@@ -1,0 +1,8 @@
+//
+// Created by alexm on 3/6/2020.
+//
+
+#ifndef EFIXPLORER_EFIEMULATORDXE_H
+#define EFIXPLORER_EFIEMULATORDXE_H
+
+#endif //EFIXPLORER_EFIEMULATORDXE_H
