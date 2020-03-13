@@ -1,8 +1,5 @@
-﻿// efiXplorer.h : Include file for standard system include files,
-// or project specific include files.
+#include "efiUtils.h"
 
-#pragma once
-
-#include <iostream>
-
-// TODO: Reference additional headers your program requires here.
+#define DEBUG
+#define COPYRIGHT                                                              \
+    "(c) 2020, binarly-io - https://github.com/binarly-io/efiXplorer"
