@@ -70,6 +70,7 @@ using namespace std::filesystem;
 // allins.h
 #define NN_call 16
 #define NN_callni 18
+#define NN_lea 92
 #define NN_mov 122
 
 void setGuidStructure(ea_t ea);

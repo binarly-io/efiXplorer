@@ -1,4 +1,5 @@
 #include "efiAnalysis.h"
+#include "windows.h"
 
 using namespace efiAnalysis;
 
@@ -83,13 +84,6 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     // load protocols from guids/guids.json file
     ifstream in(guidsJsonPath);
     in >> dbProtocols;
-
-    // all finded protocols (data + code analysis)
-    allProtocols = json::array();
-    // protocols from data
-    dataProtocols = json::array();
-    // proprietary protocols
-    propProtocols = json::array();
 }
 
 efiAnalysis::efiAnalyzer::~efiAnalyzer() {
@@ -252,12 +246,94 @@ void efiAnalysis::efiAnalyzer::getBootServices() {
     ft_destroy_table(table);
 }
 
-void efiAnalysis::efiAnalyzer::getProtocols() {
+void efiAnalysis::efiAnalyzer::getProtNames() {
     DEBUG_MSG("[%s] protocols finding\n", plugin_name);
+    for (int i = 0; i < bootServicesTableX64Length; i++) {
+        vector<ea_t> addrs = bootServices[bootServicesTableX64[i].service_name];
+        vector<ea_t>::iterator ea;
+        /* for each boot service */
+        for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
+            ea_t address = *ea;
+            DEBUG_MSG("[%s] looking for protocols in the 0x%llx area\n",
+                      plugin_name, address);
+            insn_t insn;
+            ea_t guidCodeAddress = 0;
+            ea_t guidDataAddress = 0;
+            bool found = false;
+            /* for each boot service area */
+            for (int i = 0; i < 16; i++) {
+                address = prev_head(address, startAddress);
+                decode_insn(&insn, address);
+                if (insn.itype == NN_lea && insn.ops[1].addr > base) {
+                    guidCodeAddress = address;
+                    guidDataAddress = insn.ops[1].addr;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                DEBUG_MSG("[%s] found protocol GUID parameter at 0x%llx\n",
+                          plugin_name, guidCodeAddress);
+                /* get protocol item */
+                json protocolItem;
+                protocolItem["address"] = guidDataAddress;
+                protocolItem["service"] = bootServicesTableX64[i].service_name;
+                /* get guid */
+                auto guid = json::array({get_wide_dword(guidDataAddress),
+                                         get_wide_word(guidDataAddress + 4),
+                                         get_wide_word(guidDataAddress + 6),
+                                         get_wide_byte(guidDataAddress + 8),
+                                         get_wide_byte(guidDataAddress + 9),
+                                         get_wide_byte(guidDataAddress + 10),
+                                         get_wide_byte(guidDataAddress + 11),
+                                         get_wide_byte(guidDataAddress + 12),
+                                         get_wide_byte(guidDataAddress + 13),
+                                         get_wide_byte(guidDataAddress + 14),
+                                         get_wide_byte(guidDataAddress + 15)});
+                protocolItem["guid"] = guid;
+                /* find guid name */
+                json::iterator dbItem;
+                for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
+                     ++dbItem) {
+                    if (guid == dbItem.value()) {
+                        protocolItem["prot_name"] = dbItem.key();
+                    }
+                }
+                if (protocolItem["prot_name"].is_null()) {
+                    protocolItem["prot_name"] = "ProprietaryProtocol";
+                }
+                allProtocols.push_back(protocolItem);
+            }
+        }
+    }
 }
 
-void efiAnalysis::efiAnalyzer::getProtNames() {
+void efiAnalysis::efiAnalyzer::printProtocols() {
     DEBUG_MSG("[%s] protocols names finding\n", plugin_name);
+    ft_table_t *table = ft_create_table();
+    ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+    ft_write_ln(table, " GUID ", " Protocol name ", " Address ", " Service ");
+    for (vector<json>::iterator protocolItem = allProtocols.begin();
+         protocolItem != allProtocols.end(); ++protocolItem) {
+        json protItem = *protocolItem;
+        auto guid = protItem["guid"];
+        string protName = protItem["prot_name"];
+        ea_t address = (ea_t)protItem["address"];
+        string service = protItem["service"];
+        ft_printf_ln(table,
+                     " %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X | %s | "
+                     "0x%llx | %s ",
+                     (unsigned long)guid[0], (unsigned short)guid[1],
+                     (unsigned short)guid[2], (unsigned char)guid[3],
+                     (unsigned char)guid[4], (unsigned char)guid[5],
+                     (unsigned char)guid[6], (unsigned char)guid[7],
+                     (unsigned char)guid[8], (unsigned char)guid[9],
+                     (unsigned char)guid[10], protName.c_str(), address,
+                     service.c_str());
+    }
+    msg("Protocols:\n");
+    msg(ft_to_string(table));
+    ft_destroy_table(table);
 }
 
 bool efiAnalysis::efiAnalyzerMain() {
@@ -270,7 +346,8 @@ bool efiAnalysis::efiAnalyzerMain() {
     analyzer.findBootServicesTable();
     analyzer.findRuntimeServicesTable();
     analyzer.getBootServices();
-    analyzer.getProtocols();
+    analyzer.getProtNames();
+    analyzer.printProtocols();
 
     return true;
 }

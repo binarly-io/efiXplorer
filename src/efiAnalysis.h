@@ -8,8 +8,8 @@ class efiAnalyzer {
     bool findBootServicesTable();
     bool findRuntimeServicesTable();
     void getBootServices();
-    void getProtocols();
     void getProtNames();
+    void printProtocols();
     efiAnalyzer();
     ~efiAnalyzer();
 
@@ -23,9 +23,9 @@ class efiAnalyzer {
     path guidsJsonPath;
     json bootServices;
     json dbProtocols;
-    json allProtocols;
-    json dataProtocols;
-    json propProtocols;
+    vector<json> allProtocols;
+    vector<json> dataProtocols;
+    vector<json> propProtocols;
 };
 
 bool efiAnalyzerMain();
