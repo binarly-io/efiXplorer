@@ -3,9 +3,11 @@
 namespace efiAnalysis {
 class efiAnalyzer {
   public:
+    bool findImageHandle();
     bool findSystemTable();
     bool findBootServicesTable();
     bool findRuntimeServicesTable();
+    void getBootServices();
     void getProtocols();
     void getProtNames();
     efiAnalyzer();

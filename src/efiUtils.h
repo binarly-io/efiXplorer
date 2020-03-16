@@ -1,3 +1,4 @@
+#include "fort.h"
 #include "json.hpp"
 #include <auto.hpp>
 #include <diskio.hpp>
@@ -10,6 +11,8 @@
 #include <loader.hpp>
 #include <name.hpp>
 #include <string>
+#include <struct.hpp>
+#include <typeinf.hpp>
 
 using namespace nlohmann;
 using namespace std;
@@ -66,4 +69,7 @@ using namespace std::filesystem;
 
 // allins.h
 #define NN_call 16
+#define NN_callni 18
 #define NN_mov 122
+
+void setGuidStructure(ea_t ea);
