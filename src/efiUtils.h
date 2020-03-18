@@ -18,6 +18,7 @@ using namespace nlohmann;
 using namespace std;
 using namespace std::filesystem;
 
+/* undefine to hide debug messages */
 #define DEBUG
 
 #ifdef DEBUG
@@ -26,19 +27,19 @@ using namespace std::filesystem;
 #define DEBUG_MSG(format, ...) {};
 #endif
 
-// architectures
+/* architectures */
 #define X86 32
 #define X64 64
 
-// max address
+/* max address */
 #define MAX_ADDR 0xffffffffffffffff
 
-// SystemTable->BootServices
+/* SystemTable->BootServices */
 #define BS_OFFSET 0x60
-// SystemTable->RuntimeServices
+/* SystemTable->RuntimeServices */
 #define RS_OFFSET 0x58
 
-// x64 registers
+/* x64 registers */
 #define REG_RAX 0x00
 #define REG_RCX 0x01
 #define REG_RDX 0x02
@@ -55,7 +56,7 @@ using namespace std::filesystem;
 #define REG_R13 0x0d
 #define REG_R14 0x0e
 
-// x86 registers
+/* x86 registers */
 #define REG_EAX 0x00
 #define REG_ECX 0x01
 #define REG_EDX 0x02
@@ -67,7 +68,7 @@ using namespace std::filesystem;
 #define REG_AL 0x10
 #define REG_DL 0x12
 
-// allins.h
+/* allins.h */
 #define NN_call 16
 #define NN_callni 18
 #define NN_lea 92

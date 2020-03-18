@@ -13,8 +13,5 @@ void setGuidStructure(ea_t ea) {
         add_struc_member(sptr, "data4", -1, byte_flag(), NULL, 8);
     }
     size_t size = get_struc_size(sptr);
-
     create_struct(ea, size, sptr->id);
-    // anterior line
-    add_extra_line(ea, 0, struct_name);
 }

@@ -1,5 +1,4 @@
 #include "efiAnalysis.h"
-#include "windows.h"
 
 using namespace efiAnalysis;
 
@@ -43,29 +42,29 @@ struct bootService bootServicesTableX86[] = {
     {"UninstallMultipleProtocolInterfaces", 0xb4}};
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
-    // check if file is valid EFI module
+    /* check if file is valid EFI module */
     valid = true;
-    // get arch, X86 or X64
+    /* get arch, X86 or X64 */
     arch = X64;
 
-    // get guids.json path
+    /* get guids.json path */
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
 
-    // get base address
+    /* get base address */
     base = get_imagebase();
 
     func_t *startFunc = NULL;
     func_t *endFunc = NULL;
-    // get start address for scan
+    /* get start address for scan */
     startFunc = getn_func(0);
     startAddress = startFunc->start_ea;
-    // get end address for scan
+    /* get end address for scan */
     endFunc = getn_func(get_func_qty() - 1);
     endAddress = endFunc->end_ea;
 
-    // set boot services that work with protocols
+    /* set boot services that work with protocols */
     vector<ea_t> addrs;
     bootServices["InstallProtocolInterface"] = addrs;
     bootServices["ReinstallProtocolInterface"] = addrs;
@@ -81,7 +80,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     bootServices["InstallMultipleProtocolInterfaces"] = addrs;
     bootServices["UninstallMultipleProtocolInterfaces"] = addrs;
 
-    // load protocols from guids/guids.json file
+    /* load protocols from guids/guids.json file */
     ifstream in(guidsJsonPath);
     in >> dbProtocols;
 }
@@ -93,10 +92,10 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
 bool efiAnalysis::efiAnalyzer::findImageHandle() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
-        // get address of entry point
+        /* get address of entry point */
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
-        // ImageHandle finding, first 8 instructions checking
+        /* ImageHandle finding, first 8 instructions checking */
         for (int i = 0; i < 8; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -109,7 +108,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandle() {
                 apply_named_type(ea, "EFI_HANDLE");
                 return true;
             }
-            ea = next_head(ea, MAX_ADDR);
+            ea = next_head(ea, endAddress);
         }
     }
     return false;
@@ -118,10 +117,10 @@ bool efiAnalysis::efiAnalyzer::findImageHandle() {
 bool efiAnalysis::efiAnalyzer::findSystemTable() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
-        // get address of entry point
+        /* get address of entry point */
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
-        // SystemTable finding, first 16 instructions checking
+        /* SystemTable finding, first 16 instructions checking */
         for (int i = 0; i < 16; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -134,7 +133,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTable() {
                 apply_named_type(ea, "EFI_SYSTEM_TABLE *");
                 return true;
             }
-            ea = next_head(ea, MAX_ADDR);
+            ea = next_head(ea, endAddress);
         }
     }
     return false;
@@ -156,7 +155,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTable() {
                 foundBs = true;
             }
         }
-        // if we found BS_OFFSET
+        /* if we found BS_OFFSET */
         if (foundBs) {
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == bsRegister && insn.ops[0].type == o_mem) {
@@ -169,7 +168,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTable() {
                 break;
             }
         }
-        ea = next_head(ea, MAX_ADDR);
+        ea = next_head(ea, endAddress);
     }
     return foundBs;
 }
@@ -190,7 +189,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTable() {
                 foundRs = true;
             }
         }
-        // if we found RS_OFFSET
+        /* if we found RS_OFFSET */
         if (foundRs) {
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == rsRegister && insn.ops[0].type == o_mem) {
@@ -203,7 +202,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTable() {
                 break;
             }
         }
-        ea = next_head(ea, MAX_ADDR);
+        ea = next_head(ea, endAddress);
     }
     return foundRs;
 }
@@ -239,7 +238,7 @@ void efiAnalysis::efiAnalyzer::getBootServices() {
                 }
             }
         }
-        ea = next_head(ea, MAX_ADDR);
+        ea = next_head(ea, endAddress);
     }
     msg("Boot services:\n");
     msg(ft_to_string(table));
@@ -297,12 +296,16 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
+                        allProtocols.push_back(protocolItem);
+                        break;
                     }
                 }
+                /* proprietary guid */
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
+                    allProtocols.push_back(protocolItem);
                 }
-                allProtocols.push_back(protocolItem);
+                break;
             }
         }
     }
@@ -323,17 +326,87 @@ void efiAnalysis::efiAnalyzer::printProtocols() {
         ft_printf_ln(table,
                      " %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X | %s | "
                      "0x%llx | %s ",
-                     (unsigned long)guid[0], (unsigned short)guid[1],
-                     (unsigned short)guid[2], (unsigned char)guid[3],
-                     (unsigned char)guid[4], (unsigned char)guid[5],
-                     (unsigned char)guid[6], (unsigned char)guid[7],
-                     (unsigned char)guid[8], (unsigned char)guid[9],
-                     (unsigned char)guid[10], protName.c_str(), address,
-                     service.c_str());
+                     (uint32_t)guid[0], (uint16_t)guid[1], (uint16_t)guid[2],
+                     (uint8_t)guid[3], (uint8_t)guid[4], (uint8_t)guid[5],
+                     (uint8_t)guid[6], (uint8_t)guid[7], (uint8_t)guid[8],
+                     (uint8_t)guid[9], (uint8_t)guid[10], protName.c_str(),
+                     address, service.c_str());
     }
     msg("Protocols:\n");
     msg(ft_to_string(table));
     ft_destroy_table(table);
+}
+
+void efiAnalysis::efiAnalyzer::markProtocols() {
+    DEBUG_MSG("[%s] protocols marking\n", plugin_name);
+    for (vector<json>::iterator protocolItem = allProtocols.begin();
+         protocolItem != allProtocols.end(); ++protocolItem) {
+        json protItem = *protocolItem;
+        ea_t address = (ea_t)protItem["address"];
+        char hexAddr[16] = {};
+        _itoa_s(address, hexAddr, 16);
+        string protName = (string)protItem["prot_name"];
+        string name = protName + "_0x" + (string)hexAddr;
+        set_name(address, name.c_str(), SN_CHECK);
+        setGuidStructure(address);
+        /* comment line */
+        string comment = "EFI_GUID *" + protName;
+        add_extra_line(address, 2, comment.c_str());
+        /* save address */
+        markedProtocols.push_back(address);
+        DEBUG_MSG("[%s] address: 0x%llx, comment: %s\n", plugin_name, address,
+                  comment.c_str());
+    }
+}
+
+void efiAnalysis::efiAnalyzer::markDataGuids() {
+    DEBUG_MSG("[%s] .data GUIDs marking\n", plugin_name);
+    segment_t *seg_info = get_segm_by_name(".data");
+    if (seg_info == NULL) {
+        DEBUG_MSG("[%s] can't find a .data segment\n", plugin_name);
+        return;
+    }
+    ea_t ea = seg_info->start_ea;
+    while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
+        if (get_wide_dword(ea) == 0x00 || get_wide_dword(ea) == 0xffffffff) {
+            ea = next_head(ea, seg_info->end_ea);
+            return;
+        }
+        /* get guid */
+        auto guid = json::array({get_wide_dword(ea), get_wide_word(ea + 4),
+                                 get_wide_word(ea + 6), get_wide_byte(ea + 8),
+                                 get_wide_byte(ea + 9), get_wide_byte(ea + 10),
+                                 get_wide_byte(ea + 11), get_wide_byte(ea + 12),
+                                 get_wide_byte(ea + 13), get_wide_byte(ea + 14),
+                                 get_wide_byte(ea + 15)});
+        /* find guid name */
+        json::iterator dbItem;
+        for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
+             ++dbItem) {
+            if (guid == dbItem.value()) {
+                /* check if guid already marked */
+                for (vector<ea_t>::iterator address = markedProtocols.begin();
+                     address != markedProtocols.end(); ++address) {
+                    if (*address == ea) {
+                        continue;
+                    }
+                }
+                /* mark .data guid */
+                char hexAddr[16] = {};
+                _itoa_s(ea, hexAddr, 16);
+                string name = dbItem.key() + "_0x" + (string)hexAddr;
+                set_name(ea, name.c_str(), SN_CHECK);
+                setGuidStructure(ea);
+                /* comment line */
+                string comment = "EFI_GUID *" + dbItem.key();
+                add_extra_line(ea, 2, comment.c_str());
+                DEBUG_MSG("[%s] address: 0x%llx, comment: %s\n", plugin_name,
+                          ea, comment.c_str());
+                break;
+            }
+        }
+        ea = next_head(ea, seg_info->end_ea);
+    }
 }
 
 bool efiAnalysis::efiAnalyzerMain() {
@@ -348,6 +421,8 @@ bool efiAnalysis::efiAnalyzerMain() {
     analyzer.getBootServices();
     analyzer.getProtNames();
     analyzer.printProtocols();
+    analyzer.markProtocols();
+    analyzer.markDataGuids();
 
     return true;
 }

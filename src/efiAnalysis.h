@@ -10,6 +10,8 @@ class efiAnalyzer {
     void getBootServices();
     void getProtNames();
     void printProtocols();
+    void markProtocols();
+    void markDataGuids();
     efiAnalyzer();
     ~efiAnalyzer();
 
@@ -24,8 +26,7 @@ class efiAnalyzer {
     json bootServices;
     json dbProtocols;
     vector<json> allProtocols;
-    vector<json> dataProtocols;
-    vector<json> propProtocols;
+    vector<ea_t> markedProtocols;
 };
 
 bool efiAnalyzerMain();

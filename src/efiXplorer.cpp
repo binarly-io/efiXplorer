@@ -25,9 +25,6 @@ int idaapi init(void) {
 
 bool idaapi run(size_t) {
     DEBUG_MSG("[%s] plugin run\n", plugin_name);
-    // --------------
-    // analyzer staff
-    // --------------
     efiAnalysis::efiAnalyzerMain();
 
     return true;
