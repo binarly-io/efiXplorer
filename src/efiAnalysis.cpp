@@ -7,39 +7,48 @@ static const char plugin_name[] = "efiXplorer";
 struct bootService {
     char service_name[64];
     size_t offset;
+    size_t reg;
 };
 
 size_t bootServicesTableX64Length = 13;
 struct bootService bootServicesTableX64[] = {
-    {"InstallProtocolInterface", 0x80},
-    {"ReinstallProtocolInterface", 0x88},
-    {"UninstallProtocolInterface", 0x90},
-    {"HandleProtocol", 0x98},
-    {"RegisterProtocolNotify", 0xa8},
-    {"OpenProtocol", 0x118},
-    {"CloseProtocol", 0x120},
-    {"OpenProtocolInformation", 0x128},
-    {"ProtocolsPerHandle", 0x130},
-    {"LocateHandleBuffer", 0x138},
-    {"LocateProtocol", 0x140},
-    {"InstallMultipleProtocolInterfaces", 0x148},
-    {"UninstallMultipleProtocolInterfaces", 0x150}};
+    {"InstallProtocolInterface", x64InstallProtocolInterfaceOffset, REG_RDX},
+    {"ReinstallProtocolInterface", x64RenstallProtocolInterfaceOffset, REG_RDX},
+    {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset},
+    {"HandleProtocol", x64HandleProtocolOffset, REG_RDX},
+    {"RegisterProtocolNotify", x64RegisterProtocolNotifyOffset, REG_RCX},
+    {"OpenProtocol", x64OpenProtocolOffset, REG_RDX},
+    {"CloseProtocol", x64CloseProtocolOffset, REG_NONE_64},
+    {"OpenProtocolInformation", x64OpenProtocolInformationOffset, REG_NONE_64},
+    {"ProtocolsPerHandle", x64ProtocolsPerHandleOffset, REG_NONE_64},
+    {"LocateHandleBuffer", x64LocateHandleBufferOffset, REG_NONE_64},
+    {"LocateProtocol", x64LocateProtocolOffset, REG_RCX},
+    {"InstallMultipleProtocolInterfaces",
+     x64InstallMultipleProtocolInterfacesOffset, REG_RDX},
+    {"UninstallMultipleProtocolInterfaces",
+     x64UninstallMultipleProtocolInterfacesOffset, REG_NONE_64}};
 
 size_t bootServicesTableX86Length = 13;
+/* REG_NONE means that the service is not currently being processed */
 struct bootService bootServicesTableX86[] = {
-    {"InstallProtocolInterface", 0x4c},
-    {"ReinstallProtocolInterface", 0x50},
-    {"UninstallProtocolInterface", 0x54},
-    {"HandleProtocol", 0x58},
-    {"RegisterProtocolNotify", 0x60},
-    {"OpenProtocol", 0x98},
-    {"CloseProtocol", 0x9c},
-    {"OpenProtocolInformation", 0xa0},
-    {"ProtocolsPerHandle", 0xa4},
-    {"LocateHandleBuffer", 0xa8},
-    {"LocateProtocol", 0xaC},
-    {"InstallMultipleProtocolInterfaces", 0xb0},
-    {"UninstallMultipleProtocolInterfaces", 0xb4}};
+    {"InstallProtocolInterface", x86InstallProtocolInterfaceOffset,
+     REG_NONE_32},
+    {"ReinstallProtocolInterface", x86RenstallProtocolInterfaceOffset,
+     REG_NONE_32},
+    {"UninstallProtocolInterface", x86UninstallProtocolInterfaceOffset,
+     REG_NONE_32},
+    {"HandleProtocol", x86HandleProtocolOffset, REG_NONE_32},
+    {"RegisterProtocolNotify", x86RegisterProtocolNotifyOffset, REG_NONE_32},
+    {"OpenProtocol", x86OpenProtocolOffset, REG_NONE_32},
+    {"CloseProtocol", x86CloseProtocolOffset, REG_NONE_32},
+    {"OpenProtocolInformation", x86OpenProtocolInformationOffset, REG_NONE_32},
+    {"ProtocolsPerHandle", x86ProtocolsPerHandleOffset, REG_NONE_32},
+    {"LocateHandleBuffer", x86LocateHandleBufferOffset, REG_NONE_32},
+    {"LocateProtocol", x86LocateProtocolOffset, REG_NONE_32},
+    {"InstallMultipleProtocolInterfaces",
+     x86InstallMultipleProtocolInterfacesOffset, REG_NONE_32},
+    {"UninstallMultipleProtocolInterfaces",
+     x86UninstallMultipleProtocolInterfacesOffset, REG_NONE_32}};
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
     /* check if file is valid EFI module */
@@ -259,17 +268,24 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
             ea_t guidCodeAddress = 0;
             ea_t guidDataAddress = 0;
             bool found = false;
-            /* for each boot service area */
-            for (int i = 0; i < 16; i++) {
+            uint16_t argReg = bootServicesTableX64[i].reg;
+            /* if service is not currently being processed */
+            if (argReg == REG_NONE_64) {
+                break;
+            }
+            /* 10 instructions above */
+            for (int j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
-                if (insn.itype == NN_lea && insn.ops[1].addr > base) {
+                if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                    insn.ops[0].reg == bootServicesTableX64[i].reg) {
                     guidCodeAddress = address;
                     guidDataAddress = insn.ops[1].addr;
                     found = true;
                     break;
                 }
             }
+
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%llx\n",
                           plugin_name, guidCodeAddress);
@@ -289,6 +305,14 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
                                          get_wide_byte(guidDataAddress + 13),
                                          get_wide_byte(guidDataAddress + 14),
                                          get_wide_byte(guidDataAddress + 15)});
+                /* check guid */
+                if (guid == json::array({0x00000000, 0x0000, 0x0000, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00})) {
+                    DEBUG_MSG("[%s] NULL GUID at 0x%llx\n", plugin_name,
+                              guidCodeAddress);
+                    continue;
+                }
+                /* if guid looks ok */
                 protocolItem["guid"] = guid;
                 /* find guid name */
                 json::iterator dbItem;
@@ -296,16 +320,28 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
-                        allProtocols.push_back(protocolItem);
+                        /* check if item already exist */
+                        vector<json>::iterator it;
+                        it = find(allProtocols.begin(), allProtocols.end(),
+                                  protocolItem);
+                        if (it == allProtocols.end()) {
+                            allProtocols.push_back(protocolItem);
+                        }
                         break;
                     }
                 }
                 /* proprietary guid */
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
-                    allProtocols.push_back(protocolItem);
+                    /* check if item already exist */
+                    vector<json>::iterator it;
+                    it = find(allProtocols.begin(), allProtocols.end(),
+                              protocolItem);
+                    if (it == allProtocols.end()) {
+                        allProtocols.push_back(protocolItem);
+                    }
+                    continue;
                 }
-                break;
             }
         }
     }
@@ -343,8 +379,20 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
          protocolItem != allProtocols.end(); ++protocolItem) {
         json protItem = *protocolItem;
         ea_t address = (ea_t)protItem["address"];
+        /* check if guid on this address already marked */
+        bool marked = false;
+        for (vector<ea_t>::iterator markedAddress = markedProtocols.begin();
+             markedAddress != markedProtocols.end(); ++markedAddress) {
+            if (*markedAddress == address) {
+                marked = true;
+                break;
+            }
+        }
+        if (marked) {
+            continue;
+        }
         char hexAddr[16] = {};
-        _itoa_s(address, hexAddr, 16);
+        sprintf(hexAddr, "%llx", address);
         string protName = (string)protItem["prot_name"];
         string name = protName + "_0x" + (string)hexAddr;
         set_name(address, name.c_str(), SN_CHECK);
@@ -361,51 +409,64 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
 
 void efiAnalysis::efiAnalyzer::markDataGuids() {
     DEBUG_MSG("[%s] .data GUIDs marking\n", plugin_name);
-    segment_t *seg_info = get_segm_by_name(".data");
-    if (seg_info == NULL) {
-        DEBUG_MSG("[%s] can't find a .data segment\n", plugin_name);
-        return;
-    }
-    ea_t ea = seg_info->start_ea;
-    while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
-        if (get_wide_dword(ea) == 0x00 || get_wide_dword(ea) == 0xffffffff) {
-            ea = next_head(ea, seg_info->end_ea);
-            return;
+    vector<string> segments = {".data"};
+    for (vector<string>::iterator seg = segments.begin(); seg != segments.end();
+         ++seg) {
+        string segName = *seg;
+        segment_t *seg_info = get_segm_by_name(segName.c_str());
+        if (seg_info == NULL) {
+            DEBUG_MSG("[%s] can't find a %s segment\n", plugin_name,
+                      segName.c_str());
         }
-        /* get guid */
-        auto guid = json::array({get_wide_dword(ea), get_wide_word(ea + 4),
-                                 get_wide_word(ea + 6), get_wide_byte(ea + 8),
-                                 get_wide_byte(ea + 9), get_wide_byte(ea + 10),
-                                 get_wide_byte(ea + 11), get_wide_byte(ea + 12),
-                                 get_wide_byte(ea + 13), get_wide_byte(ea + 14),
-                                 get_wide_byte(ea + 15)});
-        /* find guid name */
-        json::iterator dbItem;
-        for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-             ++dbItem) {
-            if (guid == dbItem.value()) {
-                /* check if guid already marked */
-                for (vector<ea_t>::iterator address = markedProtocols.begin();
-                     address != markedProtocols.end(); ++address) {
-                    if (*address == ea) {
-                        continue;
-                    }
+        ea_t ea = seg_info->start_ea;
+        while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
+            /* check if guid on this address already marked */
+            bool marked = false;
+            for (vector<ea_t>::iterator address = markedProtocols.begin();
+                 address != markedProtocols.end(); ++address) {
+                if (*address == ea) {
+                    marked = true;
+                    break;
                 }
-                /* mark .data guid */
-                char hexAddr[16] = {};
-                _itoa_s(ea, hexAddr, 16);
-                string name = dbItem.key() + "_0x" + (string)hexAddr;
-                set_name(ea, name.c_str(), SN_CHECK);
-                setGuidStructure(ea);
-                /* comment line */
-                string comment = "EFI_GUID *" + dbItem.key();
-                add_extra_line(ea, 2, comment.c_str());
-                DEBUG_MSG("[%s] address: 0x%llx, comment: %s\n", plugin_name,
-                          ea, comment.c_str());
-                break;
             }
+            if (marked) {
+                ea = next_head(ea, seg_info->end_ea);
+                continue;
+            }
+            if (get_wide_dword(ea) == 0x00000000 ||
+                get_wide_dword(ea) == 0xffffffff) {
+                ea = next_head(ea, seg_info->end_ea);
+                continue;
+            }
+            /* get guid */
+            auto guid =
+                json::array({get_wide_dword(ea), get_wide_word(ea + 4),
+                             get_wide_word(ea + 6), get_wide_byte(ea + 8),
+                             get_wide_byte(ea + 9), get_wide_byte(ea + 10),
+                             get_wide_byte(ea + 11), get_wide_byte(ea + 12),
+                             get_wide_byte(ea + 13), get_wide_byte(ea + 14),
+                             get_wide_byte(ea + 15)});
+            /* find guid name */
+            json::iterator dbItem;
+            for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
+                 ++dbItem) {
+                if (guid == dbItem.value()) {
+                    /* mark .data guid */
+                    char hexAddr[16] = {};
+                    sprintf(hexAddr, "%llx", ea);
+                    string name = dbItem.key() + "_0x" + (string)hexAddr;
+                    set_name(ea, name.c_str(), SN_CHECK);
+                    setGuidStructure(ea);
+                    /* comment line */
+                    string comment = "EFI_GUID *" + dbItem.key();
+                    add_extra_line(ea, 2, comment.c_str());
+                    DEBUG_MSG("[%s] address: 0x%llx, comment: %s\n",
+                              plugin_name, ea, comment.c_str());
+                    break;
+                }
+            }
+            ea = next_head(ea, seg_info->end_ea);
         }
-        ea = next_head(ea, seg_info->end_ea);
     }
 }
 
