@@ -1,6 +1,7 @@
-#include "efiXplorer.h"
 #include "efiAnalysis.h"
+#include "efiXplorer.h"
 
+static bool inited = false;
 static const char plugin_name[] = "efiXplorer";
 static const char plugin_hotkey[] = "Ctrl+Alt+E";
 static const char plugin_comment[] =
@@ -20,6 +21,7 @@ static const char welcome_msg[] =
 int idaapi init(void) {
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
+    inited = true;
     return PLUGIN_KEEP;
 }
 
@@ -30,17 +32,11 @@ bool idaapi run(size_t) {
     return true;
 }
 
-bool idaapi terminate(size_t) {
-    DEBUG_MSG("[%s] plugin terminate\n", plugin_name);
-
-    return true;
-}
-
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
     (PLUGIN_MOD | PLUGIN_PROC | PLUGIN_FIX), // plugin flags
     init,                                    // initialize
-    terminate,                               // terminate
+    NULL,                                    // terminate
     run,                                     // invoke plugin
     plugin_comment,                          // long comment about the plugin
     plugin_help,                             // multiline help about the plugin

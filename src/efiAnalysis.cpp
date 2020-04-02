@@ -10,25 +10,26 @@ struct bootService {
     size_t reg;
 };
 
-size_t bootServicesTableX64Length = 13;
+size_t bootServicesTableX64Length = 12;
+/* REG_NONE means that the service is not currently being processed */
 struct bootService bootServicesTableX64[] = {
     {"InstallProtocolInterface", x64InstallProtocolInterfaceOffset, REG_RDX},
     {"ReinstallProtocolInterface", x64RenstallProtocolInterfaceOffset, REG_RDX},
-    {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset},
+    {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset,
+     REG_RDX},
     {"HandleProtocol", x64HandleProtocolOffset, REG_RDX},
     {"RegisterProtocolNotify", x64RegisterProtocolNotifyOffset, REG_RCX},
     {"OpenProtocol", x64OpenProtocolOffset, REG_RDX},
-    {"CloseProtocol", x64CloseProtocolOffset, REG_NONE_64},
-    {"OpenProtocolInformation", x64OpenProtocolInformationOffset, REG_NONE_64},
-    {"ProtocolsPerHandle", x64ProtocolsPerHandleOffset, REG_NONE_64},
-    {"LocateHandleBuffer", x64LocateHandleBufferOffset, REG_NONE_64},
+    {"CloseProtocol", x64CloseProtocolOffset, REG_RDX},
+    {"OpenProtocolInformation", x64OpenProtocolInformationOffset, REG_RDX},
+    {"LocateHandleBuffer", x64LocateHandleBufferOffset, REG_RDX},
     {"LocateProtocol", x64LocateProtocolOffset, REG_RCX},
     {"InstallMultipleProtocolInterfaces",
      x64InstallMultipleProtocolInterfacesOffset, REG_RDX},
     {"UninstallMultipleProtocolInterfaces",
-     x64UninstallMultipleProtocolInterfacesOffset, REG_NONE_64}};
+     x64UninstallMultipleProtocolInterfacesOffset, REG_RDX}};
 
-size_t bootServicesTableX86Length = 13;
+size_t bootServicesTableX86Length = 12;
 /* REG_NONE means that the service is not currently being processed */
 struct bootService bootServicesTableX86[] = {
     {"InstallProtocolInterface", x86InstallProtocolInterfaceOffset,
@@ -42,7 +43,6 @@ struct bootService bootServicesTableX86[] = {
     {"OpenProtocol", x86OpenProtocolOffset, REG_NONE_32},
     {"CloseProtocol", x86CloseProtocolOffset, REG_NONE_32},
     {"OpenProtocolInformation", x86OpenProtocolInformationOffset, REG_NONE_32},
-    {"ProtocolsPerHandle", x86ProtocolsPerHandleOffset, REG_NONE_32},
     {"LocateHandleBuffer", x86LocateHandleBufferOffset, REG_NONE_32},
     {"LocateProtocol", x86LocateProtocolOffset, REG_NONE_32},
     {"InstallMultipleProtocolInterfaces",
@@ -330,7 +330,7 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
                         break;
                     }
                 }
-                /* proprietary guid */
+                /* proprietary protocol */
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
                     /* check if item already exist */
@@ -470,6 +470,20 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
     }
 }
 
+void efiAnalysis::efiAnalyzer::dumpInfo() {
+    json info;
+    info["boot_services"] = bootServices;
+    info["protocols"] = allProtocols;
+    string idbPath;
+    idbPath = get_path(PATH_TYPE_IDB);
+    path logFile;
+    logFile /= idbPath;
+    logFile.replace_extension(".json");
+    std::ofstream out(logFile);
+    out << std::setw(4) << info << std::endl;
+    DEBUG_MSG("[%s] log file: %s\n", plugin_name, logFile.c_str());
+}
+
 bool efiAnalysis::efiAnalyzerMain() {
     efiAnalysis::efiAnalyzer analyzer;
 
@@ -484,6 +498,7 @@ bool efiAnalysis::efiAnalyzerMain() {
     analyzer.printProtocols();
     analyzer.markProtocols();
     analyzer.markDataGuids();
+    analyzer.dumpInfo();
 
     return true;
 }

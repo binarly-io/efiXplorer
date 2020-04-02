@@ -12,6 +12,7 @@ class efiAnalyzer {
     void printProtocols();
     void markProtocols();
     void markDataGuids();
+    void dumpInfo();
     efiAnalyzer();
     ~efiAnalyzer();
 
@@ -27,6 +28,7 @@ class efiAnalyzer {
     json dbProtocols;
     vector<json> allProtocols;
     vector<ea_t> markedProtocols;
+    string dumpDir = "efiXplorer-logs";
 };
 
 bool efiAnalyzerMain();
