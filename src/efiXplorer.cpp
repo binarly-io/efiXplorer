@@ -27,8 +27,17 @@ int idaapi init(void) {
 
 bool idaapi run(size_t) {
     DEBUG_MSG("[%s] plugin run\n", plugin_name);
-    efiAnalysis::efiAnalyzerMain();
-
+    uint8_t arch = getFileType();
+    if (arch == X64) {
+        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n",
+                  plugin_name);
+        efiAnalysis::efiAnalyzerMainX64();
+    }
+    if (arch == X86) {
+        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n",
+                  plugin_name);
+        efiAnalysis::efiAnalyzerMainX86();
+    }
     return true;
 }
 

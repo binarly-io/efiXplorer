@@ -4,15 +4,21 @@ using namespace efiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
 
-struct bootService {
+struct bootServiceX64 {
     char service_name[64];
     size_t offset;
     size_t reg;
 };
 
+struct bootServiceX86 {
+    char service_name[64];
+    size_t offset;
+    size_t push_number;
+};
+
 size_t bootServicesTableX64Length = 12;
 /* REG_NONE means that the service is not currently being processed */
-struct bootService bootServicesTableX64[] = {
+struct bootServiceX64 bootServicesTableX64[] = {
     {"InstallProtocolInterface", x64InstallProtocolInterfaceOffset, REG_RDX},
     {"ReinstallProtocolInterface", x64RenstallProtocolInterfaceOffset, REG_RDX},
     {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset,
@@ -30,32 +36,24 @@ struct bootService bootServicesTableX64[] = {
      x64UninstallMultipleProtocolInterfacesOffset, REG_RDX}};
 
 size_t bootServicesTableX86Length = 12;
-/* REG_NONE means that the service is not currently being processed */
-struct bootService bootServicesTableX86[] = {
-    {"InstallProtocolInterface", x86InstallProtocolInterfaceOffset,
-     REG_NONE_32},
-    {"ReinstallProtocolInterface", x86RenstallProtocolInterfaceOffset,
-     REG_NONE_32},
-    {"UninstallProtocolInterface", x86UninstallProtocolInterfaceOffset,
-     REG_NONE_32},
-    {"HandleProtocol", x86HandleProtocolOffset, REG_NONE_32},
-    {"RegisterProtocolNotify", x86RegisterProtocolNotifyOffset, REG_NONE_32},
-    {"OpenProtocol", x86OpenProtocolOffset, REG_NONE_32},
-    {"CloseProtocol", x86CloseProtocolOffset, REG_NONE_32},
-    {"OpenProtocolInformation", x86OpenProtocolInformationOffset, REG_NONE_32},
-    {"LocateHandleBuffer", x86LocateHandleBufferOffset, REG_NONE_32},
-    {"LocateProtocol", x86LocateProtocolOffset, REG_NONE_32},
+/* PUSH_NONE means that the service is not currently being processed */
+struct bootServiceX86 bootServicesTableX86[] = {
+    {"InstallProtocolInterface", x86InstallProtocolInterfaceOffset, 2},
+    {"ReinstallProtocolInterface", x86RenstallProtocolInterfaceOffset, 2},
+    {"UninstallProtocolInterface", x86UninstallProtocolInterfaceOffset, 2},
+    {"HandleProtocol", x86HandleProtocolOffset, 2},
+    {"RegisterProtocolNotify", x86RegisterProtocolNotifyOffset, 1},
+    {"OpenProtocol", x86OpenProtocolOffset, 2},
+    {"CloseProtocol", x86CloseProtocolOffset, 2},
+    {"OpenProtocolInformation", x86OpenProtocolInformationOffset, 2},
+    {"LocateHandleBuffer", x86LocateHandleBufferOffset, 2},
+    {"LocateProtocol", x86LocateProtocolOffset, 1},
     {"InstallMultipleProtocolInterfaces",
-     x86InstallMultipleProtocolInterfacesOffset, REG_NONE_32},
+     x86InstallMultipleProtocolInterfacesOffset, 2},
     {"UninstallMultipleProtocolInterfaces",
-     x86UninstallMultipleProtocolInterfacesOffset, REG_NONE_32}};
+     x86UninstallMultipleProtocolInterfacesOffset, 2}};
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
-    /* check if file is valid EFI module */
-    valid = true;
-    /* get arch, X86 or X64 */
-    arch = X64;
-
     /* get guids.json path */
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
@@ -98,7 +96,7 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
     DEBUG_MSG("[%s] analyzer destruction\n", plugin_name);
 }
 
-bool efiAnalysis::efiAnalyzer::findImageHandle() {
+bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
         /* get address of entry point */
@@ -123,7 +121,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandle() {
     return false;
 }
 
-bool efiAnalysis::efiAnalyzer::findSystemTable() {
+bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
         /* get address of entry point */
@@ -148,7 +146,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTable() {
     return false;
 }
 
-bool efiAnalysis::efiAnalyzer::findBootServicesTable() {
+bool efiAnalysis::efiAnalyzer::findBootServicesTableX64() {
     DEBUG_MSG("[%s] BootServices table finding from 0x%llx to 0x%llx\n",
               plugin_name, startAddress, endAddress);
     ea_t ea = startAddress;
@@ -182,7 +180,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTable() {
     return foundBs;
 }
 
-bool efiAnalysis::efiAnalyzer::findRuntimeServicesTable() {
+bool efiAnalysis::efiAnalyzer::findRuntimeServicesTableX64() {
     DEBUG_MSG("[%s] RuntimeServices table finding from 0x%llx to 0x%llx\n",
               plugin_name, startAddress, endAddress);
     ea_t ea = startAddress;
@@ -216,7 +214,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTable() {
     return foundRs;
 }
 
-void efiAnalysis::efiAnalyzer::getBootServices() {
+void efiAnalysis::efiAnalyzer::getBootServicesX64() {
     DEBUG_MSG("[%s] BootServices finding from 0x%llx to 0x%llx\n", plugin_name,
               startAddress, endAddress);
     ea_t ea = startAddress;
@@ -254,7 +252,45 @@ void efiAnalysis::efiAnalyzer::getBootServices() {
     ft_destroy_table(table);
 }
 
-void efiAnalysis::efiAnalyzer::getProtNames() {
+void efiAnalysis::efiAnalyzer::getBootServicesX86() {
+    DEBUG_MSG("[%s] BootServices finding from 0x%llx to 0x%llx\n", plugin_name,
+              startAddress, endAddress);
+    ea_t ea = startAddress;
+    insn_t insn;
+    uint16_t bsRegister = 0;
+    ft_table_t *table = ft_create_table();
+    ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+    ft_write_ln(table, " Address ", " Service ");
+    while (ea <= endAddress) {
+        decode_insn(&insn, ea);
+        if (insn.itype == NN_callni && insn.ops[0].reg == REG_EAX) {
+            for (int i = 0; i < bootServicesTableX86Length; i++) {
+                if (insn.ops[0].addr == (ea_t)bootServicesTableX86[i].offset) {
+                    /* does not work currently */
+                    long strid = get_struc_id("EFI_BOOT_SERVICES");
+                    op_stroff(insn, 0, (const tid_t *)strid, 0, 0);
+                    /* set comment */
+                    string cmt = "gBs->";
+                    cmt += (string)bootServicesTableX86[i].service_name;
+                    set_cmt(ea, cmt.c_str(), true);
+                    /* add line to table */
+                    ft_printf_ln(table, " 0x%llx | %s ", ea,
+                                 (char *)bootServicesTableX86[i].service_name);
+                    DEBUG_MSG("[%s] 0x%llx : %s\n", plugin_name, ea,
+                              (char *)bootServicesTableX86[i].service_name);
+                    bootServices[(string)bootServicesTableX86[i].service_name]
+                        .push_back(ea);
+                }
+            }
+        }
+        ea = next_head(ea, endAddress);
+    }
+    msg("Boot services:\n");
+    msg(ft_to_string(table));
+    ft_destroy_table(table);
+}
+
+void efiAnalysis::efiAnalyzer::getProtNamesX64() {
     DEBUG_MSG("[%s] protocols finding\n", plugin_name);
     for (int i = 0; i < bootServicesTableX64Length; i++) {
         vector<ea_t> addrs = bootServices[bootServicesTableX64[i].service_name];
@@ -293,6 +329,107 @@ void efiAnalysis::efiAnalyzer::getProtNames() {
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["service"] = bootServicesTableX64[i].service_name;
+                /* get guid */
+                auto guid = json::array({get_wide_dword(guidDataAddress),
+                                         get_wide_word(guidDataAddress + 4),
+                                         get_wide_word(guidDataAddress + 6),
+                                         get_wide_byte(guidDataAddress + 8),
+                                         get_wide_byte(guidDataAddress + 9),
+                                         get_wide_byte(guidDataAddress + 10),
+                                         get_wide_byte(guidDataAddress + 11),
+                                         get_wide_byte(guidDataAddress + 12),
+                                         get_wide_byte(guidDataAddress + 13),
+                                         get_wide_byte(guidDataAddress + 14),
+                                         get_wide_byte(guidDataAddress + 15)});
+                /* check guid */
+                if (guid == json::array({0x00000000, 0x0000, 0x0000, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00})) {
+                    DEBUG_MSG("[%s] NULL GUID at 0x%llx\n", plugin_name,
+                              guidCodeAddress);
+                    continue;
+                }
+                /* if guid looks ok */
+                protocolItem["guid"] = guid;
+                /* find guid name */
+                json::iterator dbItem;
+                for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
+                     ++dbItem) {
+                    if (guid == dbItem.value()) {
+                        protocolItem["prot_name"] = dbItem.key();
+                        /* check if item already exist */
+                        vector<json>::iterator it;
+                        it = find(allProtocols.begin(), allProtocols.end(),
+                                  protocolItem);
+                        if (it == allProtocols.end()) {
+                            allProtocols.push_back(protocolItem);
+                        }
+                        break;
+                    }
+                }
+                /* proprietary protocol */
+                if (protocolItem["prot_name"].is_null()) {
+                    protocolItem["prot_name"] = "ProprietaryProtocol";
+                    /* check if item already exist */
+                    vector<json>::iterator it;
+                    it = find(allProtocols.begin(), allProtocols.end(),
+                              protocolItem);
+                    if (it == allProtocols.end()) {
+                        allProtocols.push_back(protocolItem);
+                    }
+                    continue;
+                }
+            }
+        }
+    }
+}
+
+void efiAnalysis::efiAnalyzer::getProtNamesX86() {
+    DEBUG_MSG("[%s] protocols finding\n", plugin_name);
+    for (int i = 0; i < bootServicesTableX86Length; i++) {
+        vector<ea_t> addrs = bootServices[bootServicesTableX86[i].service_name];
+        vector<ea_t>::iterator ea;
+        /* for each boot service */
+        for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
+            ea_t address = *ea;
+            DEBUG_MSG("[%s] looking for protocols in the 0x%llx area\n",
+                      plugin_name, address);
+            insn_t insn;
+            ea_t guidCodeAddress = 0;
+            ea_t guidDataAddress = 0;
+            bool found = false;
+            uint16_t pushNumber = bootServicesTableX86[i].push_number;
+            /* if service is not currently being processed */
+            if (pushNumber == PUSH_NONE) {
+                break;
+            }
+            /* 10 instructions above */
+            uint16_t pushCounter = 0;
+            for (int j = 0; j < 10; j++) {
+                address = prev_head(address, startAddress);
+                decode_insn(&insn, address);
+                if (insn.itype == NN_push) {
+                    pushCounter += 1;
+                    if (pushCounter > pushNumber) {
+                        break;
+                    }
+                    if (pushCounter == pushNumber) {
+                        guidCodeAddress = address;
+                        guidDataAddress = insn.ops[0].value;
+                        if (insn.ops[0].value > startAddress) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (found) {
+                DEBUG_MSG("[%s] found protocol GUID parameter at 0x%llx\n",
+                          plugin_name, guidCodeAddress);
+                /* get protocol item */
+                json protocolItem;
+                protocolItem["address"] = guidDataAddress;
+                protocolItem["service"] = bootServicesTableX86[i].service_name;
                 /* get guid */
                 auto guid = json::array({get_wide_dword(guidDataAddress),
                                          get_wide_word(guidDataAddress + 4),
@@ -484,17 +621,34 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     DEBUG_MSG("[%s] log file: %s\n", plugin_name, logFile.c_str());
 }
 
-bool efiAnalysis::efiAnalyzerMain() {
+bool efiAnalysis::efiAnalyzerMainX64() {
     efiAnalysis::efiAnalyzer analyzer;
 
     auto_wait();
 
-    analyzer.findImageHandle();
-    analyzer.findSystemTable();
-    analyzer.findBootServicesTable();
-    analyzer.findRuntimeServicesTable();
-    analyzer.getBootServices();
-    analyzer.getProtNames();
+    analyzer.findImageHandleX64();
+    analyzer.findSystemTableX64();
+    analyzer.findBootServicesTableX64();
+    analyzer.findRuntimeServicesTableX64();
+    analyzer.getBootServicesX64();
+    analyzer.getProtNamesX64();
+
+    analyzer.printProtocols();
+    analyzer.markProtocols();
+    analyzer.markDataGuids();
+    analyzer.dumpInfo();
+
+    return true;
+}
+
+bool efiAnalysis::efiAnalyzerMainX86() {
+    efiAnalysis::efiAnalyzer analyzer;
+
+    auto_wait();
+
+    analyzer.getBootServicesX86();
+    analyzer.getProtNamesX86();
+
     analyzer.printProtocols();
     analyzer.markProtocols();
     analyzer.markDataGuids();

@@ -56,6 +56,7 @@ using namespace std::filesystem;
 #define REG_R12 0x0c
 #define REG_R13 0x0d
 #define REG_R14 0x0e
+
 #define REG_NONE_64 0xffff
 
 /* x86 registers */
@@ -69,13 +70,15 @@ using namespace std::filesystem;
 #define REG_EDI 0x07
 #define REG_AL 0x10
 #define REG_DL 0x12
-#define REG_NONE_32 0xffff
+
+#define PUSH_NONE 0xffff
 
 /* allins.h */
 #define NN_call 16
 #define NN_callni 18
 #define NN_lea 92
 #define NN_mov 122
+#define NN_push 143
 
 #define x64InstallProtocolInterfaceOffset 0x80
 #define x64RenstallProtocolInterfaceOffset 0x88
@@ -106,3 +109,4 @@ using namespace std::filesystem;
 #define x86UninstallMultipleProtocolInterfacesOffset 0xb4
 
 void setGuidStructure(ea_t ea);
+uint8_t getFileType();
