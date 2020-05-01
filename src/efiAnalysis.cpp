@@ -232,8 +232,8 @@ void efiAnalysis::efiAnalyzer::getBootServicesX64() {
                     long strid = get_struc_id("EFI_BOOT_SERVICES");
                     op_stroff(insn, 0, (const tid_t *)strid, 0, 0);
                     /* set comment */
-                    string cmt = "gBs->";
-                    cmt += (string)bootServicesTableX64[i].service_name;
+                    string cmt =
+                        getComment((ea_t)bootServicesTableX86[i].offset, X64);
                     set_cmt(ea, cmt.c_str(), true);
                     /* add line to table */
                     ft_printf_ln(table, " 0x%llx | %s ", ea,
@@ -270,8 +270,8 @@ void efiAnalysis::efiAnalyzer::getBootServicesX86() {
                     long strid = get_struc_id("EFI_BOOT_SERVICES");
                     op_stroff(insn, 0, (const tid_t *)strid, 0, 0);
                     /* set comment */
-                    string cmt = "gBs->";
-                    cmt += (string)bootServicesTableX86[i].service_name;
+                    string cmt =
+                        getComment((ea_t)bootServicesTableX86[i].offset, X86);
                     set_cmt(ea, cmt.c_str(), true);
                     /* add line to table */
                     ft_printf_ln(table, " 0x%llx | %s ", ea,

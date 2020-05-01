@@ -110,3 +110,4 @@ using namespace std::filesystem;
 
 void setGuidStructure(ea_t ea);
 uint8_t getFileType();
+string getComment(ea_t offset, size_t arch);

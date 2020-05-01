@@ -1,4 +1,5 @@
 #include "efiUtils.h"
+#include "tables/efi_system_tables.h"
 
 static const char plugin_name[] = "efiXplorer";
 
@@ -33,4 +34,25 @@ uint8_t getFileType() {
         return X86;
     }
     return 0;
+}
+
+string getComment(ea_t offset, size_t arch) {
+    ea_t offset_arch;
+    string cmt = "";
+    cmt += "gBs->";
+    for (int i = 0; i < BTABLE_LEN; i++) {
+        offset_arch = (ea_t)boot_services_table[i].offset64;
+        if (arch == X86) {
+            offset_arch = (ea_t)boot_services_table[i].offset86;
+        }
+        if (offset == offset_arch) {
+            cmt += boot_services_table[i].name;
+            cmt += "()\n";
+            cmt += boot_services_table[i].prototype;
+            cmt += "\n";
+            cmt += boot_services_table[i].parameters;
+            break;
+        }
+    }
+    return cmt;
 }

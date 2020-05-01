@@ -1,5 +1,5 @@
-#include "efiAnalysis.h"
 #include "efiXplorer.h"
+#include "efiAnalysis.h"
 
 static bool inited = false;
 static const char plugin_name[] = "efiXplorer";
