@@ -233,7 +233,7 @@ void efiAnalysis::efiAnalyzer::getBootServicesX64() {
                     op_stroff(insn, 0, (const tid_t *)strid, 0, 0);
                     /* set comment */
                     string cmt =
-                        getComment((ea_t)bootServicesTableX86[i].offset, X64);
+                        getComment((ea_t)bootServicesTableX64[i].offset, X64);
                     set_cmt(ea, cmt.c_str(), true);
                     /* add line to table */
                     ft_printf_ln(table, " 0x%llx | %s ", ea,
