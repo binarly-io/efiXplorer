@@ -26,6 +26,8 @@ int idaapi init(void) {
 }
 
 bool idaapi run(size_t) {
+    DEBUG_MSG("[%s] ========================================================\n",
+              plugin_name);
     DEBUG_MSG("[%s] plugin run\n", plugin_name);
     uint8_t arch = getFileType();
     if (arch == X64) {

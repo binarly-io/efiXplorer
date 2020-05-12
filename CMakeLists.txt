@@ -38,5 +38,8 @@ ida_target_link_libraries(efiXplorer efiAnalysis)
 add_ida_library(efiUtils ${PROJECT_SOURCE_DIR}/src/efiUtils.cpp)
 ida_target_link_libraries(efiXplorer efiUtils)
 
+add_ida_library(efiSmmUtils ${PROJECT_SOURCE_DIR}/src/efiSmmUtils.cpp)
+ida_target_link_libraries(efiXplorer efiSmmUtils)
+
 add_ida_library(fort ${PROJECT_SOURCE_DIR}/src/thirdparty/libfort/fort.cpp)
 ida_target_link_libraries(efiXplorer fort)

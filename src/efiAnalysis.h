@@ -1,12 +1,13 @@
 #include "efiUtils.h"
+#include "efiSmmUtils.h"
 
 namespace efiAnalysis {
 class efiAnalyzer {
   public:
     bool findImageHandleX64();
     bool findSystemTableX64();
-    bool findBootServicesTableX64();
-    bool findRuntimeServicesTableX64();
+    ea_t findBootServicesTableX64();
+    ea_t findRuntimeServicesTableX64();
 
     void getBootServicesX64();
     void getBootServicesX86();
@@ -17,6 +18,9 @@ class efiAnalyzer {
     void printProtocols();
     void markProtocols();
     void markDataGuids();
+
+    bool findSmmCallout();
+
     void dumpInfo();
 
     efiAnalyzer();

@@ -79,6 +79,7 @@ using namespace std::filesystem;
 #define NN_lea 92
 #define NN_mov 122
 #define NN_push 143
+#define NN_retn 159
 
 #define x64InstallProtocolInterfaceOffset 0x80
 #define x64RenstallProtocolInterfaceOffset 0x88
@@ -111,3 +112,4 @@ using namespace std::filesystem;
 void setGuidStructure(ea_t ea);
 uint8_t getFileType();
 string getComment(ea_t offset, size_t arch);
+vector<ea_t> getXrefs(ea_t addr);

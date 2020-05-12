@@ -56,3 +56,13 @@ string getComment(ea_t offset, size_t arch) {
     }
     return cmt;
 }
+
+vector<ea_t> getXrefs(ea_t addr) {
+    vector<ea_t> xrefs;
+    ea_t xref = get_first_dref_to(addr);
+    while (xref != BADADDR) {
+        xrefs.push_back(xref);
+        xref = get_next_dref_to(addr, xref);
+    }
+    return xrefs;
+}
