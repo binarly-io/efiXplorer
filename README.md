@@ -101,9 +101,17 @@ Options:
 [efiXplorer] ========================================================
 [efiXplorer] SMM callouts finding (gBS = 0x1848)
 [efiXplorer] SW SMI handler finding (using EFI_SMM_SW_DISPATCH_PROTOCOL_GUID)
-[efiXplorer] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID address: 0x16f0
+[efiXplorer] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID address: 0x16f0
 [efiXplorer] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID xref address: 0xc56
+[efiXplorer] can't get smiHandler function, will try to create it
 [efiXplorer] SmiHandler function address: 0x808
+[efiXplorer] current function address: 0x808
+[efiXplorer] current function address: 0x107c
+[efiXplorer] current function address: 0xf34
+[efiXplorer] current function address: 0xdf0
+[efiXplorer] current function address: 0x3e4
+[efiXplorer] current function address: 0x1670
+[efiXplorer] SMM callout finded: 0x6b9
 [efiXplorer] ========================================================
 [efiXplorer] log file: /tmp/smm-test/SmmOEMInt15.json
 [efiXplorer] ========================================================
