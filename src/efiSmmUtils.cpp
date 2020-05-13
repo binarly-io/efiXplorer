@@ -113,8 +113,8 @@ func_t *findSmiHandlerSmmSwDispatch() {
         +------------------------------------------------------------------+
         | Find SW SMI handler inside SMM drivers                           |
         -------------------------------------------------------------------+
-        | 1. find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID                        |
-        | 2. get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address            |
+        | 1. find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID                     |
+        | 2. get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address         |
         | 3. this address will be inside 'RegSwSmi' function               |
         | 4. find SmiHandler by pattern (instructions may be out of order) |
         |     lea     r9, ...                                              |
