@@ -91,7 +91,7 @@ Options:
 [efiXplorer] address: 0x16e0, comment: EFI_GUID *EFI_SMM_BASE2_PROTOCOL_GUID
 [efiXplorer] address: 0x1740, comment: EFI_GUID *EFI_SMM_ACCESS2_PROTOCOL_GUID
 [efiXplorer] ========================================================
-[efiXplorer] .data and GUIDs marking
+[efiXplorer] marking GUIDs from .data
 [efiXplorer] address: 0x16e0, comment: EFI_GUID *EFI_SMM_BASE2_PROTOCOL_GUID
 [efiXplorer] address: 0x16f0, comment: EFI_GUID *EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
 [efiXplorer] address: 0x1710, comment: EFI_GUID *EFI_SMM_CPU_PROTOCOL_GUID
@@ -100,19 +100,10 @@ Options:
 [efiXplorer] address: 0x1750, comment: EFI_GUID *gPhoenixEfiSmmSwSmiProtocolGuid
 [efiXplorer] ========================================================
 [efiXplorer] SMM callouts finding (gBS = 0x1848)
-[efiXplorer] SW SMI handler finding (using EFI_SMM_CPU_PROTOCOL_GUID)
-[efiXplorer] EFI_SMM_CPU_PROTOCOL_GUID address: 0x1710
-[efiXplorer] EFI_SMM_CPU_PROTOCOL_GUID xref address: 0xc25
-[efiXplorer] gEfiSmmCpuProtocol interface address: 0x1988
-[efiXplorer] address from SmiHandler function: 0x82f
+[efiXplorer] SW SMI handler finding (using EFI_SMM_SW_DISPATCH_PROTOCOL_GUID)
+[efiXplorer] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID address: 0x16f0
+[efiXplorer] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID xref address: 0xc56
 [efiXplorer] SmiHandler function address: 0x808
-[efiXplorer] current function address: 0x808
-[efiXplorer] current function address: 0x107c
-[efiXplorer] current function address: 0xf34
-[efiXplorer] current function address: 0xdf0
-[efiXplorer] current function address: 0x3e4
-[efiXplorer] current function address: 0x1670
-[efiXplorer] SMM callout finded: 0x6b9
 [efiXplorer] ========================================================
 [efiXplorer] log file: /tmp/smm-test/SmmOEMInt15.json
 [efiXplorer] ========================================================

@@ -577,7 +577,7 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
 void efiAnalysis::efiAnalyzer::markDataGuids() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] .data and GUIDs marking\n", plugin_name);
+    DEBUG_MSG("[%s] marking GUIDs from .data\n", plugin_name);
     vector<string> segments = {".data"};
     for (vector<string>::iterator seg = segments.begin(); seg != segments.end();
          ++seg) {
@@ -670,16 +670,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
         DEBUG_MSG("[%s] can't find a gBS table\n", plugin_name);
         return false;
     }
-    /* 1'st way */
-    func_t *smiHandler = findSmiHandlerCpuProtocol();
-    if (smiHandler) {
-        DEBUG_MSG("[%s] SmiHandler function address: 0x%llx\n", plugin_name,
-                  smiHandler->start_ea);
-        findCalloutRec(smiHandler);
-        return true;
-    }
-    /* 2'nd way */
-    smiHandler = findSmiHandlerSmmSwDispatch();
+    func_t *smiHandler = findSmiHandlerSmmSwDispatch();
     if (smiHandler) {
         DEBUG_MSG("[%s] SmiHandler function address: 0x%llx\n", plugin_name,
                   smiHandler->start_ea);

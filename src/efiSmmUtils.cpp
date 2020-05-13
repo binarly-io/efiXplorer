@@ -2,10 +2,11 @@
 
 static const char plugin_name[] = "efiXplorer";
 
+/* experimental */
 func_t *findSmiHandlerCpuProtocol() {
     /*
         +------------------------------------------------------------------+
-        | Find SMI handler inside SMM drivers:                             |
+        | Find SW SMI handler inside SMM drivers:                          |
         -------------------------------------------------------------------+
         | 1. find EFI_SMM_CPU_PROTOCOL_GUID                                |
         | 2. find gEfiSmmCpuProtocol interface address                     |
@@ -112,8 +113,8 @@ func_t *findSmiHandlerSmmSwDispatch() {
         +------------------------------------------------------------------+
         | Find SW SMI handler inside SMM drivers                           |
         -------------------------------------------------------------------+
-        | 1. find EFI_SMM_SW_DISPATCH_PROTOCOL_GUID                        |
-        | 2. get EFI_SMM_SW_DISPATCH_PROTOCOL_GUID xref address            |
+        | 1. find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID                        |
+        | 2. get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address            |
         | 3. this address will be inside 'RegSwSmi' function               |
         | 4. find SmiHandler by pattern (instructions may be out of order) |
         |     lea     r9, ...                                              |
@@ -154,11 +155,12 @@ func_t *findSmiHandlerSmmSwDispatch() {
         ea += 1;
     }
     if (!efiSmmSwDispatchProtocolGuidAddr) {
-        DEBUG_MSG("[%s] can't find a EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID guid\n",
-                  plugin_name);
+        DEBUG_MSG(
+            "[%s] can't find a EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID guid\n",
+            plugin_name);
         return NULL;
     }
-    DEBUG_MSG("[%s] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID address: 0x%llx\n",
+    DEBUG_MSG("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID address: 0x%llx\n",
               plugin_name, efiSmmSwDispatchProtocolGuidAddr);
     vector<ea_t> efiSmmSwDispatchProtocolGuidXrefs =
         getXrefs(efiSmmSwDispatchProtocolGuidAddr);
@@ -170,6 +172,9 @@ func_t *findSmiHandlerSmmSwDispatch() {
             plugin_name, *guidXref);
         /* get 'RegSwSmi' function */
         func_t *regSmi = get_func(*guidXref);
+        if (regSmi == NULL) {
+            continue;
+        }
         /* find (SwDispath->Register)(SwDispath, SmiHandler, &SwSmiNum, Data) */
         for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea;
              ea = next_head(ea, BADADDR)) {
@@ -181,7 +186,8 @@ func_t *findSmiHandlerSmmSwDispatch() {
                 ea_t addr = prev_head(ea, 0);
                 for (int i = 0; i < 12; i++) {
                     decode_insn(&insn, addr);
-                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_R9) {
+                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_R9 &&
+                        insn.ops[1].type == o_displ) {
                         success = true;
                         break;
                     }
@@ -194,7 +200,8 @@ func_t *findSmiHandlerSmmSwDispatch() {
                 addr = prev_head(ea, 0);
                 for (int i = 0; i < 12; i++) {
                     decode_insn(&insn, addr);
-                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_R8) {
+                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_R8 &&
+                        insn.ops[1].type == o_displ) {
                         success = true;
                         break;
                     }
@@ -207,7 +214,8 @@ func_t *findSmiHandlerSmmSwDispatch() {
                 addr = prev_head(ea, 0);
                 for (int i = 0; i < 12; i++) {
                     decode_insn(&insn, addr);
-                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_RDX) {
+                    if (insn.itype == NN_lea && insn.ops[0].reg == REG_RDX &&
+                        insn.ops[1].type == o_mem) {
                         success = true;
                         break;
                     }
@@ -224,6 +232,9 @@ func_t *findSmiHandlerSmmSwDispatch() {
                     /* create function */
                     add_func(smiHandlerAddr);
                     smiHandler = get_func(smiHandlerAddr);
+                }
+                if (smiHandler == NULL) {
+                    continue;
                 }
                 /* make name for SmiHandler function */
                 char hexAddr[16] = {};
