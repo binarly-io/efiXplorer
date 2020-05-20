@@ -7,7 +7,9 @@ static const char plugin_name[] = "efiXplorer";
 ea_t gBS = 0;
 ea_t gRT = 0;
 
-ea_t calloutAddr = 0;
+/* for smm callouts finding */
+vector<ea_t> calloutAddrs;
+vector<func_t *> excFunctions;
 
 struct bootServiceX64 {
     char service_name[64];
@@ -577,17 +579,20 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
 void efiAnalysis::efiAnalyzer::markDataGuids() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] marking GUIDs from .data\n", plugin_name);
     vector<string> segments = {".data"};
     for (vector<string>::iterator seg = segments.begin(); seg != segments.end();
          ++seg) {
         string segName = *seg;
+        DEBUG_MSG("[%s] marking GUIDs from %s segment\n", plugin_name,
+                  segName.c_str());
         segment_t *seg_info = get_segm_by_name(segName.c_str());
         if (seg_info == NULL) {
             DEBUG_MSG("[%s] can't find a %s segment\n", plugin_name,
                       segName.c_str());
             continue;
         }
+        DEBUG_MSG("[%s] start = 0x%llx, end = 0x%llx\n", plugin_name,
+                  seg_info->start_ea, seg_info->end_ea);
         ea_t ea = seg_info->start_ea;
         while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
             if (get_wide_dword(ea) == 0x00000000 ||
@@ -629,8 +634,6 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 }
 
 void findCalloutRec(func_t *func) {
-    if (calloutAddr)
-        return;
     DEBUG_MSG("[%s] current function address: 0x%llx\n", plugin_name,
               func->start_ea);
     insn_t insn;
@@ -641,33 +644,40 @@ void findCalloutRec(func_t *func) {
             ea_t nextFuncAddr = insn.ops[0].addr;
             func_t *nextFunc = get_func(nextFuncAddr);
             if (nextFunc) {
-                findCalloutRec(nextFunc);
+                auto it = std::find(excFunctions.begin(), excFunctions.end(),
+                                    nextFunc);
+                if (it == excFunctions.end()) {
+                    excFunctions.push_back(nextFunc);
+                    findCalloutRec(nextFunc);
+                }
             }
         }
-        /* check if insn is 'mov rax, cs:gBS' */
+        /* check if insn is 'mov rax, cs:gBS' or 'mov rax, cs:gRT' */
         if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
-            insn.ops[1].type == o_mem && insn.ops[1].addr == gBS) {
+            insn.ops[1].type == o_mem &&
+            ((gBS && insn.ops[1].addr == gBS) ||
+             (gRT && insn.ops[1].addr == gRT))) {
             DEBUG_MSG("[%s] SMM callout finded: 0x%llx\n", plugin_name, ea);
-            calloutAddr = ea;
-            return;
+            calloutAddrs.push_back(ea);
         }
     }
 }
 
 bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     /*
-        +-------------------------------------------------------------+
-        | Find SMI handler inside SMM drivers:                        |
-        --------------------------------------------------------------+
-        | 1. find 'SmiHandler' function                               |
-        | 2. find 'gBS->...' recursively inside 'SmiHandler' function |
-        +-------------------------------------------------------------+
+        +----------------------------------------------------------------+
+        | Find SMI handler inside SMM drivers:                           |
+        -----------------------------------------------------------------+
+        | 1. find 'SmiHandler' function                                  |
+        | 2. find 'gBS->...' and 'gRT->...' inside 'SmiHandler' function |
+        +----------------------------------------------------------------+
     */
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name)
-    DEBUG_MSG("[%s] SMM callouts finding (gBS = 0x%llx)\n", plugin_name, gBS);
-    if (!gBS) {
-        DEBUG_MSG("[%s] can't find a gBS table\n", plugin_name);
+    DEBUG_MSG("[%s] SMM callouts finding (gBS = 0x%llx, gRT = 0x%llx)\n",
+              plugin_name, gBS, gRT);
+    if (!gBS and !gRT) {
+        DEBUG_MSG("[%s] can't find a gBS and gRT tables\n", plugin_name);
         return false;
     }
     func_t *smiHandler = findSmiHandlerSmmSwDispatch();
@@ -684,8 +694,8 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     json info;
     info["boot_services"] = bootServices;
     info["protocols"] = allProtocols;
-    if (calloutAddr) {
-        info["vulns"]["smm_callout"] = calloutAddr;
+    if (calloutAddrs.size()) {
+        info["vulns"]["smm_callout"] = calloutAddrs;
     }
     string idbPath;
     idbPath = get_path(PATH_TYPE_IDB);

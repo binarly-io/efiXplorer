@@ -80,7 +80,7 @@ func_t *findSmiHandlerCpuProtocol() {
         ea_t start = 0;
         if (smiHandler == NULL) {
             DEBUG_MSG(
-                "[%s] can't get smiHandler function, will try to create it\n",
+                "[%s] can't get SmiHandler function, will try to create it\n",
                 plugin_name)
             /* try to create function */
             ea = addrFromSmiHandler;
@@ -172,13 +172,34 @@ func_t *findSmiHandlerSmmSwDispatch() {
             plugin_name, *guidXref);
         /* get 'RegSwSmi' function */
         func_t *regSmi = get_func(*guidXref);
+        ea_t start = 0;
+        insn_t insn;
         if (regSmi == NULL) {
-            continue;
+            DEBUG_MSG(
+                "[%s] can't get RegSwSmi function, will try to create it\n",
+                plugin_name)
+            /* try to create function */
+            ea = *guidXref;
+            /* find function start */
+            for (int i = 0; i < 100; i++) {
+                /* find 'retn' insn */
+                ea = prev_head(ea, 0);
+                decode_insn(&insn, ea);
+                if (insn.itype == NN_retn) {
+                    start = next_head(ea, BADADDR);
+                    break;
+                }
+            }
+            /* create function */
+            add_func(start);
+            regSmi = get_func(*guidXref);
+            if (regSmi == NULL) {
+                continue;
+            }
         }
         /* find (SwDispath->Register)(SwDispath, SmiHandler, &SwSmiNum, Data) */
         for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea;
              ea = next_head(ea, BADADDR)) {
-            insn_t insn;
             decode_insn(&insn, ea);
             if (insn.itype == NN_callni) {
                 /* find 'lea r9' */
