@@ -1,4 +1,4 @@
-# Adapted from https://github.com/LongSoft/UEFITool/blob/new_engine/common/guids.csv
+# Source: https://github.com/yeggor/UEFI_RETool/
 
 UEFI_GUIDS = {
   '00026AEB-F334-4C15-A7F0-E1E897E9FE91': 'NvmeRecovery',

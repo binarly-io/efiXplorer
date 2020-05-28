@@ -706,7 +706,7 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     out << std::setw(4) << info << std::endl;
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] log file: %s\n", plugin_name, logFile.c_str());
+    DEBUG_MSG("[%s] the log is saved in a JSON file\n", plugin_name);
 }
 
 bool efiAnalysis::efiAnalyzerMainX64() {

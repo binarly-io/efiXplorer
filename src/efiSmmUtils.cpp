@@ -168,7 +168,7 @@ func_t *findSmiHandlerSmmSwDispatch() {
              efiSmmSwDispatchProtocolGuidXrefs.begin();
          guidXref != efiSmmSwDispatchProtocolGuidXrefs.end(); ++guidXref) {
         DEBUG_MSG(
-            "[%s] EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID xref address: 0x%llx\n",
+            "[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address: 0x%llx\n",
             plugin_name, *guidXref);
         /* get 'RegSwSmi' function */
         func_t *regSmi = get_func(*guidXref);

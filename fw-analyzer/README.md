@@ -52,7 +52,7 @@ Options:
   --help         Show this message and exit.
 ```
 
-## Example
+## Example (tested on Linux)
 
 ```
 ./fw_analyzer.py analyze-fw -w 4 --idat ~/idapro-7.4/idat --idat64 ~/idapro-7.4/idat64 /tmp/fw.bin
