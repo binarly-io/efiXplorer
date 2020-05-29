@@ -1,9 +1,15 @@
 # Batch analyzer
 
+## Installation
+
+* install `efiXplorer` plugin
+* copy `efixplorer_start.idc` file to `<IDA_DIR>/idc` directory
+* add `<IDA_DIR>` to `$PATH`
+
 ## Usage
 
 ```
-./fw_analyzer.py --help
+python .\fw_analyzer.py
 ```
 
 ```
@@ -13,47 +19,10 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  analyze-fw     Analyze UEFI firmware with IDA in batch mode.
-  analyze-image  Analyze UEFI module with IDA in batch mode.
+  analyze-fw        Analyze UEFI firmware with IDA in batch mode.
+  analyze-image     Analyze UEFI module with IDA in batch mode.
+  get-images        Extract efi images from UEFI firmware.
+  get-swsmi-images  Find modules with swsmi handlers.
 ```
 
-### Analyze UEFI firmware with IDA in batch mode
-
-```
-./fw_analyzer.py analyze-fw --help
-```
-
-```
-Usage: fw_analyzer.py analyze-fw [OPTIONS] FIRMWARE_PATH
-
-  Analyze UEFI firmware with IDA in batch mode.
-
-Options:
-  -w, --workers INTEGER  Number of workers (8 by default).
-  --idat TEXT            Path to idat executable.
-  --idat64 TEXT          Path to idat64 executable.
-  --help                 Show this message and exit
-```
-
-### Analyze UEFI module with IDA in batch mode
-
-```
-./fw_analyzer.py analyze-image --help
-```
-
-```
-Usage: fw_analyzer.py analyze-image [OPTIONS] IMAGE_PATH
-
-  Analyze UEFI module with IDA in batch mode. The analysis result is saved
-  to .json file.
-
-Options:
-  --idat64 TEXT  Path to idat64 executable.
-  --help         Show this message and exit.
-```
-
-## Example (tested on Linux)
-
-```
-./fw_analyzer.py analyze-fw -w 4 --idat ~/idapro-7.4/idat --idat64 ~/idapro-7.4/idat64 /tmp/fw.bin
-```
+*Tested on Windows and Linux with python3.7 and IDA 7.5*

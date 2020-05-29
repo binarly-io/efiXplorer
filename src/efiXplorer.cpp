@@ -18,7 +18,7 @@ static const char welcome_msg[] =
     "                  | |\n"
     "                  |_|\n";
 
-int idaapi init(void) {
+plugmod_t *idaapi init(void) {
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
     inited = true;

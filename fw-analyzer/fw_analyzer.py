@@ -103,55 +103,44 @@ def get_swsmi_images(firmware_path):
 
 @click.command()
 @click.argument('image_path')
-@click.option('--ida_dir', help='Path to IDA directory.')
-def analyze_image(image_path, ida_dir):
+def analyze_image(image_path):
     """Analyze UEFI module with IDA in batch mode."""
     if not os.path.isfile(image_path):
         print('{} check image path'.format(ERROR))
         return False
-    if not os.path.isdir(ida_dir):
-        print('{} check ida_dir parameter'.format(ERROR))
-        return False
-    script_path = os.path.join(ida_dir, 'idc', 'efixplorer_start.idc')
-    if not os.path.isfile(script_path):
-        # yapf: disable
-        print('{} can\'t find <ida_dir>/idc/efixplorer_start.idc script'.format(ERROR))
-        return False
-    ida_exe = os.path.join(ida_dir, 'idat64')
+    script_path = os.path.join('idc', 'efixplorer_start.idc')
+    ida_exe = 'idat64'
     machine_type = utils.get_machine_type(image_path)
     if machine_type == utils.IMAGE_FILE_MACHINE_I386:
-        ida_exe = ida_exe = os.path.join(ida_dir, 'idat')
+        ida_exe = 'idat'
     process = subprocess.Popen(
         [ida_exe, '-A', '-S{}'.format(script_path), image_path],
         stdout=subprocess.PIPE)
     # ignore stdout, stderr
     _, _ = process.communicate()
-    print('{} check {}.json file'.format(DONE, image_path))
+    if os.path.isfile('{}.idb'.format(image_path)) or os.path.isfile(
+            '{}.i64'.format(image_path)):
+        print('{} check {}.json file'.format(DONE, image_path))
+        return True
+    print('{} failed to analyze this image'.format(ERROR))
+    return False
 
 
 @click.command()
 @click.argument('firmware_path')
-@click.option('--ida_dir', help='Path to IDA directory.')
 @click.option('-w',
               '--workers',
               help='Number of workers (8 by default).',
               type=int)
-@click.option('--swsmi', help='Analyze images with swsmi handlers only', count=True)
-def analyze_fw(firmware_path, ida_dir, workers, swsmi):
+@click.option('--swsmi',
+              help='Analyze images with swsmi handlers only',
+              count=True)
+def analyze_fw(firmware_path, workers, swsmi):
     """Analyze UEFI firmware with IDA in batch mode."""
     if not os.path.isfile(firmware_path):
         print('{} check firmware path'.format(ERROR))
         return False
-    if not os.path.isdir(ida_dir):
-        print('{} check ida_dir parameter'.format(ERROR))
-        return False
-    script_path = os.path.join(ida_dir, 'idc', 'efixplorer_start.idc')
-    if not os.path.isfile(script_path):
-        # yapf: disable
-        print('{} can\'t find <ida_dir>/idc/efixplorer_start.idc script'.format(ERROR))
-        return False
-    idat = os.path.join(ida_dir, 'idat')
-    idat64 = os.path.join(ida_dir, 'idat64')
+    script_path = os.path.join('idc', 'efixplorer_start.idc')
     fw_data = os.path.join(tempfile.gettempdir(), 'fw_data')
     fw_images = os.path.join(tempfile.gettempdir(), 'fw_images')
     with open(firmware_path, 'rb') as f:
@@ -165,16 +154,13 @@ def analyze_fw(firmware_path, ida_dir, workers, swsmi):
         os.mkdir(fw_logs)
     utils.get_fw_volume(firmware_path)
     get_efi_images(firmware_path, fw_data, fw_images)
-    if not os.path.isfile(idat64):
-        print('{} check idat64 path'.format(ERROR))
-        return False
     if not swsmi:
         files = glob.glob(os.path.join(fw_images, '*'))
     else:
         files = utils.get_swsmi_h_images(fw_images)
     if not workers:
         workers = 8
-    analyse_all(files, script_path, workers, idat, idat64)
+    analyse_all(files, script_path, workers, 'idat', 'idat64')
     # get logs
     logs = glob.glob(os.path.join(fw_images, '*.json'))
     for log in logs:
