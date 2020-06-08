@@ -342,18 +342,17 @@ void efiAnalysis::efiAnalyzer::getProtNamesX64() {
                     insn.ops[0].reg == bootServicesTableX64[i].reg) {
                     guidCodeAddress = address;
                     guidDataAddress = insn.ops[1].addr;
-                    found = true;
-                    break;
+                    if (insn.ops[1].addr > startAddress and
+                        insn.ops[1].addr != BADADDR) {
+                        found = true;
+                        break;
+                    }
                 }
             }
 
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%llx\n",
                           plugin_name, guidCodeAddress);
-                /* get protocol item */
-                json protocolItem;
-                protocolItem["address"] = guidDataAddress;
-                protocolItem["service"] = bootServicesTableX64[i].service_name;
                 /* get guid */
                 auto guid = json::array({get_wide_dword(guidDataAddress),
                                          get_wide_word(guidDataAddress + 4),
@@ -367,12 +366,18 @@ void efiAnalysis::efiAnalyzer::getProtNamesX64() {
                                          get_wide_byte(guidDataAddress + 14),
                                          get_wide_byte(guidDataAddress + 15)});
                 /* check guid */
-                if (guid == json::array({0x00000000, 0x0000, 0x0000, 0x00, 0x00,
-                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00})) {
-                    DEBUG_MSG("[%s] NULL GUID at 0x%llx\n", plugin_name,
+                if (((uint32_t)guid[0] == 0x00000000 and
+                     (uint16_t) guid[1] == 0x0000) or
+                    ((uint32_t)guid[0] == 0xffffffff and
+                     (uint16_t) guid[1] == 0xffff)) {
+                    DEBUG_MSG("[%s] Incorrect GUID at 0x%llx\n", plugin_name,
                               guidCodeAddress);
                     continue;
                 }
+                /* get protocol item */
+                json protocolItem;
+                protocolItem["address"] = guidDataAddress;
+                protocolItem["service"] = bootServicesTableX64[i].service_name;
                 /* if guid looks ok */
                 protocolItem["guid"] = guid;
                 /* find guid name */
@@ -442,7 +447,8 @@ void efiAnalysis::efiAnalyzer::getProtNamesX86() {
                     if (pushCounter == pushNumber) {
                         guidCodeAddress = address;
                         guidDataAddress = insn.ops[0].value;
-                        if (insn.ops[0].value > startAddress) {
+                        if (insn.ops[0].value > startAddress and
+                            insn.ops[0].value != BADADDR) {
                             found = true;
                             break;
                         }
@@ -453,10 +459,6 @@ void efiAnalysis::efiAnalyzer::getProtNamesX86() {
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%llx\n",
                           plugin_name, guidCodeAddress);
-                /* get protocol item */
-                json protocolItem;
-                protocolItem["address"] = guidDataAddress;
-                protocolItem["service"] = bootServicesTableX86[i].service_name;
                 /* get guid */
                 auto guid = json::array({get_wide_dword(guidDataAddress),
                                          get_wide_word(guidDataAddress + 4),
@@ -470,12 +472,18 @@ void efiAnalysis::efiAnalyzer::getProtNamesX86() {
                                          get_wide_byte(guidDataAddress + 14),
                                          get_wide_byte(guidDataAddress + 15)});
                 /* check guid */
-                if (guid == json::array({0x00000000, 0x0000, 0x0000, 0x00, 0x00,
-                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00})) {
-                    DEBUG_MSG("[%s] NULL GUID at 0x%llx\n", plugin_name,
+                if (((uint32_t)guid[0] == 0x00000000 and
+                     (uint16_t) guid[1] == 0x0000) or
+                    ((uint32_t)guid[0] == 0xffffffff and
+                     (uint16_t) guid[1] == 0xffff)) {
+                    DEBUG_MSG("[%s] Incorrect GUID at 0x%llx\n", plugin_name,
                               guidCodeAddress);
                     continue;
                 }
+                /* get protocol item */
+                json protocolItem;
+                protocolItem["address"] = guidDataAddress;
+                protocolItem["service"] = bootServicesTableX86[i].service_name;
                 /* if guid looks ok */
                 protocolItem["guid"] = guid;
                 /* find guid name */
