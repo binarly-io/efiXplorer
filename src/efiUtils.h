@@ -81,35 +81,8 @@ using namespace std::filesystem;
 #define NN_push 143
 #define NN_retn 159
 
-#define x64InstallProtocolInterfaceOffset 0x80
-#define x64RenstallProtocolInterfaceOffset 0x88
-#define x64UninstallProtocolInterfaceOffset 0x90
-#define x64HandleProtocolOffset 0x98
-#define x64RegisterProtocolNotifyOffset 0xa8
-#define x64OpenProtocolOffset 0x118
-#define x64CloseProtocolOffset 0x120
-#define x64OpenProtocolInformationOffset 0x128
-#define x64ProtocolsPerHandleOffset 0x130
-#define x64LocateHandleBufferOffset 0x138
-#define x64LocateProtocolOffset 0x140
-#define x64InstallMultipleProtocolInterfacesOffset 0x148
-#define x64UninstallMultipleProtocolInterfacesOffset 0x150
-
-#define x86InstallProtocolInterfaceOffset 0x4c
-#define x86RenstallProtocolInterfaceOffset 0x50
-#define x86UninstallProtocolInterfaceOffset 0x54
-#define x86HandleProtocolOffset 0x58
-#define x86RegisterProtocolNotifyOffset 0x60
-#define x86OpenProtocolOffset 0x98
-#define x86CloseProtocolOffset 0x9c
-#define x86OpenProtocolInformationOffset 0xa0
-#define x86ProtocolsPerHandleOffset 0xa4
-#define x86LocateHandleBufferOffset 0xa8
-#define x86LocateProtocolOffset 0xac
-#define x86InstallMultipleProtocolInterfacesOffset 0xb0
-#define x86UninstallMultipleProtocolInterfacesOffset 0xb4
-
 void setGuidStructure(ea_t ea);
 uint8_t getFileType();
-string getComment(ea_t offset, size_t arch);
+string getBsComment(ea_t offset, size_t arch);
+string getRtComment(ea_t offset, size_t arch);
 vector<ea_t> getXrefs(ea_t addr);

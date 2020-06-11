@@ -1,5 +1,5 @@
-#include "efiUtils.h"
 #include "efiSmmUtils.h"
+#include "efiUtils.h"
 
 namespace efiAnalysis {
 class efiAnalyzer {
@@ -9,10 +9,14 @@ class efiAnalyzer {
     ea_t findBootServicesTableX64();
     ea_t findRuntimeServicesTableX64();
 
-    void getBootServicesX64();
-    void getBootServicesX86();
+    void getProtBootServicesX64();
+    void getAllBootServicesX64();
+    void getAllRuntimeServicesX64();
+
+    void getProtBootServicesX86();
 
     void getProtNamesX64();
+
     void getProtNamesX86();
 
     void printProtocols();
@@ -33,6 +37,8 @@ class efiAnalyzer {
     ea_t mainAddress;
     path guidsJsonPath;
     json bootServices;
+    json bootServicesAll;
+    json runtimeServicesAll;
     json dbProtocols;
     vector<json> allProtocols;
     vector<ea_t> markedProtocols;

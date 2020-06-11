@@ -36,10 +36,10 @@ uint8_t getFileType() {
     return 0;
 }
 
-string getComment(ea_t offset, size_t arch) {
+string getBsComment(ea_t offset, size_t arch) {
     ea_t offset_arch;
     string cmt = "";
-    cmt += "gBs->";
+    cmt += "gBS->";
     for (int i = 0; i < BTABLE_LEN; i++) {
         offset_arch = (ea_t)boot_services_table[i].offset64;
         if (arch == X86) {
@@ -51,6 +51,27 @@ string getComment(ea_t offset, size_t arch) {
             cmt += boot_services_table[i].prototype;
             cmt += "\n";
             cmt += boot_services_table[i].parameters;
+            break;
+        }
+    }
+    return cmt;
+}
+
+string getRtComment(ea_t offset, size_t arch) {
+    ea_t offset_arch;
+    string cmt = "";
+    cmt += "gRT->";
+    for (int i = 0; i < RTABLE_LEN; i++) {
+        offset_arch = (ea_t)runtime_services_table[i].offset64;
+        if (arch == X86) {
+            offset_arch = (ea_t)runtime_services_table[i].offset86;
+        }
+        if (offset == offset_arch) {
+            cmt += runtime_services_table[i].name;
+            cmt += "()\n";
+            cmt += runtime_services_table[i].prototype;
+            cmt += "\n";
+            cmt += runtime_services_table[i].parameters;
             break;
         }
     }
