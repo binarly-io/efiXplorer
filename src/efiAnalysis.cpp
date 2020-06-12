@@ -338,7 +338,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
 void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] BootServices finding from 0x%llx to 0x%llx\n (protocols)",
+    DEBUG_MSG("[%s] BootServices finding from 0x%llx to 0x%llx (protocols)\n",
               plugin_name, startAddress, endAddress);
     ea_t ea = startAddress;
     insn_t insn;
