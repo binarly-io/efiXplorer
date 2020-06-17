@@ -40,8 +40,6 @@ def analyse_module(module_path, scr_path, idat, idat64):
         stdout=subprocess.PIPE)
     # ignore stdout, stderr
     _, _ = process.communicate()
-    # analyse module in batch mode
-    os.system(cmd)
     if not (os.path.isfile('{}.i64'.format(module_path))
             or os.path.isfile('{}.idb'.format(module_path))):
         print('[ERROR] module: {}'.format(module_path))
@@ -142,7 +140,7 @@ def get_sig(modules_dir):
     if os.path.isfile(result_exc):
         with open(result_exc, 'r') as f:
             exc_buf = f.read()
-        next_line_index = exc_buf.find(os.linesep) + len(os.linesep)
+        next_line_index = exc_buf.find('\n') + 1
         with open(result_exc, 'w') as f:
             f.write(exc_buf[next_line_index:])
         os.system(' '.join(['sigmake', result_pat, result_sig]))

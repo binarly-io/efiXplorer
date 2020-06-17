@@ -434,7 +434,7 @@ def make_func_sigs(config):
 def get_pat_file(config):
     logger = logging.getLogger('idb2pat:get_pat_file')
 
-    if config.pat_append or config.batch:
+    if config.pat_append and config.batch:
         return os.path.join(tempfile.gettempdir(), 'ida2pat_res.pat')
 
     name, extension = os.path.splitext(get_input_file_path())
