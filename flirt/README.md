@@ -6,6 +6,7 @@
 * add `flair75` binaries to `$PATH`
 * copy `ida2pat.py` file to `<IDA_DIR>/idc` directory
 * add `<IDA_DIR>` to `$PATH`
+* install `dos2unix` if you work under Linux
 
 ## Usage
 
