@@ -1,4 +1,4 @@
-# FLIRT generator
+# FLIRT signatures generator
 
 ## Installation
 
@@ -10,14 +10,16 @@
 
 ## Usage
 
-First step:
+1. generate .pat files from modules with debug information
 
 ```
 .\get_sig.py analyze MODULES_DIR
 ```
 
-Second step:
+2. generate efixplorer.sig file from .pat files
 
 ```
 .\get_sig.py get-sig MODULES_DIR
 ```
+
+3. move `efixplorer.sig` file to `<IDA_DIR>/sig/pc` directory

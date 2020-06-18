@@ -16,17 +16,63 @@ IDA_PATH = 'idat'
 IDA64_PATH = 'idat64'
 
 
-def get_machine_arch(module_path):
+def get_type(module_path):
+    """Get binary type (ELF or PE)"""
+    with open(module_path, 'rb') as f:
+        header = f.read(2)
+    if header == b'\x4d\x5a':
+        return 'pe'
+    if header == b'\x7f\x45':
+        return 'elf'
+    return 'unknown'
+
+
+def get_num_le(bytearr):
+    """Get le-number from data"""
+    num_le = 0
+    for i in range(len(bytearr)):
+        num_le += bytearr[i] * pow(256, i)
+    return num_le
+
+
+def get_pe_machine_arch(module_path):
+    """Get architecture for PE file"""
+    ia64 = 0x8664
+    i386 = 0x014c
+    pe_offset = 0x3c
+    with open(module_path, 'rb') as module:
+        data = module.read()
+    pe_pointer = get_num_le(data[pe_offset:pe_offset + 1:])
+    fh_pointer = pe_pointer + 4
+    machine_type = data[fh_pointer:fh_pointer + 2:]
+    type_value = get_num_le(machine_type)
+    if type_value == ia64:
+        return 'x64'
+    if type_value == i386:
+        return 'x86'
+    return 'unknown'
+
+
+def get_elf_machine_arch(module_path):
+    """Get architecture for ELF file"""
     with open(module_path, 'rb') as f:
         elffile = ELFFile(f)
         if not elffile.has_dwarf_info():
-            return None
+            return 'unknown'
     return elffile.get_machine_arch()
+
+
+def get_machine_arch(module_path):
+    if get_type(module_path) == 'pe':
+        return get_pe_machine_arch(module_path)
+    if get_type(module_path) == 'elf':
+        return get_elf_machine_arch(module_path)
+    return 'unknown'
 
 
 def analyse_module(module_path, scr_path, idat, idat64):
     _, ext = os.path.splitext(module_path)
-    if ext != '.debug':
+    if ext != '.debug' and ext != '.efi':
         return False
     arch = get_machine_arch(module_path)
     if arch == 'x86':
@@ -146,8 +192,25 @@ def get_sig(modules_dir):
         os.system(' '.join(['sigmake', result_pat, result_sig]))
 
 
+@click.command()
+@click.argument('modules_dir')
+def clear(modules_dir):
+    """Remove .idb, .i64 and .pat files"""
+    if not os.path.isdir(modules_dir):
+        print('[ERROR] check modules directory')
+        return False
+    d_an = dbgs_analyser(modules_dir, 1)
+    d_an._get_files(modules_dir)
+    for file in d_an.files:
+        _, ext = os.path.splitext(file)
+        if ext in ['.idb', '.i64', '.pat']:
+            os.remove(file)
+    return True
+
+
 cli.add_command(analyze)
 cli.add_command(get_sig)
+cli.add_command(clear)
 
 if __name__ == '__main__':
     cli()
