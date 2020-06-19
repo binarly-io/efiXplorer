@@ -25,10 +25,14 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     func_t *endFunc = NULL;
     /* get start address for scan */
     startFunc = getn_func(0);
-    startAddress = startFunc->start_ea;
+    if (startFunc) {
+        startAddress = startFunc->start_ea;
+    }
     /* get end address for scan */
     endFunc = getn_func(get_func_qty() - 1);
-    endAddress = endFunc->end_ea;
+    if (endFunc) {
+        endAddress = endFunc->end_ea;
+    }
 
     /* set boot services that work with protocols */
     vector<ea_t> addrs;

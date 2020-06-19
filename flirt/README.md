@@ -1,4 +1,4 @@
-# FLIRT generator
+# FLIRT signatures generator
 
 ## Installation
 
@@ -10,14 +10,26 @@
 
 ## Usage
 
-First step:
+1. build modules with debug information using [edk2](https://github.com/tianocore/edk2)
 
-```
-.\get_sig.py analyze MODULES_DIR
-```
+2. generate .pat files from modules with debug information
 
-Second step:
+    ```bash
+    python get_sig.py analyze MODULES_DIR
+    ```
 
-```
-.\get_sig.py get-sig MODULES_DIR
-```
+3. generate efixplorer.sig file from .pat files
+
+    ```bash
+    python get_sig.py get-sig MODULES_DIR
+    # out: efixplorer.sig file
+    ```
+
+    ```bash
+    # optional
+    python get_sig.py clear MODULES_DIR
+    ```
+
+4. move `efixplorer.sig` file to `<IDA_DIR>/sig/pc` directory
+
+*Tested on Windows and Linux with python3.7 and IDA 7.5*

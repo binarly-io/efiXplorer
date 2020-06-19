@@ -32,8 +32,8 @@ class efiAnalyzer {
 
   private:
     ea_t base;
-    ea_t startAddress;
-    ea_t endAddress;
+    ea_t startAddress = 0;
+    ea_t endAddress = 0;
     ea_t mainAddress;
     path guidsJsonPath;
     json bootServices;
