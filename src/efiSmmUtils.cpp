@@ -2,18 +2,13 @@
 
 static const char plugin_name[] = "efiXplorer";
 
-/* experimental */
+//--------------------------------------------------------------------------
+// Find SW SMI handler inside SMM drivers (experimental)
+//  * find EFI_SMM_CPU_PROTOCOL_GUID
+//  * find gEfiSmmCpuProtocol interface address
+//  * find address for 'mov rax, cs:gEfiSmmCpuProtocol' instruction
+//  * this address will be inside SmiHandler function
 func_t *findSmiHandlerCpuProtocol() {
-    /*
-        +------------------------------------------------------------------+
-        | Find SW SMI handler inside SMM drivers:                          |
-        -------------------------------------------------------------------+
-        | 1. find EFI_SMM_CPU_PROTOCOL_GUID                                |
-        | 2. find gEfiSmmCpuProtocol interface address                     |
-        | 3. find address for 'mov rax, cs:gEfiSmmCpuProtocol' instruction |
-        | 4. this address will be inside 'SmiHandler' function             |
-        +------------------------------------------------------------------+
-    */
     DEBUG_MSG("[%s] SW SMI handler finding (using EFI_SMM_CPU_PROTOCOL_GUID)\n",
               plugin_name);
     efiGuid efiSmmCpuProtocolGuid = {
@@ -108,21 +103,17 @@ func_t *findSmiHandlerCpuProtocol() {
     return NULL;
 }
 
+//--------------------------------------------------------------------------
+// Find SW SMI handler inside SMM drivers
+//  * find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
+//  * get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address
+//  * this address will be inside RegSwSmi function
+//  * find SmiHandler by pattern (instructions may be out of order)
+//        lea     r9, ...
+//        lea     r8, ...
+//        lea     rdx, <func>
+//        call    qword ptr [...]
 func_t *findSmiHandlerSmmSwDispatch() {
-    /*
-        +------------------------------------------------------------------+
-        | Find SW SMI handler inside SMM drivers                           |
-        -------------------------------------------------------------------+
-        | 1. find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID                     |
-        | 2. get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address         |
-        | 3. this address will be inside 'RegSwSmi' function               |
-        | 4. find SmiHandler by pattern (instructions may be out of order) |
-        |     lea     r9, ...                                              |
-        |     lea     r8, ...                                              |
-        |     lea     rdx, <func>                                          |
-        |     call    qword ptr [...]                                      |
-        +------------------------------------------------------------------+
-    */
     DEBUG_MSG("[%s] SW SMI handler finding (using "
               "EFI_SMM_SW_DISPATCH_PROTOCOL_GUID)\n",
               plugin_name);
@@ -170,7 +161,7 @@ func_t *findSmiHandlerSmmSwDispatch() {
         DEBUG_MSG(
             "[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address: 0x%llx\n",
             plugin_name, *guidXref);
-        /* get 'RegSwSmi' function */
+        /* get RegSwSmi function */
         func_t *regSmi = get_func(*guidXref);
         ea_t start = 0;
         insn_t insn;

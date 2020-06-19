@@ -1,6 +1,7 @@
 #include "fort.h"
 #include "json.hpp"
 #include <auto.hpp>
+#include <bytes.hpp>
 #include <diskio.hpp>
 #include <entry.hpp>
 #include <filesystem>
@@ -8,6 +9,7 @@
 #include <ida.hpp>
 #include <idp.hpp>
 #include <iostream>
+#include <kernwin.hpp>
 #include <loader.hpp>
 #include <name.hpp>
 #include <stdio.h>

@@ -57,6 +57,8 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
     DEBUG_MSG("[%s] analyzer destruction\n", plugin_name);
 }
 
+//--------------------------------------------------------------------------
+// Find gImageHandle address for X64 modules
 bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -85,6 +87,8 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
     return false;
 }
 
+//--------------------------------------------------------------------------
+// Find gST address for X64 modules
 bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -113,6 +117,8 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
     return false;
 }
 
+//--------------------------------------------------------------------------
+// Find gBS address for X64 modules
 ea_t efiAnalysis::efiAnalyzer::findBootServicesTableX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -149,6 +155,8 @@ ea_t efiAnalysis::efiAnalyzer::findBootServicesTableX64() {
     return 0;
 }
 
+//--------------------------------------------------------------------------
+// Find gRT address for X64 modules
 ea_t efiAnalysis::efiAnalyzer::findRuntimeServicesTableX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -185,6 +193,8 @@ ea_t efiAnalysis::efiAnalyzer::findRuntimeServicesTableX64() {
     return 0;
 }
 
+//--------------------------------------------------------------------------
+// Get all boot services for X64 modules
 void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -241,6 +251,8 @@ void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
     ft_destroy_table(table);
 }
 
+//--------------------------------------------------------------------------
+// Get all runtime services for X64 modules
 void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -297,6 +309,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
     ft_destroy_table(table);
 }
 
+//--------------------------------------------------------------------------
+// Get boot services by protocols for X64 modules
 void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -335,6 +349,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
     ft_destroy_table(table);
 }
 
+//--------------------------------------------------------------------------
+// Get boot services by protocols for X86 modules
 void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -376,6 +392,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
     ft_destroy_table(table);
 }
 
+//--------------------------------------------------------------------------
+// Get protocols names for X64 modules
 void efiAnalysis::efiAnalyzer::getProtNamesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -476,6 +494,8 @@ void efiAnalysis::efiAnalyzer::getProtNamesX64() {
     }
 }
 
+//--------------------------------------------------------------------------
+// Get protocols names for X86 modules
 void efiAnalysis::efiAnalyzer::getProtNamesX86() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -586,6 +606,8 @@ void efiAnalysis::efiAnalyzer::getProtNamesX86() {
     }
 }
 
+//--------------------------------------------------------------------------
+// Print protocols
 void efiAnalysis::efiAnalyzer::printProtocols() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -618,6 +640,8 @@ void efiAnalysis::efiAnalyzer::printProtocols() {
     ft_destroy_table(table);
 }
 
+//--------------------------------------------------------------------------
+// Mark protocols
 void efiAnalysis::efiAnalyzer::markProtocols() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -653,6 +677,8 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
     }
 }
 
+//--------------------------------------------------------------------------
+// Mark GUIDs found in the .data segment
 void efiAnalysis::efiAnalyzer::markDataGuids() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -708,6 +734,8 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
     }
 }
 
+//--------------------------------------------------------------------------
+// Search for callouts recursively
 void findCalloutRec(func_t *func) {
     DEBUG_MSG("[%s] current function address: 0x%llx\n", plugin_name,
               func->start_ea);
@@ -738,15 +766,11 @@ void findCalloutRec(func_t *func) {
     }
 }
 
+//--------------------------------------------------------------------------
+// Find SMI handler inside SMM drivers:
+//  * find SmiHandler function
+//  * find gBS->service_name and gRT->service_name inside SmiHandler function
 bool efiAnalysis::efiAnalyzer::findSmmCallout() {
-    /*
-        +----------------------------------------------------------------+
-        | Find SMI handler inside SMM drivers:                           |
-        -----------------------------------------------------------------+
-        | 1. find 'SmiHandler' function                                  |
-        | 2. find 'gBS->...' and 'gRT->...' inside 'SmiHandler' function |
-        +----------------------------------------------------------------+
-    */
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name)
     DEBUG_MSG("[%s] SMM callouts finding (gBS = 0x%llx, gRT = 0x%llx)\n",
@@ -765,6 +789,8 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     return false;
 }
 
+//--------------------------------------------------------------------------
+// Dump all info to JSON file
 void efiAnalysis::efiAnalyzer::dumpInfo() {
     json info;
     info["bs_all"] = bootServicesAll;
@@ -786,6 +812,8 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     DEBUG_MSG("[%s] the log is saved in a JSON file\n", plugin_name);
 }
 
+//--------------------------------------------------------------------------
+// Main function for X64 modules
 bool efiAnalysis::efiAnalyzerMainX64() {
     efiAnalysis::efiAnalyzer analyzer;
 
@@ -813,6 +841,8 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     return true;
 }
 
+//--------------------------------------------------------------------------
+// Main function for X86 modules
 bool efiAnalysis::efiAnalyzerMainX86() {
     efiAnalysis::efiAnalyzer analyzer;
 

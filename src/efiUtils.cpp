@@ -3,6 +3,8 @@
 
 static const char plugin_name[] = "efiXplorer";
 
+//--------------------------------------------------------------------------
+// Create EFI_GUID structure
 void setGuidStructure(ea_t ea) {
     static const char struct_name[] = "_EFI_GUID";
     struc_t *sptr = get_struc(get_struc_id(struct_name));
@@ -19,6 +21,8 @@ void setGuidStructure(ea_t ea) {
     create_struct(ea, size, sptr->id);
 }
 
+//--------------------------------------------------------------------------
+// Get input file type (X64 or X86)
 uint8_t getFileType() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
@@ -36,6 +40,8 @@ uint8_t getFileType() {
     return 0;
 }
 
+//--------------------------------------------------------------------------
+// Get boot service description comment
 string getBsComment(ea_t offset, size_t arch) {
     ea_t offset_arch;
     string cmt = "";
@@ -57,6 +63,8 @@ string getBsComment(ea_t offset, size_t arch) {
     return cmt;
 }
 
+//--------------------------------------------------------------------------
+// Get runtime service description comment
 string getRtComment(ea_t offset, size_t arch) {
     ea_t offset_arch;
     string cmt = "";
@@ -78,6 +86,8 @@ string getRtComment(ea_t offset, size_t arch) {
     return cmt;
 }
 
+//--------------------------------------------------------------------------
+// Get all data xrefs for address
 vector<ea_t> getXrefs(ea_t addr) {
     vector<ea_t> xrefs;
     ea_t xref = get_first_dref_to(addr);

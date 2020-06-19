@@ -18,6 +18,8 @@ static const char welcome_msg[] =
     "                  | |\n"
     "                  |_|\n";
 
+//--------------------------------------------------------------------------
+// Initialize
 plugmod_t *idaapi init(void) {
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
@@ -25,6 +27,9 @@ plugmod_t *idaapi init(void) {
     return PLUGIN_KEEP;
 }
 
+//--------------------------------------------------------------------------
+// The plugin method
+// This is the main function of plugin
 bool idaapi run(size_t) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -43,6 +48,8 @@ bool idaapi run(size_t) {
     return true;
 }
 
+//--------------------------------------------------------------------------
+// PLUGIN DESCRIPTION BLOCK
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
     (PLUGIN_MOD | PLUGIN_PROC | PLUGIN_FIX), // plugin flags
