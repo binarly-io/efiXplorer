@@ -1,4 +1,5 @@
 #include "efiAnalysis.h"
+#include "efiUi.h"
 #include "tables/efi_services.h"
 
 using namespace efiAnalysis;
@@ -730,6 +731,19 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     string comment = "EFI_GUID *" + dbItem.key();
                     DEBUG_MSG("[%s] address: 0x%llx, comment: %s\n",
                               plugin_name, ea, comment.c_str());
+                    json guidItem;
+                    guidItem["address"] = ea;
+                    guidItem["name"] = dbItem.key();
+                    char guidValue[37] = {0};
+                    snprintf(
+                        guidValue, 36,
+                        "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                        (uint32_t)guid[0], (uint16_t)guid[1], (uint16_t)guid[2],
+                        (uint8_t)guid[3], (uint8_t)guid[4], (uint8_t)guid[5],
+                        (uint8_t)guid[6], (uint8_t)guid[7], (uint8_t)guid[8],
+                        (uint8_t)guid[9], (uint8_t)guid[10]);
+                    guidItem["guid"] = guidValue;
+                    dataGuids.push_back(guidItem);
                     break;
                 }
             }
@@ -837,6 +851,11 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     analyzer.printProtocols();
     analyzer.markProtocols();
     analyzer.markDataGuids();
+
+    /* open window with protocols */
+    protocols_show(analyzer.allProtocols);
+    /* open window with data guids */
+    guids_show(analyzer.dataGuids);
 
     analyzer.findSmmCallout();
 

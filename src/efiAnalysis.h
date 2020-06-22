@@ -4,6 +4,9 @@
 namespace efiAnalysis {
 class efiAnalyzer {
   public:
+    vector<json> dataGuids;
+    vector<json> allProtocols;
+
     bool findImageHandleX64();
     bool findSystemTableX64();
     ea_t findBootServicesTableX64();
@@ -40,7 +43,6 @@ class efiAnalyzer {
     json bootServicesAll;
     json runtimeServicesAll;
     json dbProtocols;
-    vector<json> allProtocols;
     vector<ea_t> markedProtocols;
 };
 
