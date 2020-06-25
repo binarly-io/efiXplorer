@@ -1,3 +1,7 @@
+/* efixplorer_start.cpp
+ * This file is part of efiXplorer
+ */
+
 #include <idc.idc>
 
 static main() {

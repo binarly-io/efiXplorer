@@ -1,3 +1,7 @@
+/* efiSmmUtils.h
+ * This file is part of efiXplorer
+ */
+
 #include "efiUtils.h"
 
 struct efiGuid {

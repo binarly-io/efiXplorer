@@ -1,3 +1,7 @@
+/* efiUi.cpp
+ * This file is part of efiXplorer
+ */
+
 #include "efiUi.h"
 
 /* guids column widths */
@@ -30,6 +34,18 @@ const char *const protocols_chooser_t::header_protocols[] = {
     "Service"  // 3
 };
 
+/* services column widths */
+const int s_chooser_t::widths_s[] = {
+    16, // Address
+    32, // Service name
+};
+
+/* services column widths */
+const char *const s_chooser_t::header_s[] = {
+    "Address",      // 0
+    "Service name", // 1
+};
+
 inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
                                         vector<json> guids)
     : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_),
@@ -47,7 +63,7 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
     json item = chooser_guids[n];
     string guid = (string)item["guid"];
     string name = (string)item["name"];
-    cols[0].sprnt("0x%llx", ea);
+    cols[0].sprnt("%016X", ea);
     cols[1].sprnt("%s", guid.c_str());
     cols[2].sprnt("%s", name.c_str());
     CASSERT(qnumber(header_guids) == 3);
@@ -79,15 +95,34 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
              (uint8_t)guid[3], (uint8_t)guid[4], (uint8_t)guid[5],
              (uint8_t)guid[6], (uint8_t)guid[7], (uint8_t)guid[8],
              (uint8_t)guid[9], (uint8_t)guid[10]);
-    cols[0].sprnt("0x%llx", ea);
+    cols[0].sprnt("%016X", ea);
     cols[1].sprnt("%s", protGuid);
     cols[2].sprnt("%s", name.c_str());
     cols[3].sprnt("%s", service.c_str());
     CASSERT(qnumber(header_protocols) == 4);
 }
 
-bool guids_show(vector<json> guids) {
-    qstring title = "efiXplorer: guids";
+inline s_chooser_t::s_chooser_t(const char *title_, bool ok,
+                                vector<json> services)
+    : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
+    CASSERT(qnumber(widths_s) == qnumber(header_s));
+    build_list(ok, services);
+}
+
+void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                 chooser_item_attrs_t *, size_t n) const {
+    ea_t ea = list[n];
+
+    // generate the line
+    qstrvec_t &cols = *cols_;
+    json item = chooser_s[n];
+    string name = (string)item["service_name"];
+    cols[0].sprnt("%016X", ea);
+    cols[1].sprnt("%s", name.c_str());
+    CASSERT(qnumber(header_s) == 2);
+}
+
+bool guids_show(vector<json> guids, qstring title) {
     bool ok;
     /* open the window */
     guids_chooser_t *ch = new guids_chooser_t(title.c_str(), ok, guids);
@@ -96,12 +131,20 @@ bool guids_show(vector<json> guids) {
     return true;
 }
 
-bool protocols_show(vector<json> protocols) {
-    qstring title = "efiXplorer: protocols";
+bool protocols_show(vector<json> protocols, qstring title) {
     bool ok;
     /* open the window */
     protocols_chooser_t *ch =
         new protocols_chooser_t(title.c_str(), ok, protocols);
+    /* default cursor position is 0 (first row) */
+    ch->choose();
+    return true;
+}
+
+bool services_show(vector<json> services, qstring title) {
+    bool ok;
+    /* open the window */
+    s_chooser_t *ch = new s_chooser_t(title.c_str(), ok, services);
     /* default cursor position is 0 (first row) */
     ch->choose();
     return true;

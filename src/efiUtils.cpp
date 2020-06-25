@@ -1,3 +1,7 @@
+/* efiUtils.cpp
+ * This file is part of efiXplorer
+ */
+
 #include "efiUtils.h"
 #include "tables/efi_system_tables.h"
 

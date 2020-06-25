@@ -1,3 +1,7 @@
+/* efiSmmUtils.h
+ * This file is part of efiXplorer
+ */
+
 #include "efiSmmUtils.h"
 
 static const char plugin_name[] = "efiXplorer";

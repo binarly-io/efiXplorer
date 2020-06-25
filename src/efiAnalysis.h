@@ -1,3 +1,7 @@
+/* efiAnalysis.h
+ * This file is part of efiXplorer
+ */
+
 #include "efiSmmUtils.h"
 #include "efiUtils.h"
 
@@ -6,6 +10,8 @@ class efiAnalyzer {
   public:
     vector<json> dataGuids;
     vector<json> allProtocols;
+    vector<json> allBootServices;
+    vector<json> allRuntimeServices;
 
     bool findImageHandleX64();
     bool findSystemTableX64();
@@ -49,3 +55,5 @@ class efiAnalyzer {
 bool efiAnalyzerMainX64();
 bool efiAnalyzerMainX86();
 }; // namespace efiAnalysis
+
+void showAllChoosers(efiAnalysis::efiAnalyzer analyzer);

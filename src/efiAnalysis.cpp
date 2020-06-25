@@ -1,3 +1,7 @@
+/* efiAnalysis.cpp
+ * This file is part of efiXplorer
+ */
+
 #include "efiAnalysis.h"
 #include "efiUi.h"
 #include "tables/efi_services.h"
@@ -56,11 +60,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     in >> dbProtocols;
 }
 
-efiAnalysis::efiAnalyzer::~efiAnalyzer() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] analyzer destruction\n", plugin_name);
-}
+efiAnalysis::efiAnalyzer::~efiAnalyzer() {}
 
 //--------------------------------------------------------------------------
 // Find gImageHandle address for X64 modules
@@ -240,6 +240,16 @@ void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
                             bootServicesAll[(string)bootServicesX64All[j]
                                                 .service_name]
                                 .push_back(addr);
+                            /* add item to allBootServices vector */
+                            json bsItem;
+                            bsItem["address"] = addr;
+                            bsItem["service_name"] =
+                                (string)bootServicesX64All[j].service_name;
+                            if (find(allBootServices.begin(),
+                                     allBootServices.end(),
+                                     bsItem) == allBootServices.end()) {
+                                allBootServices.push_back(bsItem);
+                            }
                             break;
                         }
                     }
@@ -298,6 +308,16 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
                             runtimeServicesAll[(string)runtimeServicesX64All[j]
                                                    .service_name]
                                 .push_back(addr);
+                            /* add item to allRuntimeServices vector */
+                            json rtItem;
+                            rtItem["address"] = addr;
+                            rtItem["service_name"] =
+                                (string)runtimeServicesX64All[j].service_name;
+                            if (find(allRuntimeServices.begin(),
+                                     allRuntimeServices.end(),
+                                     rtItem) == allRuntimeServices.end()) {
+                                allRuntimeServices.push_back(rtItem);
+                            }
                             break;
                         }
                     }
@@ -343,6 +363,15 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                               (char *)bootServicesTableX64[i].service_name);
                     bootServices[(string)bootServicesTableX64[i].service_name]
                         .push_back(ea);
+                    /* add item to allBootServices vector */
+                    json bsItem;
+                    bsItem["address"] = ea;
+                    bsItem["service_name"] =
+                        (string)bootServicesTableX64[i].service_name;
+                    if (find(allBootServices.begin(), allBootServices.end(),
+                             bsItem) == allBootServices.end()) {
+                        allBootServices.push_back(bsItem);
+                    }
                     break;
                 }
             }
@@ -386,6 +415,15 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                               (char *)bootServicesTableX86[i].service_name);
                     bootServices[(string)bootServicesTableX86[i].service_name]
                         .push_back(ea);
+                    /* add item to allBootServices vector */
+                    json bsItem;
+                    bsItem["address"] = ea;
+                    bsItem["service_name"] =
+                        (string)bootServicesTableX86[i].service_name;
+                    if (find(allBootServices.begin(), allBootServices.end(),
+                             bsItem) == allBootServices.end()) {
+                        allBootServices.push_back(bsItem);
+                    }
                     break;
                 }
             }
@@ -831,6 +869,32 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
 }
 
 //--------------------------------------------------------------------------
+// Show all non-empty choosers windows
+void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
+    qstring title;
+    /* open window with boot services */
+    if (analyzer.allBootServices.size()) {
+        title = "efiXplorer: boot services";
+        services_show(analyzer.allBootServices, title);
+    }
+    /* open window with runtime services */
+    if (analyzer.allRuntimeServices.size()) {
+        title = "efiXplorer: runtime services";
+        services_show(analyzer.allRuntimeServices, title);
+    }
+    /* open window with protocols */
+    if (analyzer.allProtocols.size()) {
+        title = "efiXplorer: protocols";
+        protocols_show(analyzer.allProtocols, title);
+    }
+    /* open window with data guids */
+    if (analyzer.dataGuids.size()) {
+        qstring title = "efiXplorer: guids";
+        guids_show(analyzer.dataGuids, title);
+    }
+}
+
+//--------------------------------------------------------------------------
 // Main function for X64 modules
 bool efiAnalysis::efiAnalyzerMainX64() {
     efiAnalysis::efiAnalyzer analyzer;
@@ -852,14 +916,12 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     analyzer.markProtocols();
     analyzer.markDataGuids();
 
-    /* open window with protocols */
-    protocols_show(analyzer.allProtocols);
-    /* open window with data guids */
-    guids_show(analyzer.dataGuids);
-
     analyzer.findSmmCallout();
 
     analyzer.dumpInfo();
+
+    /* show all choosers windows */
+    showAllChoosers(analyzer);
 
     return true;
 }
@@ -880,6 +942,9 @@ bool efiAnalysis::efiAnalyzerMainX86() {
     analyzer.markProtocols();
     analyzer.markDataGuids();
     analyzer.dumpInfo();
+
+    /* show all choosers windows */
+    showAllChoosers(analyzer);
 
     return true;
 }

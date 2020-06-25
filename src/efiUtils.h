@@ -1,3 +1,7 @@
+/* efiUtils.h
+ * This file is part of efiXplorer
+ */
+
 #include "fort.h"
 #include "json.hpp"
 #include <auto.hpp>

@@ -1,3 +1,7 @@
+/* efi_services.h
+ * This file is part of efiXplorer
+ */
+
 #define x64RaiseTPLOffset 0x18
 #define x64RestoreTPLOffset 0x20
 #define x64AllocatePagesOffset 0x28

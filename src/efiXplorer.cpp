@@ -1,3 +1,7 @@
+/* efiXplorer.cpp
+ * This file is part of efiXplorer
+ */
+
 #include "efiXplorer.h"
 #include "efiAnalysis.h"
 

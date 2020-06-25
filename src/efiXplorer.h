@@ -1,3 +1,7 @@
+/* efiXplorer.h
+ * This file is part of efiXplorer
+ */
+
 #include "efiUtils.h"
 
 #define COPYRIGHT                                                              \
