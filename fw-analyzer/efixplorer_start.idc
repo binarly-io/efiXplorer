@@ -1,4 +1,4 @@
-/* efixplorer_start.cpp
+/* efixplorer_start.idc
  * This file is part of efiXplorer
  */
 
