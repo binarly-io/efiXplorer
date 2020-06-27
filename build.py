@@ -3,6 +3,7 @@
 import os
 import platform
 import shutil
+import subprocess
 
 import click
 
@@ -14,8 +15,8 @@ def build(idasdk_dir, plugins_path):
     if not os.path.isdir('build'):
         os.mkdir('build')
     os.chdir('build')
-    os.system('cmake .. -DIdaSdk_ROOT_DIR={}'.format(idasdk_dir))
-    os.system('cmake --build . --config Release')
+    subprocess.call(['cmake', '..', '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir)])
+    subprocess.call(['cmake', '--build', '.', '--config', 'Release'])
     if plugins_path and os.path.isdir(plugins_path):
         if platform.system() == 'Linux':
             print('[DEBUG] copying builds to {}'.format(plugins_path))

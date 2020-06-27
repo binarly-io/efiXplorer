@@ -57,8 +57,7 @@ inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
 void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
                                      chooser_item_attrs_t *, size_t n) const {
     ea_t ea = list[n];
-
-    // generate the line
+    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_guids[n];
     string guid = (string)item["guid"];
@@ -82,8 +81,7 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
                                          chooser_item_attrs_t *,
                                          size_t n) const {
     ea_t ea = list[n];
-
-    // generate the line
+    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
     auto guid = item["guid"];
@@ -112,8 +110,7 @@ inline s_chooser_t::s_chooser_t(const char *title_, bool ok,
 void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
                                  chooser_item_attrs_t *, size_t n) const {
     ea_t ea = list[n];
-
-    // generate the line
+    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
     string name = (string)item["service_name"];

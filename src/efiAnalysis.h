@@ -2,7 +2,6 @@
  * This file is part of efiXplorer
  */
 
-#include "efiSmmUtils.h"
 #include "efiUtils.h"
 
 namespace efiAnalysis {

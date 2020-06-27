@@ -791,61 +791,6 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 }
 
 //--------------------------------------------------------------------------
-// Search for callouts recursively
-void findCalloutRec(func_t *func) {
-    DEBUG_MSG("[%s] current function address: 0x%llx\n", plugin_name,
-              func->start_ea);
-    insn_t insn;
-    for (ea_t ea = func->start_ea; ea < func->end_ea;
-         ea = next_head(ea, BADADDR)) {
-        decode_insn(&insn, ea);
-        if (insn.itype == NN_call) {
-            ea_t nextFuncAddr = insn.ops[0].addr;
-            func_t *nextFunc = get_func(nextFuncAddr);
-            if (nextFunc) {
-                auto it = std::find(excFunctions.begin(), excFunctions.end(),
-                                    nextFunc);
-                if (it == excFunctions.end()) {
-                    excFunctions.push_back(nextFunc);
-                    findCalloutRec(nextFunc);
-                }
-            }
-        }
-        /* check if insn is 'mov rax, cs:gBS' or 'mov rax, cs:gRT' */
-        if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
-            insn.ops[1].type == o_mem &&
-            ((gBS && insn.ops[1].addr == gBS) ||
-             (gRT && insn.ops[1].addr == gRT))) {
-            DEBUG_MSG("[%s] SMM callout finded: 0x%llx\n", plugin_name, ea);
-            calloutAddrs.push_back(ea);
-        }
-    }
-}
-
-//--------------------------------------------------------------------------
-// Find SMI handler inside SMM drivers:
-//  * find SmiHandler function
-//  * find gBS->service_name and gRT->service_name inside SmiHandler function
-bool efiAnalysis::efiAnalyzer::findSmmCallout() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name)
-    DEBUG_MSG("[%s] SMM callouts finding (gBS = 0x%llx, gRT = 0x%llx)\n",
-              plugin_name, gBS, gRT);
-    if (!gBS and !gRT) {
-        DEBUG_MSG("[%s] can't find a gBS and gRT tables\n", plugin_name);
-        return false;
-    }
-    func_t *smiHandler = findSmiHandlerSmmSwDispatch();
-    if (smiHandler) {
-        DEBUG_MSG("[%s] SmiHandler function address: 0x%llx\n", plugin_name,
-                  smiHandler->start_ea);
-        findCalloutRec(smiHandler);
-        return true;
-    }
-    return false;
-}
-
-//--------------------------------------------------------------------------
 // Dump all info to JSON file
 void efiAnalysis::efiAnalyzer::dumpInfo() {
     json info;
@@ -915,8 +860,6 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     analyzer.printProtocols();
     analyzer.markProtocols();
     analyzer.markDataGuids();
-
-    analyzer.findSmmCallout();
 
     analyzer.dumpInfo();
 

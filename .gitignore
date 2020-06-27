@@ -37,7 +37,7 @@ env.bak/
 venv.bak/
 
 # custom directories
-test/
-.vscode/
 .vs/
+.vscode/
 build/
+test/
