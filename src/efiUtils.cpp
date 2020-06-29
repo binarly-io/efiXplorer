@@ -12,9 +12,9 @@ static const char plugin_name[] = "efiXplorer";
 void setGuidStructure(ea_t ea) {
     static const char struct_name[] = "_EFI_GUID";
     struc_t *sptr = get_struc(get_struc_id(struct_name));
-    if (sptr == NULL) {
+    if (sptr == nullptr) {
         sptr = get_struc(add_struc(-1, struct_name));
-        if (sptr == NULL)
+        if (sptr == nullptr)
             return;
         add_struc_member(sptr, "data1", -1, dword_flag(), NULL, 4);
         add_struc_member(sptr, "data2", -1, word_flag(), NULL, 2);
@@ -30,7 +30,7 @@ void setGuidStructure(ea_t ea) {
 uint8_t getFileType() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
-    string fileTypeStr = (string)fileType;
+    auto fileTypeStr = static_cast<string>(fileType);
     int index = fileTypeStr.find("AMD64");
     if (index > 0) {
         /* Portable executable for AMD64 (PE) */
@@ -50,7 +50,7 @@ string getBsComment(ea_t offset, size_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gBS->";
-    for (int i = 0; i < BTABLE_LEN; i++) {
+    for (auto i = 0; i < BTABLE_LEN; i++) {
         offset_arch = (ea_t)boot_services_table[i].offset64;
         if (arch == X86) {
             offset_arch = (ea_t)boot_services_table[i].offset86;
@@ -73,7 +73,7 @@ string getRtComment(ea_t offset, size_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gRT->";
-    for (int i = 0; i < RTABLE_LEN; i++) {
+    for (auto i = 0; i < RTABLE_LEN; i++) {
         offset_arch = (ea_t)runtime_services_table[i].offset64;
         if (arch == X86) {
             offset_arch = (ea_t)runtime_services_table[i].offset86;
