@@ -14,10 +14,6 @@ static const char plugin_name[] = "efiXplorer";
 ea_t gBS = 0;
 ea_t gRT = 0;
 
-/* for smm callouts finding */
-vector<ea_t> callout_addrs;
-vector<func_t *> exc_functions;
-
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
     /* get guids.json path */
     guidsJsonPath /= idadir("plugins");
@@ -229,23 +225,26 @@ void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
                             static_cast<ea_t>(bootServicesX64All[j].offset)) {
                             found = true;
                             string cmt = getBsComment(
-                                static_cast<ea_t>(bootServicesX64All[j].offset), X64);
+                                static_cast<ea_t>(bootServicesX64All[j].offset),
+                                X64);
                             set_cmt(addr, cmt.c_str(), true);
                             /* add line to table */
                             ft_printf_ln(
                                 table, " 0x%llx | %s ", ea,
-                                static_cast<char*>(bootServicesX64All[j].service_name));
-                            DEBUG_MSG(
-                                "[%s] 0x%llx : %s\n", plugin_name, addr,
-                                static_cast<char *>(bootServicesX64All[j].service_name));
-                            bootServicesAll[static_cast<string>(bootServicesX64All[j]
-                                    .service_name)]
+                                static_cast<char *>(
+                                    bootServicesX64All[j].service_name));
+                            DEBUG_MSG("[%s] 0x%llx : %s\n", plugin_name, addr,
+                                      static_cast<char *>(
+                                          bootServicesX64All[j].service_name));
+                            bootServicesAll[static_cast<string>(
+                                                bootServicesX64All[j]
+                                                    .service_name)]
                                 .push_back(addr);
                             /* add item to allBootServices vector */
                             json bsItem;
                             bsItem["address"] = addr;
-                            bsItem["service_name"] =
-                                static_cast<string>(bootServicesX64All[j].service_name);
+                            bsItem["service_name"] = static_cast<string>(
+                                bootServicesX64All[j].service_name);
                             if (find(allBootServices.begin(),
                                      allBootServices.end(),
                                      bsItem) == allBootServices.end()) {
@@ -294,26 +293,32 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
                 if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
                     for (int j = 0; j < runtimeServicesX64AllLength; j++) {
                         if (insn.ops[0].addr ==
-                            static_cast<ea_t>(runtimeServicesX64All[j].offset)) {
+                            static_cast<ea_t>(
+                                runtimeServicesX64All[j].offset)) {
                             found = true;
                             string cmt = getRtComment(
-                                static_cast<ea_t>(runtimeServicesX64All[j].offset), X64);
+                                static_cast<ea_t>(
+                                    runtimeServicesX64All[j].offset),
+                                X64);
                             set_cmt(addr, cmt.c_str(), true);
                             /* add line to table */
                             ft_printf_ln(
                                 table, " 0x%llx | %s ", ea,
-                                static_cast<char*>(runtimeServicesX64All[j].service_name));
+                                static_cast<char *>(
+                                    runtimeServicesX64All[j].service_name));
                             DEBUG_MSG(
                                 "[%s] 0x%llx : %s\n", plugin_name, addr,
-                                static_cast<char *>(runtimeServicesX64All[j].service_name));
-                            runtimeServicesAll[static_cast<string>(runtimeServicesX64All[j]
-                                    .service_name)]
+                                static_cast<char *>(
+                                    runtimeServicesX64All[j].service_name));
+                            runtimeServicesAll[static_cast<string>(
+                                                   runtimeServicesX64All[j]
+                                                       .service_name)]
                                 .push_back(addr);
                             /* add item to allRuntimeServices vector */
                             json rtItem;
                             rtItem["address"] = addr;
-                            rtItem["service_name"] =
-                                static_cast<string>(runtimeServicesX64All[j].service_name);
+                            rtItem["service_name"] = static_cast<string>(
+                                runtimeServicesX64All[j].service_name);
                             if (find(allRuntimeServices.begin(),
                                      allRuntimeServices.end(),
                                      rtItem) == allRuntimeServices.end()) {
@@ -352,23 +357,27 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
             for (auto i = 0; i < bootServicesTableX64Length; i++) {
-                if (insn.ops[0].addr == static_cast<ea_t>(bootServicesTableX64[i].offset)) {
+                if (insn.ops[0].addr ==
+                    static_cast<ea_t>(bootServicesTableX64[i].offset)) {
                     /* set comment */
-                    string cmt =
-                        getBsComment(static_cast<ea_t>(bootServicesTableX64[i].offset), X64);
+                    string cmt = getBsComment(
+                        static_cast<ea_t>(bootServicesTableX64[i].offset), X64);
                     set_cmt(ea, cmt.c_str(), true);
                     /* add line to table */
                     ft_printf_ln(table, " 0x%llx | %s ", ea,
-                                 static_cast<char*>(bootServicesTableX64[i].service_name));
+                                 static_cast<char *>(
+                                     bootServicesTableX64[i].service_name));
                     DEBUG_MSG("[%s] 0x%llx : %s\n", plugin_name, ea,
-                              static_cast<char *>(bootServicesTableX64[i].service_name));
-                    bootServices[static_cast<string>(bootServicesTableX64[i].service_name)]
+                              static_cast<char *>(
+                                  bootServicesTableX64[i].service_name));
+                    bootServices[static_cast<string>(
+                                     bootServicesTableX64[i].service_name)]
                         .push_back(ea);
                     /* add item to allBootServices vector */
                     json bsItem;
                     bsItem["address"] = ea;
-                    bsItem["service_name"] =
-                        static_cast<string>(bootServicesTableX64[i].service_name);
+                    bsItem["service_name"] = static_cast<string>(
+                        bootServicesTableX64[i].service_name);
                     if (find(allBootServices.begin(), allBootServices.end(),
                              bsItem) == allBootServices.end()) {
                         allBootServices.push_back(bsItem);
@@ -401,26 +410,27 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni && insn.ops[0].reg == REG_EAX) {
             for (auto i = 0; i < bootServicesTableX86Length; i++) {
-                if (insn.ops[0].addr == static_cast<ea_t>(bootServicesTableX86[i].offset)) {
-                    /* does not work currently */
-                    long strid = get_struc_id("EFI_BOOT_SERVICES");
-                    op_stroff(insn, 0, static_cast<const tid_t*>(strid), 0, 0);
+                if (insn.ops[0].addr ==
+                    static_cast<ea_t>(bootServicesTableX86[i].offset)) {
                     /* set comment */
-                    string cmt =
-                        getBsComment(static_cast<ea_t>(bootServicesTableX86[i].offset), X86);
+                    string cmt = getBsComment(
+                        static_cast<ea_t>(bootServicesTableX86[i].offset), X86);
                     set_cmt(ea, cmt.c_str(), true);
                     /* add line to table */
                     ft_printf_ln(table, " 0x%llx | %s ", ea,
-                                 static_cast<char*>(bootServicesTableX86[i].service_name));
+                                 static_cast<char *>(
+                                     bootServicesTableX86[i].service_name));
                     DEBUG_MSG("[%s] 0x%llx : %s\n", plugin_name, ea,
-                              static_cast<char *>(bootServicesTableX86[i].service_name));
-                    bootServices[static_cast<string>(bootServicesTableX86[i].service_name)]
+                              static_cast<char *>(
+                                  bootServicesTableX86[i].service_name));
+                    bootServices[static_cast<string>(
+                                     bootServicesTableX86[i].service_name)]
                         .push_back(ea);
                     /* add item to allBootServices vector */
                     json bsItem;
                     bsItem["address"] = ea;
-                    bsItem["service_name"] =
-                        static_cast<string>(bootServicesTableX86[i].service_name);
+                    bsItem["service_name"] = static_cast<string>(
+                        bootServicesTableX86[i].service_name);
                     if (find(allBootServices.begin(), allBootServices.end(),
                              bsItem) == allBootServices.end()) {
                         allBootServices.push_back(bsItem);
@@ -670,14 +680,17 @@ void efiAnalysis::efiAnalyzer::printProtocols() {
         string protName = protItem["prot_name"];
         ea_t address = static_cast<ea_t>(protItem["address"]);
         string service = protItem["service"];
-        ft_printf_ln(table,
-                     " %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X | %s | "
-                     "0x%llx | %s ",
-                     static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]), static_cast<uint16_t>(guid[2]),
-                     static_cast<uint8_t>(guid[3]), static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-                     static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]), static_cast<uint8_t>(guid[8]),
-                     static_cast<uint8_t>(guid[9]), static_cast<uint8_t>(guid[10]), protName.c_str(),
-                     address, service.c_str());
+        ft_printf_ln(
+            table,
+            " %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X | %s | "
+            "0x%llx | %s ",
+            static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+            static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+            static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+            static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+            static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+            static_cast<uint8_t>(guid[10]), protName.c_str(), address,
+            service.c_str());
     }
     msg("[%s] Protocols:\n", plugin_name);
     msg(ft_to_string(table));
@@ -763,7 +776,8 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     /* mark .data guid */
                     char hexAddr[16] = {};
                     sprintf(hexAddr, "%llx", ea);
-                    string name = dbItem.key() + "_" + static_cast<string>(hexAddr);
+                    string name =
+                        dbItem.key() + "_" + static_cast<string>(hexAddr);
                     set_name(ea, name.c_str(), SN_CHECK);
                     setGuidStructure(ea);
                     /* comment line */
@@ -774,13 +788,19 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     guidItem["address"] = ea;
                     guidItem["name"] = dbItem.key();
                     char guidValue[37] = {0};
-                    snprintf(
-                        guidValue, 36,
-                        "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-                        static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]), static_cast<uint16_t>(guid[2]),
-                        static_cast<uint8_t>(guid[3]), static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-                        static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]), static_cast<uint8_t>(guid[8]),
-                        static_cast<uint8_t>(guid[9]), static_cast<uint8_t>(guid[10]));
+                    snprintf(guidValue, 36,
+                             "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                             static_cast<uint32_t>(guid[0]),
+                             static_cast<uint16_t>(guid[1]),
+                             static_cast<uint16_t>(guid[2]),
+                             static_cast<uint8_t>(guid[3]),
+                             static_cast<uint8_t>(guid[4]),
+                             static_cast<uint8_t>(guid[5]),
+                             static_cast<uint8_t>(guid[6]),
+                             static_cast<uint8_t>(guid[7]),
+                             static_cast<uint8_t>(guid[8]),
+                             static_cast<uint8_t>(guid[9]),
+                             static_cast<uint8_t>(guid[10]));
                     guidItem["guid"] = guidValue;
                     dataGuids.push_back(guidItem);
                     break;
@@ -799,9 +819,6 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     info["rt_all"] = runtimeServicesAll;
     info["bs_protocols"] = bootServices;
     info["protocols"] = allProtocols;
-    if (callout_addrs.size()) {
-        info["vulns"]["smm_callout"] = callout_addrs;
-    }
     string idbPath = get_path(PATH_TYPE_IDB);
     path log_file;
     log_file /= idbPath;

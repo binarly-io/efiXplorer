@@ -38,9 +38,6 @@ using namespace std::filesystem;
 #define X86 32
 #define X64 64
 
-/* max address */
-#define MAX_ADDR 0xffffffffffffffff
-
 /* SystemTable->BootServices */
 #define BS_OFFSET 0x60
 /* SystemTable->RuntimeServices */

@@ -89,10 +89,12 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
     string service = static_cast<string>(item["service"]);
     char protGuid[37] = {0};
     snprintf(protGuid, 36, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-             (uint32_t)guid[0], (uint16_t)guid[1], (uint16_t)guid[2],
-             (uint8_t)guid[3], (uint8_t)guid[4], (uint8_t)guid[5],
-             (uint8_t)guid[6], (uint8_t)guid[7], (uint8_t)guid[8],
-             (uint8_t)guid[9], (uint8_t)guid[10]);
+             static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+             static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+             static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+             static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+             static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+             static_cast<uint8_t>(guid[10]));
     cols[0].sprnt("%016X", ea);
     cols[1].sprnt("%s", protGuid);
     cols[2].sprnt("%s", name.c_str());
