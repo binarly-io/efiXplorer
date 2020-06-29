@@ -38,11 +38,6 @@ IDA plugin for UEFI firmware analysis.
 
     ![guids](img/guids.png)
 
-## JSON report generation
-
-* all useful information is dumped to a JSON report
-* it useful for batch analysis
-
 # Build instruction
 
 ## Build script
@@ -59,12 +54,6 @@ Options:
 
 ```bash
 ./build.py <IDASDK_DIR>
-```
-
-## Build and copy example
-
-```bash
-./build.py -c ~/idapro-7.4/plugins ~/sdk/idasdk74
 ```
 
 # Contributors

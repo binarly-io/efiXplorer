@@ -813,25 +813,6 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 }
 
 //--------------------------------------------------------------------------
-// Dump all info to JSON file
-void efiAnalysis::efiAnalyzer::dumpInfo() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    json info;
-    info["bs_all"] = bootServicesAll;
-    info["rt_all"] = runtimeServicesAll;
-    info["bs_protocols"] = bootServices;
-    info["protocols"] = allProtocols;
-    string idbPath = get_path(PATH_TYPE_IDB);
-    path log_file;
-    log_file /= idbPath;
-    log_file.replace_extension(".json");
-    std::ofstream out(log_file);
-    out << std::setw(4) << info << std::endl;
-    DEBUG_MSG("[%s] the log is saved in a JSON file\n", plugin_name);
-}
-
-//--------------------------------------------------------------------------
 // Show all non-empty choosers windows
 void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
     qstring title;
@@ -879,8 +860,6 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     analyzer.markProtocols();
     analyzer.markDataGuids();
 
-    analyzer.dumpInfo();
-
     /* show all choosers windows */
     showAllChoosers(analyzer);
 
@@ -902,7 +881,6 @@ bool efiAnalysis::efiAnalyzerMainX86() {
     analyzer.printProtocols();
     analyzer.markProtocols();
     analyzer.markDataGuids();
-    analyzer.dumpInfo();
 
     /* show all choosers windows */
     showAllChoosers(analyzer);

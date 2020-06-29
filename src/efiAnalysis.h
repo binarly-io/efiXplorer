@@ -33,8 +33,6 @@ class efiAnalyzer {
 
     bool findSmmCallout();
 
-    void dumpInfo();
-
     efiAnalyzer();
     ~efiAnalyzer();
 
