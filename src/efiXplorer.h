@@ -9,7 +9,7 @@
  *                  |_|
  *
  * efiXplorer
- * Copyright (C) 2020  binarly-io
+ * Copyright (C) 2020  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,5 +30,4 @@
 
 #include "efiUtils.h"
 
-#define COPYRIGHT                                                              \
-    "(c) 2020, binarly-io - https://github.com/binarly-io/efiXplorer"
+#define COPYRIGHT "(c) 2020, Binarly - https://github.com/binarly-io/efiXplorer"
