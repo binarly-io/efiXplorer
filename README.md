@@ -4,6 +4,10 @@
 
 IDA plugin for UEFI firmware analysis.
 
+# Overview
+
+![overview](img/overview.gif)
+
 # Key features
 
 ## Boot services finding
@@ -53,7 +57,7 @@ Options:
 ## Build example
 
 ```bash
-./build.py <IDASDK_DIR>
+./build.py <IDASDK75_DIR>
 ```
 
 # Contributors
