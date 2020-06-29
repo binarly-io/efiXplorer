@@ -42,6 +42,10 @@ IDA plugin for UEFI firmware analysis.
 
     ![guids](img/guids.png)
 
+# Architecture
+
+![arch](img/arch.png)
+
 # Build instruction
 
 ## Build script
