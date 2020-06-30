@@ -36,7 +36,7 @@ Anotate assembly code atomaticaly with availible Runtime Services
 
     ![protocols](img/protocols.png)
 
-## Identify known EFI GUID's
+## REcognize all known EFI GUID's
 
 * Build the list of availible EFI GUID's (include protocol name identification)
 
