@@ -10,7 +10,7 @@ __Contributors__:
 
 __Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because trying to use most recent features from new SDK releases. That's mean we tested just on recent versions of Hex-Rays products and not guaranteed stable work on previous generations. 
 
-__Why not IdaPython:__ all code developed on C++ because it's more stable way to support complex plugin and get full power of most recent SDK's features.
+__Why not IDApython:__ all code developed on C++ because it's more stable way to support complex plugin and get full power of most recent SDK's features.
 
 __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
@@ -48,6 +48,8 @@ Anotate assembly code atomaticaly with availible Runtime Services
 
 # Build instruction
 
+We try to make the build process for diffirent platform very simple, just use the build script to automate this process :snake:
+
 ## Build script
 
 ```
@@ -57,9 +59,7 @@ Options:
   -c, --copy TEXT  path to IDA plugins directory
   --help           Show this message and exit.
 ```
-
-## Build example
-
+example of build process:
 ```bash
 ./build.py <IDASDK75_DIR>
 ```
