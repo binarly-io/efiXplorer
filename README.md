@@ -2,6 +2,12 @@
 
 **efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation :octocat:
 
+__Contributors__: 
+* Alex Matrosov ([@matrosov](https://github.com/matrosov))
+* Andrey Labunets ([@isciurus](https://github.com/isciurus))
+* Philip Lebedev ([@p41l](https://github.com/p41l/))
+* Yegor Vasilenko ([@yeggor](https://github.com/yeggor/))
+
 __Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because trying to use most recent features from new SDK releases. That's mean we tested just on recent versions of Hex-Rays products and not guaranteed stable work on previous generations. 
 
 __Why not IdaPython:__ all code developed on C++ because it's more stable way to support complex plugin and get full power of most recent SDK's features.
@@ -57,12 +63,6 @@ Options:
 ```bash
 ./build.py <IDASDK75_DIR>
 ```
-
-# Contributors
-* Alex Matrosov ([@matrosov](https://github.com/matrosov))
-* Andrey Labunets ([@isciurus](https://github.com/isciurus))
-* Philip Lebedev ([@p41l](https://github.com/p41l/))
-* Yegor Vasilenko ([@yeggor](https://github.com/yeggor/))
 
 # References 
 * https://github.com/yeggor/UEFI_RETool 
