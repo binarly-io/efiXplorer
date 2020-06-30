@@ -18,7 +18,7 @@ __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
 # Key features
 
-## dentify available Boot Services automatically
+## Identify available Boot Services automatically
 
 Anotate assembly code atomaticaly with availible Boot Services
 
