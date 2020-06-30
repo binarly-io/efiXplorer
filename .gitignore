@@ -24,6 +24,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+#osx
+.DS_Store
+
 # pyenv
 .python-version
 
