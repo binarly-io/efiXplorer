@@ -8,9 +8,9 @@ __Contributors__:
 * Philip Lebedev ([@p41l](https://github.com/p41l/))
 * Yegor Vasilenko ([@yeggor](https://github.com/yeggor/))
 
-__Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because trying to use most recent features from new SDK releases. That's mean we tested just on recent versions of Hex-Rays products and not guaranteed stable work on previous generations. 
+__Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because trying to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
 
-__Why not IDApython:__ all code developed on C++ because it's more stable way to support complex plugin and get full power of most recent SDK's features.
+__Why not IDApython:__ all code developed in C++ because it's a more stable and performant way to support a complex plugin and get full power of most recent SDK's features.
 
 __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
@@ -20,13 +20,13 @@ __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
 ## Identify available Boot Services automatically
 
-Anotate assembly code atomaticaly with availible Boot Services
+Annotate assembly code automatically with availible Boot Services
 
 ![bs2](img/bs2.png)
 
 ## Identify available Runtime Services automatically
 
-Anotate assembly code atomaticaly with availible Runtime Services
+Annotate assembly code automatically with availible Runtime Services
 
 ![rt2](img/rt2.png)
 
@@ -36,9 +36,9 @@ Anotate assembly code atomaticaly with availible Runtime Services
 
     ![protocols](img/protocols.png)
 
-## REcognize all known EFI GUID's
+## Identify known EFI GUID's
 
-* Build the list of availible EFI GUID's (include protocol name identification)
+* Build the list of availible EFI GUID's (including protocol name identification)
 
     ![guids](img/guids.png)
 
@@ -70,7 +70,7 @@ example of build process:
 
 # Installation
 
-Copy compiled binaries of efiXplorer plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
+Copy binaries from `bin/<platform>/` and `guids` directory to `<IDA_DIR>/plugins`.
 
 # References 
 
