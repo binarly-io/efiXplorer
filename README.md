@@ -49,7 +49,7 @@ From the beginning of the project, we focus on building extensible architecture 
 
 # Build instruction
 
-We try to make the build process for different platforms very simple, just use the build script to automate this process 🐍
+We try to make the build process for different platforms very simple, just use the build script to automate this process🐍
 
 ## Build script
 
