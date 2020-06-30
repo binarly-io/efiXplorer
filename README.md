@@ -43,12 +43,13 @@ Anotate assembly code atomaticaly with availible Runtime Services
     ![guids](img/guids.png)
 
 # efiXplorer Architecture
+From the beginning of the project, we focus on building extensible architecture to make our  life easier to support the current version and adding new features :rocket:
 
 ![arch](img/arch.png)
 
 # Build instruction
 
-We try to make the build process for diffirent platform very simple, just use the build script to automate this process :snake:
+We try to make the build process for different platforms very simple, just use the build script to automate this process 🐍
 
 ## Build script
 
