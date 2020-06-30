@@ -70,7 +70,7 @@ example of build process:
 
 # Installation
 
-Copy binaries from `bin/<platform>/` and `guids` directory to `<IDA_DIR>/plugins`.
+Copy compiled binaries of efiXplorer plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
 
 # References 
 
