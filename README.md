@@ -18,19 +18,19 @@ __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
 # Key features
 
-## Identify availible Boot Services automaticaly
+## dentify available Boot Services automatically
 
 Anotate assembly code atomaticaly with availible Boot Services
 
 ![bs2](img/bs2.png)
 
-## Identify availible Runtime Services automaticaly
+## Identify available Runtime Services automatically
 
 Anotate assembly code atomaticaly with availible Runtime Services
 
 ![rt2](img/rt2.png)
 
-## Identify availible EFI Protocols automaticaly
+## Identify available EFI Protocols automatically
 
 * Build the list of availible EFI Protocols
 
