@@ -68,11 +68,12 @@ example of build process:
 ./build.py <IDASDK75_DIR>
 ```
 
-## Installation
+# Installation
 
 Copy binaries from `bin/<platform>/` and `guids` directory to `<IDA_DIR>/plugins`.
 
 # References 
+
 * https://github.com/yeggor/UEFI_RETool 
 * https://github.com/gdbinit/EFISwissKnife 
 * https://github.com/snare/ida-efiutils
