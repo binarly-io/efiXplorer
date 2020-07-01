@@ -20,25 +20,25 @@ __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
 ## Identify available Boot Services automatically
 
-Annotate assembly code automatically with availible Boot Services
+Annotate assembly code automatically with available Boot Services
 
 ![bs2](img/bs2.png)
 
 ## Identify available Runtime Services automatically
 
-Annotate assembly code automatically with availible Runtime Services
+Annotate assembly code automatically with available Runtime Services
 
 ![rt2](img/rt2.png)
 
 ## Identify available EFI Protocols automatically
 
-* Build the list of availible EFI Protocols
+* Build the list of available EFI Protocols
 
     ![protocols](img/protocols.png)
 
 ## Identify known EFI GUID's
 
-* Build the list of availible EFI GUID's (including protocol name identification)
+* Build the list of available EFI GUID's (including protocol name identification)
 
     ![guids](img/guids.png)
 
