@@ -73,9 +73,12 @@ example of build process:
 Copy compiled binaries of efiXplorer plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
 
 # References 
-
+__For IDA:__
 * https://github.com/yeggor/UEFI_RETool 
 * https://github.com/gdbinit/EFISwissKnife 
 * https://github.com/snare/ida-efiutils
+
+__For Ghidra:__
 * https://github.com/al3xtjames/ghidra-firmware-utils
+* https://github.com/DSecurity/efiSeek
 
