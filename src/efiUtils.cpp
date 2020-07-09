@@ -34,21 +34,33 @@
 static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
-// Create EFI_GUID structure
-void setGuidStructure(ea_t ea) {
-    static const char struct_name[] = "_EFI_GUID";
-    struc_t *sptr = get_struc(get_struc_id(struct_name));
-    if (sptr == nullptr) {
-        sptr = get_struc(add_struc(-1, struct_name));
-        if (sptr == nullptr)
-            return;
-        add_struc_member(sptr, "data1", -1, dword_flag(), NULL, 4);
-        add_struc_member(sptr, "data2", -1, word_flag(), NULL, 2);
-        add_struc_member(sptr, "data3", -1, word_flag(), NULL, 2);
-        add_struc_member(sptr, "data4", -1, byte_flag(), NULL, 8);
+// Set type and name for gBS
+void setBsTypeAndName(ea_t ea, string name) {
+    set_name(ea, "gBS", SN_CHECK);
+    set_name(ea, name.c_str(), SN_CHECK);
+}
+
+//--------------------------------------------------------------------------
+// Set type and name for gRT
+void setRtTypeAndName(ea_t ea, string name) {
+    set_name(ea, "gRT", SN_CHECK);
+    set_name(ea, name.c_str(), SN_CHECK);
+}
+
+//--------------------------------------------------------------------------
+// Set type and name for gSmst
+void setSmstTypeAndName(ea_t ea, string name) {
+    set_name(ea, "gSmst", SN_CHECK);
+    set_name(ea, name.c_str(), SN_CHECK);
+}
+
+//--------------------------------------------------------------------------
+// Set EFI_GUID type
+void setGuidType(ea_t ea) {
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(get_idati(), "EFI_GUID")) {
+        apply_tinfo(ea, tinfo, TINFO_DEFINITE);
     }
-    size_t size = get_struc_size(sptr);
-    create_struct(ea, size, sptr->id);
 }
 
 //--------------------------------------------------------------------------
@@ -57,7 +69,7 @@ uint8_t getFileType() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
     auto fileTypeStr = static_cast<string>(fileType);
-    int index = fileTypeStr.find("AMD64");
+    size_t index = fileTypeStr.find("AMD64");
     if (index > 0) {
         /* Portable executable for AMD64 (PE) */
         return X64;
@@ -114,4 +126,38 @@ string getRtComment(ea_t offset, size_t arch) {
         }
     }
     return cmt;
+}
+
+//--------------------------------------------------------------------------
+// Find address of global gBS var for X64 module for each service
+ea_t findUnknownBsVarX64(ea_t ea) {
+    ea_t resAddr = 0;
+    insn_t insn;
+    /* 10 instructions below */
+    for (int i = 0; i < 10; i++) {
+        decode_insn(&insn, ea);
+        /* check if insn like 'mov rax, cs:<gBS>' */
+        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
+            DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n",
+                      plugin_name, ea, insn.ops[1].addr);
+            resAddr = insn.ops[1].addr;
+            set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
+            break;
+        }
+        ea = prev_head(ea, 0);
+    }
+    return resAddr;
+}
+
+//--------------------------------------------------------------------------
+// Get all data xrefs for address
+vector<ea_t> getXrefs(ea_t addr) {
+    vector<ea_t> xrefs;
+    ea_t xref = get_first_dref_to(addr);
+    while (xref != BADADDR) {
+        xrefs.push_back(xref);
+        xref = get_next_dref_to(addr, xref);
+    }
+    return xrefs;
 }

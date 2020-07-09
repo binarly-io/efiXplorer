@@ -28,6 +28,8 @@
  *
  */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "fort.h"
 #include "json.hpp"
 #include <auto.hpp>
@@ -67,7 +69,7 @@ using namespace std::filesystem;
 /* SystemTable->BootServices */
 #define BS_OFFSET 0x60
 /* SystemTable->RuntimeServices */
-#define RS_OFFSET 0x58
+#define RT_OFFSET 0x58
 
 /* x64 registers */
 #define REG_RAX 0x00
@@ -85,8 +87,6 @@ using namespace std::filesystem;
 #define REG_R12 0x0c
 #define REG_R13 0x0d
 #define REG_R14 0x0e
-
-#define REG_NONE_64 0xffff
 
 /* x86 registers */
 #define REG_EAX 0x00
@@ -110,8 +110,12 @@ using namespace std::filesystem;
 #define NN_push 143
 #define NN_retn 159
 
-void setGuidStructure(ea_t ea);
 uint8_t getFileType();
+void setGuidType(ea_t ea);
+void setBsTypeAndName(ea_t ea, string name);
+void setRtTypeAndName(ea_t ea, string name);
+void setSmstTypeAndName(ea_t ea, string name);
 string getBsComment(ea_t offset, size_t arch);
 string getRtComment(ea_t offset, size_t arch);
 vector<ea_t> getXrefs(ea_t addr);
+ea_t findUnknownBsVarX64(ea_t ea);

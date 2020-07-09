@@ -110,7 +110,7 @@ struct bootServiceX64 {
 struct bootServiceX86 {
     char service_name[64];
     size_t offset;
-    size_t push_number;
+    uint16_t push_number;
 };
 
 struct service {
