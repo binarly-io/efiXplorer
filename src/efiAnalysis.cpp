@@ -52,11 +52,13 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
 
     func_t *start_func = nullptr;
     func_t *end_func = nullptr;
+
     /* get start address for scan */
     start_func = getn_func(0);
     if (start_func) {
         startAddress = start_func->start_ea;
     }
+
     /* get end address for scan */
     end_func = getn_func(get_func_qty() - 1);
     if (end_func) {
@@ -82,6 +84,13 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     /* load protocols from guids/guids.json file */
     ifstream in(guidsJsonPath);
     in >> dbProtocols;
+
+    /* import necessary types */
+    const til_t *idati = get_idati();
+    import_type(idati, -1, "EFI_GUID");
+    import_type(idati, -1, "EFI_BOOT_SERVICES");
+    import_type(idati, -1, "EFI_RUNTIME_SERVICES");
+    import_type(idati, -1, "EFI_SMM_SYSTEM_TABLE2");
 }
 
 efiAnalysis::efiAnalyzer::~efiAnalyzer() {}
@@ -152,7 +161,7 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] SMST finding\n", plugin_name);
-    gSmstList = findSmst();
+    gSmstList = findSmst(gBsList);
     if (gSmstList.size()) {
         return true;
     }
@@ -284,6 +293,8 @@ void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
                                         bootServicesX64All[j].offset),
                                     X64);
                                 set_cmt(addr, cmt.c_str(), true);
+                                /* op_stroff */
+                                opStroff(addr, "EFI_BOOT_SERVICES");
                                 /* add line to table */
                                 ft_printf_ln(
                                     table, " 0x%016X | %s ",
@@ -362,6 +373,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
                                         runtimeServicesX64All[j].offset),
                                     X64);
                                 set_cmt(addr, cmt.c_str(), true);
+                                /* op_stroff */
+                                opStroff(addr, "EFI_RUNTIME_SERVICES");
                                 /* add line to table */
                                 ft_printf_ln(
                                     table, " 0x%016X | %s ",
@@ -426,6 +439,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                     string cmt = getBsComment(
                         static_cast<ea_t>(bootServicesTableX64[i].offset), X64);
                     set_cmt(ea, cmt.c_str(), true);
+                    /* op_stroff */
+                    opStroff(ea, "EFI_BOOT_SERVICES");
                     /* add line to table */
                     ft_printf_ln(table, " 0x%016X | %s ",
                                  static_cast<unsigned int>(ea),
@@ -481,6 +496,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                     string cmt = getBsComment(
                         static_cast<ea_t>(bootServicesTableX86[i].offset), X86);
                     set_cmt(ea, cmt.c_str(), true);
+                    /* op_stroff */
+                    opStroff(ea, "EFI_BOOT_SERVICES");
                     /* add line to table */
                     ft_printf_ln(table, " 0x%016X | %s ",
                                  static_cast<unsigned int>(ea),
@@ -822,7 +839,7 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
         set_name(address, name.c_str(), SN_CHECK);
         setGuidType(address);
         /* comment line */
-        string comment = "EFI_GUID *" + protName;
+        string comment = "EFI_GUID " + protName;
         /* save address */
         markedProtocols.push_back(address);
         DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n", plugin_name, address,
@@ -877,7 +894,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     set_name(ea, name.c_str(), SN_CHECK);
                     setGuidType(ea);
                     /* comment line */
-                    string comment = "EFI_GUID *" + dbItem.key();
+                    string comment = "EFI_GUID " + dbItem.key();
                     DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n",
                               plugin_name, ea, comment.c_str());
                     json guidItem;
@@ -953,7 +970,7 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                         string name =
                             dbItem.key() + "_" + static_cast<string>(hexAddr);
                         /* comment line */
-                        string comment = "EFI_GUID *" + dbItem.key();
+                        string comment = "EFI_GUID " + dbItem.key();
                         DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n",
                                   plugin_name, ea, comment.c_str());
                         /* set comment */

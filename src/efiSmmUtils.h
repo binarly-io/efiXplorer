@@ -37,5 +37,5 @@ struct efiGuid {
     uint8_t data4[8];
 };
 
-vector<ea_t> findSmst();
+vector<ea_t> findSmst(vector<ea_t> gBsList);
 func_t *findSmiHandlerSmmSwDispatch();

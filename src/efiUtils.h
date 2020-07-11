@@ -110,12 +110,29 @@ using namespace std::filesystem;
 #define NN_push 143
 #define NN_retn 159
 
+/* Get input file type
+ * (X64 or X86) */
 uint8_t getFileType();
+/* Set EFI_GUID type */
 void setGuidType(ea_t ea);
-void setBsTypeAndName(ea_t ea, string name);
-void setRtTypeAndName(ea_t ea, string name);
-void setSmstTypeAndName(ea_t ea, string name);
-string getBsComment(ea_t offset, size_t arch);
-string getRtComment(ea_t offset, size_t arch);
+/* Get all data xrefs for address */
 vector<ea_t> getXrefs(ea_t addr);
+/* op_stroff wrapper */
+bool opStroff(ea_t addr, string type);
+/* Create EFI_GUID structure */
+void createGuidStructure(ea_t ea);
+/* Set type and name for gBS */
+void setBsTypeAndName(ea_t ea, string name);
+/* Set type and name for gRT */
+void setRtTypeAndName(ea_t ea, string name);
+/* Set type and name for gSmst */
+void setSmstTypeAndName(ea_t ea, string name);
+/* Get boot service description comment */
+string getBsComment(ea_t offset, size_t arch);
+/* Get runtime service description comment */
+string getRtComment(ea_t offset, size_t arch);
+/* Find address of global gBS variable
+ * for X64 module for each service */
 ea_t findUnknownBsVarX64(ea_t ea);
+/* Get pointer to named type and apply it */
+bool setPtrType(ea_t addr, string type);

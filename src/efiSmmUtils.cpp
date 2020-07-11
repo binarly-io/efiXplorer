@@ -36,7 +36,7 @@ static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable
-vector<ea_t> findSmst() {
+vector<ea_t> findSmst(vector<ea_t> gBsList) {
     vector<ea_t> resAddrs;
     efiGuid efiSmmSwDispatch2ProtocolGuid = {
         0x18a3c6dc,
@@ -83,6 +83,10 @@ vector<ea_t> findSmst() {
                 DEBUG_MSG("[%s] found gSmst at 0x%016X, address = 0x%016X\n",
                           plugin_name, curAddr, insn.ops[1].addr);
                 resAddr = insn.ops[1].addr;
+                if (find(gBsList.begin(), gBsList.end(), resAddr) !=
+                    gBsList.end()) {
+                    continue;
+                }
                 char hexAddr[16] = {};
                 sprintf(hexAddr, "%llX", static_cast<uint64_t>(resAddr));
                 set_cmt(curAddr, "EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);

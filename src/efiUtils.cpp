@@ -36,22 +36,43 @@ static const char plugin_name[] = "efiXplorer";
 //--------------------------------------------------------------------------
 // Set type and name for gBS
 void setBsTypeAndName(ea_t ea, string name) {
-    set_name(ea, "gBS", SN_CHECK);
+    /* set gBS_ADDR name */
     set_name(ea, name.c_str(), SN_CHECK);
+    setPtrType(ea, "EFI_BOOT_SERVICES");
 }
 
 //--------------------------------------------------------------------------
 // Set type and name for gRT
 void setRtTypeAndName(ea_t ea, string name) {
-    set_name(ea, "gRT", SN_CHECK);
+    /* set gRT_ADDR name */
     set_name(ea, name.c_str(), SN_CHECK);
+    setPtrType(ea, "EFI_RUNTIME_SERVICES");
 }
 
 //--------------------------------------------------------------------------
 // Set type and name for gSmst
 void setSmstTypeAndName(ea_t ea, string name) {
-    set_name(ea, "gSmst", SN_CHECK);
+    /* set gSmst_ADDR name */
     set_name(ea, name.c_str(), SN_CHECK);
+    setPtrType(ea, "EFI_SMM_SYSTEM_TABLE2");
+}
+
+//--------------------------------------------------------------------------
+// Create EFI_GUID structure
+void createGuidStructure(ea_t ea) {
+    static const char struct_name[] = "_EFI_GUID";
+    struc_t *sptr = get_struc(get_struc_id(struct_name));
+    if (sptr == nullptr) {
+        sptr = get_struc(add_struc(-1, struct_name));
+        if (sptr == nullptr)
+            return;
+        add_struc_member(sptr, "data1", -1, dword_flag(), NULL, 4);
+        add_struc_member(sptr, "data2", -1, word_flag(), NULL, 2);
+        add_struc_member(sptr, "data3", -1, word_flag(), NULL, 2);
+        add_struc_member(sptr, "data4", -1, byte_flag(), NULL, 8);
+    }
+    asize_t size = get_struc_size(sptr);
+    create_struct(ea, size, sptr->id);
 }
 
 //--------------------------------------------------------------------------
@@ -160,4 +181,26 @@ vector<ea_t> getXrefs(ea_t addr) {
         xref = get_next_dref_to(addr, xref);
     }
     return xrefs;
+}
+
+//--------------------------------------------------------------------------
+// op_stroff wrapper
+bool opStroff(ea_t addr, string type) {
+    insn_t insn;
+    decode_insn(&insn, addr);
+    tid_t struc_id = get_struc_id(type.c_str());
+    return op_stroff(insn, 0, &struc_id, 1, 0);
+}
+
+//--------------------------------------------------------------------------
+// Get pointer to named type and apply it
+bool setPtrType(ea_t addr, string type) {
+    tinfo_t tinfo;
+    if (!tinfo.get_named_type(get_idati(), type.c_str())) {
+        return false;
+    }
+    tinfo_t ptrTinfo;
+    ptrTinfo.create_ptr(tinfo);
+    apply_tinfo(addr, ptrTinfo, TINFO_DEFINITE);
+    return true;
 }

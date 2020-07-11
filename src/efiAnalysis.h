@@ -47,13 +47,11 @@ class efiAnalyzer {
     void findOtherBsTablesX64();
 
     void getProtBootServicesX64();
+    void getProtBootServicesX86();
     void getAllBootServicesX64();
     void getAllRuntimeServicesX64();
 
-    void getProtBootServicesX86();
-
     void getProtNamesX64();
-
     void getProtNamesX86();
 
     void printProtocols();
