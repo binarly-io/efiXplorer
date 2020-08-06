@@ -38,6 +38,7 @@ class efiAnalyzer {
     vector<json> allProtocols;
     vector<json> allBootServices;
     vector<json> allRuntimeServices;
+    vector<json> allSmmServices;
 
     bool findImageHandleX64();
     bool findSystemTableX64();
@@ -47,11 +48,14 @@ class efiAnalyzer {
     void findOtherBsTablesX64();
 
     void getProtBootServicesX64();
-    void getProtBootServicesX86();
     void getAllBootServicesX64();
     void getAllRuntimeServicesX64();
+    void getAllSmmServicesX64();
+
+    void getProtBootServicesX86();
 
     void getProtNamesX64();
+
     void getProtNamesX86();
 
     void printProtocols();
@@ -73,6 +77,7 @@ class efiAnalyzer {
     json bootServices;
     json bootServicesAll;
     json runtimeServicesAll;
+    json smmServicesAll;
     json dbProtocols;
     vector<ea_t> markedProtocols;
 };

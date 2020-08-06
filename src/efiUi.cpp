@@ -114,7 +114,7 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
     string name = static_cast<string>(item["prot_name"]);
     string service = static_cast<string>(item["service"]);
     char protGuid[37] = {0};
-    snprintf(protGuid, 36, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
              static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
              static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
              static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),

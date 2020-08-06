@@ -37,9 +37,11 @@ using namespace efiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
 
+vector<ea_t> gStList;
 vector<ea_t> gBsList;
 vector<ea_t> gRtList;
 vector<ea_t> gSmstList;
+vector<ea_t> gImageHandleList;
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
     /* get guids.json path */
@@ -58,7 +60,6 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     if (start_func) {
         startAddress = start_func->start_ea;
     }
-
     /* get end address for scan */
     end_func = getn_func(get_func_qty() - 1);
     if (end_func) {
@@ -90,7 +91,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     import_type(idati, -1, "EFI_GUID");
     import_type(idati, -1, "EFI_BOOT_SERVICES");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
-    import_type(idati, -1, "EFI_SMM_SYSTEM_TABLE2");
+    import_type(idati, -1, "_EFI_SMM_SYSTEM_TABLE2");
 }
 
 efiAnalysis::efiAnalyzer::~efiAnalyzer() {}
@@ -117,6 +118,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
                 /* with this name type will applied automatically */
                 set_name(insn.ops[0].addr, "gImageHandle", SN_CHECK);
                 set_cmt(ea, "EFI_HANDLE gImageHandle", true);
+                gImageHandleList.push_back(insn.ops[0].addr);
                 return true;
             }
             ea = next_head(ea, endAddress);
@@ -147,9 +149,10 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                 /* with this name type will applied automatically */
                 set_name(insn.ops[0].addr, "gST", SN_CHECK);
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
+                gStList.push_back(insn.ops[0].addr);
                 return true;
             }
-            ea = next_head(ea, endAddress);
+            ea = next_head(ea, BADADDR);
         }
     }
     return false;
@@ -161,11 +164,14 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] SMST finding\n", plugin_name);
-    gSmstList = findSmst(gBsList);
-    if (gSmstList.size()) {
-        return true;
+    gSmstList = findSmstSmmBase(gBsList);
+    if (!gSmstList.size()) {
+        gSmstList = findSmstSwDispatch(gBsList);
+        if (!gSmstList.size()) {
+            return false;
+        }
     }
-    return false;
+    return true;
 }
 
 //--------------------------------------------------------------------------
@@ -178,29 +184,65 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTablesX64() {
     ea_t ea = startAddress;
     insn_t insn;
     uint16_t bsRegister = 0;
+    uint16_t stRegister = 0;
     while (ea <= endAddress) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
-            insn.ops[1].phrase == REG_EDX) {
+            insn.ops[1].phrase != REG_RSP) {
             if (insn.ops[0].type == o_reg && insn.ops[1].addr == BS_OFFSET) {
                 bsRegister = insn.ops[0].reg;
+                stRegister = insn.ops[1].phrase;
+                auto bsFound = false;
+                auto stFound = false;
                 /* found BS_OFFSET, need to check 10 instructions below */
                 for (auto i = 0; i < 10; i++) {
                     decode_insn(&insn, ea);
                     if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
-                        insn.ops[1].reg == bsRegister &&
                         insn.ops[0].type == o_mem) {
-                        DEBUG_MSG("[%s] found BootServices table at 0x%016X, "
-                                  "address = "
-                                  "0x%016X\n",
-                                  plugin_name, ea, insn.ops[0].addr);
-                        char hexAddr[16] = {};
-                        sprintf(hexAddr, "%llX",
-                                static_cast<uint64_t>(insn.ops[0].addr));
-                        set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                        string name = "gBS_" + static_cast<string>(hexAddr);
-                        setBsTypeAndName(insn.ops[0].addr, name);
-                        gBsList.push_back(insn.ops[0].addr);
+                        if (insn.ops[1].reg == bsRegister && !bsFound) {
+                            DEBUG_MSG(
+                                "[%s] found BootServices table at 0x%016X, "
+                                "address = "
+                                "0x%016X\n",
+                                plugin_name, ea, insn.ops[0].addr);
+                            if (find(gBsList.begin(), gBsList.end(),
+                                     insn.ops[0].addr) == gBsList.end()) {
+                                char hexAddr[21] = {};
+                                snprintf(
+                                    hexAddr, 21, "%llX",
+                                    static_cast<uint64_t>(insn.ops[0].addr));
+                                set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
+                                string name =
+                                    "gBS_" + static_cast<string>(hexAddr);
+                                setPtrTypeAndName(insn.ops[0].addr, name,
+                                                  "EFI_BOOT_SERVICES");
+                                gBsList.push_back(insn.ops[0].addr);
+                            }
+                            bsFound = true;
+                        }
+                        /* here you can also find gST */
+                        if (insn.ops[1].reg == stRegister && !stFound) {
+                            DEBUG_MSG("[%s] found SystemTable at 0x%016X, "
+                                      "address = "
+                                      "0x%016X\n",
+                                      plugin_name, ea, insn.ops[0].addr);
+                            if (find(gStList.begin(), gStList.end(),
+                                     insn.ops[0].addr) == gStList.end()) {
+                                char hexAddr[21] = {};
+                                snprintf(
+                                    hexAddr, 21, "%llX",
+                                    static_cast<uint64_t>(insn.ops[0].addr));
+                                set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
+                                string name =
+                                    "gST_" + static_cast<string>(hexAddr);
+                                setPtrTypeAndName(insn.ops[0].addr, name,
+                                                  "EFI_SYSTEM_TABLE");
+                                gStList.push_back(insn.ops[0].addr);
+                            }
+                            stFound = true;
+                        }
+                    }
+                    if (bsFound && stFound) {
                         break;
                     }
                     ea = next_head(ea, endAddress);
@@ -225,7 +267,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTablesX64() {
     while (ea <= endAddress) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
-            insn.ops[1].phrase == REG_EDX) {
+            insn.ops[1].phrase != REG_RSP) {
             if (insn.ops[0].type == o_reg && insn.ops[1].addr == RT_OFFSET) {
                 rsRegister = insn.ops[0].reg;
                 /* found RT_OFFSET, need to check 10 instructions below */
@@ -238,12 +280,13 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTablesX64() {
                                   "0x%016X, address "
                                   "= 0x%016X\n",
                                   plugin_name, ea, insn.ops[0].addr);
-                        char hexAddr[16] = {};
-                        sprintf(hexAddr, "%llX",
-                                static_cast<uint64_t>(insn.ops[0].addr));
+                        char hexAddr[21] = {};
+                        snprintf(hexAddr, 21, "%llX",
+                                 static_cast<uint64_t>(insn.ops[0].addr));
                         set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
                         string name = "gRT_" + static_cast<string>(hexAddr);
-                        setRtTypeAndName(insn.ops[0].addr, name);
+                        setPtrTypeAndName(insn.ops[0].addr, name,
+                                          "EFI_RUNTIME_SERVICES");
                         gRtList.push_back(insn.ops[0].addr);
                         break;
                     }
@@ -314,6 +357,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServicesX64() {
                                 bsItem["address"] = addr;
                                 bsItem["service_name"] = static_cast<string>(
                                     bootServicesX64All[j].service_name);
+                                bsItem["offset"] = bootServicesX64All[j].offset;
                                 if (find(allBootServices.begin(),
                                          allBootServices.end(),
                                          bsItem) == allBootServices.end()) {
@@ -411,6 +455,86 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServicesX64() {
     }
     if (found) {
         msg("[%s] Runtime services (all):\n", plugin_name);
+        msg(ft_to_string(table));
+    }
+    ft_destroy_table(table);
+}
+
+//--------------------------------------------------------------------------
+// Get all smm services for X64 modules
+void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
+    DEBUG_MSG("[%s] ========================================================\n",
+              plugin_name);
+    DEBUG_MSG("[%s] SmmServices finding from 0x%016X to 0x%016X (all)\n",
+              plugin_name, startAddress, endAddress);
+    if (!gSmstList.size()) {
+        return;
+    }
+    ea_t ea = startAddress;
+    insn_t insn;
+    ft_table_t *table = ft_create_table();
+    ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+    ft_write_ln(table, " Address ", " Service ");
+    auto found = false;
+    while (ea <= endAddress) {
+        decode_insn(&insn, ea);
+        for (vector<ea_t>::iterator smms = gSmstList.begin();
+             smms != gSmstList.end(); ++smms) {
+            if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
+                insn.ops[1].type == o_mem && insn.ops[1].addr == *smms) {
+                ea_t addr = ea;
+                /* 10 instructions below */
+                for (auto i = 0; i < 10; i++) {
+                    decode_insn(&insn, addr);
+                    if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
+                        for (int j = 0; j < smmServicesX64AllLength; j++) {
+                            if (insn.ops[0].addr ==
+                                static_cast<ea_t>(
+                                    smmServicesX64All[j].offset)) {
+                                found = true;
+                                string cmt =
+                                    "gSmst->" +
+                                    static_cast<string>(
+                                        smmServicesX64All[j].service_name);
+                                set_cmt(addr, cmt.c_str(), true);
+                                /* op_stroff */
+                                opStroff(addr, "_EFI_SMM_SYSTEM_TABLE2");
+                                /* add line to table */
+                                ft_printf_ln(
+                                    table, " 0x%016X | %s ",
+                                    static_cast<unsigned int>(addr),
+                                    static_cast<char *>(
+                                        smmServicesX64All[j].service_name));
+                                DEBUG_MSG(
+                                    "[%s] 0x%016X : %s\n", plugin_name, addr,
+                                    static_cast<char *>(
+                                        smmServicesX64All[j].service_name));
+                                smmServicesAll[static_cast<string>(
+                                                   smmServicesX64All[j]
+                                                       .service_name)]
+                                    .push_back(addr);
+                                /* add item to allSmmServices vector */
+                                json smmsItem;
+                                smmsItem["address"] = addr;
+                                smmsItem["service_name"] = static_cast<string>(
+                                    smmServicesX64All[j].service_name);
+                                if (find(allSmmServices.begin(),
+                                         allSmmServices.end(),
+                                         smmsItem) == allSmmServices.end()) {
+                                    allSmmServices.push_back(smmsItem);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    addr = next_head(addr, BADADDR);
+                }
+            }
+        }
+        ea = next_head(ea, BADADDR);
+    }
+    if (found) {
+        msg("[%s] SMM services (all):\n", plugin_name);
         msg(ft_to_string(table));
     }
     ft_destroy_table(table);
@@ -554,10 +678,10 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
         DEBUG_MSG("[%s] found BootServices table at 0x%016X, address = "
                   "0x%016X\n",
                   plugin_name, addr, addrBs);
-        char hexAddr[16] = {};
-        sprintf(hexAddr, "%llX", static_cast<uint64_t>(addrBs));
+        char hexAddr[21] = {};
+        snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(addrBs));
         string name = "gBS_" + static_cast<string>(hexAddr);
-        setBsTypeAndName(addrBs, name);
+        setPtrTypeAndName(addrBs, name, "EFI_BOOT_SERVICES");
         gBsList.push_back(addrBs);
     }
 }
@@ -627,6 +751,7 @@ void efiAnalysis::efiAnalyzer::getProtNamesX64() {
                 /* get protocol item */
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
+                protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTableX64[i].service_name;
                 protocolItem["guid"] = guid;
                 /* find guid name */
@@ -738,6 +863,7 @@ void efiAnalysis::efiAnalyzer::getProtNamesX86() {
                 /* get protocol item */
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
+                protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTableX86[i].service_name;
                 protocolItem["guid"] = guid;
                 /* find guid name */
@@ -832,8 +958,8 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
         if (marked) {
             continue;
         }
-        char hexAddr[16] = {};
-        sprintf(hexAddr, "%llX", static_cast<uint64_t>(address));
+        char hexAddr[21] = {};
+        snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(address));
         string protName = static_cast<string>(protItem["prot_name"]);
         string name = protName + "_" + static_cast<string>(hexAddr);
         set_name(address, name.c_str(), SN_CHECK);
@@ -887,8 +1013,8 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                  ++dbItem) {
                 if (guid == dbItem.value()) {
                     /* mark .data guid */
-                    char hexAddr[16] = {};
-                    sprintf(hexAddr, "%llX", static_cast<uint64_t>(ea));
+                    char hexAddr[21] = {};
+                    snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
                     string name =
                         dbItem.key() + "_" + static_cast<string>(hexAddr);
                     set_name(ea, name.c_str(), SN_CHECK);
@@ -901,7 +1027,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     guidItem["address"] = ea;
                     guidItem["name"] = dbItem.key();
                     char guidValue[37] = {0};
-                    snprintf(guidValue, 36,
+                    snprintf(guidValue, 37,
                              "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
                              static_cast<uint32_t>(guid[0]),
                              static_cast<uint16_t>(guid[1]),
@@ -965,8 +1091,9 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                     if (gData1 == static_cast<uint32_t>(guid[0]) &&
                         gData2 == static_cast<uint16_t>(guid[1])) {
                         /* mark local guid */
-                        char hexAddr[16] = {};
-                        sprintf(hexAddr, "%llX", static_cast<uint64_t>(ea));
+                        char hexAddr[21] = {};
+                        snprintf(hexAddr, 21, "%llX",
+                                 static_cast<uint64_t>(ea));
                         string name =
                             dbItem.key() + "_" + static_cast<string>(hexAddr);
                         /* comment line */
@@ -979,7 +1106,7 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                         guidItem["address"] = ea;
                         guidItem["name"] = dbItem.key();
                         char guidValue[37] = {0};
-                        snprintf(guidValue, 36,
+                        snprintf(guidValue, 37,
                                  "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%"
                                  "02X%02X",
                                  static_cast<uint32_t>(guid[0]),
@@ -1026,6 +1153,11 @@ void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
         title = "efiXplorer: runtime services";
         services_show(analyzer.allRuntimeServices, title);
     }
+    /* open window with smm services */
+    if (analyzer.allSmmServices.size()) {
+        title = "efiXplorer: smm services";
+        services_show(analyzer.allSmmServices, title);
+    }
     /* open window with protocols */
     if (analyzer.allProtocols.size()) {
         title = "efiXplorer: protocols";
@@ -1061,6 +1193,9 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     /* other addresses of global gBS values finding */
     analyzer.findOtherBsTablesX64();
     analyzer.getAllBootServicesX64();
+
+    /* find smm services */
+    analyzer.getAllSmmServicesX64();
 
     /* print and mark protocols */
     analyzer.getProtNamesX64();

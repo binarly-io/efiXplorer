@@ -34,30 +34,6 @@
 static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
-// Set type and name for gBS
-void setBsTypeAndName(ea_t ea, string name) {
-    /* set gBS_ADDR name */
-    set_name(ea, name.c_str(), SN_CHECK);
-    setPtrType(ea, "EFI_BOOT_SERVICES");
-}
-
-//--------------------------------------------------------------------------
-// Set type and name for gRT
-void setRtTypeAndName(ea_t ea, string name) {
-    /* set gRT_ADDR name */
-    set_name(ea, name.c_str(), SN_CHECK);
-    setPtrType(ea, "EFI_RUNTIME_SERVICES");
-}
-
-//--------------------------------------------------------------------------
-// Set type and name for gSmst
-void setSmstTypeAndName(ea_t ea, string name) {
-    /* set gSmst_ADDR name */
-    set_name(ea, name.c_str(), SN_CHECK);
-    setPtrType(ea, "EFI_SMM_SYSTEM_TABLE2");
-}
-
-//--------------------------------------------------------------------------
 // Create EFI_GUID structure
 void createGuidStructure(ea_t ea) {
     static const char struct_name[] = "_EFI_GUID";
@@ -203,4 +179,11 @@ bool setPtrType(ea_t addr, string type) {
     ptrTinfo.create_ptr(tinfo);
     apply_tinfo(addr, ptrTinfo, TINFO_DEFINITE);
     return true;
+}
+
+//--------------------------------------------------------------------------
+// Set name and apply pointer to named type
+void setPtrTypeAndName(ea_t ea, string name, string type) {
+    set_name(ea, name.c_str(), SN_CHECK);
+    setPtrType(ea, type.c_str());
 }

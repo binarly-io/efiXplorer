@@ -31,6 +31,12 @@ Annotate assembly code automatically with available Runtime Services
 
 ![rt2](img/rt2.png)
 
+## Identify available SMM Services automatically
+
+| Before analysis | After analysis |
+| --- | --- |
+| ![smm_before](img/smm_before.png) | ![smm_after](img/smm_after.png) |
+
 ## Identify available EFI Protocols automatically
 
 * Build the list of available EFI Protocols

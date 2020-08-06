@@ -101,6 +101,22 @@
 #define x86InstallMultipleProtocolInterfacesOffset 0xb0
 #define x86UninstallMultipleProtocolInterfacesOffset 0xb4
 
+#define x64SmmInstallConfigurationTableOffset 0x28
+#define x64SmmAllocatePoolOffset 0x50
+#define x64SmmFreePoolOffset 0x58
+#define x64SmmAllocatePagesOffset 0x60
+#define x64SmmFreePagesOffset 0x68
+#define x64SmmStartupThisApOffset 0x70
+#define x64SmmInstallProtocolInterfaceOffset 0xa8
+#define x64SmmUninstallProtocolInterfaceOffset 0xb0
+#define x64SmmHandleProtocolOffset 0xb8
+#define x64SmmRegisterProtocolNotifyOffset 0xc0
+#define x64SmmLocateHandleOffset 0xc8
+#define x64SmmLocateProtocolOffset 0xd0
+#define x64SmiManageOffset 0xd8
+#define x64SmiHandlerRegisterOffset 0xe0
+#define x64SmiHandlerUnRegisterOffset 0xe8
+
 struct bootServiceX64 {
     char service_name[64];
     size_t offset;
@@ -217,3 +233,21 @@ struct service runtimeServicesX64All[] = {
     {"UpdateCapsule", x64UpdateCapsuleOffset},
     {"QueryCapsuleCapabilities", x64QueryCapsuleCapabilitiesOffset},
     {"QueryVariableInfo", x64QueryVariableInfoOffset}};
+
+size_t smmServicesX64AllLength = 15;
+struct service smmServicesX64All[] = {
+    {"SmmInstallConfigurationTable", x64SmmInstallConfigurationTableOffset},
+    {"SmmAllocatePool", x64SmmAllocatePoolOffset},
+    {"SmmFreePool", x64SmmFreePoolOffset},
+    {"SmmAllocatePages", x64SmmAllocatePagesOffset},
+    {"SmmFreePages", x64SmmFreePagesOffset},
+    {"SmmStartupThisAp", x64SmmStartupThisApOffset},
+    {"SmmInstallProtocolInterface", x64SmmInstallProtocolInterfaceOffset},
+    {"SmmUninstallProtocolInterface", x64SmmUninstallProtocolInterfaceOffset},
+    {"SmmHandleProtocol", x64SmmHandleProtocolOffset},
+    {"SmmRegisterProtocolNotify", x64SmmRegisterProtocolNotifyOffset},
+    {"SmmLocateHandle", x64SmmLocateHandleOffset},
+    {"SmmLocateProtocol", x64SmmLocateProtocolOffset},
+    {"SmiManage", x64SmiManageOffset},
+    {"SmiHandlerRegister", x64SmiHandlerRegisterOffset},
+    {"SmiHandlerUnRegister", x64SmiHandlerUnRegisterOffset}};

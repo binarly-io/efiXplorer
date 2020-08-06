@@ -28,7 +28,11 @@ def build(idasdk_dir, plugins_path):
     if not os.path.isdir('build'):
         os.mkdir('build')
     os.chdir('build')
-    subprocess.call(['cmake', '..', '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir)])
+    subprocess.call([
+        'cmake',
+        '..',
+        '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir),
+    ])
     subprocess.call(['cmake', '--build', '.', '--config', 'Release'])
     if plugins_path and os.path.isdir(plugins_path):
         print('[DEBUG] copying builds to {}'.format(plugins_path))
