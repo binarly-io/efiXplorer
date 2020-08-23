@@ -62,14 +62,18 @@ using namespace std::filesystem;
 #define DEBUG_MSG(format, ...) {};
 #endif
 
+#define BTOA(x) ((x) ? "true" : "false")
+
 /* architectures */
 #define X86 32
 #define X64 64
 
 /* SystemTable->BootServices */
-#define BS_OFFSET 0x60
+#define BS_OFFSET_X64 0x60
+#define BS_OFFSET_X86 0x3c
 /* SystemTable->RuntimeServices */
-#define RT_OFFSET 0x58
+#define RT_OFFSET_X64 0x58
+#define RT_OFFSET_X86 0x38
 
 /* x64 registers */
 #define REG_RAX 0x00
@@ -122,9 +126,9 @@ bool opStroff(ea_t addr, string type);
 /* Create EFI_GUID structure */
 void createGuidStructure(ea_t ea);
 /* Get boot service description comment */
-string getBsComment(ea_t offset, size_t arch);
+string getBsComment(ea_t offset, uint8_t arch);
 /* Get runtime service description comment */
-string getRtComment(ea_t offset, size_t arch);
+string getRtComment(ea_t offset, uint8_t arch);
 /* Find address of global gBS variable
  * for X64 module for each service */
 ea_t findUnknownBsVarX64(ea_t ea);
@@ -132,3 +136,5 @@ ea_t findUnknownBsVarX64(ea_t ea);
 bool setPtrType(ea_t addr, string type);
 /* Set name and apply pointer to named type */
 void setPtrTypeAndName(ea_t ea, string name, string type);
+/* Check for guids.json file exist */
+bool guidsJsonExists();

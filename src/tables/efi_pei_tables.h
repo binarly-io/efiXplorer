@@ -35,6 +35,8 @@
  *
  */
 
+#include "stdint.h"
+
 struct pei_services_entry {
     char name[256];
     uint32_t offset;
@@ -45,7 +47,6 @@ struct pei_services_entry {
 };
 
 struct pei_services_entry pei_services_table[] = {
-    {"FAILED PEI PPI", 0x0, "", 1, "", 0},
     {"InstallPpi", 0x18,
      "This service is the first one provided by the PEI Foundation. This "
      "function installs an interface in the PEI PPI database by GUID. The "
@@ -188,5 +189,7 @@ struct pei_services_entry pei_services_table[] = {
      "Provides an interface that a PEIM can call to execute PCI Configuration "
      "transactions. This service is installed by an architectural PEI driver "
      "by copying the interface pointer into this table.",
-     1, "", 0},
-    {"EMPTY PPI", 0x0, "", 1, "", 0}};
+     1, "", 0}};
+
+size_t pei_services_table_size =
+    sizeof(pei_services_table) / sizeof(pei_services_entry);

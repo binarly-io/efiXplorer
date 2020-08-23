@@ -36,27 +36,24 @@ class efiAnalyzer {
   public:
     vector<json> dataGuids;
     vector<json> allProtocols;
-    vector<json> allBootServices;
-    vector<json> allRuntimeServices;
-    vector<json> allSmmServices;
+    vector<json> allServices;
 
     bool findImageHandleX64();
     bool findSystemTableX64();
-    bool findBootServicesTablesX64();
-    bool findRuntimeServicesTablesX64();
+    bool findBootServicesTables(uint8_t arch);
+    bool findRuntimeServicesTables(uint8_t arch);
     bool findSmstX64();
     void findOtherBsTablesX64();
 
     void getProtBootServicesX64();
-    void getAllBootServicesX64();
-    void getAllRuntimeServicesX64();
+    void getProtBootServicesX86();
+    void getAllBootServices(uint8_t arch);
+    void getAllRuntimeServices(uint8_t arch);
     void getAllSmmServicesX64();
 
-    void getProtBootServicesX86();
-
-    void getProtNamesX64();
-
-    void getProtNamesX86();
+    void getBsProtNamesX64();
+    void getBsProtNamesX86();
+    void getSmmProtNamesX64();
 
     void printProtocols();
     void markProtocols();
@@ -77,9 +74,31 @@ class efiAnalyzer {
     json bootServices;
     json bootServicesAll;
     json runtimeServicesAll;
+    json smmServices;
     json smmServicesAll;
     json dbProtocols;
     vector<ea_t> markedProtocols;
+    /* set boot services that work with protocols */
+    vector<string> protBsNames = {"InstallProtocolInterface",
+                                  "ReinstallProtocolInterface",
+                                  "UninstallProtocolInterface",
+                                  "HandleProtocol",
+                                  "RegisterProtocolNotify",
+                                  "OpenProtocol",
+                                  "CloseProtocol",
+                                  "OpenProtocolInformation",
+                                  "ProtocolsPerHandle",
+                                  "LocateHandleBuffer",
+                                  "LocateProtocol",
+                                  "InstallMultipleProtocolInterfaces",
+                                  "UninstallMultipleProtocolInterfaces"};
+    /* set smm services that work with protocols */
+    vector<string> protSmmNames = {"SmmInstallProtocolInterface",
+                                   "SmmUninstallProtocolInterface",
+                                   "SmmHandleProtocol",
+                                   "SmmRegisterProtocolNotify",
+                                   "SmmLocateHandle",
+                                   "SmmLocateProtocol"};
 };
 
 bool efiAnalyzerMainX64();

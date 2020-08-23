@@ -67,12 +67,12 @@ uint8_t getFileType() {
     get_file_type_name(fileType, 256);
     auto fileTypeStr = static_cast<string>(fileType);
     size_t index = fileTypeStr.find("AMD64");
-    if (index > 0) {
+    if (index != string::npos) {
         /* Portable executable for AMD64 (PE) */
         return X64;
     }
     index = fileTypeStr.find("80386");
-    if (index > 0) {
+    if (index != string::npos) {
         /* Portable executable for 80386 (PE) */
         return X86;
     }
@@ -81,7 +81,7 @@ uint8_t getFileType() {
 
 //--------------------------------------------------------------------------
 // Get boot service description comment
-string getBsComment(ea_t offset, size_t arch) {
+string getBsComment(ea_t offset, uint8_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gBS->";
@@ -104,7 +104,7 @@ string getBsComment(ea_t offset, size_t arch) {
 
 //--------------------------------------------------------------------------
 // Get runtime service description comment
-string getRtComment(ea_t offset, size_t arch) {
+string getRtComment(ea_t offset, uint8_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gRT->";
@@ -186,4 +186,16 @@ bool setPtrType(ea_t addr, string type) {
 void setPtrTypeAndName(ea_t ea, string name, string type) {
     set_name(ea, name.c_str(), SN_CHECK);
     setPtrType(ea, type.c_str());
+}
+
+//--------------------------------------------------------------------------
+// Check for guids.json file exist
+bool guidsJsonExists() {
+    struct stat buffer;
+    /* get guids.json path */
+    path guidsJsonPath;
+    guidsJsonPath /= idadir("plugins");
+    guidsJsonPath /= "guids";
+    guidsJsonPath /= "guids.json";
+    return (stat(guidsJsonPath.u8string().c_str(), &buffer) == 0);
 }
