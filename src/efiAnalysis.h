@@ -61,7 +61,6 @@ class efiAnalyzer {
     void markLocalGuidsX64();
 
     func_t *findSwSmiHandler();
-    bool findSmmCallout();
 
     void dumpInfo();
 

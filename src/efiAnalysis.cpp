@@ -1394,52 +1394,6 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
 }
 
 //--------------------------------------------------------------------------
-// Search for callouts recursively
-void findCalloutRec(func_t *func) {
-    DEBUG_MSG("[%s] current function address: 0x%016X\n", plugin_name,
-              func->start_ea);
-    insn_t insn;
-    for (ea_t ea = func->start_ea; ea < func->end_ea;
-         ea = next_head(ea, BADADDR)) {
-        decode_insn(&insn, ea);
-        if (insn.itype == NN_call) {
-            ea_t nextFuncAddr = insn.ops[0].addr;
-            func_t *nextFunc = get_func(nextFuncAddr);
-            if (nextFunc) {
-                auto it = std::find(excFunctions.begin(), excFunctions.end(),
-                                    nextFunc);
-                if (it == excFunctions.end()) {
-                    excFunctions.push_back(nextFunc);
-                    findCalloutRec(nextFunc);
-                }
-            }
-        }
-        /* find callouts with gBS */
-        for (vector<ea_t>::iterator bs = gBsList.begin(); bs != gBsList.end();
-             ++bs) {
-            /* check if insn is 'mov rax, cs:gBS' */
-            if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
-                insn.ops[1].type == o_mem && insn.ops[1].addr == *bs) {
-                DEBUG_MSG("[%s] SMM callout finded: 0x%016X\n", plugin_name,
-                          ea);
-                calloutAddrs.push_back(ea);
-            }
-        }
-        /* find callouts with gRT */
-        for (vector<ea_t>::iterator rt = gRtList.begin(); rt != gRtList.end();
-             ++rt) {
-            /* check if insn is 'mov rax, cs:gRT' */
-            if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
-                insn.ops[1].type == o_mem && insn.ops[1].addr == *rt) {
-                DEBUG_MSG("[%s] SMM callout finded: 0x%016X\n", plugin_name,
-                          ea);
-                calloutAddrs.push_back(ea);
-            }
-        }
-    }
-}
-
-//--------------------------------------------------------------------------
 // Find SwSmiHandler function inside SMM drivers
 func_t *efiAnalysis::efiAnalyzer::findSwSmiHandler() {
     DEBUG_MSG("[%s] ========================================================\n",
