@@ -62,8 +62,6 @@ class efiAnalyzer {
 
     func_t *findSwSmiHandler();
 
-    void dumpInfo();
-
     efiAnalyzer();
     ~efiAnalyzer();
 
