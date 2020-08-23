@@ -62,7 +62,7 @@ using namespace std::filesystem;
 #define DEBUG_MSG(format, ...) {};
 #endif
 
-#define btoa(x) ((x) ? "true" : "false")
+#define BTOA(x) ((x) ? "true" : "false")
 
 /* architectures */
 #define X86 32

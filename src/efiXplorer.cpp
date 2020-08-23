@@ -65,7 +65,7 @@ bool idaapi run(size_t) {
               plugin_name);
     DEBUG_MSG("[%s] plugin run\n", plugin_name);
     bool guidsJsonOk = guidsJsonExists();
-    DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, btoa(guidsJsonOk));
+    DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
     if (!guidsJsonOk) {
         string msg_text = "guids.json file not found, copy \"guids\" directory "
                           "to <IDA_DIR>/plugins";
