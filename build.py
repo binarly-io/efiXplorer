@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import platform
 import shutil
 import subprocess
 
 import click
+
+
+def search_so(d):
+    return list(pathlib.Path(d).rglob('*.so'))
+
+
+def search_dll(d):
+    return list(pathlib.Path(d).rglob('*.dll'))
+
+
+def search_dylib(d):
+    return list(pathlib.Path(d).rglob('*.dylib'))
 
 
 @click.command()
@@ -15,21 +28,26 @@ def build(idasdk_dir, plugins_path):
     if not os.path.isdir('build'):
         os.mkdir('build')
     os.chdir('build')
-    subprocess.call(['cmake', '..', '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir)])
+    subprocess.call([
+        'cmake',
+        '..',
+        '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir),
+    ])
     subprocess.call(['cmake', '--build', '.', '--config', 'Release'])
     if plugins_path and os.path.isdir(plugins_path):
+        print('[DEBUG] copying builds to {}'.format(plugins_path))
         if platform.system() == 'Linux':
-            print('[DEBUG] copying builds to {}'.format(plugins_path))
-            shutil.copy('efiXplorer.so',
-                        os.path.join(plugins_path, 'efiXplorer.so'))
-            shutil.copy('efiXplorer64.so',
-                        os.path.join(plugins_path, 'efiXplorer64.so'))
+            for plugin_bin in search_so('.'):
+                _, fname = os.path.split(plugin_bin)
+                shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
         if platform.system() == 'Windows':
-            print('[DEBUG] copying builds to {}'.format(plugins_path))
-            shutil.copy(os.path.join('Release', 'efiXplorer.dll'),
-                        os.path.join(plugins_path, 'efiXplorer.dll'))
-            shutil.copy(os.path.join('Release', 'efiXplorer64.dll'),
-                        os.path.join(plugins_path, 'efiXplorer64.dll'))
+            for plugin_bin in search_dll('.'):
+                _, fname = os.path.split(plugin_bin)
+                shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
+        if platform.system() == 'Darwin':
+            for plugin_bin in search_dylib('.'):
+                _, fname = os.path.split(plugin_bin)
+                shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
 
 
 # pylint: disable=no-value-for-parameter

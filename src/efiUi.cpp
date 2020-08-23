@@ -64,12 +64,14 @@ const char *const protocols_chooser_t::header_protocols[] = {
 const int s_chooser_t::widths_s[] = {
     16, // Address
     32, // Service name
+    32, // Table name
 };
 
 /* services column widths */
 const char *const s_chooser_t::header_s[] = {
     "Address",      // 0
     "Service name", // 1
+    "Table name"    // 2
 };
 
 inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
@@ -114,7 +116,7 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
     string name = static_cast<string>(item["prot_name"]);
     string service = static_cast<string>(item["service"]);
     char protGuid[37] = {0};
-    snprintf(protGuid, 36, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
              static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
              static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
              static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
@@ -141,10 +143,12 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
-    string name = static_cast<string>(item["service_name"]);
+    string service_name = static_cast<string>(item["service_name"]);
+    string table_name = static_cast<string>(item["table_name"]);
     cols[0].sprnt("%016X", ea);
-    cols[1].sprnt("%s", name.c_str());
-    CASSERT(qnumber(header_s) == 2);
+    cols[1].sprnt("%s", service_name.c_str());
+    cols[2].sprnt("%s", table_name.c_str());
+    CASSERT(qnumber(header_s) == 3);
 }
 
 bool guids_show(vector<json> guids, qstring title) {

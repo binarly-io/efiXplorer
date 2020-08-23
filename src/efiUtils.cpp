@@ -35,7 +35,7 @@ static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
 // Create EFI_GUID structure
-void setGuidStructure(ea_t ea) {
+void createGuidStructure(ea_t ea) {
     static const char struct_name[] = "_EFI_GUID";
     struc_t *sptr = get_struc(get_struc_id(struct_name));
     if (sptr == nullptr) {
@@ -47,8 +47,17 @@ void setGuidStructure(ea_t ea) {
         add_struc_member(sptr, "data3", -1, word_flag(), NULL, 2);
         add_struc_member(sptr, "data4", -1, byte_flag(), NULL, 8);
     }
-    size_t size = get_struc_size(sptr);
+    asize_t size = get_struc_size(sptr);
     create_struct(ea, size, sptr->id);
+}
+
+//--------------------------------------------------------------------------
+// Set EFI_GUID type
+void setGuidType(ea_t ea) {
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(get_idati(), "EFI_GUID")) {
+        apply_tinfo(ea, tinfo, TINFO_DEFINITE);
+    }
 }
 
 //--------------------------------------------------------------------------
@@ -57,13 +66,13 @@ uint8_t getFileType() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
     auto fileTypeStr = static_cast<string>(fileType);
-    int index = fileTypeStr.find("AMD64");
-    if (index > 0) {
+    size_t index = fileTypeStr.find("AMD64");
+    if (index != string::npos) {
         /* Portable executable for AMD64 (PE) */
         return X64;
     }
     index = fileTypeStr.find("80386");
-    if (index > 0) {
+    if (index != string::npos) {
         /* Portable executable for 80386 (PE) */
         return X86;
     }
@@ -72,7 +81,7 @@ uint8_t getFileType() {
 
 //--------------------------------------------------------------------------
 // Get boot service description comment
-string getBsComment(ea_t offset, size_t arch) {
+string getBsComment(ea_t offset, uint8_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gBS->";
@@ -95,7 +104,7 @@ string getBsComment(ea_t offset, size_t arch) {
 
 //--------------------------------------------------------------------------
 // Get runtime service description comment
-string getRtComment(ea_t offset, size_t arch) {
+string getRtComment(ea_t offset, uint8_t arch) {
     ea_t offset_arch;
     string cmt = "";
     cmt += "gRT->";
@@ -114,4 +123,79 @@ string getRtComment(ea_t offset, size_t arch) {
         }
     }
     return cmt;
+}
+
+//--------------------------------------------------------------------------
+// Find address of global gBS var for X64 module for each service
+ea_t findUnknownBsVarX64(ea_t ea) {
+    ea_t resAddr = 0;
+    insn_t insn;
+    /* 10 instructions below */
+    for (int i = 0; i < 10; i++) {
+        decode_insn(&insn, ea);
+        /* check if insn like 'mov rax, cs:<gBS>' */
+        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
+            DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n",
+                      plugin_name, ea, insn.ops[1].addr);
+            resAddr = insn.ops[1].addr;
+            set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
+            break;
+        }
+        ea = prev_head(ea, 0);
+    }
+    return resAddr;
+}
+
+//--------------------------------------------------------------------------
+// Get all data xrefs for address
+vector<ea_t> getXrefs(ea_t addr) {
+    vector<ea_t> xrefs;
+    ea_t xref = get_first_dref_to(addr);
+    while (xref != BADADDR) {
+        xrefs.push_back(xref);
+        xref = get_next_dref_to(addr, xref);
+    }
+    return xrefs;
+}
+
+//--------------------------------------------------------------------------
+// op_stroff wrapper
+bool opStroff(ea_t addr, string type) {
+    insn_t insn;
+    decode_insn(&insn, addr);
+    tid_t struc_id = get_struc_id(type.c_str());
+    return op_stroff(insn, 0, &struc_id, 1, 0);
+}
+
+//--------------------------------------------------------------------------
+// Get pointer to named type and apply it
+bool setPtrType(ea_t addr, string type) {
+    tinfo_t tinfo;
+    if (!tinfo.get_named_type(get_idati(), type.c_str())) {
+        return false;
+    }
+    tinfo_t ptrTinfo;
+    ptrTinfo.create_ptr(tinfo);
+    apply_tinfo(addr, ptrTinfo, TINFO_DEFINITE);
+    return true;
+}
+
+//--------------------------------------------------------------------------
+// Set name and apply pointer to named type
+void setPtrTypeAndName(ea_t ea, string name, string type) {
+    set_name(ea, name.c_str(), SN_CHECK);
+    setPtrType(ea, type.c_str());
+}
+
+//--------------------------------------------------------------------------
+// Check for guids.json file exist
+bool guidsJsonExists() {
+    struct stat buffer;
+    /* get guids.json path */
+    path guidsJsonPath;
+    guidsJsonPath /= idadir("plugins");
+    guidsJsonPath /= "guids";
+    guidsJsonPath /= "guids.json";
+    return (stat(guidsJsonPath.u8string().c_str(), &buffer) == 0);
 }

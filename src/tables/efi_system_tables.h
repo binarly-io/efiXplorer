@@ -35,7 +35,7 @@
  *
  */
 
-#define BTABLE_LEN 44
+#define BTABLE_LEN 43
 #define RTABLE_LEN 14
 
 struct services_entry {
@@ -205,7 +205,6 @@ Protocol    The published unique identifier of the protocol.\n\
 Interface   Supplies the address where a pointer to the corresponding Protocol Interface is returned.",
      "IN EFI_HANDLE Handle", "IN EFI_GUID *Protocol", "OUT VOID **Interface",
      "", "", "", "", "", 0},
-    {"Reserved", 0xA0, 0x5c, "", 1, "", "", "", "", "", "", "", "", "", "", 0},
     {"RegisterProtocolNotify", 0xA8, 0x60,
      "Creates an event that is to be signaled whenever an interface is "
      "installed for a specified protocol.",
