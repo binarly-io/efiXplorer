@@ -79,6 +79,9 @@ example of build process:
 
 Copy compiled binaries of efiXplorer plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
 
+# Publications
+* [How efiXplorer helping to solve challenges in reverse engineering of UEFI firmware](https://www.youtube.com/watch?v=FFGQJBmRkLw)
+
 # References 
 __For IDA:__
 * https://github.com/yeggor/UEFI_RETool 
