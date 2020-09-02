@@ -1,0 +1,92 @@
+name: Builds for Windows, Linux and OSX
+on:
+  push:
+  pull_request:
+jobs:
+  build_windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: cmd
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "%IDA_SDK75%"
+          unzip -P "%PASSWORD%" idasdk.zip
+      - name: Build efiXplorer
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="..\idasdk75" -DHexRaysSdk_ROOT_DIR="..\hexrays_sdk"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer.dll
+          path: build/Release/efiXplorer.dll
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer64.dll
+          path: build/Release/efiXplorer64.dll
+  build_linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: bash
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "$IDA_SDK75"
+          unzip -P $PASSWORD idasdk.zip
+      - name: Build efiXplorer
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75" -DHexRaysSdk_ROOT_DIR="../hexrays_sdk"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer.so
+          path: build/efiXplorer.so
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer64.so
+          path: build/efiXplorer64.so
+  build_osx:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: bash
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "$IDA_SDK75"
+          unzip -P $PASSWORD idasdk.zip
+      - name: Build efiXplorer
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75" -DHexRaysSdk_ROOT_DIR="../hexrays_sdk"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer.dylib
+          path: build/efiXplorer.dylib
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXplorer64.dylib
+          path: build/efiXplorer64.dylib
