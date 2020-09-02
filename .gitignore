@@ -24,9 +24,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-#osx
-.DS_Store
-
 # pyenv
 .python-version
 
@@ -40,7 +37,15 @@ env.bak/
 venv.bak/
 
 # custom directories
-.vs/
 .vscode/
-build/
+.vs/
+.idea/
 test/
+build/
+
+# CMake
+build*/
+cmake*/
+
+# OSX
+.DS_Store
