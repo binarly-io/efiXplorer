@@ -68,6 +68,13 @@ using namespace std::filesystem;
 #define X86 32
 #define X64 64
 
+/* (FFS) file type */
+#define FTYPE_DXE_AND_THE_LIKE 7
+#define FTYPE_PEI 6
+
+#define VZ 0x5A56
+#define MZ 0x5A4D
+
 /* SystemTable->BootServices */
 #define BS_OFFSET_X64 0x60
 #define BS_OFFSET_X86 0x3c
@@ -114,8 +121,11 @@ using namespace std::filesystem;
 #define NN_push 143
 #define NN_retn 159
 
-/* Get input file type
+/* Get input file architecture
  * (X64 or X86) */
+uint8_t getArch();
+/* Get input file type
+* (PEI or DXE-like) */
 uint8_t getFileType();
 /* Set EFI_GUID type */
 void setGuidType(ea_t ea);
@@ -127,6 +137,8 @@ bool opStroff(ea_t addr, string type);
 void createGuidStructure(ea_t ea);
 /* Get boot service description comment */
 string getBsComment(ea_t offset, uint8_t arch);
+/* Get Pei service description comment (X86 is assumed) */
+string getPeiSvcComment(ea_t offset);
 /* Get runtime service description comment */
 string getRtComment(ea_t offset, uint8_t arch);
 /* Find address of global gBS variable
@@ -138,3 +150,6 @@ bool setPtrType(ea_t addr, string type);
 void setPtrTypeAndName(ea_t ea, string name, string type);
 /* Check for guids.json file exist */
 bool guidsJsonExists();
+/* Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
+/* for ModuleEntryPoint */
+void setEntryArgToPeiSvc();

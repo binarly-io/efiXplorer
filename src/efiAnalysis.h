@@ -55,6 +55,8 @@ class efiAnalyzer {
     void getBsProtNamesX86();
     void getSmmProtNamesX64();
 
+    void getAllPeiServicesX86();
+
     void printProtocols();
     void markProtocols();
     void markDataGuids();
@@ -65,6 +67,8 @@ class efiAnalyzer {
     efiAnalyzer();
     ~efiAnalyzer();
 
+    uint8_t fileType = 0;
+
   private:
     ea_t base;
     ea_t startAddress = 0;
@@ -73,6 +77,7 @@ class efiAnalyzer {
     path guidsJsonPath;
     json bootServices;
     json bootServicesAll;
+    json peiServicesAll;
     json runtimeServicesAll;
     json smmServices;
     json smmServicesAll;

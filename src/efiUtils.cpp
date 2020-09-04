@@ -31,6 +31,17 @@
 #include "efiUtils.h"
 #include "tables/efi_system_tables.h"
 
+struct pei_services_entry {
+    char name[256];
+    uint32_t offset;
+    char description[1024];
+    uint32_t nr_args;
+    char prototype[512];
+    uint32_t count;
+};
+extern struct pei_services_entry pei_services_table[];
+extern size_t pei_services_table_size;
+
 static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
@@ -61,8 +72,8 @@ void setGuidType(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// Get input file type (X64 or X86)
-uint8_t getFileType() {
+// Get input file architecture (bit width X64 or X86)
+uint8_t getArch() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
     auto fileTypeStr = static_cast<string>(fileType);
@@ -77,6 +88,34 @@ uint8_t getFileType() {
         return X86;
     }
     return 0;
+}
+
+//--------------------------------------------------------------------------
+// Get input file type (PEI or DXE-like). No reliable way to determine FFS
+// file type given only its PE/TE image section, so hello heuristics
+uint8_t getFileType() {
+    uint8_t arch = getArch();
+    segment_t *hdr_seg = get_segm_by_name("HEADER");
+    if (hdr_seg == NULL) {
+        DEBUG_MSG("[%s] hdr_seg == NULL \n", plugin_name);
+        return FTYPE_DXE_AND_THE_LIKE;
+    }
+    uint64_t signature = get_wide_word(hdr_seg->start_ea);
+    char fileName[512] = {0};
+    get_root_filename(fileName, sizeof(fileName));
+    auto fileNameStr = static_cast<string>(fileName);
+    if ((fileNameStr.find("Pei") != string::npos || signature == VZ) &&
+        arch == X86) {
+        DEBUG_MSG("[%s] Parsing binary file as PEI, signature = %x, "
+                  "hdr_seg->start_ea = %x\n",
+                  plugin_name, signature, hdr_seg->start_ea);
+        return FTYPE_PEI;
+    } else {
+        DEBUG_MSG("[%s] Parsing binary file as DXE/SMM, signature = %x, "
+                  "hdr_seg->start_ea = %x\n",
+                  plugin_name, signature, hdr_seg->start_ea);
+        return FTYPE_DXE_AND_THE_LIKE;
+    }
 }
 
 //--------------------------------------------------------------------------
@@ -96,6 +135,22 @@ string getBsComment(ea_t offset, uint8_t arch) {
             cmt += boot_services_table[i].prototype;
             cmt += "\n";
             cmt += boot_services_table[i].parameters;
+            break;
+        }
+    }
+    return cmt;
+}
+
+//--------------------------------------------------------------------------
+// Get Pei service description comment (X86 is assumed)
+string getPeiSvcComment(ea_t offset) {
+    string cmt = "";
+    cmt += "gPS->";
+    for (auto i = 0; i < pei_services_table_size; i++) {
+        if (offset == pei_services_table[i].offset) {
+            cmt += pei_services_table[i].name;
+            cmt += "()\n";
+            cmt += pei_services_table[i].prototype;
             break;
         }
     }
@@ -198,4 +253,50 @@ bool guidsJsonExists() {
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
     return (stat(guidsJsonPath.u8string().c_str(), &buffer) == 0);
+}
+
+//--------------------------------------------------------------------------
+// Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
+// for ModuleEntryPoint
+void setEntryArgToPeiSvc() {
+    for (auto idx = 0; idx < get_entry_qty(); idx++) {
+        uval_t ord = get_entry_ordinal(idx);
+        ea_t start_ea = get_entry(ord);
+        tinfo_t tif_ea;
+        if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
+            DEBUG_MSG("[%s] guess_tinfo failed, start_ea = 0x%016X, idx=%d\n",
+                plugin_name, start_ea, idx);
+            continue;
+        }
+
+        func_type_data_t funcdata;
+        if (!tif_ea.get_func_details(&funcdata)) {
+            DEBUG_MSG("[%s] get_func_details failed, %d\n", plugin_name, idx);
+            continue;
+        }
+        tinfo_t tif_pei;
+        bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
+        if (!res) {
+            DEBUG_MSG("[%s] get_named_type failed, res = %d, idx=%d\n",
+                plugin_name, res, idx);
+            continue;
+        }
+        tinfo_t ptrTinfo;
+        tinfo_t ptrPtrTinfo;
+        ptrTinfo.create_ptr(tif_pei);
+        ptrPtrTinfo.create_ptr(ptrTinfo);
+        funcdata[1].type = ptrPtrTinfo;
+        funcdata[1].name = "PeiServices";
+        tinfo_t func_tinfo;
+        if (!func_tinfo.create_func(funcdata)) {
+            DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name, idx);
+            continue;
+        }
+        if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
+            DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
+            continue;
+        }
+        DEBUG_MSG("[%s] setEntryArgToPeiSvc finished, idx=%d\n", plugin_name,
+            idx);
+    }
 }
