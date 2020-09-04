@@ -50,7 +50,11 @@ static const char welcome_msg[] =
 
 //--------------------------------------------------------------------------
 // Initialize
+#if IDA_SDK_VERSION == 740
+int idaapi init(void) {
+#else
 plugmod_t *idaapi init(void) {
+#endif
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
     inited = true;
@@ -73,7 +77,7 @@ bool idaapi run(size_t) {
         warning("%s: %s\n", plugin_name, msg_text.c_str());
         return false;
     }
-    uint8_t arch = getFileType();
+    uint8_t arch = getArch();
     if (arch == X64) {
         DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n",
                   plugin_name);

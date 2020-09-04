@@ -30,6 +30,7 @@
 
 #include "efiAnalysis.h"
 #include "efiUi.h"
+#include "tables/efi_pei_tables.h"
 #include "tables/efi_services.h"
 #include "thirdparty/libfort/fort.h"
 
@@ -38,6 +39,7 @@ using namespace efiAnalysis;
 static const char plugin_name[] = "efiXplorer";
 
 vector<ea_t> gStList;
+vector<ea_t> gPeiSvcList;
 vector<ea_t> gBsList;
 vector<ea_t> gRtList;
 vector<ea_t> gSmstList;
@@ -54,6 +56,8 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
 
     func_t *start_func = nullptr;
     func_t *end_func = nullptr;
+
+    this->fileType = getFileType();
 
     /* get start address for scan */
     start_func = getn_func(0);
@@ -88,6 +92,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     import_type(idati, -1, "EFI_BOOT_SERVICES");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
     import_type(idati, -1, "_EFI_SMM_SYSTEM_TABLE2");
+    import_type(idati, -1, "EFI_PEI_SERVICES");
 }
 
 efiAnalysis::efiAnalyzer::~efiAnalyzer() {}
@@ -688,6 +693,105 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
     }
     if (found) {
         msg("[%s] SMM services (all):\n", plugin_name);
+        msg(ft_to_string(table));
+    }
+    ft_destroy_table(table);
+}
+
+//--------------------------------------------------------------------------
+// Get all Pei services for X86 modules
+// Currently should cover all PeiServices except EFI_PEI_COPY_MEM,
+// EFI_PEI_SET_MEM, EFI_PEI_RESET2_SYSTEM, and "Future Installed Services"
+// (EFI_PEI_FFS_FIND_BY_NAME, etc.)
+void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
+    DEBUG_MSG("[%s] ========================================================\n",
+              plugin_name);
+    DEBUG_MSG("[%s] PeiServices finding from 0x%016X to 0x%016X (all)\n",
+              plugin_name, startAddress, endAddress);
+    ea_t ea = startAddress;
+    insn_t insn;
+    ft_table_t *table = ft_create_table();
+    ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+    ft_write_ln(table, " Address ", " Service ");
+    auto found = false;
+    while (ea <= endAddress) {
+        decode_insn(&insn, ea);
+        if (insn.itype == NN_callni &&
+            (insn.ops[0].reg == REG_EAX || insn.ops[0].reg == REG_ECX ||
+             insn.ops[0].reg == REG_EDX)) {
+            for (int j = 0; j < pei_services_table_size; j++) {
+                if (insn.ops[0].addr ==
+                    static_cast<ea_t>(pei_services_table[j].offset)) {
+                    bool found_src_reg = false;
+                    ea_t address = ea;
+                    insn_t aboveInst;
+                    uint16_t src_reg = 0xffff;
+                    /* 15 instructions above */
+                    for (auto j = 0; j < 15; j++) {
+                        address = prev_head(address, startAddress);
+                        decode_insn(&aboveInst, address);
+                        if (aboveInst.itype == NN_mov &&
+                            aboveInst.ops[0].type == o_reg &&
+                            aboveInst.ops[0].reg == insn.ops[0].reg &&
+                            aboveInst.ops[1].type == o_phrase) {
+                            found_src_reg = true;
+                            src_reg = aboveInst.ops[1].reg;
+                        }
+                    }
+
+                    bool found_push = false;
+                    /* 15 instructions above */
+                    address = ea;
+                    for (auto j = 0; j < 15; j++) {
+                        address = prev_head(address, startAddress);
+                        decode_insn(&aboveInst, address);
+                        if (aboveInst.itype == NN_push) {
+                            if (aboveInst.ops[0].type == o_reg &&
+                                aboveInst.ops[0].reg == src_reg) {
+                                found_push = true;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (found_src_reg && found_push) {
+                        string cmt = getPeiSvcComment(
+                            static_cast<ea_t>(pei_services_table[j].offset));
+                        set_cmt(ea, cmt.c_str(), true);
+                        /* op_stroff */
+                        opStroff(ea, "EFI_PEI_SERVICES");
+                        /* add line to table */
+                        ft_printf_ln(
+                            table, " 0x%016X | %s",
+                            static_cast<unsigned int>(ea),
+                            static_cast<char *>(pei_services_table[j].name));
+                        DEBUG_MSG(
+                            "[%s] 0x%016X : %s\n",
+                            plugin_name, ea,
+                            static_cast<char *>(pei_services_table[j].name));
+                        peiServicesAll[static_cast<string>(
+                                           pei_services_table[j].name)]
+                            .push_back(ea);
+                        json psItem;
+                        psItem["address"] = ea;
+                        psItem["service_name"] =
+                            static_cast<string>(pei_services_table[j].name);
+                        psItem["table_name"] =
+                            static_cast<string>("EFI_PEI_SERVICES");
+                        psItem["offset"] = pei_services_table[j].offset;
+                        if (find(allServices.begin(), allServices.end(),
+                            psItem) == allServices.end()) {
+                            allServices.push_back(psItem);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        ea = next_head(ea, BADADDR);
+    }
+    if (found) {
+        msg("[%s] Pei services (all):\n", plugin_name);
         msg(ft_to_string(table));
     }
     ft_destroy_table(table);
@@ -1432,35 +1536,37 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     };
 
     /* find global vars for gImageHandle, gST, gBS, gRT, gSmst */
-    analyzer.findImageHandleX64();
-    analyzer.findSystemTableX64();
-    analyzer.findBootServicesTables(X64);
-    analyzer.findRuntimeServicesTables(X64);
-    analyzer.findSmstX64();
+    if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+        analyzer.findImageHandleX64();
+        analyzer.findSystemTableX64();
+        analyzer.findBootServicesTables(X64);
+        analyzer.findRuntimeServicesTables(X64);
+        analyzer.findSmstX64();
 
-    /* find boot services and runtime services */
-    analyzer.getAllRuntimeServices(X64);
-    analyzer.getProtBootServicesX64();
+        /* find boot services and runtime services */
+        analyzer.getAllRuntimeServices(X64);
+        analyzer.getProtBootServicesX64();
 
-    /* other addresses of global gBS values finding */
-    analyzer.findOtherBsTablesX64();
-    analyzer.getAllBootServices(X64);
+        /* other addresses of global gBS values finding */
+        analyzer.findOtherBsTablesX64();
+        analyzer.getAllBootServices(X64);
 
-    /* find smm services */
-    analyzer.getAllSmmServicesX64();
+        /* find smm services */
+        analyzer.getAllSmmServicesX64();
 
-    /* print and mark protocols */
-    analyzer.getBsProtNamesX64();
-    analyzer.getSmmProtNamesX64();
-    analyzer.printProtocols();
-    analyzer.markProtocols();
+        /* print and mark protocols */
+        analyzer.getBsProtNamesX64();
+        analyzer.getSmmProtNamesX64();
+        analyzer.printProtocols();
+        analyzer.markProtocols();
 
-    /* mark GUIDs */
-    analyzer.markDataGuids();
-    analyzer.markLocalGuidsX64();
+        /* mark GUIDs */
+        analyzer.markDataGuids();
+        analyzer.markLocalGuidsX64();
 
-    /* find SwSmiHandler function */
-    analyzer.findSwSmiHandler();
+        /* find SwSmiHandler function */
+        analyzer.findSwSmiHandler();
+    }
 
     /* show all choosers windows */
     showAllChoosers(analyzer);
@@ -1477,19 +1583,24 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         auto_wait();
     };
 
-    /* find global vars for gST, gBS, gRT */
-    analyzer.findBootServicesTables(X86);
-    analyzer.findRuntimeServicesTables(X86);
+    if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+        /* find global vars for gST, gBS, gRT */
+        analyzer.findBootServicesTables(X86);
+        analyzer.findRuntimeServicesTables(X86);
 
-    /* find boot services and runtime services */
-    analyzer.getAllRuntimeServices(X86);
-    analyzer.getProtBootServicesX86();
-    analyzer.getAllBootServices(X86);
+        /* find boot services and runtime services */
+        analyzer.getAllRuntimeServices(X86);
+        analyzer.getProtBootServicesX86();
+        analyzer.getAllBootServices(X86);
 
-    /* print and mark protocols */
-    analyzer.getBsProtNamesX86();
-    analyzer.printProtocols();
-    analyzer.markProtocols();
+        /* print and mark protocols */
+        analyzer.getBsProtNamesX86();
+        analyzer.printProtocols();
+        analyzer.markProtocols();
+    } else if (analyzer.fileType == FTYPE_PEI) {
+        setEntryArgToPeiSvc();
+        analyzer.getAllPeiServicesX86();
+    }
 
     /* mark GUIDs */
     analyzer.markDataGuids();
