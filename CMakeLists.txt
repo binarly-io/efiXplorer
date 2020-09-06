@@ -42,6 +42,9 @@ ida_target_link_libraries(efiXplorer efiUtils)
 add_ida_library(efiSmmUtils ${PROJECT_SOURCE_DIR}/src/efiSmmUtils.cpp)
 ida_target_link_libraries(efiXplorer efiSmmUtils)
 
+add_ida_library(efiHexRays ${PROJECT_SOURCE_DIR}/src/efiHexRays.cpp)
+ida_target_link_libraries(efiXplorer efiHexRays)
+
 add_ida_library(efiUi ${PROJECT_SOURCE_DIR}/src/efiUi.cpp)
 ida_target_link_libraries(efiXplorer efiUi)
 

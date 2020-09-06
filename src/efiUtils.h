@@ -51,7 +51,11 @@
 
 using namespace nlohmann;
 using namespace std;
-using namespace std::filesystem;
+#ifdef __NT__
+	using namespace std::experimental::filesystem;
+#else
+	using namespace std::filesystem;
+#endif
 
 /* undefine to hide debug messages */
 #define DEBUG

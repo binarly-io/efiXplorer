@@ -1326,7 +1326,7 @@ void efiAnalysis::efiAnalyzer::markProtocols() {
         }
         char hexAddr[21] = {};
         snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(address));
-        string protName = static_cast<string>(protItem["prot_name"]);
+        string protName = protItem["prot_name"].get<std::string>();
         string name = protName + "_" + static_cast<string>(hexAddr);
         set_name(address, name.c_str(), SN_CHECK);
         setGuidType(address);

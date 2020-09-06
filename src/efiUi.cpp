@@ -88,8 +88,8 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_guids[n];
-    string guid = static_cast<string>(item["guid"]);
-    string name = static_cast<string>(item["name"]);
+    string guid = item["guid"].get<std::string>();
+    string name = item["name"].get<std::string>();
     cols[0].sprnt("%016X", ea);
     cols[1].sprnt("%s", guid.c_str());
     cols[2].sprnt("%s", name.c_str());
@@ -113,8 +113,8 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
     auto guid = item["guid"];
-    string name = static_cast<string>(item["prot_name"]);
-    string service = static_cast<string>(item["service"]);
+    string name = item["prot_name"].get<std::string>();
+    string service = item["service"].get<std::string>();
     char protGuid[37] = {0};
     snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
              static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
@@ -143,8 +143,8 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
-    string service_name = static_cast<string>(item["service_name"]);
-    string table_name = static_cast<string>(item["table_name"]);
+    string service_name = item["service_name"].get<std::string>();
+    string table_name = item["table_name"].get<std::string>();
     cols[0].sprnt("%016X", ea);
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
