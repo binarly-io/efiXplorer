@@ -51,11 +51,7 @@
 
 using namespace nlohmann;
 using namespace std;
-#ifdef __NT__
-	using namespace std::experimental::filesystem;
-#else
-	using namespace std::filesystem;
-#endif
+using namespace std::filesystem;
 
 /* undefine to hide debug messages */
 #define DEBUG
@@ -129,7 +125,7 @@ using namespace std;
  * (X64 or X86) */
 uint8_t getArch();
 /* Get input file type
-* (PEI or DXE-like) */
+ * (PEI or DXE-like) */
 uint8_t getFileType();
 /* Set EFI_GUID type */
 void setGuidType(ea_t ea);
