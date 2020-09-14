@@ -96,7 +96,7 @@ We try to make the build process for different platforms very simple, just use t
 ## Build script
 
 ```
-Usage: build.py [OPTIONS] IDASDK HEXRAYSSDK
+Usage: build.py [OPTIONS] IDASDK_DIR
 
 Options:
   --copy TEXT  path to IDA plugins directory
@@ -106,7 +106,7 @@ Options:
 example of build process:
 
 ```bash
-./build.py <IDASDK75_DIR> <HEXRAYSSDK_DIR> 
+./build.py <IDASDK75_DIR>
 ```
 
 ## Compilation with cmake

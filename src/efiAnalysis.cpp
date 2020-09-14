@@ -117,6 +117,7 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
 void efiAnalysis::efiAnalyzer::getSegments() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] search for .text and .data segments\n", plugin_name);
     for (segment_t *s = get_first_seg(); s != NULL;
          s = get_next_seg(s->start_ea)) {
         qstring seg_name;
@@ -239,6 +240,7 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
 bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] BootServices tables finding\n", plugin_name);
     /* init architecture-specific constants */
     auto BS_OFFSET = BS_OFFSET_X64;
     auto REG_SP = REG_RSP;
@@ -381,6 +383,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
 bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] RuntimeServices tables finding\n", plugin_name);
     /* init architecture-specific constants */
     auto RT_OFFSET = RT_OFFSET_X64;
     auto REG_SP = REG_RSP;
@@ -523,6 +526,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] BootServices finding (all)\n", plugin_name)
     if (!gBsList.size()) {
         return;
     }
@@ -623,6 +627,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
 void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] RuntimeServices finding (all)\n", plugin_name);
     if (!gRtList.size()) {
         return;
     }
@@ -634,8 +639,9 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     for (vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
-        DEBUG_MSG("[%s] RuntimeServices finding from 0x%016X to 0x%016X\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        DEBUG_MSG(
+            "[%s] RuntimeServices finding from 0x%016X to 0x%016X (all)\n",
+            plugin_name, s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
@@ -926,6 +932,7 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
 void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
+    DEBUG_MSG("[%s] BootServices finding (protocols)\n", plugin_name)
     insn_t insn;
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
