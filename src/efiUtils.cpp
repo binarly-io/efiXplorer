@@ -72,6 +72,16 @@ void setGuidType(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
+// Set type and name
+void setTypeAndName(ea_t ea, string name, string type) {
+    set_name(ea, name.c_str(), SN_CHECK);
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(get_idati(), type.c_str())) {
+        apply_tinfo(ea, tinfo, TINFO_DEFINITE);
+    }
+}
+
+//--------------------------------------------------------------------------
 // Get input file architecture (bit width X64 or X86)
 uint8_t getArch() {
     char fileType[256] = {};
@@ -87,6 +97,11 @@ uint8_t getArch() {
         /* Portable executable for 80386 (PE) */
         return X86;
     }
+    index = fileTypeStr.find("UEFI");
+    if (index != string::npos) {
+        /* UEFI firmware */
+        return UEFI;
+    }
     return 0;
 }
 
@@ -95,6 +110,9 @@ uint8_t getArch() {
 // file type given only its PE/TE image section, so hello heuristics
 uint8_t getFileType() {
     uint8_t arch = getArch();
+    if (arch == UEFI) {
+        return FTYPE_DXE_AND_THE_LIKE;
+    }
     segment_t *hdr_seg = get_segm_by_name("HEADER");
     if (hdr_seg == NULL) {
         DEBUG_MSG("[%s] hdr_seg == NULL \n", plugin_name);
@@ -252,7 +270,7 @@ bool guidsJsonExists() {
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
-    return (stat(guidsJsonPath.u8string().c_str(), &buffer) == 0);
+    return std::filesystem::exists(guidsJsonPath);
 }
 
 //--------------------------------------------------------------------------
@@ -265,7 +283,7 @@ void setEntryArgToPeiSvc() {
         tinfo_t tif_ea;
         if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
             DEBUG_MSG("[%s] guess_tinfo failed, start_ea = 0x%016X, idx=%d\n",
-                plugin_name, start_ea, idx);
+                      plugin_name, start_ea, idx);
             continue;
         }
 
@@ -278,7 +296,7 @@ void setEntryArgToPeiSvc() {
         bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
         if (!res) {
             DEBUG_MSG("[%s] get_named_type failed, res = %d, idx=%d\n",
-                plugin_name, res, idx);
+                      plugin_name, res, idx);
             continue;
         }
         tinfo_t ptrTinfo;
@@ -297,6 +315,6 @@ void setEntryArgToPeiSvc() {
             continue;
         }
         DEBUG_MSG("[%s] setEntryArgToPeiSvc finished, idx=%d\n", plugin_name,
-            idx);
+                  idx);
     }
 }

@@ -1,5 +1,4 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-[![Join the chat at https://gitter.im/efiXplorer/dev](https://badges.gitter.im/efiXplorer/efiXplorer.svg)](https://gitter.im/efiXplorer/dev?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 **efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation :octocat:
 
@@ -15,77 +14,147 @@ __Why not IDApython:__ all code developed in C++ because it's a more stable and 
 
 __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
-![overview](img/overview.gif)
+![overview](pics/efiXplorer_new_1.gif)
 
-# Key features
+# efiXplorer Key features
 
 ## Identify available Boot Services automatically
 
 Annotate assembly code automatically with available Boot Services
 
-![bs2](img/bs2.png)
+![bs](pics/efiXplorer_new_2.gif)
 
 ## Identify available Runtime Services automatically
 
 Annotate assembly code automatically with available Runtime Services
 
-![rt2](img/rt2.png)
+![rt](pics/efiXplorer_new_3.gif)
 
-## Identify available SMM Services automatically
+## Identify available SMM services automatically
 
-| Before analysis | After analysis |
-| --- | --- |
-| ![smm_before](img/smm_before.png) | ![smm_after](img/smm_after.png) |
+Annotate assembly code automatically with available SMM Services
+
+![efiXplorer_new_6](pics/efXplorer_new_6.gif)
+
+## Identify available PEI services automatically
+
+Annotate assembly code automatically with available PEI Services
+
+![efiXplorer_new_6](pics/efXplorer_new_7.gif)
+
 
 ## Identify available EFI Protocols automatically
 
 * Build the list of available EFI Protocols
 
-    ![protocols](img/protocols.png)
+![protocols](pics/efiXplorer_new_4.gif)
 
 ## Identify known EFI GUID's
 
 * Build the list of available EFI GUID's (including protocol name identification)
 
-    ![guids](img/guids.png)
+![guids](pics/efiXplorer_new_5.gif)
 
-# efiXplorer Architecture
+# efiXloader Key features
 
-From the beginning of the project, we focus on building extensible architecture to make our  life easier to support the current version and adding new features :rocket:
+* `efiXloader` is an IDA Pro loader module, responsible for processing UEFI drivers within single IDA Pro instance.
 
-![arch](img/arch.png)
+![loader_1.gif](pics/loader_1.gif)
+
+## UEFI drivers entry points identification
+
+* During UEFI drivers analysis `efiXloader` identifies each driver's entry.
+
+![loader_2.gif](pics/loader_6.gif)
+
+## Navigation between different UEFI drivers
+
+* Each UEFI driver is accessible within single IDA Pro instance for reverse-engineering.
+
+![loader_3.gif](pics/loader_3.gif)
+
+## UEFI drivers extraction
+
+* All processed UEFI drivers are dropped into prepared folder.
+
+![loader_4.gif](pics/loader_4.gif)
+
+## efiXplorer + efiXloader in action
+
+* All `efiXplorer` analysis capabilities can be applied to the whole UEFI firmware image.
+
+![loader_5.gif](pics/loader_5.gif)
+
+## SMI handlers identification within the whole firmware
+
+![loader_5.gif](pics/loader_7.gif)
 
 # Build instruction
 
-We try to make the build process for different platforms very simple, just use the build script to automate this process🐍
+We try to make the build process for different platforms very simple, just use the build script to automate this process.
 
 ## Build script
 
 ```
-Usage: build.py [OPTIONS] IDASDK_DIR
+Usage: build.py [OPTIONS] IDASDK HEXRAYSSDK
 
 Options:
-  -c, --copy TEXT  path to IDA plugins directory
-  --help           Show this message and exit.
+  --copy TEXT  path to IDA plugins directory
+  --help       Show this message and exit.
 ```
 
 example of build process:
 
 ```bash
-./build.py <IDASDK75_DIR>
+./build.py <IDASDK75_DIR> <HEXRAYSSDK_DIR> 
+```
+
+## Compilation with cmake
+
+```
+mkdir build
+cd build
+cmake .. -DIdaSdk_ROOT_DIR="/path/to/idasdk"
+cmake --build . --config Release
+```
+
+## efiXloader compilation and installation
+
+The common steps are next.
+
+```bash
+cd efiXloader
+mkdir build
+cd build
+cmake .. -DIdaSdk_ROOT_DIR="/path/to/idasdk"
+cmake --build . --config Release
 ```
 
 # Installation
 
-Copy compiled binaries of efiXplorer plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
+## efiXplorer
 
-# References 
-__For IDA:__
-* https://github.com/yeggor/UEFI_RETool 
-* https://github.com/gdbinit/EFISwissKnife 
+Copy compiled binaries of `efiXplorer` plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
+
+## efiXloader
+
+Copy `builds/efiXloader64.dll` to `<IDA_DIR>/loaders/efiXloader64.dll`
+
+# Features summary table
+
+| Feature \ Bitness | 32-bit | 64-bit |
+| --- | --- | --- |
+| Boot Services | + | + |
+| Runtime Services | + | + |
+| SMM services | - | + |
+| PEI Services | + | - |
+| Loader | - | + |
+
+# References
+
+* https://github.com/LongSoft/UEFITool
+* https://github.com/yeggor/UEFI_RETool
+* https://github.com/gdbinit/EFISwissKnife
 * https://github.com/snare/ida-efiutils
-
-__For Ghidra:__
 * https://github.com/al3xtjames/ghidra-firmware-utils
 * https://github.com/DSecurity/efiSeek
-

@@ -1,0 +1,83 @@
+name: Builds for Windows, Linux and OSX
+on:
+  push:
+  pull_request:
+jobs:
+  build_windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: cmd
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "%IDA_SDK75%"
+          unzip -P "%PASSWORD%" idasdk.zip
+      - name: Build efiXloader
+        run: |
+          cd efiXloader
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="..\..\idasdk75"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXloader64.dll
+          path: efiXloader/build/Release/efiXloader64.dll
+  build_linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: bash
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "$IDA_SDK75"
+          unzip -P $PASSWORD idasdk.zip
+      - name: Build efiXloader
+        run: |
+          cd efiXloader
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk75"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXloader64.so
+          path: efiXloader/build/libefiXloader64.so
+  build_osx:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+      - name: Dowload IDA SDK
+        shell: bash
+        env:
+          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+        run: |
+          cd ..
+          curl -O -J -L "$IDA_SDK75"
+          unzip -P $PASSWORD idasdk.zip
+      - name: Build efiXloader
+        run: |
+          cd efiXloader
+          mkdir build
+          cd build
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk75"
+          cmake --build . --config Release
+      - uses: actions/upload-artifact@master
+        with:
+          name: efiXloader64.dylib
+          path: efiXloader/build/efiXloader64.dylib
