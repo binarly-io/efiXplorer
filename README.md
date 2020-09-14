@@ -8,11 +8,11 @@ __Contributors__:
 * Philip Lebedev ([@p41l](https://github.com/p41l/))
 * Yegor Vasilenko ([@yeggor](https://github.com/yeggor/))
 
-__Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because trying to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
+__Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because we try to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
 
 __Why not IDApython:__ all code developed in C++ because it's a more stable and performant way to support a complex plugin and get full power of most recent SDK's features.
 
-__Supported Platforms:__ Win, Linux and OSX (x86/x64).
+__Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 
 ![overview](pics/efiXplorer_new_1.gif)
 
@@ -20,38 +20,38 @@ __Supported Platforms:__ Win, Linux and OSX (x86/x64).
 
 ## Identify available Boot Services automatically
 
-Annotate assembly code automatically with available Boot Services
+Annotate Boot Services calls in assembly code automatically
 
 ![bs](pics/efiXplorer_new_2.gif)
 
 ## Identify available Runtime Services automatically
 
-Annotate assembly code automatically with available Runtime Services
+Annotate Runtime Services calls in assembly code automatically
 
 ![rt](pics/efiXplorer_new_3.gif)
 
 ## Identify available SMM services automatically
 
-Annotate assembly code automatically with available SMM Services
+Annotate SMM Services calls in assembly code automatically
 
 ![efiXplorer_new_6](pics/efXplorer_new_6.gif)
 
 ## Identify available PEI services automatically
 
-Annotate assembly code automatically with available PEI Services
+Annotate PEI Services calls in assembly code automatically
 
 ![efiXplorer_new_6](pics/efXplorer_new_7.gif)
 
 
 ## Identify available EFI Protocols automatically
 
-* Build the list of available EFI Protocols
+* Build the list of EFI Protocols firmware consumes and installes
 
 ![protocols](pics/efiXplorer_new_4.gif)
 
 ## Identify known EFI GUID's
 
-* Build the list of available EFI GUID's (including protocol name identification)
+* Build the list of identified EFI GUID's (including protocol names for known GUIDS)
 
 ![guids](pics/efiXplorer_new_5.gif)
 
@@ -81,7 +81,7 @@ Annotate assembly code automatically with available PEI Services
 
 ## efiXplorer + efiXloader in action
 
-* All `efiXplorer` analysis capabilities can be applied to the whole UEFI firmware image.
+* All `efiXplorer` analysis capabilities can be applied to the whole UEFI firmware image (instead of reverse-engineering each single executable in a separate IDA session)
 
 ![loader_5.gif](pics/loader_5.gif)
 
@@ -91,7 +91,7 @@ Annotate assembly code automatically with available PEI Services
 
 # Build instruction
 
-We try to make the build process for different platforms very simple, just use the build script to automate this process.
+We try to make the build process for all supported platforms very simple, just use the build script to automate this process.
 
 ## Build script
 
