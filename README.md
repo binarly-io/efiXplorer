@@ -138,7 +138,7 @@ Copy compiled binaries of `efiXplorer` plugin and `guids` directory to `<IDA_DIR
 
 ## efiXloader
 
-Copy `builds/efiXloader64.dll` to `<IDA_DIR>/loaders/efiXloader64.dll`
+Copy `builds/efiXloader64.dll` to `<IDA_DIR>/loaders`.
 
 # Features summary table
 
