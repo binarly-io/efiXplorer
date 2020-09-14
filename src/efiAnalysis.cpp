@@ -209,7 +209,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                 set_cmt(ea, "EFI_SYSTEM_TABLE gST", true);
                 string name = "gST_" + static_cast<string>(hexAddr);
                 /* set type and name */
-                setTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                 gStList.push_back(insn.ops[0].addr);
                 return true;
             }
@@ -423,11 +423,8 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                           "= 0x%016X\n",
                                           plugin_name, ea, insn.ops[0].addr);
                                 baseInsnAddr = ea;
-                                if ((find(gRtList.begin(), gRtList.end(),
-                                          insn.ops[0].addr) == gRtList.end() &&
-                                     (find(gBsList.begin(), gBsList.end(),
-                                           insn.ops[0].addr) ==
-                                      gBsList.end()))) {
+                                if (find(gRtList.begin(), gRtList.end(),
+                                         insn.ops[0].addr) == gRtList.end()) {
                                     char hexAddr[21] = {};
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(
@@ -450,7 +447,11 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                           "0x%016X\n",
                                           plugin_name, ea, insn.ops[0].addr);
                                 if (find(gStList.begin(), gStList.end(),
-                                         insn.ops[0].addr) == gStList.end()) {
+                                         insn.ops[0].addr) == gStList.end() &&
+                                    find(gBsList.begin(), gBsList.end(),
+                                         insn.ops[0].addr) == gBsList.end() &&
+                                    find(gRtList.begin(), gRtList.end(),
+                                         insn.ops[0].addr) == gRtList.end()) {
                                     char hexAddr[21] = {};
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(
