@@ -88,6 +88,10 @@ bool idaapi run(size_t) {
                   plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
+    if (arch == UEFI) {
+        DEBUG_MSG("[%s] input file is UEFI firmware\n", plugin_name);
+        efiAnalysis::efiAnalyzerMainX64();
+    }
     return true;
 }
 

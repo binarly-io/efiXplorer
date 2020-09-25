@@ -37,6 +37,8 @@ struct efiGuid {
     uint8_t data4[8];
 };
 
-vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList);
-vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList);
-func_t *findSmiHandlerSmmSwDispatch();
+vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
+                                vector<segment_t *> dataSegments);
+vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
+                             vector<segment_t *> dataSegments);
+vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments);

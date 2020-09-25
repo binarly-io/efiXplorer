@@ -28,10 +28,12 @@
  *
  */
 
-#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS // TODO: need a fix in future
 
+/* 3rd party */
 #include "fort.h"
 #include "json.hpp"
+
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
@@ -48,6 +50,13 @@
 #include <string>
 #include <struct.hpp>
 #include <typeinf.hpp>
+
+/* HexRays */
+#ifdef HEX_RAYS
+#define HEX_RAYS 0
+/* support build without Hex-Rays Decompiler features */
+#include <hexrays.hpp>
+#endif
 
 using namespace nlohmann;
 using namespace std;
@@ -67,6 +76,7 @@ using namespace std::filesystem;
 /* architectures */
 #define X86 32
 #define X64 64
+#define UEFI 96
 
 /* (FFS) file type */
 #define FTYPE_DXE_AND_THE_LIKE 7
@@ -153,3 +163,5 @@ bool guidsJsonExists();
 /* Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
 /* for ModuleEntryPoint */
 void setEntryArgToPeiSvc();
+/* Set type and name */
+void setTypeAndName(ea_t ea, string name, string type);
