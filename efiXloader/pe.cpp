@@ -694,8 +694,8 @@ void efiloader::PE::preprocess() {
                     ea_t block_ptr = relocs_va + 8;
                     while (block_reloc_count--) {
                         uint16_t reloc_value = get_word(block_ptr);
-                        uint16_t type = (reloc_value >> 12) & 0xF;
-                        uint16_t offset = (reloc_value >> 0) & 0xFFF;
+                        uint16_t type = reloc_value & PER_TYPE;
+                        uint16_t offset = reloc_value & PER_OFF;
                         if (type == PER_DIR64)
                             add_qword(block_base + offset, delta);
                         else if (type == PER_HIGHLOW)
