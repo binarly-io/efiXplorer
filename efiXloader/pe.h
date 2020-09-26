@@ -39,7 +39,7 @@
 #include "utils.h"
 
 #include <typeinf.hpp>
-#include <windows.h>
+
 #define PAGE_SIZE 0x1000
 
 #define MZ_SIGN 0x5A4D       // MZ header

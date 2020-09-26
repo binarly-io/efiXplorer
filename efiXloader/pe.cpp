@@ -584,6 +584,7 @@ void efiloader::PE::preprocess() {
     set_cmt(next_ea, "Base of code", 0);
     make_entry(get_dword(next_ea));
     next_ea += 4;
+    uint64_t default_image_base = get_qword(next_ea);
     create_qword(next_ea, 8);
     set_cmt(next_ea, "Image base", 0);
     op_hex(next_ea, 0);
@@ -677,6 +678,41 @@ void efiloader::PE::preprocess() {
     uint32_t size = 0;
     next_ea += 4;
     for (int i = 0; i < number_of_dirs; i++) {
+        if (is_reloc_dir(i)) {
+            uint32_t relocs_rva = get_dword(next_ea);
+            uint32_t relocs_size = get_dword(next_ea + 4);
+            if (relocs_rva && relocs_size) {
+                ea_t relocs_va = image_base + relocs_rva;
+                ea_t relocs_va_end = relocs_va + relocs_size;
+                ea_t delta = image_base - default_image_base;
+                ea_t block_addr = get_dword(relocs_va);
+                ea_t block_size = get_dword(relocs_va + 4);
+                while (block_size && relocs_va < relocs_va_end) {
+                    ea_t block_base = image_base + block_addr;
+                    int block_reloc_count = (block_size - 8) / 2;
+
+                    ea_t block_ptr = relocs_va + 8;
+                    while (block_reloc_count--) {
+                        uint16_t reloc_value = get_word(block_ptr);
+                        uint16_t type = (reloc_value >> 12) & 0xF;
+                        uint16_t offset = (reloc_value >> 0) & 0xFFF;
+                        if (type == PER_DIR64)
+                            add_qword(block_base + offset, delta);
+                        else if (type == PER_HIGHLOW)
+                            add_dword(block_base + offset, (uint32_t)delta);
+                        else if (type == PER_HIGH)
+                            add_word(block_base + offset, (uint16_t)(delta >> 16));
+                        else if (type == PER_LOW)
+                            add_word(block_base + offset, (uint16_t)delta);
+                        block_ptr += 2;
+                    }
+                    relocs_va += block_size;
+
+                    block_addr = get_dword(relocs_va);
+                    block_size = get_dword(relocs_va + 4);
+                }
+            }
+        }
         if (is_reloc_dir(i) || is_debug_dir(i)) {
             add_extra_cmt(next_ea, true, DIRECTORIES[i]);
             create_dword(next_ea, 4);
