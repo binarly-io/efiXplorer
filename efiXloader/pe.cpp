@@ -308,7 +308,7 @@ segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
 
 int efiloader::PE::preprocess_sections() {
     qlseek(li, _pe_header_off);
-    qlread(li, &pe, sizeof(peheader_t) + sizeof(uint32_t));
+    qlread(li, &pe, sizeof(peheader_t));
 
     // x86
     number_of_sections = pe.nobjs;
