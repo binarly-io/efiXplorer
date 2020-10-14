@@ -90,29 +90,3 @@ jobs:
         with:
           name: efiXplorer64.dylib
           path: build/efiXplorer64.dylib
-  build_efixloader_windows:
-    runs-on: windows-2019
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: true
-      - name: Dowload IDA SDK
-        shell: cmd
-        env:
-          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
-          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
-        run: |
-          cd ..
-          curl -O -J -L "%IDA_SDK75%"
-          unzip -P "%PASSWORD%" idasdk.zip
-      - name: Build efiXplorer
-        run: |
-          cd efiXloader
-          mkdir build
-          cd build
-          cmake .. -DIdaSdk_ROOT_DIR="..\..\idasdk75"
-          cmake --build . --config Release
-      - uses: actions/upload-artifact@master
-        with:
-          name: efiXloader64.dll
-          path: efiXloader/build/Release/efiXloader64.dll
