@@ -148,6 +148,8 @@ Copy `builds/efiXloader64.dll` to `<IDA_DIR>/loaders`.
 | Runtime Services | + | + |
 | SMM services | - | + |
 | PEI Services | + | - |
+| Protocols | + | + |
+| GUIDS | + | + | 
 | Loader | - | + |
 
 # References
