@@ -1740,7 +1740,8 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         analyzer.printProtocols();
         analyzer.markProtocols();
     } else if (analyzer.fileType == FTYPE_PEI) {
-        setEntryArgToPeiSvc();
+        /* TODO: fix setEntryArgToPeiSvc function
+         * setEntryArgToPeiSvc(); */
         analyzer.getAllPeiServicesX86();
     }
 
