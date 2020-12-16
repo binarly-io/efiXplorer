@@ -105,7 +105,15 @@ class PE {
     inline ea_t skip(ea_t ea, qoff64_t off) { return ea + off; };
     // ida db processing
     void push_to_idb(ea_t start, ea_t end) {
-        file2base(li, 0x0, start, end, FILEREG_PATCHABLE);
+        // Map header
+        file2base(li, 0x0, start, start + headers_size, FILEREG_PATCHABLE);
+        // Map sections
+        for (int i = 0; i < number_of_sections; i++) {
+            file2base(li, _sec_headers[i].s_scnptr,
+                      start + _sec_headers[i].s_vaddr,
+                      start + _sec_headers[i].s_vaddr  + _sec_headers[i].s_psize,
+                      FILEREG_PATCHABLE);
+        }
     };
 
   private:
@@ -113,13 +121,11 @@ class PE {
     std::basic_string<char> _full_path;
     std::basic_string<char> _image_name;
     efiloader::Utils *utils;
-    segment_t *code_segm;
-    segment_t *data_segm;
-    segment_t *unk_segm;
     linput_t *li;
     qoff64_t head_start();
     qoff64_t head_off;
     qoff64_t _pe_header_off;
+    uint16_t headers_size;
     peheader_t pe;
     peheader64_t pe64;
     uint16_t _sec_num;
@@ -146,10 +152,12 @@ class PE {
     // pe ord
     uval_t _ord;
     ea_t image_base;
+    uint32_t image_size;
     qvector<size_t> segm_sizes;
     qvector<size_t> segm_raw_sizes;
     qvector<ea_t> segm_entries;
-    int process_sections();
+
+    int preprocess_sections();
     //
     // functions processing
     //
@@ -165,9 +173,8 @@ class PE {
     qvector<qstring> segm_names;
     qvector<qstring> secs_names;
     ea_t process_section_entry(ea_t ea);
-    segment_t *make_code_segment(ea_t start, ea_t end, char *name);
-    segment_t *make_data_segment(ea_t start, ea_t end, char *name);
-    segment_t *make_unkn_segment(ea_t start, ea_t end, char *name);
+    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
+                                 char *section_name, uint32_t flags);
     segment_t *make_head_segment(ea_t start, ea_t end, char *name);
     void setup_ds_selector();
 };

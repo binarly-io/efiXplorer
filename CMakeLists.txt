@@ -5,6 +5,7 @@ project(efiXplorer CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fPIC)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -24,8 +25,6 @@ if(MSVC)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${HexRaysSdk_INCLUDE_DIRS})
-# 3rd
 include_directories(${PROJECT_SOURCE_DIR}/src/thirdparty/nlohmann_json)
 include_directories(${PROJECT_SOURCE_DIR}/src/thirdparty/libfort)
 
@@ -42,6 +41,9 @@ ida_target_link_libraries(efiXplorer efiUtils)
 
 add_ida_library(efiSmmUtils ${PROJECT_SOURCE_DIR}/src/efiSmmUtils.cpp)
 ida_target_link_libraries(efiXplorer efiSmmUtils)
+
+# add_ida_library(efiHexRays ${PROJECT_SOURCE_DIR}/src/efiHexRays.cpp)
+# ida_target_link_libraries(efiXplorer efiHexRays)
 
 add_ida_library(efiUi ${PROJECT_SOURCE_DIR}/src/efiUi.cpp)
 ida_target_link_libraries(efiXplorer efiUi)

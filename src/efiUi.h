@@ -83,7 +83,7 @@ class guids_chooser_t : public chooser_t {
 
 //-------------------------------------------------------------------------
 // protocols chooser
-class protocols_chooser_t : public chooser_t {
+class interfaces_chooser_t : public chooser_t {
   protected:
     static const int widths_protocols[];
     static const char *const header_protocols[];
@@ -92,9 +92,11 @@ class protocols_chooser_t : public chooser_t {
     /* remember the addresses in this qvector */
     eavec_t list;
     json chooser_protocols;
+    string name_key;
 
     /* this object must be allocated using `new` */
-    protocols_chooser_t(const char *title, bool ok, vector<json> protocols);
+    interfaces_chooser_t(const char *title, bool ok, vector<json> interfaces,
+                         string name_key);
 
     /* function that is used to decide whether a new chooser should be opened or
      * we can use the existing one. The contents of the window are completely
@@ -187,4 +189,5 @@ class s_chooser_t : public chooser_t {
 
 bool guids_show(vector<json> guid, qstring title);
 bool protocols_show(vector<json> protocols, qstring title);
+bool ppis_show(vector<json> protocols, qstring title);
 bool services_show(vector<json> services, qstring title);

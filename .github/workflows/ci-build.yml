@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DHEX_RAYS=1 -DIdaSdk_ROOT_DIR="..\idasdk75" -DHexRaysSdk_ROOT_DIR="..\hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="..\idasdk75"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DHEX_RAYS=1 -DIdaSdk_ROOT_DIR="../idasdk75" -DHexRaysSdk_ROOT_DIR="../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -80,7 +80,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DHEX_RAYS=1 -DIdaSdk_ROOT_DIR="../idasdk75" -DHexRaysSdk_ROOT_DIR="../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:

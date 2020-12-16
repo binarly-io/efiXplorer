@@ -65,3 +65,17 @@ if(UNIX AND NOT APPLE)
                       "-Wl,--version-script=${PROJECT_SOURCE_DIR}/exports.def")
   set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "efiXloader64")
 endif()
+
+if(APPLE)
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__X64__")
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__MAC__")
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__EA64__")
+  set(IDA_LIB_DIR
+      "${IDA_SDK}/lib/x64_mac_clang_64"
+      CACHE PATH "IDA SDK library path" FORCE)
+  target_link_libraries(${CMAKE_PROJECT_NAME} "${IDA_LIB_DIR}/libida64.dylib"
+                        "${IDA_LIB_DIR}/pro.a")
+  # target_link_options(${CMAKE_PROJECT_NAME} PUBLIC
+  # "-Wl,--version-script=${PROJECT_SOURCE_DIR}/exports.def")
+  set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "efiXloader64")
+endif()

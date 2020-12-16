@@ -122,7 +122,7 @@ uint16_t efiloader::PE::arch() {
 
 bool efiloader::PE::process() {
     preprocess();
-    *pe_base = image_base + qlsize(li);
+    *pe_base = image_base + image_size;
     return true;
 }
 
@@ -262,56 +262,74 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
     seg->bitness = 2;
     seg->perm = SEG_DATA;
     seg->sel = allocate_selector(0x0);
-    seg->start_ea = image_base;
-    seg->end_ea = image_base + 0x280;
+    seg->start_ea = start;
+    seg->end_ea = end;
     add_segm_ex(seg, section_name, "DATA", ADDSEG_NOAA | ADDSEG_NOSREG);
     return seg;
 }
 
-segment_t *efiloader::PE::make_code_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                            char *section_name) {
-    segment_t *code_segm = new segment_t;
-    code_segm->sel = allocate_selector(0x0);
-    code_segm->start_ea = seg_ea;
-    code_segm->end_ea = seg_ea_end;
-    code_segm->bitness = 2;
-    code_segm->perm = SEGPERM_EXEC | SEGPERM_READ;
-    code_segm->type = SEG_CODE;
-    add_segm_ex(code_segm, section_name, "CODE", ADDSEG_NOAA);
-    secs_names.push_back(qstring(section_name));
-    return code_segm;
-}
+segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
+                                            char *section_name,
+                                            uint32_t flags) {
+    segment_t *generic_segm = new segment_t;
+    generic_segm->sel = allocate_selector(0x0);
+    generic_segm->start_ea = seg_ea;
+    generic_segm->end_ea = seg_ea_end;
+    generic_segm->bitness = 2;
+    generic_segm->perm = SEGPERM_READ;
+    if (flags & PEST_EXEC)
+        generic_segm->perm |= SEGPERM_EXEC;
+    if (flags & PEST_WRITE)
+        generic_segm->perm |= SEGPERM_WRITE;
 
-segment_t *efiloader::PE::make_data_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                            char *section_name) {
-    segment_t *data_segm = new segment_t;
-    data_segm->sel = allocate_selector(0x0);
-    data_segm->start_ea = seg_ea;
-    data_segm->end_ea = seg_ea_end;
-    data_segm->bitness = 2;
-    data_segm->perm = SEGPERM_READ;
-    data_segm->type = SEG_DATA;
-    add_segm_ex(data_segm, section_name, "DATA", ADDSEG_NOAA);
-    secs_names.push_back(qstring(section_name));
-    return data_segm;
-}
-
-segment_t *efiloader::PE::make_unkn_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                            char *section_name) {
-    segment_t *unk_segm = new segment_t;
-    unk_segm->start_ea = seg_ea;
-    unk_segm->end_ea = seg_ea_end;
-    unk_segm->bitness = 2;
-    unk_segm->perm = SEGPERM_READ | SEGPERM_WRITE;
-    unk_segm->type = SEG_DATA;
-    unk_segm->sel = allocate_selector(0x0);
     if (!qstrstr(section_name, ".")) {
         qstring tmp_section_name = qstring(section_name) + qstring(".unkn");
         section_name = (char *)tmp_section_name.c_str();
     }
-    add_segm_ex(unk_segm, section_name, "DATA", ADDSEG_NOAA);
+
+    if (flags & PEST_EXEC) {
+        generic_segm->type = SEG_CODE;
+        add_segm_ex(generic_segm, section_name, "CODE", ADDSEG_NOAA);   
+    } else {
+        generic_segm->type = SEG_DATA;
+        add_segm_ex(generic_segm, section_name, "DATA", ADDSEG_NOAA);   
+    }
+
+    if (!qstrcmp(section_name, ".text")) {
+        code_segm_name.insert(section_name);
+    } else if (!qstrcmp(section_name, ".data")) {
+        data_segm_name.insert(section_name);
+        data_segment_sel = get_segm_by_name(data_segm_name.c_str())->sel;
+    }
+
     secs_names.push_back(qstring(section_name));
-    return unk_segm;
+    return generic_segm;
+}
+
+int efiloader::PE::preprocess_sections() {
+    qlseek(li, _pe_header_off);
+    qlread(li, &pe, sizeof(peheader_t));
+
+    // x86
+    number_of_sections = pe.nobjs;
+    int section_headers_offset = pe.first_section_pos(_pe_header_off);
+    headers_size = pe.allhdrsize;
+
+    if (pe.machine == PECPU_AMD64) { // x64
+        qlseek(li, _pe_header_off);
+        qlread(li, &pe64, sizeof(peheader64_t));
+        number_of_sections = pe64.nobjs;
+        section_headers_offset = pe64.first_section_pos(_pe_header_off);
+        headers_size = pe64.allhdrsize;
+    }
+
+    _sec_headers.resize(number_of_sections);
+    qlseek(li, section_headers_offset);
+    for (int i = 0; i < number_of_sections; i++) {
+        qlread(li, &_sec_headers[i], sizeof(pesection_t));
+    }
+
+    return 0;
 }
 
 ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
@@ -360,25 +378,17 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     create_dword(next_ea, 4);
     set_cmt(next_ea, "Characteristics", 0);
     op_hex(next_ea, 0);
+    uint32_t section_characteristics = get_dword(next_ea);
     next_ea += 4;
     qstring section_name = qstring(_image_name.c_str());
     section_name += qstring("_") + qstring(segm_names[0].c_str());
     ea_t seg_ea = image_base + segm_entries[0];
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
     msg("[efiloader]\tprocessing: %s\n", segm_names[0].c_str());
-    if (!qstrcmp(segm_names[0].c_str(), ".text")) {
-        segments.push_back(make_code_segment(seg_ea, seg_ea_end,
-                                             (char *)section_name.c_str()));
-        code_segm_name.insert(section_name);
-    } else if (!qstrcmp(segm_names[0].c_str(), ".data")) {
-        segments.push_back(make_data_segment(seg_ea, seg_ea_end,
-                                             (char *)section_name.c_str()));
-        data_segm_name.insert(section_name);
-        data_segment_sel = get_segm_by_name(data_segm_name.c_str())->sel;
-    } else {
-        segments.push_back(make_unkn_segment(seg_ea, seg_ea_end,
-                                             (char *)section_name.c_str()));
-    }
+
+    segments.push_back(make_generic_segment(seg_ea, seg_ea_end,
+                                             (char *)section_name.c_str(),
+                                             section_characteristics));
     segm_names.pop_back();
     segm_sizes.pop_back();
     segm_raw_sizes.pop_back();
@@ -416,9 +426,11 @@ void efiloader::PE::preprocess() {
               _image_name.c_str());
     qsnprintf(image_base_name, sizeof(image_base_name), "%s_IMAGE_BASE",
               _image_name.c_str());
+
+    preprocess_sections();
     push_to_idb(start, end);
-    segments.push_back(
-        make_head_segment(image_base, image_base + 0x280, seg_header_name));
+    segments.push_back(make_head_segment(image_base, image_base + headers_size,
+                                         seg_header_name));
     secs_names.push_back(qstring(seg_header_name));
     create_word(ea, 2);
     set_cmt(ea, "PE magic number", 0);
@@ -572,6 +584,7 @@ void efiloader::PE::preprocess() {
     set_cmt(next_ea, "Base of code", 0);
     make_entry(get_dword(next_ea));
     next_ea += 4;
+    uint64_t default_image_base = get_qword(next_ea);
     create_qword(next_ea, 8);
     set_cmt(next_ea, "Image base", 0);
     op_hex(next_ea, 0);
@@ -616,6 +629,7 @@ void efiloader::PE::preprocess() {
     create_dword(next_ea, 4);
     set_cmt(next_ea, "Size of image", 0);
     op_hex(next_ea, 0);
+    image_size = get_dword(next_ea);
     next_ea += 4;
     create_dword(next_ea, 4);
     set_cmt(next_ea, "Size of headers", 0);
@@ -664,6 +678,41 @@ void efiloader::PE::preprocess() {
     uint32_t size = 0;
     next_ea += 4;
     for (int i = 0; i < number_of_dirs; i++) {
+        if (is_reloc_dir(i)) {
+            uint32_t relocs_rva = get_dword(next_ea);
+            uint32_t relocs_size = get_dword(next_ea + 4);
+            if (relocs_rva && relocs_size) {
+                ea_t relocs_va = image_base + relocs_rva;
+                ea_t relocs_va_end = relocs_va + relocs_size;
+                ea_t delta = image_base - default_image_base;
+                ea_t block_addr = get_dword(relocs_va);
+                ea_t block_size = get_dword(relocs_va + 4);
+                while (block_size && relocs_va < relocs_va_end) {
+                    ea_t block_base = image_base + block_addr;
+                    int block_reloc_count = (block_size - 8) / 2;
+
+                    ea_t block_ptr = relocs_va + 8;
+                    while (block_reloc_count--) {
+                        uint16_t reloc_value = get_word(block_ptr);
+                        uint16_t type = reloc_value & PER_TYPE;
+                        uint16_t offset = reloc_value & PER_OFF;
+                        if (type == PER_DIR64)
+                            add_qword(block_base + offset, delta);
+                        else if (type == PER_HIGHLOW)
+                            add_dword(block_base + offset, (uint32_t)delta);
+                        else if (type == PER_HIGH)
+                            add_word(block_base + offset, (uint16_t)(delta >> 16));
+                        else if (type == PER_LOW)
+                            add_word(block_base + offset, (uint16_t)delta);
+                        block_ptr += 2;
+                    }
+                    relocs_va += block_size;
+
+                    block_addr = get_dword(relocs_va);
+                    block_size = get_dword(relocs_va + 4);
+                }
+            }
+        }
         if (is_reloc_dir(i) || is_debug_dir(i)) {
             add_extra_cmt(next_ea, true, DIRECTORIES[i]);
             create_dword(next_ea, 4);
@@ -679,8 +728,7 @@ void efiloader::PE::preprocess() {
         }
         next_ea += 8;
     }
-    del_items(next_ea, DELIT_EXPAND | DELIT_DELNAMES,
-              0x28 * number_of_sections);
+    del_items(next_ea, DELIT_EXPAND | DELIT_DELNAMES, 0x28 * number_of_sections);
     for (int i = 0; i < number_of_sections; i++) {
         next_ea = process_section_entry(next_ea);
         memset(seg_name, 0, sizeof(seg_name));

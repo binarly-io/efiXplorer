@@ -1,0 +1,14 @@
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiUi_ea32.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiAnalysis_ea32.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiXplorer.dll.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiXplorer64.dll.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiUtils_ea32.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiUi_ea64.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiAnalysis_ea64.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiUtils_ea64.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiSmmUtils_ea32.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/efiSmmUtils_ea64.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/fort_ea32.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/fort_ea64.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/vasil/work/efiXplorer_internal/build/CMakeFiles/ZERO_CHECK.dir

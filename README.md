@@ -1,6 +1,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation :octocat:
+**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation:
 
 __Contributors__: 
 * Alex Matrosov ([@matrosov](https://github.com/matrosov))
@@ -89,6 +89,12 @@ Annotate PEI Services calls in assembly code automatically
 
 ![loader_5.gif](pics/loader_7.gif)
 
+## Dependency graph between DXE drivers
+
+In conjunction with the loader efiXplorer can build a dependency graph between DXE drivers based on protocols usage.
+
+![graph]()
+
 # Build instruction
 
 We try to make the build process for all supported platforms very simple, just use the build script to automate this process.
@@ -148,7 +154,10 @@ Copy `builds/efiXloader64.dll` to `<IDA_DIR>/loaders`.
 | Runtime Services | + | + |
 | SMM services | - | + |
 | PEI Services | + | - |
+| Protocols | + | + |
+| GUIDS | + | + | 
 | Loader | - | + |
+| Dependency graph | - | + |
 
 # References
 
