@@ -93,7 +93,7 @@ Annotate PEI Services calls in assembly code automatically
 
 In conjunction with the loader efiXplorer can build a dependency graph between DXE drivers based on protocols usage.
 
-![graph]()
+![graph.png](pics/graph.png)
 
 # Build instruction
 
