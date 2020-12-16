@@ -34,12 +34,20 @@
 #include "fort.h"
 #include "json.hpp"
 
+<<<<<<< HEAD
+=======
+#include <algorithm>
+>>>>>>> origin/public
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
 #include <entry.hpp>
 #include <filesystem>
 #include <fstream>
+<<<<<<< HEAD
+=======
+#include <graph.hpp>
+>>>>>>> origin/public
 #include <ida.hpp>
 #include <idp.hpp>
 #include <iostream>
@@ -122,6 +130,11 @@ using namespace std::filesystem;
 #define REG_DL 0x12
 
 #define PUSH_NONE 0xffff
+<<<<<<< HEAD
+=======
+#define GUID_OFFSET_NONE 0xffff
+#define GUID_OFFSET_DWORD 4
+>>>>>>> origin/public
 
 /* allins.h */
 #define NN_call 16
@@ -136,7 +149,11 @@ using namespace std::filesystem;
 uint8_t getArch();
 /* Get input file type
  * (PEI or DXE-like) */
+<<<<<<< HEAD
 uint8_t getFileType();
+=======
+uint8_t getFileType(vector<json> *allGuids);
+>>>>>>> origin/public
 /* Set EFI_GUID type */
 void setGuidType(ea_t ea);
 /* Get all data xrefs for address */
@@ -149,6 +166,11 @@ void createGuidStructure(ea_t ea);
 string getBsComment(ea_t offset, uint8_t arch);
 /* Get Pei service description comment (X86 is assumed) */
 string getPeiSvcComment(ea_t offset);
+<<<<<<< HEAD
+=======
+string getPPICallComment(ea_t offset, string name);
+string getSmmVarComment();
+>>>>>>> origin/public
 /* Get runtime service description comment */
 string getRtComment(ea_t offset, uint8_t arch);
 /* Find address of global gBS variable
@@ -160,8 +182,30 @@ bool setPtrType(ea_t addr, string type);
 void setPtrTypeAndName(ea_t ea, string name, string type);
 /* Check for guids.json file exist */
 bool guidsJsonExists();
+<<<<<<< HEAD
+=======
+/* Get json summary file name */
+path getSummaryFile();
+/* Check for summary json file exist */
+bool summaryJsonExist();
+>>>>>>> origin/public
 /* Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
 /* for ModuleEntryPoint */
 void setEntryArgToPeiSvc();
 /* Set type and name */
 void setTypeAndName(ea_t ea, string name, string type);
+<<<<<<< HEAD
+=======
+/* Collect information for dependency browser and dependency graph */
+vector<json> getDependenciesLoader();
+/* Get name for each node */
+vector<string> getNodes(vector<json> depJson);
+/* Get edges */
+vector<json> getEdges(vector<string> depNodes, vector<json> depJson);
+/* Get module name by address */
+qstring getModuleNameLoader(ea_t address);
+/* Print vector<json> object */
+void printVectorJson(vector<json> in);
+/* Change the value of a number to match the data type */
+uval_t truncImmToDtype(uval_t value, op_dtype_t dtype);
+>>>>>>> origin/public

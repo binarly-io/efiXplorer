@@ -1,0 +1,345 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\efiLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\pe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\pe_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\uefitool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\LzmaCompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\LzmaDecompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\Bra86.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzFind.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzmaDec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzmaEnc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\Tiano\EfiTianoCompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\Tiano\EfiTianoCompressLegacy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\Tiano\EfiTianoDecompress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\bstrlib\bstrlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\bstrlib\bstrwrap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\descriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsbuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsops.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsreport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\guiddatabase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\meparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\nvram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\nvramparser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\peimage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\sha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\treeitem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\treemodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ustring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\utility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\gzclose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\gzlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\gzread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\gzwrite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inffast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\efiLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\ida_core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\pe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\pe_ida.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\pe_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\uefitool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\LzmaCompress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\LzmaDecompress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\7zVersion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\Bra.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\CpuArch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzFind.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzHash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzmaDec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\LzmaEnc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\SDK\C\Types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\LZMA\UefiLzma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\Tiano\EfiTianoCompress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\Tiano\EfiTianoDecompress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\basetypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\bootguard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\bstrlib\bstrlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\bstrlib\bstrwrap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\descriptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsbuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsops.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsreport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ffsutils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\filesystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\fit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\gbe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\guiddatabase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\me.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\meparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\nvram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\nvramparser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\parsingdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\peimage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\sha256.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\treeitem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\treemodel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ubytearray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\ustring.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inffast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inffixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\common\zlib\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\3rd\uefitool\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\vasil\bnrly\efiXplorer_internal\efiXloader\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{B5E4A113-8F3D-37F7-8CFA-BB1C6A4222B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A431CA37-DB35-3857-8BC3-E0702C13BBB6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

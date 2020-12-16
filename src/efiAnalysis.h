@@ -35,11 +35,22 @@ namespace efiAnalysis {
 
 class efiAnalyzer {
   public:
+<<<<<<< HEAD
     vector<json> dataGuids;
     vector<json> allProtocols;
     vector<json> allServices;
 
     void getSegments();
+=======
+    vector<json> allGuids;
+    vector<json> allProtocols;
+    vector<json> allPPIs;
+    vector<json> allServices;
+    vector<func_t *> smiHandlers;
+
+    void getSegments();
+    void setStrings();
+>>>>>>> origin/public
 
     bool findImageHandleX64();
     bool findSystemTableX64();
@@ -59,6 +70,7 @@ class efiAnalyzer {
     void getSmmProtNamesX64();
 
     void getAllPeiServicesX86();
+<<<<<<< HEAD
 
     void printProtocols();
     void markProtocols();
@@ -66,6 +78,23 @@ class efiAnalyzer {
     void markLocalGuidsX64();
 
     vector<func_t *> findSwSmiHandlers();
+=======
+    void getPpiNamesX86();
+    void getAllVariablePPICallsX86();
+
+    void printInterfaces();
+    void markInterfaces();
+    void markDataGuids();
+    void markLocalGuidsX64();
+
+    bool efiSmmCpuProtocolResolver();
+    void findSwSmiHandlers();
+    bool findGetVariableOveflow(vector<json> allServices);
+    bool findPPIGetVariableStackOveflow();
+    bool findSmmGetVariableOveflow();
+    bool findSmmCallout();
+    void dumpInfo();
+>>>>>>> origin/public
 
     efiAnalyzer();
     ~efiAnalyzer();
@@ -80,12 +109,22 @@ class efiAnalyzer {
     path guidsJsonPath;
     json bootServices;
     json bootServicesAll;
+<<<<<<< HEAD
     json peiServicesAll;
+=======
+    json peiServices;
+    json peiServicesAll;
+    json ppiCallsAll;
+>>>>>>> origin/public
     json runtimeServicesAll;
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
+<<<<<<< HEAD
     vector<ea_t> markedProtocols;
+=======
+    vector<ea_t> markedInterfaces;
+>>>>>>> origin/public
     /* set boot services that work with protocols */
     vector<string> protBsNames = {"InstallProtocolInterface",
                                   "ReinstallProtocolInterface",
@@ -108,10 +147,26 @@ class efiAnalyzer {
                                    "SmmRegisterProtocolNotify",
                                    "SmmLocateHandle",
                                    "SmmLocateProtocol"};
+<<<<<<< HEAD
+=======
+    /* set of pei services that work with PPI */
+    vector<string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
+                                  "NotifyPpi"};
+    // Format-dependent interface-related settings (protocols for DXE, PPIs for
+    // PEI)
+    char *if_name;
+    char *if_pl;
+    char *if_key;
+    vector<json> *if_tbl;
+>>>>>>> origin/public
 };
 
 bool efiAnalyzerMainX64();
 bool efiAnalyzerMainX86();
 }; // namespace efiAnalysis
 
+<<<<<<< HEAD
 void showAllChoosers(efiAnalysis::efiAnalyzer analyzer);
+=======
+void showAllChoosers(efiAnalysis::efiAnalyzer analyzer);
+>>>>>>> origin/public

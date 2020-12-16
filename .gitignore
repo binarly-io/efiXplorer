@@ -45,7 +45,6 @@ build/
 
 # CMake
 build*/
-cmake*/
 
 # OSX
 .DS_Store
