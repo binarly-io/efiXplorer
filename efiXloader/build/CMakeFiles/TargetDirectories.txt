@@ -1,3 +1,0 @@
-C:/Users/vasil/bnrly/efiXplorer_internal/efiXloader/build/CMakeFiles/efiXloader.dir
-C:/Users/vasil/bnrly/efiXplorer_internal/efiXloader/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/vasil/bnrly/efiXplorer_internal/efiXloader/build/CMakeFiles/ZERO_CHECK.dir
