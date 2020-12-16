@@ -45,7 +45,7 @@ const char *const guids_chooser_t::header_guids[] = {
 };
 
 /* protocols column widths */
-const int protocols_chooser_t::widths_protocols[] = {
+const int interfaces_chooser_t::widths_protocols[] = {
     16, // Address
     32, // GUID
     32, // Name
@@ -53,7 +53,7 @@ const int protocols_chooser_t::widths_protocols[] = {
 };
 
 /* protocols column headers */
-const char *const protocols_chooser_t::header_protocols[] = {
+const char *const interfaces_chooser_t::header_protocols[] = {
     "Address", // 0
     "GUID",    // 1
     "Name",    // 2
@@ -96,24 +96,26 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
     CASSERT(qnumber(header_guids) == 3);
 }
 
-inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
-                                                vector<json> protocols)
+inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
+                                                  vector<json> protocols,
+                                                  string name_key_)
     : chooser_t(0, qnumber(widths_protocols), widths_protocols,
                 header_protocols, title_),
       list() {
     CASSERT(qnumber(widths_protocols) == qnumber(header_protocols));
+    name_key = name_key_;
     build_list(ok, protocols);
 }
 
-void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                         chooser_item_attrs_t *,
-                                         size_t n) const {
+void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                          chooser_item_attrs_t *,
+                                          size_t n) const {
     ea_t ea = list[n];
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
     auto guid = item["guid"];
-    string name = static_cast<string>(item["prot_name"]);
+    string name = static_cast<string>(item[name_key]);
     string service = static_cast<string>(item["service"]);
     char protGuid[37] = {0};
     snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -163,8 +165,18 @@ bool guids_show(vector<json> guids, qstring title) {
 bool protocols_show(vector<json> protocols, qstring title) {
     bool ok;
     /* open the window */
-    protocols_chooser_t *ch =
-        new protocols_chooser_t(title.c_str(), ok, protocols);
+    interfaces_chooser_t *ch =
+        new interfaces_chooser_t(title.c_str(), ok, protocols, "prot_name");
+    /* default cursor position is 0 (first row) */
+    ch->choose();
+    return true;
+}
+
+bool ppis_show(vector<json> ppis, qstring title) {
+    bool ok;
+    /* open the window */
+    interfaces_chooser_t *ch =
+        new interfaces_chooser_t(title.c_str(), ok, ppis, "ppi_name");
     /* default cursor position is 0 (first row) */
     ch->choose();
     return true;

@@ -41,4 +41,12 @@ vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
                                 vector<segment_t *> dataSegments);
 vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
                              vector<segment_t *> dataSegments);
-vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments);
+vector<func_t *> findSmiHandlers(ea_t address);
+vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
+                                              vector<json> stackGuids);
+vector<func_t *> findSmiHandlersSmmSwDispatchStack(vector<json> stackGuids);
+vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
+                                     vector<json> *allServices);
+vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
+                                      vector<json> dataGuids,
+                                      vector<json> *allServices);
