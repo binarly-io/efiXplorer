@@ -121,7 +121,7 @@ uint8_t getArch() {
 //--------------------------------------------------------------------------
 // Get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-uint8_t guessFileType(vector<json> *allGuids) {
+uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
     uint8_t arch = getArch();
     if (arch == UEFI) {
         return FTYPE_DXE_AND_THE_LIKE;
@@ -167,7 +167,12 @@ uint8_t guessFileType(vector<json> *allGuids) {
 }
 
 uint8_t getFileType(vector<json> *allGuids) {
-    auto ftype = guessFileType(allGuids);
+    uint8_t arch = getArch();
+    if (arch == UEFI) {
+        // skip UI for efiXloader
+        return FTYPE_DXE_AND_THE_LIKE;
+    }
+    auto ftype = guessFileType(arch, allGuids);
     auto btnId = ask_buttons("DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE, "Parse file as", ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
     if (btnId == ASKBTN_YES) {
         return FTYPE_DXE_AND_THE_LIKE;
