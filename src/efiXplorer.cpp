@@ -31,17 +31,6 @@
 #include "efiXplorer.h"
 #include "efiAnalysis.h"
 
-#ifdef HEX_RAYS
-#define HEX_RAYS 0
-#include "efiHexRaysAnalysis.h"
-#endif
-
-#ifdef HEX_RAYS
-#define HEX_RAYS 0
-/* Hex-Rays API pointer */
-hexdsp_t *hexdsp = nullptr;
-#endif
-
 #define GRAPH_DEBUG 0
 
 static bool inited = false;
@@ -467,22 +456,6 @@ bool idaapi plugin_ctx_t::run(size_t) {
         depNodes.clear();
         depEdges.clear();
     }
-
-/* support build without Hex-Rays Decompiler features */
-#ifdef HEX_RAYS
-#define HEX_RAYS 0
-    if (!init_hexrays_plugin()) {
-        DEBUG_MSG("[%s] Hex-Rays Decompiler plugin not found! HexRays-based "
-                  "code analysis features will not apply!\n",
-                  plugin_name);
-    } else {
-        const char *hxver = get_hexrays_version();
-        DEBUG_MSG("[%s] Hex-Rays Decompiler plugin %s has been detected\n",
-                  plugin_name, hxver);
-        efiHexRaysAnalysis::efiHexRaysAnalyzerMain();
-    }
-#endif
-
     return true;
 }
 

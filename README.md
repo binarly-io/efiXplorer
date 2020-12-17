@@ -1,6 +1,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation:
+**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation
 
 __Contributors__: 
 * Alex Matrosov ([@matrosov](https://github.com/matrosov))
