@@ -9,7 +9,7 @@
  *                  |_|
  *
  * efiXplorer
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
  */
 
 #include "efiAnalysis.h"
+#include "efiPluginArgs.h"
 #include "efiUi.h"
 #include "tables/efi_pei_tables.h"
 #include "tables/efi_services.h"
@@ -2443,17 +2444,16 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         analyzer.printInterfaces();
         analyzer.markInterfaces();
 
-        /* find potential smm callouts */
-        analyzer.findSwSmiHandlers();
-        analyzer.findSmmCallout();
-
-        /* find potential vuln in GetVariable function */
-        analyzer.findGetVariableOveflow(analyzer.allServices);
-
-        /* find potential vuln in SmmGetVariable function */
-        analyzer.findSmmGetVariableOveflow();
-
-        analyzer.efiSmmCpuProtocolResolver();
+        if (!g_args.disable_vuln_hunt) {
+            /* find potential smm callouts */
+            analyzer.findSwSmiHandlers();
+            analyzer.findSmmCallout();
+            /* find potential vuln in GetVariable function */
+            analyzer.findGetVariableOveflow(analyzer.allServices);
+            /* find potential vuln in SmmGetVariable function */
+            analyzer.findSmmGetVariableOveflow();
+            analyzer.efiSmmCpuProtocolResolver();
+        }
     } else {
         DEBUG_MSG("[%s] Parsing of 64-bit PEI files is not supported yet\n",
                   plugin_name);
@@ -2508,8 +2508,9 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         analyzer.getAllVariablePPICallsX86();
         analyzer.printInterfaces();
         analyzer.markInterfaces();
-
-        analyzer.findPPIGetVariableStackOveflow();
+        if (!g_args.disable_vuln_hunt) {
+            analyzer.findPPIGetVariableStackOveflow();
+        }
     }
 
     /* dump info to JSON file */

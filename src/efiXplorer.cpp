@@ -9,7 +9,7 @@
  *                  |_|
  *
  * efiXplorer
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 
 #include "efiXplorer.h"
 #include "efiAnalysis.h"
+#include "efiPluginArgs.h"
 
 #define GRAPH_DEBUG 0
 
@@ -53,6 +54,9 @@ static const char welcome_msg[] =
 vector<json> depJson;
 vector<string> depNodes;
 vector<json> depEdges;
+
+// default arguments
+struct args g_args = {.disable_ui = 0, .disable_vuln_hunt = 0};
 
 //-------------------------------------------------------------------------
 struct plugin_ctx_t;
@@ -397,11 +401,23 @@ static plugmod_t *idaapi init() {
 
 //--------------------------------------------------------------------------
 static const char wanted_title[] = "efiXplorer: dependency graph";
-bool idaapi plugin_ctx_t::run(size_t) {
-    /* analyzer staff start */
+bool idaapi plugin_ctx_t::run(size_t arg) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] plugin run\n", plugin_name);
+    // parse arguments
+    // arg = 0 (00): default
+    // arg = 1 (01): disable_ui
+    // arg = 2 (10): disable_vuln_hunt
+    // arg = 3 (11): disable_ui & disable_vuln_hunt
+    if (arg >> 0 & 1) {
+        g_args.disable_ui = 1;
+    }
+    if (arg >> 1 & 1) {
+        g_args.disable_vuln_hunt = 1;
+    }
+    DEBUG_MSG("[%s] plugin run with argument %d\n", plugin_name, arg);
+    DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
+              g_args.disable_ui, g_args.disable_vuln_hunt);
     bool guidsJsonOk = guidsJsonExists();
     DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
     if (!guidsJsonOk) {
@@ -456,6 +472,8 @@ bool idaapi plugin_ctx_t::run(size_t) {
         depNodes.clear();
         depEdges.clear();
     }
+    /* reset arguments */
+    g_args = {.disable_ui = 0, .disable_vuln_hunt = 0};
     return true;
 }
 

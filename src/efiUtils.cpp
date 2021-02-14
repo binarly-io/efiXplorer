@@ -9,7 +9,7 @@
  *                  |_|
  *
  * efiXplorer
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
  */
 
 #include "efiUtils.h"
+#include "efiPluginArgs.h"
 #include "tables/efi_system_tables.h"
 
 struct pei_services_entry {
@@ -167,12 +168,14 @@ uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
 
 uint8_t getFileType(vector<json> *allGuids) {
     uint8_t arch = getArch();
-    if (arch == UEFI) {
-        // skip UI for efiXloader
+    if (arch == UEFI || g_args.disable_ui) {
+        // skip UI for efiXloader or if disable_ui argument passed
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);
-    auto btnId = ask_buttons("DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE, "Parse file as", ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
+    auto btnId = ask_buttons(
+        "DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE, "Parse file as",
+        ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
     if (btnId == ASKBTN_YES) {
         return FTYPE_DXE_AND_THE_LIKE;
     } else {
@@ -408,11 +411,13 @@ void setEntryArgToPeiSvc() {
             funcdata[1].name = "PeiServices";
             tinfo_t func_tinfo;
             if (!func_tinfo.create_func(funcdata)) {
-                DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name, idx);
+                DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name,
+                          idx);
                 continue;
             }
             if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-                DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
+                DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name,
+                          idx);
                 continue;
             }
         }

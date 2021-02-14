@@ -24,29 +24,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * efiSmmUtils.h
+ * efiPluginArgs.h
  *
  */
 
-#include "efiUtils.h"
-
-struct efiGuid {
-    uint32_t data1;
-    uint16_t data2;
-    uint16_t data3;
-    uint8_t data4[8];
+/* arguments configuration */
+typedef struct args {
+    int disable_ui;
+    int disable_vuln_hunt;
 };
-
-vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
-                                vector<segment_t *> dataSegments);
-vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
-                             vector<segment_t *> dataSegments);
-vector<func_t *> findSmiHandlers(ea_t address);
-vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
-                                              vector<json> stackGuids);
-vector<func_t *> findSmiHandlersSmmSwDispatchStack(vector<json> stackGuids);
-vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
-                                     vector<json> *allServices);
-vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
-                                      vector<json> dataGuids,
-                                      vector<json> *allServices);
+extern struct args g_args;
