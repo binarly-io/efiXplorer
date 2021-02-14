@@ -56,7 +56,7 @@ vector<string> depNodes;
 vector<json> depEdges;
 
 // default arguments
-struct args g_args = {.disable_ui = 0, .disable_vuln_hunt = 0};
+struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 
 //-------------------------------------------------------------------------
 struct plugin_ctx_t;
@@ -473,7 +473,7 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
         depEdges.clear();
     }
     /* reset arguments */
-    g_args = {.disable_ui = 0, .disable_vuln_hunt = 0};
+    g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
     return true;
 }
 
