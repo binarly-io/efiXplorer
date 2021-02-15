@@ -23,16 +23,29 @@ def search_dylib(d):
 
 @click.command()
 @click.option('--copy', 'plugins_path', help='path to IDA plugins directory')
+@click.option('--batch',
+              'batch',
+              type=bool,
+              default=False,
+              help='set to True if the plugin will be used in batch mode')
 @click.argument('idasdk_dir')
-def build(idasdk_dir, plugins_path):
+def build(idasdk_dir, plugins_path, batch):
     if not os.path.isdir('build'):
         os.mkdir('build')
     os.chdir('build')
-    subprocess.call([
-        'cmake',
-        '..',
-        '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir),
-    ])
+    if batch:
+        subprocess.call([
+            'cmake',
+            '..',
+            '-DBATCH=1',
+            '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir),
+        ])
+    else:
+        subprocess.call([
+            'cmake',
+            '..',
+            '-DIdaSdk_ROOT_DIR={}'.format(idasdk_dir),
+        ])
     subprocess.call(['cmake', '--build', '.', '--config', 'Release'])
     if plugins_path and os.path.isdir(plugins_path):
         print('[DEBUG] copying builds to {}'.format(plugins_path))

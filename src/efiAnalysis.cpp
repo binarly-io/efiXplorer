@@ -2444,6 +2444,7 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         analyzer.printInterfaces();
         analyzer.markInterfaces();
 
+        /* search for vulnerabilities */
         if (!g_args.disable_vuln_hunt) {
             /* find potential smm callouts */
             analyzer.findSwSmiHandlers();
@@ -2463,7 +2464,9 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     analyzer.dumpInfo();
 
     /* show all choosers windows */
-    showAllChoosers(analyzer);
+    if (!g_args.disable_ui) {
+        showAllChoosers(analyzer);
+    }
 
     return true;
 }
@@ -2508,6 +2511,8 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         analyzer.getAllVariablePPICallsX86();
         analyzer.printInterfaces();
         analyzer.markInterfaces();
+
+        /* search for vulnerabilities */
         if (!g_args.disable_vuln_hunt) {
             analyzer.findPPIGetVariableStackOveflow();
         }
@@ -2517,7 +2522,9 @@ bool efiAnalysis::efiAnalyzerMainX86() {
     analyzer.dumpInfo();
 
     /* show all choosers windows */
-    showAllChoosers(analyzer);
+    if (!g_args.disable_ui) {
+        showAllChoosers(analyzer);
+    }
 
     return true;
 }

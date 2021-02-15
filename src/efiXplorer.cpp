@@ -51,12 +51,61 @@ static const char welcome_msg[] =
     "                  | |\n"
     "                  |_|\n";
 
+// default arguments
+struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
+
+#if BATCH
+
+//--------------------------------------------------------------------------
+plugmod_t *idaapi init(void) {
+    msg(welcome_msg);
+    msg("%s\n\n", COPYRIGHT);
+    inited = true;
+    return PLUGIN_KEEP;
+}
+
+//--------------------------------------------------------------------------
+bool idaapi run(size_t) {
+    DEBUG_MSG("[%s] ========================================================\n",
+              plugin_name);
+    g_args.disable_ui = 1;
+    g_args.disable_vuln_hunt = 1;
+    DEBUG_MSG("[%s] plugin run\n", plugin_name);
+    DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
+              g_args.disable_ui, g_args.disable_vuln_hunt);
+    uint8_t arch = getArch();
+    if (arch == X64) {
+        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n",
+                  plugin_name);
+        efiAnalysis::efiAnalyzerMainX64();
+    }
+    if (arch == X86) {
+        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n",
+                  plugin_name);
+        efiAnalysis::efiAnalyzerMainX86();
+    }
+    return true;
+}
+
+//--------------------------------------------------------------------------
+// PLUGIN DESCRIPTION BLOCK
+plugin_t PLUGIN = {
+    IDP_INTERFACE_VERSION,
+    0,              // plugin flags
+    init,           // initialize plugin
+    nullptr,        // terminate plugin
+    run,            // invoke plugin
+    plugin_comment, // long comment about the plugin
+    plugin_help,    // multiline help about the plugin
+    plugin_name,    // the preferred short name of the plugin
+    plugin_hotkey   // the preferred hotkey to run the plugin
+};
+
+#else
+
 vector<json> depJson;
 vector<string> depNodes;
 vector<json> depEdges;
-
-// default arguments
-struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 
 //-------------------------------------------------------------------------
 struct plugin_ctx_t;
@@ -490,3 +539,5 @@ plugin_t PLUGIN = {
     plugin_name,    // the preferred short name of the plugin
     plugin_hotkey   // the preferred hotkey to run the plugin
 };
+
+#endif
