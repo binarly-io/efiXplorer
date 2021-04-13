@@ -28,10 +28,6 @@
 #ifndef EFILOADER_EFILOADER_H
 #define EFILOADER_EFILOADER_H
 
-//
-// IDA headers
-//
-
 #include "ida_core.h"
 #include "pe.h"
 #include "pe_manager.h"

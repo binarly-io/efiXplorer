@@ -135,9 +135,19 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
         loader_failure("failed to import \"EFI_GUID\"");
     }
     msg("processing UEFI binaries:\n");
-    for (int i = 0; i < uefiParser.files.size(); i++) {
-        li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
-        peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
+    if (uefiParser.files.size()) {
+        for (int i = 0; i < uefiParser.files.size(); i++) {
+            li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
+            peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
+        }
+    } else {
+        efiloader::Utils utils;
+        std::vector<qstring> files = utils.get_images();
+        for (int i = 0; i < files.size(); i++) {
+            msg("[efiloader] current file: %s\n", files[i].c_str());
+            li = open_linput(files[i].c_str(), false);
+            peManager.process(li, files[i].c_str(), i);
+        }
     }
 }
 

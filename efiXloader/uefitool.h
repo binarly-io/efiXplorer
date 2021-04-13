@@ -70,7 +70,6 @@ class File {
     void set_data(char *data_in, uint32_t size_in) {
         qname.qclear();
         bytes.resize(size_in);
-        // memcpy_s(&bytes[0], size_in, data_in, size_in);
         memcpy(&bytes[0], data_in, size_in);
     };
     void write() {

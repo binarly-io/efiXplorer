@@ -26,8 +26,6 @@
  */
 
 #include "utils.h"
-#include <algorithm>
-#include <string>
 
 void efiloader::Utils::show_hex(void *buffer, size_t length,
                                 const char *prefix) {
@@ -101,4 +99,24 @@ void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size,
     default:
         break;
     }
+}
+
+std::vector<qstring> efiloader::Utils::get_images() {
+    std::vector<qstring> names;
+    qstring idb_path(get_path(PATH_TYPE_IDB));
+    qstring images_path = idb_path + qstring(".efiloader");
+    msg("[efiloader] loading images from %s directory\n", images_path.c_str());
+    qstring search_path = images_path + qstring("/*.*");
+    WIN32_FIND_DATA fd;
+    HANDLE hFind = ::FindFirstFile(search_path.c_str(), &fd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        do {
+            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                names.push_back(images_path + qstring("/") +
+                                qstring(fd.cFileName));
+            }
+        } while (::FindNextFile(hFind, &fd));
+        ::FindClose(hFind);
+    }
+    return names;
 }
