@@ -34,6 +34,8 @@ All `efiXplorer` analysis capabilities can be applied to the whole UEFI firmware
 
 ## Compilation
 
+### Manually
+
 The common steps are next.
 
 ```bash
@@ -47,6 +49,20 @@ mkdir build
 cd build
 cmake .. -DIdaSdk_ROOT_DIR="/path/to/idasdk"
 cmake --build . --config Release
+```
+
+### With build script
+
+Build:
+
+```bash
+./build.py build-loader "/path/to/idasdk"
+```
+
+Build and install:
+
+```bash
+./build.py build-loader "/path/to/idasdk" --copy "/path/to/loaders"
 ```
 
 ## Limitations

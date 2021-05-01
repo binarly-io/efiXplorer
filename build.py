@@ -60,15 +60,15 @@ def build_plugin(idasdk_dir, plugins_path, batch):
     subprocess.call(["cmake", "--build", ".", "--config", "Release"])
     if plugins_path and os.path.isdir(plugins_path):
         print("[DEBUG] copying builds to {}".format(plugins_path))
-        if platform.system() is "Linux":
+        if platform.system() == "Linux":
             for plugin_bin in search_so("."):
                 _, fname = os.path.split(plugin_bin)
                 shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
-        if platform.system() is "Windows":
+        if platform.system() == "Windows":
             for plugin_bin in search_dll("."):
                 _, fname = os.path.split(plugin_bin)
                 shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
-        if platform.system() is "Darwin":
+        if platform.system() == "Darwin":
             for plugin_bin in search_dylib("."):
                 _, fname = os.path.split(plugin_bin)
                 shutil.copy(plugin_bin, os.path.join(plugins_path, fname))
@@ -92,7 +92,7 @@ def build_loader(idasdk_dir, loaders_path):
     subprocess.call(["cmake", "--build", ".", "--config", "Release"])
     if loaders_path and os.path.isdir(loaders_path):
         print("[DEBUG] copying builds to {}".format(loaders_path))
-        if platform.system() is "Windows":
+        if platform.system() == "Windows":
             for loader_bin in search_dll("."):
                 _, fname = os.path.split(loader_bin)
                 shutil.copy(loader_bin, os.path.join(loaders_path, fname))

@@ -102,17 +102,21 @@ We try to make the build process for all supported platforms very simple, just u
 ## Build script
 
 ```
-Usage: build.py [OPTIONS] IDASDK_DIR
+./build.py
+Usage: build.py [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --copy TEXT  path to IDA plugins directory
-  --help       Show this message and exit.
+  --help  Show this message and exit.
+
+Commands:
+  build-loader
+  build-plugin
 ```
 
-example of build process:
+Example of build process:
 
 ```bash
-./build.py <IDASDK75_DIR>
+./build.py build-plugin "/path/to/idasdk"
 ```
 
 ## Compilation with cmake
@@ -126,6 +130,8 @@ cmake --build . --config Release
 
 ## efiXloader compilation and installation
 
+### Manually
+
 The common steps are next.
 
 ```bash
@@ -136,11 +142,19 @@ cmake .. -DIdaSdk_ROOT_DIR="/path/to/idasdk"
 cmake --build . --config Release
 ```
 
+### With build script
+
+```bash
+./build.py build-loader "/path/to/idasdk"
+```
+
 # Installation
 
 ## efiXplorer
 
 Copy compiled binaries of `efiXplorer` plugin and `guids` directory to `<IDA_DIR>/plugins`. Enjoy!
+
+You can also use the `--copy` option in the build script.
 
 ## efiXloader
 
