@@ -58,6 +58,10 @@ struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 
 //--------------------------------------------------------------------------
 plugmod_t *idaapi init(void) {
+    uint8_t arch = getArch();
+    if (arch != X86 && arch != X64) {
+        return PLUGIN_SKIP;
+    }
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
     inited = true;
@@ -440,11 +444,13 @@ ssize_t idaapi plugin_ctx_t::on_event(ssize_t code, va_list va) {
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init() {
+    uint8_t arch = getArch();
+    if ((arch != X86 && arch != X64) || !is_idaq()) {
+        return nullptr;
+    }
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
     inited = true;
-    if (!is_idaq())
-        return nullptr;
     return new plugin_ctx_t;
 }
 
