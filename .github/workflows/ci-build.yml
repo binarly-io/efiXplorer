@@ -1,4 +1,4 @@
-name: Builds for Windows, Linux and OSX
+name: efiXplorer CI
 on:
   push:
   pull_request:
