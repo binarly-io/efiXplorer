@@ -10,23 +10,17 @@ __Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 
 ![overview](pics/efiXplorer_new_1.gif)
 
-# [efiXplorer core features](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
+## [efiXplorer core features](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
 
-# [Build instructions and Installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
+## [Build instructions and Installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
 
-# Thank you for support
-<p float="left">
-  <img src="https://hex-rays.com/wp-content/themes/hx2021/dist/img/logo.svg" width="200" height="200">
-  <img src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="100" height="100">
-</p>
-
-# Publications
+## Publications
 
 * [efiXplorer: Hunting for UEFI Firmware Vulnerabilities at Scale with Automated Static Analysis](https://i.blackhat.com/eu-20/Wednesday/eu-20-Labunets-efiXplorer-Hunting-For-UEFI-Firmware-Vulnerabilities-At-Scale-With-Automated-Static-Analysis.pdf)
 * [Static analysis-based recovery of service function calls in UEFI firmware](https://www.youtube.com/watch?v=rK0tmVa19ME)
 * [How efiXplorer helping to solve challenges in reverse engineering of UEFI firmware](https://www.youtube.com/watch?v=FFGQJBmRkLw)
 
-# References
+## References
 
 * https://github.com/LongSoft/UEFITool
 * https://github.com/yeggor/UEFI_RETool
@@ -36,3 +30,14 @@ __Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 * https://github.com/DSecurity/efiSeek
 * https://github.com/p-state/ida-efitools2
 * https://github.com/zznop/bn-uefi-helper
+
+## Thank you for support
+
+<table>
+<tbody>
+<tr>
+<td><img src="https://hex-rays.com/wp-content/themes/hx2021/dist/img/logo.svg" width="200" height="200"></td>
+<td><img src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="100" height="100"></td>
+</tr>
+</tbody>
+</table>
