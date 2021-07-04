@@ -54,6 +54,9 @@ jobs:
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
     - name: Autobuild
+      env:
+        IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+        PASSWORD: ${{ secrets.ZIP_PASSWORD }}
       run: |
         cd ..
         curl -O -J -L "$IDA_SDK"
