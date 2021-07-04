@@ -16,7 +16,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           curl -O -J -L "%IDA_SDK76%"
-          unzip -P "%PASSWORD%" idasdk.zip
+          unzip -P "%PASSWORD%" idasdk76.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
