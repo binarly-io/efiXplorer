@@ -12,17 +12,17 @@ jobs:
       - name: Dowload IDA SDK
         shell: cmd
         env:
-          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          curl -O -J -L "%IDA_SDK75%"
+          curl -O -J -L "%IDA_SDK76%"
           unzip -P "%PASSWORD%" idasdk.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk75
+          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk76
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -37,17 +37,17 @@ jobs:
       - name: Dowload IDA SDK
         shell: cmd
         env:
-          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "%IDA_SDK75%"
+          curl -O -J -L "%IDA_SDK76%"
           unzip -P "%PASSWORD%" idasdk.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="..\idasdk75"
+          cmake .. -DIdaSdk_ROOT_DIR="..\idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -66,17 +66,17 @@ jobs:
       - name: Dowload IDA SDK
         shell: bash
         env:
-          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK75"
+          curl -O -J -L "$IDA_SDK76"
           unzip -P $PASSWORD idasdk.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75"
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -95,17 +95,17 @@ jobs:
       - name: Dowload IDA SDK
         shell: bash
         env:
-          IDA_SDK75: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
+          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK75"
+          curl -O -J -L "$IDA_SDK76"
           unzip -P $PASSWORD idasdk.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../idasdk75"
+          cmake .. -DIdaSdk_ROOT_DIR="../idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
