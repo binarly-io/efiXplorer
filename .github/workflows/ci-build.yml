@@ -12,10 +12,10 @@ jobs:
       - name: Dowload IDA SDK
         shell: cmd
         env:
-          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
+          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          curl -O -J -L "%IDA_SDK76%"
+          curl -O -J -L "%IDA_SDK%"
           unzip -P "%PASSWORD%" idasdk76.zip
       - name: Build efiXloader
         run: |
@@ -37,11 +37,11 @@ jobs:
       - name: Dowload IDA SDK
         shell: cmd
         env:
-          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
+          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "%IDA_SDK76%"
+          curl -O -J -L "%IDA_SDK%"
           unzip -P "%PASSWORD%" idasdk.zip
       - name: Build efiXplorer
         run: |
@@ -66,11 +66,11 @@ jobs:
       - name: Dowload IDA SDK
         shell: bash
         env:
-          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
+          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK76"
+          curl -O -J -L "$IDA_SDK"
           unzip -P $PASSWORD idasdk.zip
       - name: Build efiXplorer
         run: |
@@ -95,11 +95,11 @@ jobs:
       - name: Dowload IDA SDK
         shell: bash
         env:
-          IDA_SDK76: ${{ secrets.DOWNLOAD_LINK_IDA_SDK76 }}
+          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK76"
+          curl -O -J -L "$IDA_SDK"
           unzip -P $PASSWORD idasdk.zip
       - name: Build efiXplorer
         run: |
