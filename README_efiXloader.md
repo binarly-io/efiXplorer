@@ -41,10 +41,6 @@ The common steps are next.
 ```bash
 git clone git@github.com:binarly-io/efiXplorer.git
 cd efiXplorer
-git submodule update --init --recursive
-cd efiXplorer/efiXloader/3rd/uefitool
-git checkout new_engine
-cd -
 mkdir build
 cd build
 cmake .. -DIdaSdk_ROOT_DIR="/path/to/idasdk"
