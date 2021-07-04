@@ -42,7 +42,7 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "%IDA_SDK%"
-          unzip -P "%PASSWORD%" idasdk.zip
+          unzip -P "%PASSWORD%" idasdk76.zip
       - name: Build efiXplorer
         run: |
           mkdir build
@@ -71,7 +71,7 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk.zip
+          unzip -P $PASSWORD idasdk76.zip
       - name: Build efiXplorer
         run: |
           mkdir build
@@ -100,7 +100,7 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk.zip
+          unzip -P $PASSWORD idasdk76.zip
       - name: Build efiXplorer
         run: |
           mkdir build
