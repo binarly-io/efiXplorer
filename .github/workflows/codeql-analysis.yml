@@ -61,7 +61,7 @@ jobs:
         cd ..
         curl -O -J -L "$IDA_SDK"
         unzip -P $PASSWORD idasdk76.zip
-        cd efiXloader
+        cd efiXplorer
         mkdir build
         cd build
         cmake .. -DIdaSdk_ROOT_DIR="../idasdk76"
