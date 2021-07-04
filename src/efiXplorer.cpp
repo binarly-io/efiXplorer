@@ -329,21 +329,6 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         result = true;
     } break;
 
-    case grcode_user_gentext: // generate text for user-defined graph nodes
-                              // in:  mutable_graph_t *g
-                              // out: must return 0
-    {
-        mutable_graph_t *g = va_arg(va, mutable_graph_t *);
-        if (GRAPH_DEBUG)
-            msg("%p: generate text for graph nodes\n", g);
-        ctx.graph_text.resize(g->size());
-        for (node_iterator p = g->begin(); p != g->end(); ++p) {
-            int n = *p;
-            ctx.graph_text[n] = get_node_name(n);
-        }
-        result = true;
-    } break;
-
     case grcode_user_text: // retrieve text for user-defined graph node
                            // in:  mutable_graph_t *g
                            //      int node
