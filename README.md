@@ -13,6 +13,8 @@ __Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 
 ## [efiXplorer core features](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
 
+## [efiXloader description](https://github.com/binarly-io/efiXplorer/wiki/efiXloader)
+
 ## [Build instructions and Installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
 
 ## Publications
