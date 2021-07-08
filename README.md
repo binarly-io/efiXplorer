@@ -35,6 +35,6 @@ __Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 ## Thank you for support
 
 <p align="center">
-  <img alt="HexRays Logo" src="pics/hexrays_logo.svg" width="55%">
-  <img alt="JetBrains Logo" src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="20%">
+  <img alt="HexRays Logo" src="pics/hexrays_logo.svg" width="40%">
+  <img alt="JetBrains Logo" src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="14%">
 </p>
