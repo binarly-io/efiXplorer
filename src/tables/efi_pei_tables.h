@@ -48,7 +48,7 @@ struct pei_services_entry {
     uint16_t ppi_guid_push_number;
     // GUID_OFFSET_NONE if the argument is Guid (or if no Guid arg exists)
     // Otherwise, if the arg is EFI_PEI_PPI_DESCRIPTOR/EFI_PEI_NOTIFY_DESCRIPTOR,
-    //  offset of Guid field inside a given structure (in bytes).
+    // offset of Guid field inside a given structure (in bytes).
     uint16_t guid_offset;
 };
 
