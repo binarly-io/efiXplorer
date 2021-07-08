@@ -88,7 +88,7 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
     json item = chooser_guids[n];
     string guid = static_cast<string>(item["guid"]);
     string name = static_cast<string>(item["name"]);
-    cols[0].sprnt("%016llX", ea);
+    cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", guid.c_str());
     cols[2].sprnt("%s", name.c_str());
     CASSERT(qnumber(header_guids) == 3);
@@ -121,7 +121,7 @@ void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_
              static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
              static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
              static_cast<uint8_t>(guid[10]));
-    cols[0].sprnt("%016llX", ea);
+    cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", protGuid);
     cols[2].sprnt("%s", name.c_str());
     cols[3].sprnt("%s", service.c_str());
@@ -142,7 +142,7 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
     json item = chooser_s[n];
     string service_name = static_cast<string>(item["service_name"]);
     string table_name = static_cast<string>(item["table_name"]);
-    cols[0].sprnt("%016llX", ea);
+    cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
     CASSERT(qnumber(header_s) == 3);
