@@ -56,8 +56,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     case EFI_SECTION_USER_INTERFACE:
         if (file->is_pe) {
             file->uname = model.body(index);
-            utf16_utf8(&tmp,
-                       reinterpret_cast<const wchar16_t *>(file->uname.data()));
+            utf16_utf8(&tmp, reinterpret_cast<const wchar16_t *>(file->uname.data()));
             file->qname.swap(tmp);
             file->write();
             files.push_back(file);
@@ -75,8 +74,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
 
 void efiloader::Uefitool::dump(const UModelIndex &index) {
     USTATUS err;
-    msg("[UEFITOOL PARSER] file (%s, %s)\n",
-        itemTypeToUString(model.type(index)).data,
+    msg("[UEFITOOL PARSER] file (%s, %s)\n", itemTypeToUString(model.type(index)).data,
         itemSubtypeToUString(model.type(index), model.subtype(index)).data);
     msg("[UEFITOOL PARSER] number of items: %#x\n", model.rowCount(index));
     if (is_file_index(index)) {

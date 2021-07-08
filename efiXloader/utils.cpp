@@ -27,8 +27,7 @@
 
 #include "utils.h"
 
-void efiloader::Utils::show_hex(void *buffer, size_t length,
-                                const char *prefix) {
+void efiloader::Utils::show_hex(void *buffer, size_t length, const char *prefix) {
     uint8_t *buf = (uint8_t *)buffer;
     msg("[efiLoader] %s = ", prefix);
     for (int i = 0; i < length; i++) {
@@ -37,8 +36,7 @@ void efiloader::Utils::show_hex(void *buffer, size_t length,
     msg("\n");
 }
 
-bool efiloader::Utils::find_vol(bytevec_t &frm, std::string &sig,
-                                qoff64_t &vol_off) {
+bool efiloader::Utils::find_vol(bytevec_t &frm, std::string &sig, qoff64_t &vol_off) {
     auto found = std::search(frm.begin(), frm.end(), sig.begin(), sig.end());
     if (found != frm.end()) {
         vol_off = std::distance(frm.begin(), found);
@@ -55,8 +53,7 @@ qoff64_t efiloader::Utils::find_vol_new(linput_t *li, char *sig) {
         qlread(li, &buf, 4);
         if (strneq(buf, sig, 4)) {
 #ifdef DEBUG
-            msg("[efiloader:PARSER] found FV sign %s: %#x\n", buf,
-                qltell(li) - 4);
+            msg("[efiloader:PARSER] found FV sign %s: %#x\n", buf, qltell(li) - 4);
 #endif
             return qltell(li) - 4 - 0x28;
         }
@@ -73,8 +70,7 @@ qoff64_t efiloader::Utils::find_vol_test(bytevec_t &data) {
     return res;
 }
 
-void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size,
-                            size_t count) {
+void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size, size_t count) {
     switch (size) {
     case 1:
         for (int i = 0; i < count; i++) {
@@ -116,8 +112,7 @@ std::vector<qstring> efiloader::Utils::get_images() {
     if (hFind != INVALID_HANDLE_VALUE) {
         do {
             if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-                names.push_back(images_path + qstring("/") +
-                                qstring(fd.cFileName));
+                names.push_back(images_path + qstring("/") + qstring(fd.cFileName));
             }
         } while (::FindNextFile(hFind, &fd));
         ::FindClose(hFind);

@@ -41,15 +41,14 @@ static const char plugin_comment[] =
     "This plugin performs automatic analysis of the input UEFI module";
 static const char plugin_help[] =
     "This plugin performs automatic analysis of the input UEFI module";
-static const char welcome_msg[] =
-    "        __ ___   __      _\n"
-    "       / _(_) \\ / /     | |\n"
-    "   ___| |_ _ \\ V / _ __ | | ___  _ __ ___ _ __\n"
-    "  / _ \\  _| | > < | '_ \\| |/ _ \\| '__/ _ \\ '__|\n"
-    " |  __/ | | |/ . \\| |_) | | (_) | | |  __/ |\n"
-    "  \\___|_| |_/_/ \\_\\ .__/|_|\\___/|_|  \\___|_|\n"
-    "                  | |\n"
-    "                  |_|\n";
+static const char welcome_msg[] = "        __ ___   __      _\n"
+                                  "       / _(_) \\ / /     | |\n"
+                                  "   ___| |_ _ \\ V / _ __ | | ___  _ __ ___ _ __\n"
+                                  "  / _ \\  _| | > < | '_ \\| |/ _ \\| '__/ _ \\ '__|\n"
+                                  " |  __/ | | |/ . \\| |_) | | (_) | | |  __/ |\n"
+                                  "  \\___|_| |_/_/ \\_\\ .__/|_|\\___/|_|  \\___|_|\n"
+                                  "                  | |\n"
+                                  "                  |_|\n";
 
 // default arguments
 struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
@@ -79,13 +78,11 @@ bool idaapi run(size_t) {
               g_args.disable_ui, g_args.disable_vuln_hunt);
     uint8_t arch = getArch();
     if (arch == X64) {
-        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n",
-                  plugin_name);
+        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
     }
     if (arch == X86) {
-        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n",
-                  plugin_name);
+        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
     return true;
@@ -123,9 +120,8 @@ struct change_layout_ah_t : public action_handler_t {
 //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t, public event_listener_t {
     change_layout_ah_t change_layout_ah = change_layout_ah_t(*this);
-    const action_desc_t change_layout_desc =
-        ACTION_DESC_LITERAL_PLUGMOD("ugraph:ChangeLayout", "User function",
-                                    &change_layout_ah, this, NULL, NULL, -1);
+    const action_desc_t change_layout_desc = ACTION_DESC_LITERAL_PLUGMOD(
+        "ugraph:ChangeLayout", "User function", &change_layout_ah, this, NULL, NULL, -1);
 
     qstrvec_t graph_text;
     graph_viewer_t *gv = nullptr;
@@ -221,8 +217,8 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
             break;
         case git_elp:
             if (GRAPH_DEBUG)
-                msg("edge layout point (%d, %d) #%d\n", m->elp.e.src,
-                    m->elp.e.dst, m->elp.pidx);
+                msg("edge layout point (%d, %d) #%d\n", m->elp.e.src, m->elp.e.dst,
+                    m->elp.pidx);
             break;
         }
     } break;
@@ -241,8 +237,8 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
             else if (s->is_node)
                 msg("node %d\n", s->node);
             else
-                msg("edge (%d, %d) layout point #%d\n", s->elp.e.src,
-                    s->elp.e.dst, s->elp.pidx);
+                msg("edge (%d, %d) layout point #%d\n", s->elp.e.src, s->elp.e.dst,
+                    s->elp.pidx);
         }
     } break;
 
@@ -256,8 +252,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
             intvec_t &nodes = *va_arg(va, intvec_t *);
             if (GRAPH_DEBUG) {
                 msg("%p: creating group", g);
-                for (intvec_t::iterator p = nodes.begin(); p != nodes.end();
-                     ++p)
+                for (intvec_t::iterator p = nodes.begin(); p != nodes.end(); ++p)
                     msg(" %d", *p);
                 msg("...\n");
             }
@@ -288,8 +283,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
             int group = va_argi(va, int);
             bool expand = va_argi(va, bool);
             if (GRAPH_DEBUG)
-                msg("%p: %scollapsing group %d\n", g, expand ? "un" : "",
-                    group);
+                msg("%p: %scollapsing group %d\n", g, expand ? "un" : "", group);
         }
         break;
 
@@ -321,8 +315,8 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         /* add all edges to graph */
         if (g->empty())
             g->resize(depNodes.size());
-        for (vector<json>::iterator edge = depEdges.begin();
-             edge != depEdges.end(); ++edge) {
+        for (vector<json>::iterator edge = depEdges.begin(); edge != depEdges.end();
+             ++edge) {
             json e = *edge;
             g->add_edge(e["from"], e["to"], NULL);
         }
@@ -455,7 +449,7 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
     if (arg >> 1 & 1) {
         g_args.disable_vuln_hunt = 1;
     }
-    DEBUG_MSG("[%s] plugin run with argument %d\n", plugin_name, arg);
+    DEBUG_MSG("[%s] plugin run with argument %lu\n", plugin_name, arg);
     DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
               g_args.disable_ui, g_args.disable_vuln_hunt);
     bool guidsJsonOk = guidsJsonExists();
@@ -469,20 +463,17 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
     }
     uint8_t arch = getArch();
     if (arch == X64) {
-        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n",
-                  plugin_name);
+        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
     }
     if (arch == X86) {
-        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n",
-                  plugin_name);
+        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
     if (arch == UEFI) {
         /* warning to user */
-        warning(
-            "%s: analysis may take some time, please wait for it to complete\n",
-            plugin_name);
+        warning("%s: analysis may take some time, please wait for it to complete\n",
+                plugin_name);
         /* analyzer staff */
         DEBUG_MSG("[%s] input file is UEFI firmware\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();

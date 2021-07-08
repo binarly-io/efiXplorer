@@ -57,8 +57,8 @@ class guids_chooser_t : public chooser_t {
     virtual size_t idaapi get_count() const { return list.size(); }
 
     /* function that generates the list line */
-    virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
-                                chooser_item_attrs_t *attrs, size_t n) const;
+    virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
+                                size_t n) const;
 
     /* function that is called when the user hits Enter */
     virtual cbret_t idaapi enter(size_t n) {
@@ -110,8 +110,8 @@ class interfaces_chooser_t : public chooser_t {
     virtual size_t idaapi get_count() const { return list.size(); }
 
     /* function that generates the list line */
-    virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
-                                chooser_item_attrs_t *attrs, size_t n) const;
+    virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
+                                size_t n) const;
 
     /* function that is called when the user hits Enter */
     virtual cbret_t idaapi enter(size_t n) {
@@ -124,8 +124,7 @@ class interfaces_chooser_t : public chooser_t {
     void build_list(bool ok, vector<json> protocols) {
         /* iterate the array */
         size_t n = 0;
-        for (vector<json>::iterator p = protocols.begin(); p != protocols.end();
-             ++p) {
+        for (vector<json>::iterator p = protocols.begin(); p != protocols.end(); ++p) {
             json protocol = *p;
             list.push_back(protocol["address"]);
             chooser_protocols[n] = protocol;
@@ -162,8 +161,8 @@ class s_chooser_t : public chooser_t {
     virtual size_t idaapi get_count() const { return list.size(); }
 
     /* function that generates the list line */
-    virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
-                                chooser_item_attrs_t *attrs, size_t n) const;
+    virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
+                                size_t n) const;
 
     /* function that is called when the user hits Enter */
     virtual cbret_t idaapi enter(size_t n) {
@@ -176,8 +175,7 @@ class s_chooser_t : public chooser_t {
     void build_list(bool ok, vector<json> services) {
         /* iterate the array */
         size_t n = 0;
-        for (vector<json>::iterator s = services.begin(); s != services.end();
-             ++s) {
+        for (vector<json>::iterator s = services.begin(); s != services.end(); ++s) {
             json j_service = *s;
             list.push_back(j_service["address"]);
             chooser_s[n] = j_service;

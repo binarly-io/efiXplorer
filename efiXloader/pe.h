@@ -51,8 +51,8 @@ namespace efiloader {
 
 class PE {
   public:
-    PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base,
-       ushort *sel_base, int ord) {
+    PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base, ushort *sel_base,
+       int ord) {
         _image_name = fname.substr(fname.find_last_of("/\\") + 1);
         msg("[efiloader] image name is %s\n", _image_name.c_str());
         pe_base = base;
@@ -94,14 +94,14 @@ class PE {
     bool process();
     uint16_t arch();
     // data processing
-    inline size_t make_named_byte(ea_t ea, const char *name,
-                                  const char *extra = NULL, size_t count = 1);
-    inline size_t make_named_word(ea_t ea, const char *name,
-                                  const char *extra = NULL, size_t count = 1);
-    inline size_t make_named_dword(ea_t ea, const char *name,
-                                   const char *extra = NULL, size_t count = 1);
-    inline size_t make_named_qword(ea_t ea, const char *name,
-                                   const char *extra = NULL, size_t count = 1);
+    inline size_t make_named_byte(ea_t ea, const char *name, const char *extra = NULL,
+                                  size_t count = 1);
+    inline size_t make_named_word(ea_t ea, const char *name, const char *extra = NULL,
+                                  size_t count = 1);
+    inline size_t make_named_dword(ea_t ea, const char *name, const char *extra = NULL,
+                                   size_t count = 1);
+    inline size_t make_named_qword(ea_t ea, const char *name, const char *extra = NULL,
+                                   size_t count = 1);
     inline ea_t skip(ea_t ea, qoff64_t off) { return ea + off; };
     // ida db processing
     void push_to_idb(ea_t start, ea_t end) {
@@ -109,9 +109,8 @@ class PE {
         file2base(li, 0x0, start, start + headers_size, FILEREG_PATCHABLE);
         // Map sections
         for (int i = 0; i < number_of_sections; i++) {
-            file2base(li, _sec_headers[i].s_scnptr,
-                      start + _sec_headers[i].s_vaddr,
-                      start + _sec_headers[i].s_vaddr  + _sec_headers[i].s_psize,
+            file2base(li, _sec_headers[i].s_scnptr, start + _sec_headers[i].s_vaddr,
+                      start + _sec_headers[i].s_vaddr + _sec_headers[i].s_psize,
                       FILEREG_PATCHABLE);
         }
     };
@@ -173,8 +172,8 @@ class PE {
     qvector<qstring> segm_names;
     qvector<qstring> secs_names;
     ea_t process_section_entry(ea_t ea);
-    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                 char *section_name, uint32_t flags);
+    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end, char *section_name,
+                                    uint32_t flags);
     segment_t *make_head_segment(ea_t start, ea_t end, char *name);
     void setup_ds_selector();
 };

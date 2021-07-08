@@ -40,8 +40,7 @@ bool first_uefi_image = true;
 void idaapi load_binary(const char *fname) {
     load_info_t *ld = NULL;
     linput_t *li = NULL;
-    ushort nflags =
-        NEF_SEGS | NEF_RSCS | NEF_NAME | NEF_IMPS | NEF_LALL | NEF_FLAT;
+    ushort nflags = NEF_SEGS | NEF_RSCS | NEF_NAME | NEF_IMPS | NEF_LALL | NEF_FLAT;
     if (first_uefi_image) {
         nflags |= NEF_FIRST;
     }
@@ -96,8 +95,8 @@ void efi_til_init(const char *til_name) {
 // IDA loader
 //------------------------
 
-static int idaapi accept_file(qstring *fileformatname, qstring *processor,
-                              linput_t *li, const char *filename) {
+static int idaapi accept_file(qstring *fileformatname, qstring *processor, linput_t *li,
+                              const char *filename) {
     efiloader::Utils utils;
     bytevec_t data;
     data.resize(qlsize(li));
@@ -151,9 +150,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     }
 }
 
-static int idaapi move_segm(ea_t from, ea_t to, asize_t, const char *) {
-    return 1;
-}
+static int idaapi move_segm(ea_t from, ea_t to, asize_t, const char *) { return 1; }
 
 //----------------------------------------------------------------------
 //

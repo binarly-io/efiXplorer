@@ -83,8 +83,7 @@ class File {
         mkdir(images_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
         if (!qname.empty()) {
-            qstring image_path =
-                images_path + qstring("/") + qstring(qname.c_str());
+            qstring image_path = images_path + qstring("/") + qstring(qname.c_str());
             msg("[efiloader] writing images to %s\n", image_path.c_str());
             std::ofstream file;
             file.open(image_path.c_str(), std::ios::out | std::ios::binary);
@@ -125,9 +124,7 @@ class Uefitool {
     void dump();
     void dump(const UModelIndex &index);
     void dump(const UModelIndex &index, uint8_t el_type, File *pe_file);
-    bool is_pe_index(const UModelIndex &index) {
-        return model.rowCount(index) == 4;
-    };
+    bool is_pe_index(const UModelIndex &index) { return model.rowCount(index) == 4; };
     bool is_file_index(const UModelIndex &index) {
         return model.type(index) == Types::File;
     };

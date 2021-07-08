@@ -100,21 +100,17 @@ bool _validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
 // Validate a counter taken from the input file. If there are not enough bytes
 // in the input file, ask the user if we may continue and fix the counter.
 template <class T>
-void validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
-                          const char *counter_name, int64 curoff = -1,
-                          int64 maxoff = -1) {
+void validate_array_count(linput_t *li, T *p_cnt, size_t elsize, const char *counter_name,
+                          int64 curoff = -1, int64 maxoff = -1) {
     T old = *p_cnt;
     if (!_validate_array_count(li, p_cnt, elsize, curoff, maxoff)) {
         static const char *const format =
             "AUTOHIDE SESSION\n"
             "HIDECANCEL\n"
-            "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64
-            "u%s";
+            "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64 "u%s";
 #ifndef __KERNEL__
-        if (ask_yn(ASKBTN_YES, format, counter_name, uint64(old),
-                   uint64(*p_cnt),
-                   ". Do you want to continue with the new value?") !=
-            ASKBTN_YES) {
+        if (ask_yn(ASKBTN_YES, format, counter_name, uint64(old), uint64(*p_cnt),
+                   ". Do you want to continue with the new value?") != ASKBTN_YES) {
             loader_failure(NULL);
         }
 #else

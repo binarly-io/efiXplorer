@@ -27,8 +27,7 @@
 
 #include "pe_manager.h"
 
-void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname,
-                                   int ord) {
+void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname, int ord) {
     efiloader::PE pe(li, fname, &pe_base, &pe_sel_base, ord);
     if (pe.good() && pe.is_p32_plus()) {
         msg("[efiloader] PE detected\n");

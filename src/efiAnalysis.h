@@ -122,10 +122,8 @@ class efiAnalyzer {
                                    "SmmLocateHandle",
                                    "SmmLocateProtocol"};
     /* set of pei services that work with PPI */
-    vector<string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
-                                  "NotifyPpi"};
-    // Format-dependent interface-related settings (protocols for DXE, PPIs for
-    // PEI)
+    vector<string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi", "NotifyPpi"};
+    /* Format-dependent interface-related settings (protocols for DXE, PPIs for PEI) */
     char *if_name;
     char *if_pl;
     char *if_key;

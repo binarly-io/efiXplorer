@@ -34,11 +34,7 @@ __Supported Platforms:__ Windows, Linux and OSX (x86/x64).
 
 ## Thank you for support
 
-<table>
-<tbody>
-<tr>
-<td><img src="https://hex-rays.com/wp-content/themes/hx2021/dist/img/logo.svg" width="200" height="100"></td>
-<td><img src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="100" height="100"></td>
-</tr>
-</tbody>
-</table>
+<p align="center">
+  <img alt="HexRays Logo" src="pics/hexrays_logo.svg" width="55%">
+  <img alt="JetBrains Logo" src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="20%">
+</p>

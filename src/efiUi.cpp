@@ -74,23 +74,21 @@ const char *const s_chooser_t::header_s[] = {
     "Table name"    // 2
 };
 
-inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
-                                        vector<json> guids)
-    : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_),
-      list() {
+inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok, vector<json> guids)
+    : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_), list() {
     CASSERT(qnumber(widths_guids) == qnumber(header_guids));
     build_list(ok, guids);
 }
 
-void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                     chooser_item_attrs_t *, size_t n) const {
+void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+                                     size_t n) const {
     ea_t ea = list[n];
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_guids[n];
     string guid = static_cast<string>(item["guid"]);
     string name = static_cast<string>(item["name"]);
-    cols[0].sprnt("%016X", ea);
+    cols[0].sprnt("%016llX", ea);
     cols[1].sprnt("%s", guid.c_str());
     cols[2].sprnt("%s", name.c_str());
     CASSERT(qnumber(header_guids) == 3);
@@ -99,16 +97,14 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
 inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
                                                   vector<json> protocols,
                                                   string name_key_)
-    : chooser_t(0, qnumber(widths_protocols), widths_protocols,
-                header_protocols, title_),
+    : chooser_t(0, qnumber(widths_protocols), widths_protocols, header_protocols, title_),
       list() {
     CASSERT(qnumber(widths_protocols) == qnumber(header_protocols));
     name_key = name_key_;
     build_list(ok, protocols);
 }
 
-void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                          chooser_item_attrs_t *,
+void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
                                           size_t n) const {
     ea_t ea = list[n];
     /* generate the line */
@@ -125,29 +121,28 @@ void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *,
              static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
              static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
              static_cast<uint8_t>(guid[10]));
-    cols[0].sprnt("%016X", ea);
+    cols[0].sprnt("%016llX", ea);
     cols[1].sprnt("%s", protGuid);
     cols[2].sprnt("%s", name.c_str());
     cols[3].sprnt("%s", service.c_str());
     CASSERT(qnumber(header_protocols) == 4);
 }
 
-inline s_chooser_t::s_chooser_t(const char *title_, bool ok,
-                                vector<json> services)
+inline s_chooser_t::s_chooser_t(const char *title_, bool ok, vector<json> services)
     : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
     CASSERT(qnumber(widths_s) == qnumber(header_s));
     build_list(ok, services);
 }
 
-void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                 chooser_item_attrs_t *, size_t n) const {
+void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+                                 size_t n) const {
     ea_t ea = list[n];
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
     string service_name = static_cast<string>(item["service_name"]);
     string table_name = static_cast<string>(item["table_name"]);
-    cols[0].sprnt("%016X", ea);
+    cols[0].sprnt("%016llX", ea);
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
     CASSERT(qnumber(header_s) == 3);

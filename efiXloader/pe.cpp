@@ -209,8 +209,8 @@ const char *efiloader::PE::_machine_name() {
 void efiloader::PE::make_entry(ea_t ea) {
     char func_name[MAXNAMESIZE] = {0};
     ea_t new_ea = image_base + ea;
-    qsnprintf(func_name, sizeof(func_name), "%s_entry_%08X",
-              _image_name.c_str(), calc_file_crc32(li));
+    qsnprintf(func_name, sizeof(func_name), "%s_entry_%08X", _image_name.c_str(),
+              calc_file_crc32(li));
     add_entry(new_ea, new_ea, func_name, true);
     memset(func_name, 0, sizeof(func_name));
 }
@@ -219,8 +219,8 @@ void efiloader::PE::make_entry(ea_t ea) {
 // PE image pre-processing
 //
 
-inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name,
-                                             const char *extra, size_t count) {
+inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name, const char *extra,
+                                             size_t count) {
     if (extra) {
         add_extra_cmt(ea, true, extra);
     }
@@ -256,8 +256,7 @@ inline size_t efiloader::PE::make_named_qword(ea_t ea, const char *name,
 // Segments processing
 //
 
-segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
-                                            char *section_name) {
+segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, char *section_name) {
     segment_t *seg = new segment_t;
     seg->bitness = 2;
     seg->perm = SEG_DATA;
@@ -269,8 +268,7 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
 }
 
 segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                            char *section_name,
-                                            uint32_t flags) {
+                                               char *section_name, uint32_t flags) {
     segment_t *generic_segm = new segment_t;
     generic_segm->sel = allocate_selector(0x0);
     generic_segm->start_ea = seg_ea;
@@ -289,10 +287,10 @@ segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
 
     if (flags & PEST_EXEC) {
         generic_segm->type = SEG_CODE;
-        add_segm_ex(generic_segm, section_name, "CODE", ADDSEG_NOAA);   
+        add_segm_ex(generic_segm, section_name, "CODE", ADDSEG_NOAA);
     } else {
         generic_segm->type = SEG_DATA;
-        add_segm_ex(generic_segm, section_name, "DATA", ADDSEG_NOAA);   
+        add_segm_ex(generic_segm, section_name, "DATA", ADDSEG_NOAA);
     }
 
     if (!qstrcmp(section_name, ".text")) {
@@ -337,8 +335,7 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     set_cmt(next_ea, "Name", 0);
     op_hex(next_ea, 0);
     size_t segm_name_len = get_max_strlit_length(next_ea, STRTYPE_C);
-    get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len,
-                        STRTYPE_C);
+    get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len, STRTYPE_C);
     next_ea += 8;
     create_dword(next_ea, 4);
     set_cmt(next_ea, "Virtual size", 0);
@@ -386,9 +383,8 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
     msg("[efiloader]\tprocessing: %s\n", segm_names[0].c_str());
 
-    segments.push_back(make_generic_segment(seg_ea, seg_ea_end,
-                                             (char *)section_name.c_str(),
-                                             section_characteristics));
+    segments.push_back(make_generic_segment(
+        seg_ea, seg_ea_end, (char *)section_name.c_str(), section_characteristics));
     segm_names.pop_back();
     segm_sizes.pop_back();
     segm_raw_sizes.pop_back();
@@ -398,10 +394,9 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
 void efiloader::PE::setup_ds_selector() {
     for (; !secs_names.empty(); secs_names.pop_back()) {
-        msg("[efiloader]\tsetting DS ( %#x ) for %s segment\n",
-            data_segment_sel, secs_names[secs_names.size() - 1].c_str());
-        segment_t *seg =
-            get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
+        msg("[efiloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
+            secs_names[secs_names.size() - 1].c_str());
+        segment_t *seg = get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
         set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
     }
 }
@@ -422,15 +417,14 @@ void efiloader::PE::preprocess() {
     ea_t end = ea + qlsize(li);
     qsnprintf(seg_name, sizeof(seg_name), "%s_%08X", _image_name.c_str(),
               calc_file_crc32(li));
-    qsnprintf(seg_header_name, sizeof(seg_header_name), "%s_HEADER",
-              _image_name.c_str());
+    qsnprintf(seg_header_name, sizeof(seg_header_name), "%s_HEADER", _image_name.c_str());
     qsnprintf(image_base_name, sizeof(image_base_name), "%s_IMAGE_BASE",
               _image_name.c_str());
 
     preprocess_sections();
     push_to_idb(start, end);
-    segments.push_back(make_head_segment(image_base, image_base + headers_size,
-                                         seg_header_name));
+    segments.push_back(
+        make_head_segment(image_base, image_base + headers_size, seg_header_name));
     secs_names.push_back(qstring(seg_header_name));
     create_word(ea, 2);
     set_cmt(ea, "PE magic number", 0);

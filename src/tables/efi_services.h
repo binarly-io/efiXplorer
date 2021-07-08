@@ -202,8 +202,7 @@ struct service {
 struct pServiceReg bootServicesTableX64[] = {
     {"InstallProtocolInterface", x64InstallProtocolInterfaceOffset, REG_RDX},
     {"ReinstallProtocolInterface", x64RenstallProtocolInterfaceOffset, REG_RDX},
-    {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset,
-     REG_RDX},
+    {"UninstallProtocolInterface", x64UninstallProtocolInterfaceOffset, REG_RDX},
     {"HandleProtocol", x64HandleProtocolOffset, REG_RDX},
     {"RegisterProtocolNotify", x64RegisterProtocolNotifyOffset, REG_RCX},
     {"OpenProtocol", x64OpenProtocolOffset, REG_RDX},
@@ -211,12 +210,11 @@ struct pServiceReg bootServicesTableX64[] = {
     {"OpenProtocolInformation", x64OpenProtocolInformationOffset, REG_RDX},
     {"LocateHandleBuffer", x64LocateHandleBufferOffset, REG_RDX},
     {"LocateProtocol", x64LocateProtocolOffset, REG_RCX},
-    {"InstallMultipleProtocolInterfaces",
-     x64InstallMultipleProtocolInterfacesOffset, REG_RDX},
-    {"UninstallMultipleProtocolInterfaces",
-     x64UninstallMultipleProtocolInterfacesOffset, REG_RDX}};
-size_t bootServicesTableX64Length =
-    sizeof(bootServicesTableX64) / sizeof(pServiceReg);
+    {"InstallMultipleProtocolInterfaces", x64InstallMultipleProtocolInterfacesOffset,
+     REG_RDX},
+    {"UninstallMultipleProtocolInterfaces", x64UninstallMultipleProtocolInterfacesOffset,
+     REG_RDX}};
+size_t bootServicesTableX64Length = sizeof(bootServicesTableX64) / sizeof(pServiceReg);
 
 struct pServicePush bootServicesTableX86[] = {
     {"InstallProtocolInterface", x86InstallProtocolInterfaceOffset, 2},
@@ -229,12 +227,10 @@ struct pServicePush bootServicesTableX86[] = {
     {"OpenProtocolInformation", x86OpenProtocolInformationOffset, 2},
     {"LocateHandleBuffer", x86LocateHandleBufferOffset, 2},
     {"LocateProtocol", x86LocateProtocolOffset, 1},
-    {"InstallMultipleProtocolInterfaces",
-     x86InstallMultipleProtocolInterfacesOffset, 2},
-    {"UninstallMultipleProtocolInterfaces",
-     x86UninstallMultipleProtocolInterfacesOffset, 2}};
-size_t bootServicesTableX86Length =
-    sizeof(bootServicesTableX86) / sizeof(pServicePush);
+    {"InstallMultipleProtocolInterfaces", x86InstallMultipleProtocolInterfacesOffset, 2},
+    {"UninstallMultipleProtocolInterfaces", x86UninstallMultipleProtocolInterfacesOffset,
+     2}};
+size_t bootServicesTableX86Length = sizeof(bootServicesTableX86) / sizeof(pServicePush);
 
 struct service bootServicesTableAll[] = {
     {"RaiseTPL", x64RaiseTPLOffset, x86RaiseTPLOffset},
@@ -272,31 +268,25 @@ struct service bootServicesTableAll[] = {
      x86GetNextMonotonicCountOffset},
     {"Stall", x64StallOffset, x86StallOffset},
     {"SetWatchdogTimer", x64SetWatchdogTimerOffset, x86SetWatchdogTimerOffset},
-    {"ConnectController", x64ConnectControllerOffset,
-     x86ConnectControllerOffset},
+    {"ConnectController", x64ConnectControllerOffset, x86ConnectControllerOffset},
     {"DisconnectController", x64DisconnectControllerOffset,
      x86DisconnectControllerOffset},
     {"OpenProtocol", x64OpenProtocolOffset, x86OpenProtocolOffset},
     {"CloseProtocol", x64CloseProtocolOffset, x86CloseProtocolOffset},
     {"OpenProtocolInformation", x64OpenProtocolInformationOffset,
      x86OpenProtocolInformationOffset},
-    {"ProtocolsPerHandle", x64ProtocolsPerHandleOffset,
-     x86ProtocolsPerHandleOffset},
-    {"LocateHandleBuffer", x64LocateHandleBufferOffset,
-     x86LocateHandleBufferOffset},
+    {"ProtocolsPerHandle", x64ProtocolsPerHandleOffset, x86ProtocolsPerHandleOffset},
+    {"LocateHandleBuffer", x64LocateHandleBufferOffset, x86LocateHandleBufferOffset},
     {"LocateProtocol", x64LocateProtocolOffset, x86LocateProtocolOffset},
-    {"InstallMultipleProtocolInterfaces",
-     x64InstallMultipleProtocolInterfacesOffset,
+    {"InstallMultipleProtocolInterfaces", x64InstallMultipleProtocolInterfacesOffset,
      x86InstallMultipleProtocolInterfacesOffset},
-    {"UninstallMultipleProtocolInterfaces",
-     x64UninstallMultipleProtocolInterfacesOffset,
+    {"UninstallMultipleProtocolInterfaces", x64UninstallMultipleProtocolInterfacesOffset,
      x86UninstallMultipleProtocolInterfacesOffset},
     {"CalculateCrc32", x64CalculateCrc32Offset, x86CalculateCrc32Offset},
     {"CopyMem", x64CopyMemOffset, x86CopyMemOffset},
     {"SetMem", x64SetMemOffset, x86SetMemOffset},
     {"CreateEventEx", x64CreateEventExOffset, x86CreateEventExOffset}};
-size_t bootServicesTableAllLength =
-    sizeof(bootServicesTableAll) / sizeof(service);
+size_t bootServicesTableAllLength = sizeof(bootServicesTableAll) / sizeof(service);
 
 struct service runtimeServicesTableAll[] = {
     {"GetTime", x64GetTimeOffset, x86GetTimeOffset},
@@ -307,8 +297,7 @@ struct service runtimeServicesTableAll[] = {
      x86SetVirtualAddressMapOffset},
     {"ConvertPointer", x64ConvertPointerOffset, x86ConvertPointerOffset},
     {"GetVariable", x64GetVariableOffset, x86GetVariableOffset},
-    {"GetNextVariableName", x64GetNextVariableNameOffset,
-     x86GetNextVariableNameOffset},
+    {"GetNextVariableName", x64GetNextVariableNameOffset, x86GetNextVariableNameOffset},
     {"SetVariable", x64SetVariableOffset, x86SetVariableOffset},
     {"GetNextHighMonotonicCount", x64GetNextHighMonotonicCountOffset,
      x86GetNextHighMonotonicCountOffset},
@@ -316,22 +305,17 @@ struct service runtimeServicesTableAll[] = {
     {"UpdateCapsule", x64UpdateCapsuleOffset, x86UpdateCapsuleOffset},
     {"QueryCapsuleCapabilities", x64QueryCapsuleCapabilitiesOffset,
      x86QueryCapsuleCapabilitiesOffset},
-    {"QueryVariableInfo", x64QueryVariableInfoOffset,
-     x86QueryVariableInfoOffset}};
-size_t runtimeServicesTableAllLength =
-    sizeof(runtimeServicesTableAll) / sizeof(service);
+    {"QueryVariableInfo", x64QueryVariableInfoOffset, x86QueryVariableInfoOffset}};
+size_t runtimeServicesTableAllLength = sizeof(runtimeServicesTableAll) / sizeof(service);
 
 struct pServiceReg smmServicesProtX64[] = {
-    {"SmmInstallProtocolInterface", x64SmmInstallProtocolInterfaceOffset,
-     REG_RDX},
-    {"SmmUninstallProtocolInterface", x64SmmUninstallProtocolInterfaceOffset,
-     REG_RDX},
+    {"SmmInstallProtocolInterface", x64SmmInstallProtocolInterfaceOffset, REG_RDX},
+    {"SmmUninstallProtocolInterface", x64SmmUninstallProtocolInterfaceOffset, REG_RDX},
     {"SmmHandleProtocol", x64SmmHandleProtocolOffset, REG_RDX},
     {"SmmRegisterProtocolNotify", x64SmmRegisterProtocolNotifyOffset, REG_RCX},
     {"SmmLocateHandle", x64SmmLocateHandleOffset, REG_RDX},
     {"SmmLocateProtocol", x64SmmLocateProtocolOffset, REG_RCX}};
-size_t smmServicesProtX64Length =
-    sizeof(smmServicesProtX64) / sizeof(pServiceReg);
+size_t smmServicesProtX64Length = sizeof(smmServicesProtX64) / sizeof(pServiceReg);
 
 struct service smmServicesTableAll[] = {
     {"SmmInstallConfigurationTable", x64SmmInstallConfigurationTableOffset,
@@ -345,17 +329,13 @@ struct service smmServicesTableAll[] = {
      x86SmmInstallProtocolInterfaceOffset},
     {"SmmUninstallProtocolInterface", x64SmmUninstallProtocolInterfaceOffset,
      x86SmmUninstallProtocolInterfaceOffset},
-    {"SmmHandleProtocol", x64SmmHandleProtocolOffset,
-     x86SmmHandleProtocolOffset},
+    {"SmmHandleProtocol", x64SmmHandleProtocolOffset, x86SmmHandleProtocolOffset},
     {"SmmRegisterProtocolNotify", x64SmmRegisterProtocolNotifyOffset,
      x86SmmRegisterProtocolNotifyOffset},
     {"SmmLocateHandle", x64SmmLocateHandleOffset, x86SmmLocateHandleOffset},
-    {"SmmLocateProtocol", x64SmmLocateProtocolOffset,
-     x86SmmLocateProtocolOffset},
+    {"SmmLocateProtocol", x64SmmLocateProtocolOffset, x86SmmLocateProtocolOffset},
     {"SmiManage", x64SmiManageOffset, x86SmiManageOffset},
-    {"SmiHandlerRegister", x64SmiHandlerRegisterOffset,
-     x86SmiHandlerRegisterOffset},
+    {"SmiHandlerRegister", x64SmiHandlerRegisterOffset, x86SmiHandlerRegisterOffset},
     {"SmiHandlerUnRegister", x64SmiHandlerUnRegisterOffset,
      x86SmiHandlerUnRegisterOffset}};
-size_t smmServicesTableAllLength =
-    sizeof(smmServicesTableAll) / sizeof(service);
+size_t smmServicesTableAllLength = sizeof(smmServicesTableAll) / sizeof(service);

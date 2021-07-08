@@ -173,9 +173,9 @@ uint8_t getFileType(vector<json> *allGuids) {
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);
-    auto btnId = ask_buttons(
-        "DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE, "Parse file as",
-        ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
+    auto btnId =
+        ask_buttons("DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE,
+                    "Parse file as", ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
     if (btnId == ASKBTN_YES) {
         return FTYPE_DXE_AND_THE_LIKE;
     } else {
@@ -292,8 +292,8 @@ ea_t findUnknownBsVarX64(ea_t ea) {
         /* check if insn like 'mov rax, cs:<gBS>' */
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
-            DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n",
-                      plugin_name, ea, insn.ops[1].addr);
+            DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
+                      insn.ops[1].addr);
             resAddr = insn.ops[1].addr;
             set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
             break;
@@ -398,8 +398,8 @@ void setEntryArgToPeiSvc() {
         tinfo_t tif_pei;
         bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
         if (!res) {
-            DEBUG_MSG("[%s] get_named_type failed, res = %d, idx=%d\n",
-                      plugin_name, res, idx);
+            DEBUG_MSG("[%s] get_named_type failed, res = %d, idx=%d\n", plugin_name, res,
+                      idx);
             continue;
         }
         tinfo_t ptrTinfo;
@@ -411,13 +411,11 @@ void setEntryArgToPeiSvc() {
             funcdata[1].name = "PeiServices";
             tinfo_t func_tinfo;
             if (!func_tinfo.create_func(funcdata)) {
-                DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name,
-                          idx);
+                DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
             if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-                DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name,
-                          idx);
+                DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
         }
@@ -515,8 +513,8 @@ vector<json> getDependenciesLoader() {
 // Get name for each node
 vector<string> getNodes(vector<json> depJson) {
     vector<string> nodes;
-    for (vector<json>::iterator depItem = depJson.begin();
-         depItem != depJson.end(); ++depItem) {
+    for (vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
+         ++depItem) {
         json dep = *depItem;
         string name = static_cast<string>(dep["module_name"]);
         if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
@@ -537,8 +535,8 @@ vector<string> getNodes(vector<json> depJson) {
 // Get edges
 vector<json> getEdges(vector<string> depNodes, vector<json> depJson) {
     vector<json> edges;
-    for (vector<json>::iterator depItem = depJson.begin();
-         depItem != depJson.end(); ++depItem) {
+    for (vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
+         ++depItem) {
         json dep = *depItem;
         size_t len = dep["used_by"].size();
         if (!len)

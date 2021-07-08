@@ -36,19 +36,12 @@ static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
-vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
-                                vector<segment_t *> dataSegments) {
+vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList, vector<segment_t *> dataSegments) {
     vector<ea_t> resAddrs;
     efiGuid efiSmmSwDispatch2ProtocolGuid = {
-        0x18a3c6dc,
-        0x5eea,
-        0x48c8,
-        {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}};
+        0x18a3c6dc, 0x5eea, 0x48c8, {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}};
     efiGuid efiSmmSwDispatchProtocolGuid = {
-        0xe541b773,
-        0xdd11,
-        0x420c,
-        {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8, 0xbf}};
+        0xe541b773, 0xdd11, 0x420c, {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8, 0xbf}};
     ea_t efiSmmSwDispatchProtocolGuidAddr = 0;
     for (vector<segment_t *>::iterator seg = dataSegments.begin();
          seg != dataSegments.end(); ++seg) {
@@ -72,8 +65,7 @@ vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
         }
         vector<ea_t> efiSmmSwDispatchProtocolGuidXrefs =
             getXrefs(efiSmmSwDispatchProtocolGuidAddr);
-        for (vector<ea_t>::iterator guidXref =
-                 efiSmmSwDispatchProtocolGuidXrefs.begin();
+        for (vector<ea_t>::iterator guidXref = efiSmmSwDispatchProtocolGuidXrefs.begin();
              guidXref != efiSmmSwDispatchProtocolGuidXrefs.end(); ++guidXref) {
             ea_t resAddr = 0;
             ea_t curAddr = prev_head(*guidXref, 0);
@@ -84,17 +76,14 @@ vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
                 /* check if insn like 'mov rax, cs:<gSmst>' */
                 if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
-                    DEBUG_MSG(
-                        "[%s] found gSmst at 0x%016X, address = 0x%016X\n",
-                        plugin_name, curAddr, insn.ops[1].addr);
+                    DEBUG_MSG("[%s] found gSmst at 0x%016X, address = 0x%016X\n",
+                              plugin_name, curAddr, insn.ops[1].addr);
                     resAddr = insn.ops[1].addr;
-                    if (find(gBsList.begin(), gBsList.end(), resAddr) !=
-                        gBsList.end()) {
+                    if (find(gBsList.begin(), gBsList.end(), resAddr) != gBsList.end()) {
                         continue;
                     }
                     char hexAddr[21] = {};
-                    snprintf(hexAddr, 21, "%llX",
-                             static_cast<uint64_t>(resAddr));
+                    snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(resAddr));
                     set_cmt(curAddr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
                     string name = "gSmst_" + static_cast<string>(hexAddr);
                     setPtrTypeAndName(resAddr, name, "_EFI_SMM_SYSTEM_TABLE2");
@@ -110,14 +99,10 @@ vector<ea_t> findSmstSwDispatch(vector<ea_t> gBsList,
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
-vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
-                             vector<segment_t *> dataSegments) {
+vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList, vector<segment_t *> dataSegments) {
     vector<ea_t> resAddrs;
     efiGuid efiSmmBase2ProtocolGuid = {
-        0xf4ccbfb7,
-        0xf6e0,
-        0x47fd,
-        {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}};
+        0xf4ccbfb7, 0xf6e0, 0x47fd, {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}};
     ea_t efiSmmBase2ProtocolGuidAddr = 0;
     for (vector<segment_t *>::iterator seg = dataSegments.begin();
          seg != dataSegments.end(); ++seg) {
@@ -139,10 +124,8 @@ vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
         if (!efiSmmBase2ProtocolGuidAddr) {
             continue;
         }
-        vector<ea_t> efiSmmBase2ProtocolGuidXrefs =
-            getXrefs(efiSmmBase2ProtocolGuidAddr);
-        for (vector<ea_t>::iterator guidXref =
-                 efiSmmBase2ProtocolGuidXrefs.begin();
+        vector<ea_t> efiSmmBase2ProtocolGuidXrefs = getXrefs(efiSmmBase2ProtocolGuidAddr);
+        for (vector<ea_t>::iterator guidXref = efiSmmBase2ProtocolGuidXrefs.begin();
              guidXref != efiSmmBase2ProtocolGuidXrefs.end(); ++guidXref) {
             ea_t resAddr = 0;
             ea_t curAddr = next_head(*guidXref, BADADDR);
@@ -153,17 +136,14 @@ vector<ea_t> findSmstSmmBase(vector<ea_t> gBsList,
                 /* check if insn like 'lea rdx, <gSmst>' */
                 if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
-                    DEBUG_MSG(
-                        "[%s] found gSmst at 0x%016X, address = 0x%016X\n",
-                        plugin_name, curAddr, insn.ops[1].addr);
+                    DEBUG_MSG("[%s] found gSmst at 0x%016X, address = 0x%016X\n",
+                              plugin_name, curAddr, insn.ops[1].addr);
                     resAddr = insn.ops[1].addr;
-                    if (find(gBsList.begin(), gBsList.end(), resAddr) !=
-                        gBsList.end()) {
+                    if (find(gBsList.begin(), gBsList.end(), resAddr) != gBsList.end()) {
                         continue;
                     }
                     char hexAddr[21] = {};
-                    snprintf(hexAddr, 21, "%llX",
-                             static_cast<uint64_t>(resAddr));
+                    snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(resAddr));
                     set_cmt(curAddr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
                     string name = "gSmst_" + static_cast<string>(hexAddr);
                     setPtrTypeAndName(resAddr, name, "_EFI_SMM_SYSTEM_TABLE2");
@@ -211,8 +191,7 @@ vector<func_t *> findSmiHandlers(ea_t address) {
     /* find (SwDispath->Register)(SwDispath, SwSmiHandler, &SwSmiNum,
      * Data)
      */
-    for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea;
-         ea = next_head(ea, BADADDR)) {
+    for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea; ea = next_head(ea, BADADDR)) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni) {
             /* find 'lea r9' */
@@ -272,8 +251,7 @@ vector<func_t *> findSmiHandlers(ea_t address) {
             }
             /* make name for SwSmiHandler function */
             char hexAddr[21] = {0};
-            snprintf(hexAddr, 21, "%llX",
-                     static_cast<uint64_t>(smiHandler->start_ea));
+            snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(smiHandler->start_ea));
             string name = "SwSmiHandler_" + static_cast<string>(hexAddr);
             set_name(smiHandler->start_ea, name.c_str(), SN_CHECK);
             smiHandlers.push_back(smiHandler);
@@ -300,22 +278,15 @@ vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
               "EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID)\n",
               plugin_name);
     efiGuid efiSmmSwDispatch2ProtocolGuid = {
-        0x18a3c6dc,
-        0x5eea,
-        0x48c8,
-        {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}};
+        0x18a3c6dc, 0x5eea, 0x48c8, {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}};
     efiGuid efiSmmSwDispatchProtocolGuid = {
-        0xe541b773,
-        0xdd11,
-        0x420c,
-        {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8, 0xbf}};
+        0xe541b773, 0xdd11, 0x420c, {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8, 0xbf}};
     vector<func_t *> smiHandlers;
     for (vector<segment_t *>::iterator seg = dataSegments.begin();
          seg != dataSegments.end(); ++seg) {
         segment_t *seg_info = *seg;
-        DEBUG_MSG(
-            "[%s] SwSmiHandler function finding from 0x%016X to 0x%016X\n",
-            plugin_name, seg_info->start_ea, seg_info->end_ea);
+        DEBUG_MSG("[%s] SwSmiHandler function finding from 0x%016X to 0x%016X\n",
+                  plugin_name, seg_info->start_ea, seg_info->end_ea);
         ea_t efiSmmSwDispatchProtocolGuidAddr = 0;
         ea_t ea = seg_info->start_ea;
         while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
@@ -327,18 +298,15 @@ vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
             ea += 1;
         }
         if (!efiSmmSwDispatchProtocolGuidAddr) {
-            DEBUG_MSG(
-                "[%s] can't find a EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID guid\n",
-                plugin_name);
+            DEBUG_MSG("[%s] can't find a EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID guid\n",
+                      plugin_name);
             continue;
         }
-        DEBUG_MSG(
-            "[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID address: 0x%016X\n",
-            plugin_name, efiSmmSwDispatchProtocolGuidAddr);
+        DEBUG_MSG("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID address: 0x%016X\n",
+                  plugin_name, efiSmmSwDispatchProtocolGuidAddr);
         vector<ea_t> efiSmmSwDispatchProtocolGuidXrefs =
             getXrefs(efiSmmSwDispatchProtocolGuidAddr);
-        for (vector<ea_t>::iterator guidXref =
-                 efiSmmSwDispatchProtocolGuidXrefs.begin();
+        for (vector<ea_t>::iterator guidXref = efiSmmSwDispatchProtocolGuidXrefs.begin();
              guidXref != efiSmmSwDispatchProtocolGuidXrefs.end(); ++guidXref) {
             DEBUG_MSG("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address: "
                       "0x%016X\n",
@@ -349,8 +317,7 @@ vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
         }
     }
     /* append stackSmiHandlers to result */
-    vector<func_t *> stackSmiHandlers =
-        findSmiHandlersSmmSwDispatchStack(stackGuids);
+    vector<func_t *> stackSmiHandlers = findSmiHandlersSmmSwDispatchStack(stackGuids);
     smiHandlers.insert(smiHandlers.end(), stackSmiHandlers.begin(),
                        stackSmiHandlers.end());
     return smiHandlers;
@@ -361,8 +328,7 @@ vector<func_t *> findSmiHandlersSmmSwDispatch(vector<segment_t *> dataSegments,
 // EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID is a local variable
 vector<func_t *> findSmiHandlersSmmSwDispatchStack(vector<json> stackGuids) {
     vector<func_t *> smiHandlers;
-    for (vector<json>::iterator g = stackGuids.begin(); g != stackGuids.end();
-         ++g) {
+    for (vector<json>::iterator g = stackGuids.begin(); g != stackGuids.end(); ++g) {
         json guid = *g;
         string name = static_cast<string>(guid["name"]);
         if (name != "EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID" &&
@@ -388,10 +354,7 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
               "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
               plugin_name);
     efiGuid efiSmmVariableProtocolGuid = {
-        0xed32d533,
-        0xc5a6,
-        0x40a2,
-        {0xbd, 0xe2, 0x52, 0x55, 0x8d, 0x33, 0xcc, 0xa1}};
+        0xed32d533, 0xc5a6, 0x40a2, {0xbd, 0xe2, 0x52, 0x55, 0x8d, 0x33, 0xcc, 0xa1}};
     vector<ea_t> smmGetVariableCalls;
     /* find all EFI_GUID EFI_SMM_VARIABLE_PROTOCOL_GUID addresses */
     vector<ea_t> efiSmmVariableProtocolGuidAddrs;
@@ -405,9 +368,8 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
         while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
             if (get_wide_dword(ea) == efiSmmVariableProtocolGuid.data1) {
                 efiSmmVariableProtocolGuidAddrs.push_back(ea);
-                DEBUG_MSG(
-                    "[%s] EFI_SMM_VARIABLE_PROTOCOL_GUID address: 0x%016X\n",
-                    plugin_name, ea);
+                DEBUG_MSG("[%s] EFI_SMM_VARIABLE_PROTOCOL_GUID address: 0x%016X\n",
+                          plugin_name, ea);
             }
             ea += 1;
         }
@@ -419,12 +381,10 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
     }
     /* find all gSmmVar variables */
     vector<ea_t> gSmmVarAddrs;
-    for (vector<ea_t>::iterator guid_addr =
-             efiSmmVariableProtocolGuidAddrs.begin();
+    for (vector<ea_t>::iterator guid_addr = efiSmmVariableProtocolGuidAddrs.begin();
          guid_addr != efiSmmVariableProtocolGuidAddrs.end(); ++guid_addr) {
         vector<ea_t> efiSmmVariableProtocolGuidXrefs = getXrefs(*guid_addr);
-        for (vector<ea_t>::iterator guidXref =
-                 efiSmmVariableProtocolGuidXrefs.begin();
+        for (vector<ea_t>::iterator guidXref = efiSmmVariableProtocolGuidXrefs.begin();
              guidXref != efiSmmVariableProtocolGuidXrefs.end(); ++guidXref) {
             segment_t *seg = getseg(*guidXref);
             qstring seg_name;
@@ -474,8 +434,8 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
             segment_t *seg = getseg(*smmVarXref);
             qstring seg_name;
             get_segm_name(&seg_name, seg);
-            DEBUG_MSG("[%s] gSmmVar xref address: 0x%016X, segment: %s\n",
-                      plugin_name, *smmVarXref, seg_name.c_str());
+            DEBUG_MSG("[%s] gSmmVar xref address: 0x%016X, segment: %s\n", plugin_name,
+                      *smmVarXref, seg_name.c_str());
             size_t index = seg_name.find(".text");
             if (index == string::npos) {
                 /* wrong segment */
@@ -492,14 +452,11 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
                 for (auto i = 0; i < 16; i++) {
                     ea = next_head(ea, BADADDR);
                     decode_insn(&insn, ea);
-                    if (insn.itype == NN_callni &&
-                        gSmmVarReg == insn.ops[0].reg &&
+                    if (insn.itype == NN_callni && gSmmVarReg == insn.ops[0].reg &&
                         insn.ops[0].addr == 0) {
-                        DEBUG_MSG(
-                            "[%s] gSmmVar->SmmGetVariable found: 0x%016X\n",
-                            plugin_name, ea);
-                        if (find(smmGetVariableCalls.begin(),
-                                 smmGetVariableCalls.end(),
+                        DEBUG_MSG("[%s] gSmmVar->SmmGetVariable found: 0x%016X\n",
+                                  plugin_name, ea);
+                        if (find(smmGetVariableCalls.begin(), smmGetVariableCalls.end(),
                                  ea) == smmGetVariableCalls.end()) {
                             smmGetVariableCalls.push_back(ea);
                         }
@@ -520,8 +477,8 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
                         smmItem["table_name"] =
                             static_cast<string>("EFI_SMM_VARIABLE_PROTOCOL");
                         smmItem["offset"] = 0;
-                        if (find(allServices->begin(), allServices->end(),
-                                 smmItem) == allServices->end()) {
+                        if (find(allServices->begin(), allServices->end(), smmItem) ==
+                            allServices->end()) {
                             allServices->push_back(smmItem);
                         }
 
@@ -534,15 +491,13 @@ vector<ea_t> findSmmGetVariableCalls(vector<segment_t *> dataSegments,
     return smmGetVariableCalls;
 }
 
-vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
-                                      vector<json> dataGuids,
+vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids, vector<json> dataGuids,
                                       vector<json> *allServices) {
     vector<ea_t> readSaveStateCalls;
     DEBUG_MSG("[%s] Looking for EFI_SMM_CPU_PROTOCOL\n", plugin_name);
     vector<ea_t> codeAddrs;
     vector<ea_t> gSmmCpuAddrs;
-    for (vector<json>::iterator g = stackGuids.begin(); g != stackGuids.end();
-         ++g) {
+    for (vector<json>::iterator g = stackGuids.begin(); g != stackGuids.end(); ++g) {
         json guid = *g;
         string name = static_cast<string>(guid["name"]);
         if (name != "EFI_SMM_CPU_PROTOCOL_GUID")
@@ -553,8 +508,7 @@ vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
                   plugin_name, address);
         codeAddrs.push_back(address);
     }
-    for (vector<json>::iterator g = dataGuids.begin(); g != dataGuids.end();
-         ++g) {
+    for (vector<json>::iterator g = dataGuids.begin(); g != dataGuids.end(); ++g) {
         json guid = *g;
         string name = static_cast<string>(guid["name"]);
         if (name != "EFI_SMM_CPU_PROTOCOL_GUID")
@@ -577,8 +531,8 @@ vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
             codeAddrs.push_back(*guidXref);
         }
     }
-    for (vector<ea_t>::iterator addr = codeAddrs.begin();
-         addr != codeAddrs.end(); ++addr) {
+    for (vector<ea_t>::iterator addr = codeAddrs.begin(); addr != codeAddrs.end();
+         ++addr) {
         DEBUG_MSG("[%s] current address: 0x%016X\n", plugin_name, *addr)
         insn_t insn;
         ea_t ea = prev_head(*addr, 0);
@@ -591,12 +545,10 @@ vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
                           insn.ops[1].addr);
                 /* set name and type */
                 char hexAddr[21] = {};
-                snprintf(hexAddr, 21, "%llX",
-                         static_cast<uint64_t>(insn.ops[1].addr));
+                snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(insn.ops[1].addr));
                 set_cmt(ea, "EFI_SMM_CPU_PROTOCOL *gSmmCpu", true);
                 string name = "gSmmCpu_" + static_cast<string>(hexAddr);
-                setPtrTypeAndName(insn.ops[1].addr, name,
-                                  "EFI_SMM_CPU_PROTOCOL");
+                setPtrTypeAndName(insn.ops[1].addr, name, "EFI_SMM_CPU_PROTOCOL");
                 gSmmCpuAddrs.push_back(insn.ops[1].addr);
                 break;
             }
@@ -631,11 +583,9 @@ vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
                 for (auto i = 0; i < 16; i++) {
                     ea = next_head(ea, BADADDR);
                     decode_insn(&insn, ea);
-                    if (insn.itype == NN_callni &&
-                        gSmmCpuReg == insn.ops[0].reg &&
+                    if (insn.itype == NN_callni && gSmmCpuReg == insn.ops[0].reg &&
                         insn.ops[0].addr == 0) {
-                        if (find(readSaveStateCalls.begin(),
-                                 readSaveStateCalls.end(),
+                        if (find(readSaveStateCalls.begin(), readSaveStateCalls.end(),
                                  ea) == readSaveStateCalls.end()) {
                             readSaveStateCalls.push_back(ea);
                         }
@@ -649,8 +599,8 @@ vector<ea_t> resolveEfiSmmCpuProtocol(vector<json> stackGuids,
                         smmItem["table_name"] =
                             static_cast<string>("EFI_SMM_CPU_PROTOCOL");
                         smmItem["offset"] = 0;
-                        if (find(allServices->begin(), allServices->end(),
-                                 smmItem) == allServices->end()) {
+                        if (find(allServices->begin(), allServices->end(), smmItem) ==
+                            allServices->end()) {
                             allServices->push_back(smmItem);
                         }
                         break;
