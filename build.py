@@ -27,7 +27,13 @@ def cli():
 
 
 @click.command()
-@click.option("--copy", "plugins_path", help="path to IDA plugins directory")
+@click.option(
+    "--copy",
+    "plugins_path",
+    type=str,
+    default=None,
+    help="path to IDA plugins directory",
+)
 @click.option(
     "--batch",
     "batch",
@@ -35,8 +41,17 @@ def cli():
     default=False,
     help="set to True if the plugin will be used in batch mode",
 )
-@click.argument("idasdk_dir")
-def build_plugin(idasdk_dir, plugins_path, batch):
+@click.option(
+    "--hexrays_sdk",
+    "hexrays_sdk",
+    type=str,
+    default=None,
+    help="path to hexrays_sdk directory",
+)
+@click.argument("idasdk")
+def build_plugin(idasdk, hexrays_sdk, plugins_path, batch):
+    if hexrays_sdk is None:
+        exit("[ERROR] Specify the path to hexrays_sdk directory")
     os.chdir("efiXplorer")
     if not os.path.isdir("build"):
         os.mkdir("build")
@@ -47,7 +62,8 @@ def build_plugin(idasdk_dir, plugins_path, batch):
                 "cmake",
                 "..",
                 "-DBATCH=1",
-                "-DIdaSdk_ROOT_DIR={}".format(idasdk_dir),
+                "-DIdaSdk_ROOT_DIR={}".format(idasdk),
+                "-DHexRaysSdk_ROOT_DIR={}".format(hexrays_sdk),
             ]
         )
     else:
@@ -55,7 +71,8 @@ def build_plugin(idasdk_dir, plugins_path, batch):
             [
                 "cmake",
                 "..",
-                "-DIdaSdk_ROOT_DIR={}".format(idasdk_dir),
+                "-DIdaSdk_ROOT_DIR={}".format(idasdk),
+                "-DHexRaysSdk_ROOT_DIR={}".format(hexrays_sdk),
             ]
         )
     subprocess.call(["cmake", "--build", ".", "--config", "Release"])
@@ -77,8 +94,8 @@ def build_plugin(idasdk_dir, plugins_path, batch):
 
 @click.command()
 @click.option("--copy", "loaders_path", help="path to IDA loaders directory")
-@click.argument("idasdk_dir")
-def build_loader(idasdk_dir, loaders_path):
+@click.argument("idasdk")
+def build_loader(idasdk, loaders_path):
     os.chdir("efiXloader")
     if not os.path.isdir("build"):
         os.mkdir("build")
@@ -87,7 +104,7 @@ def build_loader(idasdk_dir, loaders_path):
         [
             "cmake",
             "..",
-            "-DIdaSdk_ROOT_DIR={}".format(idasdk_dir),
+            "-DIdaSdk_ROOT_DIR={}".format(idasdk),
         ]
     )
     subprocess.call(["cmake", "--build", ".", "--config", "Release"])

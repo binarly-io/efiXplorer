@@ -57,7 +57,7 @@ bool GetPointerToNamedType(const char *name, tinfo_t &tifOut) {
 
 // Given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.
-bool OffsetOf(tinfo_t tif, const char *name, unsigned int &offset) {
+bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
 	// Get the udt details
 	udt_type_data_t udt;
 	if(!tif.get_udt_details(&udt)) {
@@ -79,7 +79,7 @@ bool OffsetOf(tinfo_t tif, const char *name, unsigned int &offset) {
 	}
 	
 	// Get the offset of the field
-	offset = static_cast<unsigned int>(udt.at(fIdx).offset >> 3ULL);
+	*offset = static_cast<unsigned int>(udt.at(fIdx).offset >> 3ULL);
 	return true;
 }
 
@@ -265,7 +265,7 @@ class ServiceDescriptor {
 
 				// Retrieve the offsets of each named function pointer
 				unsigned int offset;
-				if(!OffsetOf(mType, targets[i].name, tgt.offset)) {
+				if(!OffsetOf(mType, targets[i].name, &offset)) {
 					msg("[E] Could not get offset of %s\n", targets[i].name);
 					return false;
 				}
@@ -699,8 +699,9 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
 			// Need to get the type for the GUID variable here
 			tinfo_t tifGuidPtr;
-			if(!GetPointerToNamedType(GUIDName, tifGuidPtr)) {
-				if(!GetPointerToNamedType("_"+GUIDName, tifGuidPtr)) {
+			if(!GetPointerToNamedType(GUIDName.c_str(), tifGuidPtr)) {
+				std::string GUIDNameWithPrefix = "_" + GUIDName;
+				if(!GetPointerToNamedType(GUIDNameWithPrefix.c_str(), tifGuidPtr)) {
 					msg("[E] %a: could not get structure for protocol %s\n", mEa, GUIDName.c_str());
 					return 0;
 				}
