@@ -29,11 +29,11 @@
  */
 
 #include "efiAnalysis.h"
+#include "3rd/libfort/fort.h"
 #include "efiPluginArgs.h"
 #include "efiUi.h"
 #include "tables/efi_pei_tables.h"
 #include "tables/efi_services.h"
-#include "thirdparty/libfort/fort.h"
 
 using namespace efiAnalysis;
 

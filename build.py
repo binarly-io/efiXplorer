@@ -37,6 +37,7 @@ def cli():
 )
 @click.argument("idasdk_dir")
 def build_plugin(idasdk_dir, plugins_path, batch):
+    os.chdir("efiXplorer")
     if not os.path.isdir("build"):
         os.mkdir("build")
     os.chdir("build")

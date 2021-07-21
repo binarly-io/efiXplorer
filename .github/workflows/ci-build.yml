@@ -45,18 +45,19 @@ jobs:
           unzip -P "%PASSWORD%" idasdk76.zip
       - name: Build efiXplorer
         run: |
+          cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="..\idasdk76"
+          cmake .. -DIdaSdk_ROOT_DIR="..\..\idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer.dll
-          path: build/Release/efiXplorer.dll
+          path: efiXplorer/build/Release/efiXplorer.dll
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dll
-          path: build/Release/efiXplorer64.dll
+          path: efiXplorer/build/Release/efiXplorer64.dll
   build_linux:
     runs-on: ubuntu-20.04
     steps:
@@ -74,18 +75,19 @@ jobs:
           unzip -P $PASSWORD idasdk76.zip
       - name: Build efiXplorer
         run: |
+          cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../idasdk76"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer.so
-          path: build/efiXplorer.so
+          path: efiXplorer/build/efiXplorer.so
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.so
-          path: build/efiXplorer64.so
+          path: efiXplorer/build/efiXplorer64.so
   build_osx:
     runs-on: macos-latest
     steps:
@@ -103,15 +105,16 @@ jobs:
           unzip -P $PASSWORD idasdk76.zip
       - name: Build efiXplorer
         run: |
+          cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../idasdk76"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer.dylib
-          path: build/efiXplorer.dylib
+          path: efiXplorer/build/efiXplorer.dylib
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dylib
-          path: build/efiXplorer64.dylib
+          path: efiXplorer/build/efiXplorer64.dylib
