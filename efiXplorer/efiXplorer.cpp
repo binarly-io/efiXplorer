@@ -1,15 +1,6 @@
 /*
- *        __ ___   __      _
- *       / _(_) \ / /     | |
- *   ___| |_ _ \ V / _ __ | | ___  _ __ ___ _ __
- *  / _ \  _| | > < | '_ \| |/ _ \| '__/ _ \ '__|
- * |  __/ | | |/ . \| |_) | | (_) | | |  __/ |
- *  \___|_| |_/_/ \_\ .__/|_|\___/|_|  \___|_|
- *                  | |
- *                  |_|
- *
  * efiXplorer
- * Copyright (C) 2020-2021  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * efiXplorer.cpp
  *
@@ -41,14 +32,11 @@ static const char plugin_comment[] =
     "This plugin performs automatic analysis of the input UEFI module";
 static const char plugin_help[] =
     "This plugin performs automatic analysis of the input UEFI module";
-static const char welcome_msg[] = "        __ ___   __      _\n"
-                                  "       / _(_) \\ / /     | |\n"
-                                  "   ___| |_ _ \\ V / _ __ | | ___  _ __ ___ _ __\n"
-                                  "  / _ \\  _| | > < | '_ \\| |/ _ \\| '__/ _ \\ '__|\n"
-                                  " |  __/ | | |/ . \\| |_) | | (_) | | |  __/ |\n"
-                                  "  \\___|_| |_/_/ \\_\\ .__/|_|\\___/|_|  \\___|_|\n"
-                                  "                  | |\n"
-                                  "                  |_|\n";
+static const char welcome_msg[] = "      ____ _  __     __\\n"
+                                  " ___ / _(_) |/_/__  / /__  _______ ____\\n"
+                                  "/ -_) _/ />  </ _ \\/ / _ \\/ __/ -_) __/\\n"
+                                  "\\__/_//_/_/|_/ .__/_/\\___/_/  \\__/_/\\n"
+                                  "            /_/\\n";
 
 // default arguments
 struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};

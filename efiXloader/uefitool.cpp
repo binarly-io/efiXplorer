@@ -1,13 +1,6 @@
 /*
- *        __ ___   ___                 _
- *       / _(_) \ / / |               | |
- *   ___| |_ _ \ V /| | ___   __ _  __| | ___ _ __
- *  / _ \  _| | > < | |/ _ \ / _` |/ _` |/ _ \ '__|
- * |  __/ | | |/ . \| | (_) | (_| | (_| |  __/ |
- *  \___|_| |_/_/ \_\_|\___/ \__,_|\__,_|\___|_|
- *
  * efiXloader
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * uefitool.cpp
  */
