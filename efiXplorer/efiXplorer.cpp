@@ -32,11 +32,11 @@ static const char plugin_comment[] =
     "This plugin performs automatic analysis of the input UEFI module";
 static const char plugin_help[] =
     "This plugin performs automatic analysis of the input UEFI module";
-static const char welcome_msg[] = "      ____ _  __     __\\n"
-                                  " ___ / _(_) |/_/__  / /__  _______ ____\\n"
-                                  "/ -_) _/ />  </ _ \\/ / _ \\/ __/ -_) __/\\n"
-                                  "\\__/_//_/_/|_/ .__/_/\\___/_/  \\__/_/\\n"
-                                  "            /_/\\n";
+static const char welcome_msg[] = "      ____ _  __     __\n"
+                                  " ___ / _(_) |/_/__  / /__  _______ ____\n"
+                                  "/ -_) _/ />  </ _ \\/ / _ \\/ __/ -_) __/\n"
+                                  "\\__/_//_/_/|_/ .__/_/\\___/_/  \\__/_/\n"
+                                  "            /_/\n";
 
 // default arguments
 struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};

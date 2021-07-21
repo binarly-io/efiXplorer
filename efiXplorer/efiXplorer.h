@@ -21,4 +21,4 @@
 
 #include "efiUtils.h"
 
-#define COPYRIGHT "(c) 2020, Binarly - https://github.com/binarly-io/efiXplorer"
+#define COPYRIGHT "(c) 2020-2021, Binarly - https://github.com/binarly-io/efiXplorer"
