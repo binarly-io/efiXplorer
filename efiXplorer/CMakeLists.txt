@@ -34,6 +34,8 @@ include_directories(${HexRaysSdk_INCLUDE_DIRS})
 set(efiXplorer_src
     "efiAnalysis.cpp"
     "efiAnalysis.h"
+    "efiHexRays.cpp"
+    "efiHexRays.h"
     "efiPluginArgs.h"
     "efiSmmUtils.cpp"
     "efiSmmUtils.h"
@@ -51,9 +53,6 @@ ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
 add_ida_library(efiXplorer_lib ${efiXplorer_src})
 ida_target_link_libraries(efiXplorer efiXplorer_lib)
-
-add_ida_library(efiHexRays ${PROJECT_SOURCE_DIR}/efiHexRays.cpp)
-ida_target_link_libraries(efiXplorer efiHexRays)
 
 add_ida_library(fort ${PROJECT_SOURCE_DIR}/3rd/libfort/fort.cpp)
 ida_target_link_libraries(efiXplorer fort)

@@ -33,27 +33,22 @@
 #include <filesystem>
 #include <fstream>
 #include <graph.hpp>
+#include <hexrays.hpp>
 #include <ida.hpp>
 #include <idp.hpp>
 #include <iostream>
 #include <kernwin.hpp>
+#include <lines.hpp>
 #include <loader.hpp>
 #include <name.hpp>
+#include <pro.h>
 #include <stdio.h>
 #include <string>
 #include <struct.hpp>
 #include <typeinf.hpp>
 
-/* HexRays */
-#ifdef HEX_RAYS
-#define HEX_RAYS 0
-/* support build without Hex-Rays Decompiler features */
-#include <hexrays.hpp>
-#endif
 
 using namespace nlohmann;
-using namespace std;
-using namespace std::filesystem;
 
 /* undefine to hide debug messages */
 #define DEBUG
@@ -126,55 +121,78 @@ using namespace std::filesystem;
 #define NN_push 143
 #define NN_retn 159
 
-/* Get input file architecture
- * (X64 or X86) */
-uint8_t getArch();
 /* Get input file type
- * (PEI or DXE-like) */
-uint8_t getFileType(vector<json> *allGuids);
+ * (64-bit, 32-bit image or UEFI firmware) */
+uint8_t getArch();
+
+/* Get image type (PEI or DXE-like) */
+uint8_t getFileType(std::vector<json> *allGuids);
+
 /* Set EFI_GUID type */
 void setGuidType(ea_t ea);
+
 /* Get all data xrefs for address */
-vector<ea_t> getXrefs(ea_t addr);
+std::vector<ea_t> getXrefs(ea_t addr);
+
 /* op_stroff wrapper */
-bool opStroff(ea_t addr, string type);
+bool opStroff(ea_t addr, std::string type);
+
 /* Create EFI_GUID structure */
 void createGuidStructure(ea_t ea);
+
 /* Get boot service description comment */
-string getBsComment(ea_t offset, uint8_t arch);
-/* Get Pei service description comment (X86 is assumed) */
-string getPeiSvcComment(ea_t offset);
-string getPPICallComment(ea_t offset, string name);
-string getSmmVarComment();
+std::string getBsComment(ea_t offset, uint8_t arch);
+
+/* Get PEI service description comment (X86 is assumed) */
+std::string getPeiSvcComment(ea_t offset);
+std::string getPPICallComment(ea_t offset, std::string name);
+
+/* Get SMM service description comment */
+std::string getSmmVarComment();
+
 /* Get runtime service description comment */
-string getRtComment(ea_t offset, uint8_t arch);
+std::string getRtComment(ea_t offset, uint8_t arch);
+
 /* Find address of global gBS variable
  * for X64 module for each service */
 ea_t findUnknownBsVarX64(ea_t ea);
+
 /* Get pointer to named type and apply it */
-bool setPtrType(ea_t addr, string type);
+bool setPtrType(ea_t addr, std::string type);
+
 /* Set name and apply pointer to named type */
-void setPtrTypeAndName(ea_t ea, string name, string type);
+void setPtrTypeAndName(ea_t ea, std::string name, std::string type);
+
 /* Check for guids.json file exist */
 bool guidsJsonExists();
+
 /* Get json summary file name */
-path getSummaryFile();
+std::filesystem::path getSummaryFile();
+
 /* Check for summary json file exist */
 bool summaryJsonExist();
+
 /* Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
 /* for ModuleEntryPoint */
 void setEntryArgToPeiSvc();
+
 /* Set type and name */
-void setTypeAndName(ea_t ea, string name, string type);
+void setTypeAndName(ea_t ea, std::string name, std::string type);
+
 /* Collect information for dependency browser and dependency graph */
-vector<json> getDependenciesLoader();
+std::vector<json> getDependenciesLoader();
+
 /* Get name for each node */
-vector<string> getNodes(vector<json> depJson);
+std::vector<std::string> getNodes(std::vector<json> depJson);
+
 /* Get edges */
-vector<json> getEdges(vector<string> depNodes, vector<json> depJson);
+std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> depJson);
+
 /* Get module name by address */
 qstring getModuleNameLoader(ea_t address);
-/* Print vector<json> object */
-void printVectorJson(vector<json> in);
+
+/* Print std::vector<json> object */
+void printVectorJson(std::vector<json> in);
+
 /* Change the value of a number to match the data type */
 uval_t truncImmToDtype(uval_t value, op_dtype_t dtype);

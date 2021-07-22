@@ -21,6 +21,7 @@
 
 #include "efiAnalysis.h"
 #include "3rd/libfort/fort.h"
+#include "efiHexRays.h"
 #include "efiPluginArgs.h"
 #include "efiUi.h"
 #include "tables/efi_pei_tables.h"
@@ -30,29 +31,29 @@ using namespace efiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
 
-vector<ea_t> gStList;
-vector<ea_t> gPeiSvcList;
-vector<ea_t> gBsList;
-vector<ea_t> gRtList;
-vector<ea_t> gSmstList;
-vector<ea_t> gImageHandleList;
-vector<ea_t> gRtServicesList;
-vector<json> stackGuids;
-vector<json> dataGuids;
+std::vector<ea_t> gStList;
+std::vector<ea_t> gPeiSvcList;
+std::vector<ea_t> gBsList;
+std::vector<ea_t> gRtList;
+std::vector<ea_t> gSmstList;
+std::vector<ea_t> gImageHandleList;
+std::vector<ea_t> gRtServicesList;
+std::vector<json> stackGuids;
+std::vector<json> dataGuids;
 
 /* all .text and .data segments for compatibility with the efiLoader */
-vector<segment_t *> textSegments;
-vector<segment_t *> dataSegments;
+std::vector<segment_t *> textSegments;
+std::vector<segment_t *> dataSegments;
 
 /* for smm callouts finding */
-vector<ea_t> calloutAddrs;
-vector<func_t *> excFunctions;
-vector<ea_t> readSaveStateCalls;
+std::vector<ea_t> calloutAddrs;
+std::vector<func_t *> excFunctions;
+std::vector<ea_t> readSaveStateCalls;
 
 /* for GetVariable stack overflow finding */
-vector<ea_t> getVariableStackOverflow;
-vector<ea_t> getVariableOverflow;
-vector<ea_t> smmGetVariableOverflow;
+std::vector<ea_t> getVariableStackOverflow;
+std::vector<ea_t> getVariableOverflow;
+std::vector<ea_t> smmGetVariableOverflow;
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
     /* get guids.json path */
@@ -77,7 +78,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
         endAddress = end_func->end_ea;
     }
 
-    vector<ea_t> addrs;
+    std::vector<ea_t> addrs;
     for (auto service = begin(protBsNames); service != end(protBsNames); ++service) {
         bootServices[*service] = addrs;
     }
@@ -87,7 +88,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     }
 
     /* load protocols from guids/guids.json file */
-    ifstream in(guidsJsonPath);
+    std::ifstream in(guidsJsonPath);
     in >> dbProtocols;
 
     /* import necessary types */
@@ -148,26 +149,26 @@ void efiAnalysis::efiAnalyzer::getSegments() {
         qstring seg_name;
         get_segm_name(&seg_name, s);
         size_t index = seg_name.find(".text");
-        if (index != string::npos) {
+        if (index != std::string::npos) {
             /* found .text segment */
             textSegments.push_back(s);
             continue;
         }
         index = seg_name.find(".data");
-        if (index != string::npos) {
+        if (index != std::string::npos) {
             /* found .data segment */
             dataSegments.push_back(s);
             continue;
         }
     }
     /* print all .text segments addresses */
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] .text segment: 0x%016x\n", plugin_name, s->start_ea);
     }
     /* print all .data segments addresses */
-    for (vector<segment_t *>::iterator seg = dataSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = dataSegments.begin();
          seg != dataSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] .data segment: 0x%016x\n", plugin_name, s->start_ea);
@@ -196,7 +197,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
                 char hexAddr[21] = {};
                 snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_IMAGE_HANDLE gImageHandle", true);
-                string name = "gImageHandle_" + static_cast<string>(hexAddr);
+                std::string name = "gImageHandle_" + static_cast<std::string>(hexAddr);
                 /* set type and name */
                 setTypeAndName(insn.ops[0].addr, name, "EFI_IMAGE_HANDLE");
                 gImageHandleList.push_back(insn.ops[0].addr);
@@ -230,7 +231,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                 char hexAddr[21] = {};
                 snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                string name = "gST_" + static_cast<string>(hexAddr);
+                std::string name = "gST_" + static_cast<std::string>(hexAddr);
                 /* set type and name */
                 setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                 gStList.push_back(insn.ops[0].addr);
@@ -248,8 +249,8 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] SMST finding\n", plugin_name);
-    vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
-    vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
+    std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
+    std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
     gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
                      gSmstListSwDispatch.end());
     gSmstList.insert(gSmstList.end(), gSmstListSmmBase.begin(), gSmstListSmmBase.end());
@@ -269,7 +270,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
         REG_SP = REG_ESP;
     }
     insn_t insn;
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] BootServices tables finding from 0x%016X to 0x%016X\n",
@@ -304,7 +305,8 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                                    string name = "gBS_" + static_cast<string>(hexAddr);
+                                    std::string name =
+                                        "gBS_" + static_cast<std::string>(hexAddr);
                                     setPtrTypeAndName(insn.ops[0].addr, name,
                                                       "EFI_BOOT_SERVICES");
                                     gBsList.push_back(insn.ops[0].addr);
@@ -328,7 +330,8 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    string name = "gST_" + static_cast<string>(hexAddr);
+                                    std::string name =
+                                        "gST_" + static_cast<std::string>(hexAddr);
                                     setPtrTypeAndName(insn.ops[0].addr, name,
                                                       "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
@@ -361,8 +364,8 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                         snprintf(hexAddr, 21, "%llX",
                                                  static_cast<uint64_t>(insn.ops[0].addr));
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        string name =
-                                            "gST_" + static_cast<string>(hexAddr);
+                                        std::string name =
+                                            "gST_" + static_cast<std::string>(hexAddr);
                                         setPtrTypeAndName(insn.ops[0].addr, name,
                                                           "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
@@ -396,7 +399,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
         REG_SP = REG_ESP;
     }
     insn_t insn;
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] RuntimeServices tables finding from 0x%016X to 0x%016X\n",
@@ -431,7 +434,8 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
-                                    string name = "gRT_" + static_cast<string>(hexAddr);
+                                    std::string name =
+                                        "gRT_" + static_cast<std::string>(hexAddr);
                                     setPtrTypeAndName(insn.ops[0].addr, name,
                                                       "EFI_RUNTIME_SERVICES");
                                     gRtList.push_back(insn.ops[0].addr);
@@ -455,7 +459,8 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                     snprintf(hexAddr, 21, "%llX",
                                              static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    string name = "gST_" + static_cast<string>(hexAddr);
+                                    std::string name =
+                                        "gST_" + static_cast<std::string>(hexAddr);
                                     setPtrTypeAndName(insn.ops[0].addr, name,
                                                       "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
@@ -488,8 +493,8 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                         snprintf(hexAddr, 21, "%llX",
                                                  static_cast<uint64_t>(insn.ops[0].addr));
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        string name =
-                                            "gST_" + static_cast<string>(hexAddr);
+                                        std::string name =
+                                            "gST_" + static_cast<std::string>(hexAddr);
                                         setPtrTypeAndName(insn.ops[0].addr, name,
                                                           "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
@@ -528,7 +533,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
     ft_write_ln(table, " Address ", " Service ");
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] BootServices finding from 0x%016X to 0x%016X (all)\n",
@@ -536,7 +541,8 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
-            for (vector<ea_t>::iterator bs = gBsList.begin(); bs != gBsList.end(); ++bs) {
+            for (std::vector<ea_t>::iterator bs = gBsList.begin(); bs != gBsList.end();
+                 ++bs) {
                 if (insn.itype == NN_mov && insn.ops[0].reg == REG_AX &&
                     insn.ops[1].type == o_mem && insn.ops[1].addr == *bs) {
                     ea_t addr = next_head(ea, BADADDR);
@@ -552,7 +558,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                 }
                                 if (insn.ops[0].addr == static_cast<ea_t>(offset)) {
                                     found = true;
-                                    string cmt =
+                                    std::string cmt =
                                         getBsComment(static_cast<ea_t>(offset), arch);
                                     set_cmt(addr, cmt.c_str(), true);
                                     /* op_stroff */
@@ -566,17 +572,17 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                     DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, addr,
                                               static_cast<char *>(
                                                   bootServicesTableAll[j].service_name));
-                                    bootServicesAll[static_cast<string>(
+                                    bootServicesAll[static_cast<std::string>(
                                                         bootServicesTableAll[j]
                                                             .service_name)]
                                         .push_back(addr);
-                                    /* add item to allBootServices vector */
+                                    /* add item to allBootServices std::vector:: */
                                     json bsItem;
                                     bsItem["address"] = addr;
-                                    bsItem["service_name"] = static_cast<string>(
+                                    bsItem["service_name"] = static_cast<std::string>(
                                         bootServicesTableAll[j].service_name);
                                     bsItem["table_name"] =
-                                        static_cast<string>("EFI_BOOT_SERVICES");
+                                        static_cast<std::string>("EFI_BOOT_SERVICES");
                                     bsItem["offset"] = offset;
                                     if (find(allServices.begin(), allServices.end(),
                                              bsItem) == allServices.end()) {
@@ -613,7 +619,7 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
     ft_write_ln(table, " Address ", " Service ");
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] RuntimeServices finding from 0x%016X to 0x%016X\n", plugin_name,
@@ -621,7 +627,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
-            for (vector<ea_t>::iterator rt = gRtList.begin(); rt != gRtList.end(); ++rt) {
+            for (std::vector<ea_t>::iterator rt = gRtList.begin(); rt != gRtList.end();
+                 ++rt) {
                 if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                     insn.ops[1].type == o_mem && insn.ops[1].addr == *rt) {
                     ea_t addr = next_head(ea, BADADDR);
@@ -637,7 +644,7 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                                 }
                                 if (insn.ops[0].addr == static_cast<ea_t>(offset)) {
                                     found = true;
-                                    string cmt =
+                                    std::string cmt =
                                         getRtComment(static_cast<ea_t>(offset), arch);
                                     set_cmt(addr, cmt.c_str(), true);
                                     /* op_stroff */
@@ -652,17 +659,17 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                                         "[%s] 0x%016X : %s\n", plugin_name, addr,
                                         static_cast<char *>(
                                             runtimeServicesTableAll[j].service_name));
-                                    runtimeServicesAll[static_cast<string>(
+                                    runtimeServicesAll[static_cast<std::string>(
                                                            runtimeServicesTableAll[j]
                                                                .service_name)]
                                         .push_back(addr);
-                                    /* add item to allRuntimeServices vector */
+                                    /* add item to allRuntimeServices std::vector:: */
                                     json rtItem;
                                     rtItem["address"] = addr;
-                                    rtItem["service_name"] = static_cast<string>(
+                                    rtItem["service_name"] = static_cast<std::string>(
                                         runtimeServicesTableAll[j].service_name);
                                     rtItem["table_name"] =
-                                        static_cast<string>("EFI_RUNTIME_SERVICES");
+                                        static_cast<std::string>("EFI_RUNTIME_SERVICES");
                                     rtItem["offset"] = offset;
                                     if (find(allServices.begin(), allServices.end(),
                                              rtItem) == allServices.end()) {
@@ -701,7 +708,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
     ft_write_ln(table, " Address ", " Service ");
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] SmmServices finding from 0x%016X to 0x%016X\n", plugin_name,
@@ -709,8 +716,8 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
-            for (vector<ea_t>::iterator smms = gSmstList.begin(); smms != gSmstList.end();
-                 ++smms) {
+            for (std::vector<ea_t>::iterator smms = gSmstList.begin();
+                 smms != gSmstList.end(); ++smms) {
                 if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                     insn.ops[1].type == o_mem && insn.ops[1].addr == *smms) {
                     ea_t addr = ea;
@@ -722,9 +729,10 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                 if (insn.ops[0].addr ==
                                     static_cast<ea_t>(smmServicesTableAll[j].offset64)) {
                                     found = true;
-                                    string cmt = "gSmst->" +
-                                                 static_cast<string>(
-                                                     smmServicesTableAll[j].service_name);
+                                    std::string cmt =
+                                        "gSmst->" +
+                                        static_cast<std::string>(
+                                            smmServicesTableAll[j].service_name);
                                     set_cmt(addr, cmt.c_str(), true);
                                     /* op_stroff */
                                     opStroff(addr, "_EFI_SMM_SYSTEM_TABLE2");
@@ -737,24 +745,24 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                     DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, addr,
                                               static_cast<char *>(
                                                   smmServicesTableAll[j].service_name));
-                                    /* add address to smmServices[...] vector */
+                                    /* add address to smmServices[...] std::vector:: */
                                     if (find(protSmmNames.begin(), protSmmNames.end(),
                                              smmServicesTableAll[j].service_name) !=
                                         protSmmNames.end()) {
                                         smmServices[smmServicesTableAll[j].service_name]
                                             .push_back(addr);
                                     }
-                                    smmServicesAll[static_cast<string>(
+                                    smmServicesAll[static_cast<std::string>(
                                                        smmServicesTableAll[j]
                                                            .service_name)]
                                         .push_back(addr);
-                                    /* add item to allSmmServices vector */
+                                    /* add item to allSmmServices std::vector:: */
                                     json smmsItem;
                                     smmsItem["address"] = addr;
-                                    smmsItem["service_name"] = static_cast<string>(
+                                    smmsItem["service_name"] = static_cast<std::string>(
                                         smmServicesTableAll[j].service_name);
-                                    smmsItem["table_name"] =
-                                        static_cast<string>("_EFI_SMM_SYSTEM_TABLE2");
+                                    smmsItem["table_name"] = static_cast<std::string>(
+                                        "_EFI_SMM_SYSTEM_TABLE2");
                                     smmsItem["offset"] = smmServicesTableAll[j].offset64;
                                     if (find(allServices.begin(), allServices.end(),
                                              smmsItem) == allServices.end()) {
@@ -833,7 +841,7 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
                     }
 
                     if (found_src_reg && found_push) {
-                        string cmt = getPeiSvcComment(
+                        std::string cmt = getPeiSvcComment(
                             static_cast<ea_t>(pei_services_table[j].offset));
                         set_cmt(ea, cmt.c_str(), true);
                         /* op_stroff */
@@ -844,13 +852,15 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
                                      static_cast<char *>(pei_services_table[j].name));
                         DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, ea,
                                   static_cast<char *>(pei_services_table[j].name));
-                        peiServicesAll[static_cast<string>(pei_services_table[j].name)]
+                        peiServicesAll[static_cast<std::string>(
+                                           pei_services_table[j].name)]
                             .push_back(ea);
                         json psItem;
                         psItem["address"] = ea;
                         psItem["service_name"] =
-                            static_cast<string>(pei_services_table[j].name);
-                        psItem["table_name"] = static_cast<string>("EFI_PEI_SERVICES");
+                            static_cast<std::string>(pei_services_table[j].name);
+                        psItem["table_name"] =
+                            static_cast<std::string>("EFI_PEI_SERVICES");
                         psItem["offset"] = pei_services_table[j].offset;
                         if (find(allServices.begin(), allServices.end(), psItem) ==
                             allServices.end()) {
@@ -906,9 +916,9 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
                     }
 
                     if (found_push) {
-                        string cmt = getPPICallComment(
+                        std::string cmt = getPPICallComment(
                             static_cast<ea_t>(variable_ppi_table[j].offset),
-                            static_cast<string>(variable_ppi_name));
+                            static_cast<std::string>(variable_ppi_name));
                         set_cmt(ea, cmt.c_str(), true);
                         /* op_stroff */
                         opStroff(ea, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
@@ -918,8 +928,9 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
                                      static_cast<char *>(variable_ppi_table[j].name));
                         DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, ea,
                                   static_cast<char *>(variable_ppi_table[j].name));
-                        string ppi_call = static_cast<string>(variable_ppi_name) + "." +
-                                          static_cast<string>(variable_ppi_table[j].name);
+                        std::string ppi_call =
+                            static_cast<std::string>(variable_ppi_name) + "." +
+                            static_cast<std::string>(variable_ppi_table[j].name);
                         ppiCallsAll[ppi_call].push_back(ea);
 
                         // Injecting PPI call as service
@@ -927,7 +938,7 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
                         ppiItem["address"] = ea;
                         ppiItem["service_name"] = ppi_call;
                         ppiItem["table_name"] =
-                            static_cast<string>("EFI_PEI_READ_ONLY_VARIABLE2_PPI");
+                            static_cast<std::string>("EFI_PEI_READ_ONLY_VARIABLE2_PPI");
                         ppiItem["offset"] = variable_ppi_table[j].offset;
                         if (find(allServices.begin(), allServices.end(), ppiItem) ==
                             allServices.end()) {
@@ -963,8 +974,8 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
             !peiServicesAll.contains(pei_services_table[i].name)) {
             continue;
         }
-        vector<ea_t> addrs = peiServicesAll[pei_services_table[i].name];
-        vector<ea_t>::iterator ea;
+        std::vector<ea_t> addrs = peiServicesAll[pei_services_table[i].name];
+        std::vector<ea_t>::iterator ea;
         /* for each pei service */
         for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
             ea_t address = *ea;
@@ -1043,7 +1054,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                     if (guid == dbItem.value()) {
                         ppiItem["ppi_name"] = dbItem.key();
                         /* check if item already exists */
-                        vector<json>::iterator it;
+                        std::vector<json>::iterator it;
                         it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
                         if (it == allPPIs.end()) {
                             allPPIs.push_back(ppiItem);
@@ -1055,7 +1066,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                 if (ppiItem["ppi_name"].is_null()) {
                     ppiItem["ppi_name"] = "ProprietaryPpi";
                     /* check if item already exists */
-                    vector<json>::iterator it;
+                    std::vector<json>::iterator it;
                     it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
                     if (it == allPPIs.end()) {
                         allPPIs.push_back(ppiItem);
@@ -1076,7 +1087,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
     ft_write_ln(table, " Address ", " Service ");
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] BootServices finding from 0x%016X to 0x%016X (protocols)\n",
@@ -1090,7 +1101,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                     if (insn.ops[0].addr ==
                         static_cast<ea_t>(bootServicesTableX64[i].offset)) {
                         /* set comment */
-                        string cmt = getBsComment(
+                        std::string cmt = getBsComment(
                             static_cast<ea_t>(bootServicesTableX64[i].offset), X64);
                         set_cmt(ea, cmt.c_str(), true);
                         /* op_stroff */
@@ -1102,15 +1113,16 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                         DEBUG_MSG(
                             "[%s] 0x%016X : %s\n", plugin_name, ea,
                             static_cast<char *>(bootServicesTableX64[i].service_name));
-                        bootServices[static_cast<string>(
+                        bootServices[static_cast<std::string>(
                                          bootServicesTableX64[i].service_name)]
                             .push_back(ea);
-                        /* add item to allBootServices vector */
+                        /* add item to allBootServices std::vector:: */
                         json bsItem;
                         bsItem["address"] = ea;
-                        bsItem["service_name"] =
-                            static_cast<string>(bootServicesTableX64[i].service_name);
-                        bsItem["table_name"] = static_cast<string>("EFI_BOOT_SERVICES");
+                        bsItem["service_name"] = static_cast<std::string>(
+                            bootServicesTableX64[i].service_name);
+                        bsItem["table_name"] =
+                            static_cast<std::string>("EFI_BOOT_SERVICES");
                         bsItem["offset"] = bootServicesTableX64[i].offset;
                         if (find(allServices.begin(), allServices.end(), bsItem) ==
                             allServices.end()) {
@@ -1148,7 +1160,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                 if (insn.ops[0].addr ==
                     static_cast<ea_t>(bootServicesTableX86[i].offset)) {
                     /* set comment */
-                    string cmt = getBsComment(
+                    std::string cmt = getBsComment(
                         static_cast<ea_t>(bootServicesTableX86[i].offset), X86);
                     set_cmt(ea, cmt.c_str(), true);
                     /* op_stroff */
@@ -1159,15 +1171,15 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                         static_cast<char *>(bootServicesTableX86[i].service_name));
                     DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, ea,
                               static_cast<char *>(bootServicesTableX86[i].service_name));
-                    bootServices[static_cast<string>(
+                    bootServices[static_cast<std::string>(
                                      bootServicesTableX86[i].service_name)]
                         .push_back(ea);
-                    /* add item to allBootServices vector */
+                    /* add item to allBootServices std::vector:: */
                     json bsItem;
                     bsItem["address"] = ea;
                     bsItem["service_name"] =
-                        static_cast<string>(bootServicesTableX86[i].service_name);
-                    bsItem["table_name"] = static_cast<string>("EFI_BOOT_SERVICES");
+                        static_cast<std::string>(bootServicesTableX86[i].service_name);
+                    bsItem["table_name"] = static_cast<std::string>("EFI_BOOT_SERVICES");
                     bsItem["offset"] = bootServicesTableX86[i].offset;
                     if (find(allServices.begin(), allServices.end(), bsItem) ==
                         allServices.end()) {
@@ -1190,10 +1202,11 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] finding of other addresses of global gBS variables\n", plugin_name);
-    for (vector<json>::iterator s = allServices.begin(); s != allServices.end(); ++s) {
+    for (std::vector<json>::iterator s = allServices.begin(); s != allServices.end();
+         ++s) {
         json jService = *s;
-        string table_name = jService["table_name"];
-        if (table_name.compare(static_cast<string>("EFI_BOOT_SERVICES"))) {
+        std::string table_name = jService["table_name"];
+        if (table_name.compare(static_cast<std::string>("EFI_BOOT_SERVICES"))) {
             continue;
         }
         size_t offset = static_cast<size_t>(jService["offset"]);
@@ -1211,7 +1224,7 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
                   plugin_name, addr, addrBs);
         char hexAddr[21] = {};
         snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(addrBs));
-        string name = "gBS_" + static_cast<string>(hexAddr);
+        std::string name = "gBS_" + static_cast<std::string>(hexAddr);
         setPtrTypeAndName(addrBs, name, "EFI_BOOT_SERVICES");
         if (find(gRtList.begin(), gRtList.end(), addrBs) == gRtList.end()) {
             gBsList.push_back(addrBs);
@@ -1232,8 +1245,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
     DEBUG_MSG("[%s] protocols finding (boot services, start address = 0x%016X)\n",
               plugin_name, start);
     for (int i = 0; i < bootServicesTableX64Length; i++) {
-        vector<ea_t> addrs = bootServices[bootServicesTableX64[i].service_name];
-        vector<ea_t>::iterator ea;
+        std::vector<ea_t> addrs = bootServices[bootServicesTableX64[i].service_name];
+        std::vector<ea_t>::iterator ea;
         /* for each boot service */
         for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
             ea_t address = *ea;
@@ -1294,7 +1307,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
                         /* check if item already exist */
-                        vector<json>::iterator it;
+                        std::vector<json>::iterator it;
                         it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
                             allProtocols.push_back(protocolItem);
@@ -1306,7 +1319,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
                     /* check if item already exist */
-                    vector<json>::iterator it;
+                    std::vector<json>::iterator it;
                     it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
@@ -1330,8 +1343,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
         start = seg_info->start_ea;
     }
     for (int i = 0; i < bootServicesTableX86Length; i++) {
-        vector<ea_t> addrs = bootServices[bootServicesTableX86[i].service_name];
-        vector<ea_t>::iterator ea;
+        std::vector<ea_t> addrs = bootServices[bootServicesTableX86[i].service_name];
+        std::vector<ea_t>::iterator ea;
         /* for each boot service */
         for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
             ea_t address = *ea;
@@ -1403,7 +1416,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
                         /* check if item already exist */
-                        vector<json>::iterator it;
+                        std::vector<json>::iterator it;
                         it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
                             allProtocols.push_back(protocolItem);
@@ -1415,7 +1428,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
                     /* check if item already exist */
-                    vector<json>::iterator it;
+                    std::vector<json>::iterator it;
                     it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
@@ -1440,8 +1453,8 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
     DEBUG_MSG("[%s] protocols finding (smm services, start address = 0x%016X)\n",
               plugin_name, start);
     for (int i = 0; i < smmServicesProtX64Length; i++) {
-        vector<ea_t> addrs = smmServices[smmServicesProtX64[i].service_name];
-        vector<ea_t>::iterator ea;
+        std::vector<ea_t> addrs = smmServices[smmServicesProtX64[i].service_name];
+        std::vector<ea_t>::iterator ea;
         /* for each smm service */
         for (ea = addrs.begin(); ea != addrs.end(); ++ea) {
             ea_t address = *ea;
@@ -1502,7 +1515,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
                         /* check if item already exist */
-                        vector<json>::iterator it;
+                        std::vector<json>::iterator it;
                         it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
                             allProtocols.push_back(protocolItem);
@@ -1514,7 +1527,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
                     /* check if item already exist */
-                    vector<json>::iterator it;
+                    std::vector<json>::iterator it;
                     it = find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
@@ -1539,13 +1552,13 @@ void efiAnalysis::efiAnalyzer::printInterfaces() {
     ft_table_t *table = ft_create_table();
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
     ft_write_ln(table, " GUID ", if_name, " Address ", " Service ");
-    for (vector<json>::iterator ifItemIt = if_tbl->begin(); ifItemIt != if_tbl->end();
-         ++ifItemIt) {
+    for (std::vector<json>::iterator ifItemIt = if_tbl->begin();
+         ifItemIt != if_tbl->end(); ++ifItemIt) {
         json ifItem = *ifItemIt;
         auto guid = ifItem["guid"];
-        string svcName = ifItem[if_key];
+        std::string svcName = ifItem[if_key];
         ea_t address = static_cast<ea_t>(ifItem["address"]);
-        string service = ifItem["service"];
+        std::string service = ifItem["service"];
         ft_printf_ln(table,
                      " %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X | %s | "
                      "0x%016X | %s ",
@@ -1568,13 +1581,13 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] %s marking\n", plugin_name, if_pl);
-    for (vector<json>::iterator ifItemIt = if_tbl->begin(); ifItemIt != if_tbl->end();
-         ++ifItemIt) {
+    for (std::vector<json>::iterator ifItemIt = if_tbl->begin();
+         ifItemIt != if_tbl->end(); ++ifItemIt) {
         json ifItem = *ifItemIt;
         ea_t address = static_cast<ea_t>(ifItem["address"]);
         /* check if guid on this address already marked */
         bool marked = false;
-        for (vector<ea_t>::iterator markedAddress = markedInterfaces.begin();
+        for (std::vector<ea_t>::iterator markedAddress = markedInterfaces.begin();
              markedAddress != markedInterfaces.end(); ++markedAddress) {
             if (*markedAddress == address) {
                 marked = true;
@@ -1586,12 +1599,12 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
         }
         char hexAddr[21] = {};
         snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(address));
-        string svcName = static_cast<string>(ifItem[if_key]);
-        string name = svcName + "_" + static_cast<string>(hexAddr);
+        std::string svcName = static_cast<std::string>(ifItem[if_key]);
+        std::string name = svcName + "_" + static_cast<std::string>(hexAddr);
         set_name(address, name.c_str(), SN_CHECK);
         setGuidType(address);
         /* comment line */
-        string comment = "EFI_GUID " + svcName;
+        std::string comment = "EFI_GUID " + svcName;
         /* save address */
         markedInterfaces.push_back(address);
         DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n", plugin_name, address,
@@ -1604,7 +1617,7 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
 void efiAnalysis::efiAnalyzer::markDataGuids() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    for (vector<segment_t *>::iterator seg = dataSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = dataSegments.begin();
          seg != dataSegments.end(); ++seg) {
         segment_t *s = *seg;
         DEBUG_MSG("[%s] marking .data GUIDs from 0x%016X to 0x%016X\n", plugin_name,
@@ -1628,11 +1641,12 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                     /* mark .data guid */
                     char hexAddr[21] = {};
                     snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
-                    string name = dbItem.key() + "_" + static_cast<string>(hexAddr);
+                    std::string name =
+                        dbItem.key() + "_" + static_cast<std::string>(hexAddr);
                     set_name(ea, name.c_str(), SN_CHECK);
                     setGuidType(ea);
                     /* comment line */
-                    string comment = "EFI_GUID " + dbItem.key();
+                    std::string comment = "EFI_GUID " + dbItem.key();
                     DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n", plugin_name, ea,
                               comment.c_str());
                     json guidItem;
@@ -1663,7 +1677,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    for (vector<segment_t *>::iterator seg = textSegments.begin();
+    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
          seg != textSegments.end(); ++seg) {
         segment_t *s = *seg;
         ea_t ea = s->start_ea;
@@ -1705,10 +1719,10 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
 
                             char hexAddr[21] = {};
                             snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
-                            string name =
-                                dbItem.key() + "_" + static_cast<string>(hexAddr);
+                            std::string name =
+                                dbItem.key() + "_" + static_cast<std::string>(hexAddr);
                             /* comment line */
-                            string comment = "EFI_GUID " + dbItem.key();
+                            std::string comment = "EFI_GUID " + dbItem.key();
                             DEBUG_MSG("[%s] address: 0x%016X, comment: %s\n", plugin_name,
                                       ea, comment.c_str());
                             /* set comment */
@@ -1762,7 +1776,8 @@ void findCalloutRec(func_t *func) {
             }
         }
         /* find callouts with gBS */
-        for (vector<ea_t>::iterator bs = gBsList.begin(); bs != gBsList.end(); ++bs) {
+        for (std::vector<ea_t>::iterator bs = gBsList.begin(); bs != gBsList.end();
+             ++bs) {
             /* check if insn is 'mov rax, cs:gBS' */
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == *bs) {
@@ -1771,7 +1786,8 @@ void findCalloutRec(func_t *func) {
             }
         }
         /* find callouts with gRT */
-        for (vector<ea_t>::iterator rt = gRtList.begin(); rt != gRtList.end(); ++rt) {
+        for (std::vector<ea_t>::iterator rt = gRtList.begin(); rt != gRtList.end();
+             ++rt) {
             /* check if insn is 'mov rax, cs:gRT' */
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == *rt) {
@@ -1804,7 +1820,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
         DEBUG_MSG("[%s] can't find a SwSmiHandler functions\n", plugin_name);
         return false;
     }
-    for (vector<func_t *>::iterator f = smiHandlers.begin(); f != smiHandlers.end();
+    for (std::vector<func_t *>::iterator f = smiHandlers.begin(); f != smiHandlers.end();
          ++f) {
         func_t *func = *f;
         findCalloutRec(func);
@@ -1818,13 +1834,13 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
     DEBUG_MSG("[%s] Looking for ppi getvariable stack overflow, "
               "allServices.size() = %d \n",
               plugin_name, allServices.size());
-    vector<ea_t> getVariableServicesCalls;
-    string getVariableStr("VariablePPI.GetVariable");
-    for (vector<json>::iterator j_service = allServices.begin();
+    std::vector<ea_t> getVariableServicesCalls;
+    std::string getVariableStr("VariablePPI.GetVariable");
+    for (std::vector<json>::iterator j_service = allServices.begin();
          j_service != allServices.end(); ++j_service) {
         json service = *j_service;
-        string service_name = static_cast<string>(service["service_name"]);
-        string table_name = static_cast<string>(service["table_name"]);
+        std::string service_name = static_cast<std::string>(service["service_name"]);
+        std::string table_name = static_cast<std::string>(service["table_name"]);
         ea_t addr = static_cast<ea_t>(service["address"]);
         if (service_name.compare(getVariableStr) == 0) {
             getVariableServicesCalls.push_back(addr);
@@ -1978,16 +1994,16 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
 
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double GetVariable calls
-bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(vector<json> allServices) {
+bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServices) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] Looking for GetVariable stack/heap overflow\n", plugin_name);
-    vector<ea_t> getVariableServicesCalls;
-    string getVariableStr("GetVariable");
-    for (vector<json>::iterator j_service = allServices.begin();
+    std::vector<ea_t> getVariableServicesCalls;
+    std::string getVariableStr("GetVariable");
+    for (std::vector<json>::iterator j_service = allServices.begin();
          j_service != allServices.end(); ++j_service) {
         json service = *j_service;
-        string service_name = static_cast<string>(service["service_name"]);
+        std::string service_name = static_cast<std::string>(service["service_name"]);
         ea_t addr = static_cast<ea_t>(service["address"]);
         if (service_name.compare(getVariableStr) == 0) {
             getVariableServicesCalls.push_back(addr);
@@ -2088,7 +2104,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
     DEBUG_MSG("[%s] Looking for SmmGetVariable stack/heap overflow\n", plugin_name);
-    vector<ea_t> smmGetVariableCalls =
+    std::vector<ea_t> smmGetVariableCalls =
         findSmmGetVariableCalls(dataSegments, &allServices);
     sort(smmGetVariableCalls.begin(), smmGetVariableCalls.end());
     if (smmGetVariableCalls.size() < 2) {
@@ -2203,19 +2219,19 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     }
     info["pei_all"] = peiServicesAll;
 
-    vector<json> smiHandlersAddrs;
+    std::vector<json> smiHandlersAddrs;
     if (smiHandlers.size() > 0) {
-        for (vector<func_t *>::iterator f = smiHandlers.begin(); f != smiHandlers.end();
-             ++f) {
+        for (std::vector<func_t *>::iterator f = smiHandlers.begin();
+             f != smiHandlers.end(); ++f) {
             func_t *func = *f;
             smiHandlersAddrs.push_back(func->start_ea);
         }
     }
     info["smi_handlers"] = smiHandlersAddrs;
 
-    string idbPath;
+    std::string idbPath;
     idbPath = get_path(PATH_TYPE_IDB);
-    path logFile;
+    std::filesystem::path logFile;
     logFile /= idbPath;
     logFile.replace_extension(".json");
     std::ofstream out(logFile);

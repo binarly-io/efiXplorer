@@ -26,11 +26,11 @@ namespace efiAnalysis {
 
 class efiAnalyzer {
   public:
-    vector<json> allGuids;
-    vector<json> allProtocols;
-    vector<json> allPPIs;
-    vector<json> allServices;
-    vector<func_t *> smiHandlers;
+    std::vector<json> allGuids;
+    std::vector<json> allProtocols;
+    std::vector<json> allPPIs;
+    std::vector<json> allServices;
+    std::vector<func_t *> smiHandlers;
 
     void getSegments();
     void setStrings();
@@ -63,7 +63,7 @@ class efiAnalyzer {
 
     bool efiSmmCpuProtocolResolver();
     void findSwSmiHandlers();
-    bool findGetVariableOveflow(vector<json> allServices);
+    bool findGetVariableOveflow(std::vector<json> allServices);
     bool findPPIGetVariableStackOveflow();
     bool findSmmGetVariableOveflow();
     bool findSmmCallout();
@@ -79,7 +79,7 @@ class efiAnalyzer {
     ea_t startAddress = 0;
     ea_t endAddress = 0;
     ea_t mainAddress{};
-    path guidsJsonPath;
+    std::filesystem::path guidsJsonPath;
     json bootServices;
     json bootServicesAll;
     json peiServices;
@@ -89,36 +89,37 @@ class efiAnalyzer {
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
-    vector<ea_t> markedInterfaces;
+    std::vector<ea_t> markedInterfaces;
     /* set boot services that work with protocols */
-    vector<string> protBsNames = {"InstallProtocolInterface",
-                                  "ReinstallProtocolInterface",
-                                  "UninstallProtocolInterface",
-                                  "HandleProtocol",
-                                  "RegisterProtocolNotify",
-                                  "OpenProtocol",
-                                  "CloseProtocol",
-                                  "OpenProtocolInformation",
-                                  "ProtocolsPerHandle",
-                                  "LocateHandleBuffer",
-                                  "LocateProtocol",
-                                  "InstallMultipleProtocolInterfaces",
-                                  "UninstallMultipleProtocolInterfaces"};
+    std::vector<std::string> protBsNames = {"InstallProtocolInterface",
+                                            "ReinstallProtocolInterface",
+                                            "UninstallProtocolInterface",
+                                            "HandleProtocol",
+                                            "RegisterProtocolNotify",
+                                            "OpenProtocol",
+                                            "CloseProtocol",
+                                            "OpenProtocolInformation",
+                                            "ProtocolsPerHandle",
+                                            "LocateHandleBuffer",
+                                            "LocateProtocol",
+                                            "InstallMultipleProtocolInterfaces",
+                                            "UninstallMultipleProtocolInterfaces"};
 
     /* set smm services that work with protocols */
-    vector<string> protSmmNames = {"SmmInstallProtocolInterface",
-                                   "SmmUninstallProtocolInterface",
-                                   "SmmHandleProtocol",
-                                   "SmmRegisterProtocolNotify",
-                                   "SmmLocateHandle",
-                                   "SmmLocateProtocol"};
+    std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
+                                             "SmmUninstallProtocolInterface",
+                                             "SmmHandleProtocol",
+                                             "SmmRegisterProtocolNotify",
+                                             "SmmLocateHandle",
+                                             "SmmLocateProtocol"};
     /* set of pei services that work with PPI */
-    vector<string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi", "NotifyPpi"};
+    std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
+                                            "NotifyPpi"};
     /* Format-dependent interface-related settings (protocols for DXE, PPIs for PEI) */
     char *if_name;
     char *if_pl;
     char *if_key;
-    vector<json> *if_tbl;
+    std::vector<json> *if_tbl;
 };
 
 bool efiAnalyzerMainX64();

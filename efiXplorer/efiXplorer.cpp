@@ -92,9 +92,9 @@ plugin_t PLUGIN = {
 
 #else
 
-vector<json> depJson;
-vector<string> depNodes;
-vector<json> depEdges;
+std::vector<json> depJson;
+std::vector<std::string> depNodes;
+std::vector<json> depEdges;
 
 //-------------------------------------------------------------------------
 struct plugin_ctx_t;
@@ -303,7 +303,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         /* add all edges to graph */
         if (g->empty())
             g->resize(depNodes.size());
-        for (vector<json>::iterator edge = depEdges.begin(); edge != depEdges.end();
+        for (std::vector<json>::iterator edge = depEdges.begin(); edge != depEdges.end();
              ++edge) {
             json e = *edge;
             g->add_edge(e["from"], e["to"], NULL);
@@ -443,8 +443,8 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
     bool guidsJsonOk = guidsJsonExists();
     DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
     if (!guidsJsonOk) {
-        string msg_text = "guids.json file not found, copy \"guids\" directory "
-                          "to <IDA_DIR>/plugins";
+        std::string msg_text = "guids.json file not found, copy \"guids\" directory "
+                               "to <IDA_DIR>/plugins";
         DEBUG_MSG("[%s] %s\n", plugin_name, msg_text.c_str());
         warning("%s: %s\n", plugin_name, msg_text.c_str());
         return false;

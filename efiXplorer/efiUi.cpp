@@ -65,7 +65,8 @@ const char *const s_chooser_t::header_s[] = {
     "Table name"    // 2
 };
 
-inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok, vector<json> guids)
+inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
+                                        std::vector<json> guids)
     : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_), list() {
     CASSERT(qnumber(widths_guids) == qnumber(header_guids));
     build_list(ok, guids);
@@ -77,8 +78,8 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_guids[n];
-    string guid = static_cast<string>(item["guid"]);
-    string name = static_cast<string>(item["name"]);
+    std::string guid = static_cast<std::string>(item["guid"]);
+    std::string name = static_cast<std::string>(item["name"]);
     cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", guid.c_str());
     cols[2].sprnt("%s", name.c_str());
@@ -86,8 +87,8 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
 }
 
 inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
-                                                  vector<json> protocols,
-                                                  string name_key_)
+                                                  std::vector<json> protocols,
+                                                  std::string name_key_)
     : chooser_t(0, qnumber(widths_protocols), widths_protocols, header_protocols, title_),
       list() {
     CASSERT(qnumber(widths_protocols) == qnumber(header_protocols));
@@ -102,8 +103,8 @@ void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
     auto guid = item["guid"];
-    string name = static_cast<string>(item[name_key]);
-    string service = static_cast<string>(item["service"]);
+    std::string name = static_cast<std::string>(item[name_key]);
+    std::string service = static_cast<std::string>(item["service"]);
     char protGuid[37] = {0};
     snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
              static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
@@ -119,7 +120,7 @@ void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_
     CASSERT(qnumber(header_protocols) == 4);
 }
 
-inline s_chooser_t::s_chooser_t(const char *title_, bool ok, vector<json> services)
+inline s_chooser_t::s_chooser_t(const char *title_, bool ok, std::vector<json> services)
     : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
     CASSERT(qnumber(widths_s) == qnumber(header_s));
     build_list(ok, services);
@@ -131,15 +132,15 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
     /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
-    string service_name = static_cast<string>(item["service_name"]);
-    string table_name = static_cast<string>(item["table_name"]);
+    std::string service_name = static_cast<std::string>(item["service_name"]);
+    std::string table_name = static_cast<std::string>(item["table_name"]);
     cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
     CASSERT(qnumber(header_s) == 3);
 }
 
-bool guids_show(vector<json> guids, qstring title) {
+bool guids_show(std::vector<json> guids, qstring title) {
     bool ok;
     /* open the window */
     guids_chooser_t *ch = new guids_chooser_t(title.c_str(), ok, guids);
@@ -148,7 +149,7 @@ bool guids_show(vector<json> guids, qstring title) {
     return true;
 }
 
-bool protocols_show(vector<json> protocols, qstring title) {
+bool protocols_show(std::vector<json> protocols, qstring title) {
     bool ok;
     /* open the window */
     interfaces_chooser_t *ch =
@@ -158,7 +159,7 @@ bool protocols_show(vector<json> protocols, qstring title) {
     return true;
 }
 
-bool ppis_show(vector<json> ppis, qstring title) {
+bool ppis_show(std::vector<json> ppis, qstring title) {
     bool ok;
     /* open the window */
     interfaces_chooser_t *ch =
@@ -168,7 +169,7 @@ bool ppis_show(vector<json> ppis, qstring title) {
     return true;
 }
 
-bool services_show(vector<json> services, qstring title) {
+bool services_show(std::vector<json> services, qstring title) {
     bool ok;
     /* open the window */
     s_chooser_t *ch = new s_chooser_t(title.c_str(), ok, services);

@@ -29,12 +29,11 @@ class guids_chooser_t : public chooser_t {
     static const char *const header_guids[];
 
   public:
-    /* remember the addresses in this qvector */
     eavec_t list;
     json chooser_guids;
 
     /* this object must be allocated using `new` */
-    guids_chooser_t(const char *title, bool ok, vector<json> guids);
+    guids_chooser_t(const char *title, bool ok, std::vector<json> guids);
 
     /* function that is used to decide whether a new chooser should be opened or
      * we can use the existing one. The contents of the window are completely
@@ -59,10 +58,10 @@ class guids_chooser_t : public chooser_t {
     }
 
   protected:
-    void build_list(bool ok, vector<json> guids) {
+    void build_list(bool ok, std::vector<json> guids) {
         /* iterate the array */
         size_t n = 0;
-        for (vector<json>::iterator g = guids.begin(); g != guids.end(); ++g) {
+        for (std::vector<json>::iterator g = guids.begin(); g != guids.end(); ++g) {
             json guid = *g;
             list.push_back(guid["address"]);
             chooser_guids[n] = guid;
@@ -80,14 +79,14 @@ class interfaces_chooser_t : public chooser_t {
     static const char *const header_protocols[];
 
   public:
-    /* remember the addresses in this qvector */
+    /* remember the addresses in this qstd::vector:: */
     eavec_t list;
     json chooser_protocols;
-    string name_key;
+    std::string name_key;
 
     /* this object must be allocated using `new` */
-    interfaces_chooser_t(const char *title, bool ok, vector<json> interfaces,
-                         string name_key);
+    interfaces_chooser_t(const char *title, bool ok, std::vector<json> interfaces,
+                         std::string name_key);
 
     /* function that is used to decide whether a new chooser should be opened or
      * we can use the existing one. The contents of the window are completely
@@ -112,10 +111,11 @@ class interfaces_chooser_t : public chooser_t {
     }
 
   protected:
-    void build_list(bool ok, vector<json> protocols) {
+    void build_list(bool ok, std::vector<json> protocols) {
         /* iterate the array */
         size_t n = 0;
-        for (vector<json>::iterator p = protocols.begin(); p != protocols.end(); ++p) {
+        for (std::vector<json>::iterator p = protocols.begin(); p != protocols.end();
+             ++p) {
             json protocol = *p;
             list.push_back(protocol["address"]);
             chooser_protocols[n] = protocol;
@@ -133,12 +133,11 @@ class s_chooser_t : public chooser_t {
     static const char *const header_s[];
 
   public:
-    /* remember the addresses in this qvector */
     eavec_t list;
     json chooser_s;
 
     /* this object must be allocated using `new` */
-    s_chooser_t(const char *title, bool ok, vector<json> services);
+    s_chooser_t(const char *title, bool ok, std::vector<json> services);
 
     /* function that is used to decide whether a new chooser should be opened or
      * we can use the existing one. The contents of the window are completely
@@ -163,10 +162,10 @@ class s_chooser_t : public chooser_t {
     }
 
   protected:
-    void build_list(bool ok, vector<json> services) {
+    void build_list(bool ok, std::vector<json> services) {
         /* iterate the array */
         size_t n = 0;
-        for (vector<json>::iterator s = services.begin(); s != services.end(); ++s) {
+        for (std::vector<json>::iterator s = services.begin(); s != services.end(); ++s) {
             json j_service = *s;
             list.push_back(j_service["address"]);
             chooser_s[n] = j_service;
@@ -176,7 +175,7 @@ class s_chooser_t : public chooser_t {
     };
 };
 
-bool guids_show(vector<json> guid, qstring title);
-bool protocols_show(vector<json> protocols, qstring title);
-bool ppis_show(vector<json> protocols, qstring title);
-bool services_show(vector<json> services, qstring title);
+bool guids_show(std::vector<json> guid, qstring title);
+bool protocols_show(std::vector<json> protocols, qstring title);
+bool ppis_show(std::vector<json> protocols, qstring title);
+bool services_show(std::vector<json> services, qstring title);
