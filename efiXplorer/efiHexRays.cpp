@@ -19,39 +19,6 @@
 
 #include "efiHexRays.h"
 
-// Not used
-uint32 GetOrdinalByName(const char *name) {
-    import_type(get_idati(), -1, name);
-    tinfo_t tif;
-    if (!tif.get_named_type(get_idati(), name, BTF_STRUCT)) {
-        msg("[E] Could not get type named %s\n", name);
-        return 0;
-    }
-    return tif.get_ordinal();
-}
-
-// Used by the next function. Given a name, import the structure and retrieve
-// its tinfo_t.
-bool GetNamedType(const char *name, tinfo_t &tifOut) {
-    import_type(get_idati(), -1, name);
-    tinfo_t tif;
-    if (!tif.get_named_type(get_idati(), name, BTF_STRUCT))
-        return false;
-    tifOut = tif;
-    return true;
-}
-
-// Given a name, import the structure and retrieve a tinfo_t specifying a
-// pointer to that type.
-bool GetPointerToNamedType(const char *name, tinfo_t &tifOut) {
-    if (!GetNamedType(name, tifOut))
-        return false;
-    tinfo_t ptrTif;
-    ptrTif.create_ptr(tifOut);
-    tifOut = ptrTif;
-    return true;
-}
-
 // Given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.
 bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
@@ -77,6 +44,18 @@ bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
 
     // Get the offset of the field
     *offset = static_cast<unsigned int>(udt.at(fIdx).offset >> 3ULL);
+    return true;
+}
+
+// Utility function to set a Hex-Rays variable type
+bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif) {
+    lvar_saved_info_t lsi;
+    lsi.ll = ll;
+    lsi.type = tif;
+    if (!modify_user_lvar_info(funcEa, MLI_TYPE, lsi)) {
+        msg("[E] %a: could not modify lvar type for %s\n", funcEa, ll.name.c_str());
+        return false;
+    }
     return true;
 }
 
@@ -151,14 +130,34 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
     return out->c_str();
 }
 
-// Utility function to set a Hex-Rays variable type
-bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif) {
-    lvar_saved_info_t lsi;
-    lsi.ll = ll;
-    lsi.type = tif;
-    if (!modify_user_lvar_info(funcEa, MLI_TYPE, lsi)) {
-        msg("[E] %a: could not modify lvar type for %s\n", funcEa, ll.name.c_str());
-        return false;
-    }
-    return true;
+void efiHexRaysTest() {
+    // And now, descriptors for EFI_BOOT_SERVICES functions
+    struct TargetFunctionPointer BootServicesFunctions[3]{
+        {"HandleProtocol", 0x98, 3, 1, 2},
+        {"LocateProtocol", 0x140, 3, 0, 2},
+        {"OpenProtocol", 0x118, 6, 1, 2}};
+
+    // Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
+    struct TargetFunctionPointer SystemServicesFunctions[2]{
+        {"SmmHandleProtocol", 0xb8, 3, 1, 2},
+        {"SmmLocateProtocol", 0xd0, 3, 0, 2},
+    };
+
+    // Test function
+    ea_t addr = 0x011CC;
+    func_t *func = get_func(addr);
+
+    ServiceDescriptor sd;
+    sd.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
+    sd.Initialize("_EFI_SMM_SYSTEM_TABLE2", SystemServicesFunctions, 2);
+
+    ServiceDescriptorMap m;
+    m.Register(sd);
+
+    GUIDRetyper retyper(m);
+    retyper.SetFuncEa(addr);
+
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(func, &hf);
+    retyper.apply_to(&cfunc->body, nullptr);
 }

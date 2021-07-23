@@ -19,6 +19,8 @@
  *
  */
 
+#pragma once
+
 #include "efiSmmUtils.h"
 #include "efiUtils.h"
 

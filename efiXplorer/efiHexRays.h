@@ -19,15 +19,15 @@
  *
  */
 
+#pragma once
+
 #include "efiUtils.h"
 
-uint32 GetOrdinalByName(const char *name);
-bool GetNamedType(const char *name, tinfo_t &tifOut);
-bool GetPointerToNamedType(const char *name, tinfo_t &tifOut);
+void efiHexRaysTest();
+bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif);
 bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool IsPODArray(tinfo_t tif, unsigned int ptrDepth);
 const char *Expr2String(cexpr_t *e, qstring *out);
-bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif);
 
 // Description of a function pointer within a structure. Ultimately, this
 // plugin is looking for calls to specific UEFI functions. This structure
@@ -38,17 +38,6 @@ struct TargetFunctionPointer {
     unsigned int nArgs;    // Number of expected arguments
     unsigned int nGUIDArg; // Which argument has the EFI_GUID *
     unsigned int nOutArg;  // Which argument retrieves the output
-};
-
-// And now, descriptors for EFI_BOOT_SERVICES functions
-struct TargetFunctionPointer BootServicesFunctions[3]{{"HandleProtocol", -1, 3, 1, 2},
-                                                      {"LocateProtocol", -1, 3, 0, 2},
-                                                      {"OpenProtocol", -1, 6, 1, 2}};
-
-// Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
-struct TargetFunctionPointer SystemServicesFunctions[2]{
-    {"SmmHandleProtocol", -1, 3, 1, 2},
-    {"SmmLocateProtocol", -1, 3, 0, 2},
 };
 
 // This class holds all function pointer descriptors for one structure, as well
@@ -139,7 +128,7 @@ class ServiceDescriptor {
         // of the plugin's logic. After all, we're looking at every access to the
         // selected structures, and so, quite rightly, we'll want to ignore the
         // function pointers that we're not tracking.
-        msg("[I] Could not find function pointer with offset %d\n", offset);
+        msg("[I] Could not find function pointer with offset 0x%a\n", offset);
         return false;
     }
 };
@@ -159,7 +148,7 @@ class ServiceDescriptorMap {
   public:
     // Add a new ServiceDescriptor to the map. I should change the argument
     // type to match whatever I change the value type of the map to.
-    bool Register(ServiceDescriptor &&sd) {
+    bool Register(ServiceDescriptor sd) {
 
         // Get the ordinal from the ServiceDescriptor
         uint32 ord = sd.GetOrdinal();
@@ -507,17 +496,25 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         // I need to look that up in the GUID information and get its name
         // Also needs to handle the case where the name is unknown and return 0
         // Until I know how to do that, I'm hard-coding this example string
-        std::string GUIDName = "EFI_GRAPHICS_OUTPUT_PROTOCOL";
+        std::string GUIDName = "EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL";
 
         // Need to get the type for the GUID variable here
+        tinfo_t tif;
+        import_type(get_idati(), -1, GUIDName.c_str());
+        if (!tif.get_named_type(get_idati(), GUIDName.c_str())) {
+            return false;
+        }
+
+        qstring tStr;
+        if (!tif.get_type_name(&tStr)) {
+            DebugPrint("[E] Can't get type name\n");
+        }
+
+        DebugPrint("[I] Protocol type name: %s\n", tStr.c_str());
+
         tinfo_t tifGuidPtr;
-        if (!GetPointerToNamedType(GUIDName.c_str(), tifGuidPtr)) {
-            std::string GUIDNameWithPrefix = "_" + GUIDName;
-            if (!GetPointerToNamedType(GUIDNameWithPrefix.c_str(), tifGuidPtr)) {
-                msg("[E] %a: could not get structure for protocol %s\n", mEa,
-                    GUIDName.c_str());
-                return 0;
-            }
+        if (!tifGuidPtr.create_ptr(tif)) {
+            return false;
         }
 
         // Get the referent for the output argument.
@@ -537,19 +534,18 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
     // apply, apply the type. This is just a bit of IDA/Hex-Rays type system
     // skullduggery.
     void ApplyType(cexpr_t *outArg, tinfo_t ptrTif) {
-        qstring tstr;
-        ptrTif.get_type_name(&tstr);
+        ea_t dest_ea = outArg->obj_ea;
 
         // For global variables
         if (outArg->op == cot_obj) {
-            ea_t dest_ea = outArg->ea;
-
+            DebugPrint("[I] Address: 0x%a\n", dest_ea);
             // Just apply the type information to the address
             apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
             ++mNumApplied;
-            DebugPrint("%a: %s::%s applied type %s\n", mEa, mpService->GetName(),
-                       mpTarget->name, tstr.c_str());
+            DebugPrint("%a: %s::%s applied type for global variable\n", dest_ea,
+                       mpService->GetName(), mpTarget->name);
         }
+
         // For local variables
         else if (outArg->op == cot_var) {
             var_ref_t varRef = outArg->v;
@@ -557,18 +553,17 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             // Set the Hex-Rays variable type
             if (SetHexRaysVariableType(mFuncEa, destVar, ptrTif)) {
                 ++mNumApplied;
-                DebugPrint("%a: %s::%s applied type %s\n", mEa, mpService->GetName(),
-                           mpTarget->name, tstr.c_str());
+                DebugPrint("%a: %s::%s applied type\n", mEa, mpService->GetName(),
+                           mpTarget->name);
             }
         }
 
         // For anything else, make an note of it and throw it away
         else {
             qstring estr;
-            DebugPrint("%a: %s::%s argument was %s, not global/variable. Could not apply "
-                       "type %s\n",
-                       mEa, mpService->GetName(), mpTarget->name,
-                       Expr2String(outArg, &estr), tstr.c_str());
+            DebugPrint(
+                "%a: %s::%s argument was %s, not global/variable. Could not apply type\n",
+                mEa, mpService->GetName(), mpTarget->name, Expr2String(outArg, &estr));
         }
     }
 };

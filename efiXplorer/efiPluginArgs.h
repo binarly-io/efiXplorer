@@ -20,7 +20,7 @@
  */
 
 /* arguments configuration */
-typedef struct args {
+struct args {
     int disable_ui;
     int disable_vuln_hunt;
 };

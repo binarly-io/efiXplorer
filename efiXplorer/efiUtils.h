@@ -19,6 +19,7 @@
  *
  */
 
+#pragma once
 #define _CRT_SECURE_NO_WARNINGS // TODO: need a fix in future
 
 /* 3rd party */
@@ -46,7 +47,6 @@
 #include <string>
 #include <struct.hpp>
 #include <typeinf.hpp>
-
 
 using namespace nlohmann;
 
