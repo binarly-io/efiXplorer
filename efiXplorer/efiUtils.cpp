@@ -556,3 +556,23 @@ std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> 
     }
     return edges;
 }
+
+//--------------------------------------------------------------------------
+// Get GUID data by address
+json getGuidByAddr(ea_t addr) {
+    return json::array(
+        {get_wide_dword(addr), get_wide_word(addr + 4), get_wide_word(addr + 6),
+         get_wide_byte(addr + 8), get_wide_byte(addr + 9), get_wide_byte(addr + 10),
+         get_wide_byte(addr + 11), get_wide_byte(addr + 12), get_wide_byte(addr + 13),
+         get_wide_byte(addr + 14), get_wide_byte(addr + 15)});
+}
+
+//--------------------------------------------------------------------------
+// Validate GUID value
+bool checkGuid(json guid) {
+    if ((static_cast<uint32_t>(guid[0]) == 0x00000000 && (uint16_t)guid[1] == 0x0000) ||
+        (static_cast<uint32_t>(guid[0]) == 0xffffffff && (uint16_t)guid[1] == 0xffff)) {
+        return false;
+    }
+    return true;
+}

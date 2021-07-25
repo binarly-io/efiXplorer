@@ -79,12 +79,12 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     }
 
     std::vector<ea_t> addrs;
-    for (auto service = begin(protBsNames); service != end(protBsNames); ++service) {
-        bootServices[*service] = addrs;
+    for (auto service : protBsNames) {
+        bootServices[service] = addrs;
     }
 
-    for (auto service = begin(protSmmNames); service != end(protSmmNames); ++service) {
-        smmServices[*service] = addrs;
+    for (auto service : protSmmNames) {
+        smmServices[service] = addrs;
     }
 
     /* load protocols from guids/guids.json file */
@@ -162,15 +162,13 @@ void efiAnalysis::efiAnalyzer::getSegments() {
         }
     }
     /* print all .text segments addresses */
-    for (std::vector<segment_t *>::iterator seg = textSegments.begin();
-         seg != textSegments.end(); ++seg) {
-        segment_t *s = *seg;
+    for (auto seg : textSegments) {
+        segment_t *s = seg;
         DEBUG_MSG("[%s] .text segment: 0x%016x\n", plugin_name, s->start_ea);
     }
     /* print all .data segments addresses */
-    for (std::vector<segment_t *>::iterator seg = dataSegments.begin();
-         seg != dataSegments.end(); ++seg) {
-        segment_t *s = *seg;
+    for (auto seg : dataSegments) {
+        segment_t *s = seg;
         DEBUG_MSG("[%s] .data segment: 0x%016x\n", plugin_name, s->start_ea);
     }
 }
@@ -576,7 +574,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                                         bootServicesTableAll[j]
                                                             .service_name)]
                                         .push_back(addr);
-                                    /* add item to allBootServices std::vector:: */
+                                    /* add item to allBootServices */
                                     json bsItem;
                                     bsItem["address"] = addr;
                                     bsItem["service_name"] = static_cast<std::string>(
@@ -663,7 +661,7 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                                                            runtimeServicesTableAll[j]
                                                                .service_name)]
                                         .push_back(addr);
-                                    /* add item to allRuntimeServices std::vector:: */
+                                    /* add item to allRuntimeServices */
                                     json rtItem;
                                     rtItem["address"] = addr;
                                     rtItem["service_name"] = static_cast<std::string>(
@@ -745,7 +743,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                     DEBUG_MSG("[%s] 0x%016X : %s\n", plugin_name, addr,
                                               static_cast<char *>(
                                                   smmServicesTableAll[j].service_name));
-                                    /* add address to smmServices[...] std::vector:: */
+                                    /* add address to smmServices[...] */
                                     if (find(protSmmNames.begin(), protSmmNames.end(),
                                              smmServicesTableAll[j].service_name) !=
                                         protSmmNames.end()) {
@@ -756,7 +754,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                                        smmServicesTableAll[j]
                                                            .service_name)]
                                         .push_back(addr);
-                                    /* add item to allSmmServices std::vector:: */
+                                    /* add item to allSmmServices */
                                     json smmsItem;
                                     smmsItem["address"] = addr;
                                     smmsItem["service_name"] = static_cast<std::string>(
@@ -1020,23 +1018,8 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
             if (found) {
                 DEBUG_MSG("[%s] found PPI GUID parameter at 0x%016X\n", plugin_name,
                           guidCodeAddress);
-                /* get guid */
-                auto guid = json::array({get_wide_dword(guidDataAddress),
-                                         get_wide_word(guidDataAddress + 4),
-                                         get_wide_word(guidDataAddress + 6),
-                                         get_wide_byte(guidDataAddress + 8),
-                                         get_wide_byte(guidDataAddress + 9),
-                                         get_wide_byte(guidDataAddress + 10),
-                                         get_wide_byte(guidDataAddress + 11),
-                                         get_wide_byte(guidDataAddress + 12),
-                                         get_wide_byte(guidDataAddress + 13),
-                                         get_wide_byte(guidDataAddress + 14),
-                                         get_wide_byte(guidDataAddress + 15)});
-                /* check guid */
-                if ((static_cast<uint32_t>(guid[0]) == 0x00000000 &&
-                     (uint16_t)guid[1] == 0x0000) ||
-                    (static_cast<uint32_t>(guid[0]) == 0xffffffff &&
-                     (uint16_t)guid[1] == 0xffff)) {
+                auto guid = getGuidByAddr(guidDataAddress);
+                if (!checkGuid(guid)) {
                     DEBUG_MSG("[%s] Incorrect GUID at 0x%016X\n", plugin_name,
                               guidCodeAddress);
                     continue;
@@ -1116,7 +1099,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                         bootServices[static_cast<std::string>(
                                          bootServicesTableX64[i].service_name)]
                             .push_back(ea);
-                        /* add item to allBootServices std::vector:: */
+                        /* add item to allBootServices */
                         json bsItem;
                         bsItem["address"] = ea;
                         bsItem["service_name"] = static_cast<std::string>(
@@ -1174,7 +1157,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                     bootServices[static_cast<std::string>(
                                      bootServicesTableX86[i].service_name)]
                         .push_back(ea);
-                    /* add item to allBootServices std::vector:: */
+                    /* add item to allBootServices */
                     json bsItem;
                     bsItem["address"] = ea;
                     bsItem["service_name"] =
@@ -1273,23 +1256,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016X\n", plugin_name,
                           guidCodeAddress);
-                /* get guid */
-                auto guid = json::array({get_wide_dword(guidDataAddress),
-                                         get_wide_word(guidDataAddress + 4),
-                                         get_wide_word(guidDataAddress + 6),
-                                         get_wide_byte(guidDataAddress + 8),
-                                         get_wide_byte(guidDataAddress + 9),
-                                         get_wide_byte(guidDataAddress + 10),
-                                         get_wide_byte(guidDataAddress + 11),
-                                         get_wide_byte(guidDataAddress + 12),
-                                         get_wide_byte(guidDataAddress + 13),
-                                         get_wide_byte(guidDataAddress + 14),
-                                         get_wide_byte(guidDataAddress + 15)});
-                /* check guid */
-                if ((static_cast<uint32_t>(guid[0]) == 0x00000000 &&
-                     (uint16_t)guid[1] == 0x0000) ||
-                    (static_cast<uint32_t>(guid[0]) == 0xffffffff &&
-                     (uint16_t)guid[1] == 0xffff)) {
+                auto guid = getGuidByAddr(guidDataAddress);
+                if (!checkGuid(guid)) {
                     DEBUG_MSG("[%s] Incorrect GUID at 0x%016X\n", plugin_name,
                               guidCodeAddress);
                     continue;
@@ -1382,23 +1350,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016X\n", plugin_name,
                           guidCodeAddress);
-                /* get guid */
-                auto guid = json::array({get_wide_dword(guidDataAddress),
-                                         get_wide_word(guidDataAddress + 4),
-                                         get_wide_word(guidDataAddress + 6),
-                                         get_wide_byte(guidDataAddress + 8),
-                                         get_wide_byte(guidDataAddress + 9),
-                                         get_wide_byte(guidDataAddress + 10),
-                                         get_wide_byte(guidDataAddress + 11),
-                                         get_wide_byte(guidDataAddress + 12),
-                                         get_wide_byte(guidDataAddress + 13),
-                                         get_wide_byte(guidDataAddress + 14),
-                                         get_wide_byte(guidDataAddress + 15)});
-                /* check guid */
-                if ((static_cast<uint32_t>(guid[0]) == 0x00000000 &&
-                     (uint16_t)guid[1] == 0x0000) ||
-                    (static_cast<uint32_t>(guid[0]) == 0xffffffff &&
-                     (uint16_t)guid[1] == 0xffff)) {
+                auto guid = getGuidByAddr(guidDataAddress);
+                if (!checkGuid(guid)) {
                     DEBUG_MSG("[%s] Incorrect GUID at 0x%016X\n", plugin_name,
                               guidCodeAddress);
                     continue;
@@ -1481,23 +1434,8 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016X\n", plugin_name,
                           guidCodeAddress);
-                /* get guid */
-                auto guid = json::array({get_wide_dword(guidDataAddress),
-                                         get_wide_word(guidDataAddress + 4),
-                                         get_wide_word(guidDataAddress + 6),
-                                         get_wide_byte(guidDataAddress + 8),
-                                         get_wide_byte(guidDataAddress + 9),
-                                         get_wide_byte(guidDataAddress + 10),
-                                         get_wide_byte(guidDataAddress + 11),
-                                         get_wide_byte(guidDataAddress + 12),
-                                         get_wide_byte(guidDataAddress + 13),
-                                         get_wide_byte(guidDataAddress + 14),
-                                         get_wide_byte(guidDataAddress + 15)});
-                /* check guid */
-                if ((static_cast<uint32_t>(guid[0]) == 0x00000000 &&
-                     (uint16_t)guid[1] == 0x0000) ||
-                    (static_cast<uint32_t>(guid[0]) == 0xffffffff &&
-                     (uint16_t)guid[1] == 0xffff)) {
+                auto guid = getGuidByAddr(guidDataAddress);
+                if (!checkGuid(guid)) {
                     DEBUG_MSG("[%s] Incorrect GUID at 0x%016X\n", plugin_name,
                               guidCodeAddress);
                     continue;
@@ -1628,12 +1566,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                 ea += 1;
                 continue;
             }
-            /* get guid */
-            auto guid = json::array(
-                {get_wide_dword(ea), get_wide_word(ea + 4), get_wide_word(ea + 6),
-                 get_wide_byte(ea + 8), get_wide_byte(ea + 9), get_wide_byte(ea + 10),
-                 get_wide_byte(ea + 11), get_wide_byte(ea + 12), get_wide_byte(ea + 13),
-                 get_wide_byte(ea + 14), get_wide_byte(ea + 15)});
+            auto guid = getGuidByAddr(ea);
             /* find guid name */
             json::iterator dbItem;
             for (dbItem = dbProtocols.begin(); dbItem != dbProtocols.end(); ++dbItem) {
@@ -2334,6 +2267,8 @@ bool efiAnalysis::efiAnalyzerMainX64() {
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
+
+    applyAllTypesForInterfaces(analyzer.allGuids);
 
     return true;
 }

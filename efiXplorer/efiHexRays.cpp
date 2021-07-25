@@ -130,8 +130,8 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
     return out->c_str();
 }
 
-void efiHexRaysTest() {
-    // And now, descriptors for EFI_BOOT_SERVICES functions
+void applyAllTypesForInterfaces(std::vector<json> guids) {
+    // Descriptors for EFI_BOOT_SERVICES functions
     struct TargetFunctionPointer BootServicesFunctions[3]{
         {"HandleProtocol", 0x98, 3, 1, 2},
         {"LocateProtocol", 0x140, 3, 0, 2},
@@ -143,10 +143,7 @@ void efiHexRaysTest() {
         {"SmmLocateProtocol", 0xd0, 3, 0, 2},
     };
 
-    // Test function
-    ea_t addr = 0x011CC;
-    func_t *func = get_func(addr);
-
+    // Initialize
     ServiceDescriptor sd;
     sd.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
     sd.Initialize("_EFI_SMM_SYSTEM_TABLE2", SystemServicesFunctions, 2);
@@ -155,9 +152,16 @@ void efiHexRaysTest() {
     m.Register(sd);
 
     GUIDRetyper retyper(m);
-    retyper.SetFuncEa(addr);
+    retyper.SetGuids(guids);
 
-    hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(func, &hf);
-    retyper.apply_to(&cfunc->body, nullptr);
+    // Handle all functions
+    for (auto n = 0; n < get_func_qty(); n++) {
+        func_t *func = getn_func(n);
+
+        retyper.SetFuncEa(func->start_ea);
+
+        hexrays_failure_t hf;
+        cfuncptr_t cfunc = decompile(func, &hf);
+        retyper.apply_to(&cfunc->body, nullptr);
+    }
 }

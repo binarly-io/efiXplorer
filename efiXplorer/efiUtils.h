@@ -196,3 +196,9 @@ void printVectorJson(std::vector<json> in);
 
 /* Change the value of a number to match the data type */
 uval_t truncImmToDtype(uval_t value, op_dtype_t dtype);
+
+/* Get GUID data by address */
+json getGuidByAddr(ea_t addr);
+
+/* Validate GUID value */
+bool checkGuid(json guid);

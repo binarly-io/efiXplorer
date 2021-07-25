@@ -23,7 +23,7 @@
 
 #include "efiUtils.h"
 
-void efiHexRaysTest();
+void applyAllTypesForInterfaces(std::vector<json> guids);
 bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif);
 bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool IsPODArray(tinfo_t tif, unsigned int ptrDepth);
@@ -199,6 +199,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // We need the function ea when setting Hex-Rays variable types.
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
+    void SetGuids(std::vector<json> guids) { mGuids = guids; };
 
   protected:
     //
@@ -207,6 +208,9 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // Function address
     ea_t mFuncEa;
+
+    // GUIDs vector
+    std::vector<json> mGuids;
 
     // Print debug messages?
     bool mDebug;
@@ -403,7 +407,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
             // Debug printing
             DebugPrint("[I] %a Was indirect call from %s::%s, but %s arg was %s, not "
-                       "reference [IsPODArray: %d]",
+                       "reference [IsPODArray: %d]\n",
                        mEa, mpService->GetName(), mpTarget->name, desc,
                        Expr2String(e, &estr), bIsPodArray);
 
@@ -415,9 +419,10 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         // global or local variable. If it's not a reference, we can't get the
         // referent, so fail.
         if (x->op != cot_ref) {
-            DebugPrint(
-                "[I] %a Was indirect call from %s::%s, but %s arg was %s, not reference",
-                mEa, mpService->GetName(), mpTarget->name, desc, Expr2String(e, &estr));
+            DebugPrint("[I] %a Was indirect call from %s::%s, but %s arg was %s, not "
+                       "reference\n",
+                       mEa, mpService->GetName(), mpTarget->name, desc,
+                       Expr2String(e, &estr));
             return NULL;
         }
 
@@ -441,7 +446,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         if (mGUIDArgRefTo->op != cot_obj) {
             qstring estr;
             DebugPrint("[I] %a Was indirect call from %s::%s, but GUID arg was %s, not "
-                       "reference to global",
+                       "reference to global\n",
                        mEa, mpService->GetName(), mpTarget->name,
                        Expr2String(mGUIDArgRefTo, &estr));
             return false;
@@ -496,12 +501,30 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         // I need to look that up in the GUID information and get its name
         // Also needs to handle the case where the name is unknown and return 0
         // Until I know how to do that, I'm hard-coding this example string
-        std::string GUIDName = "EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL";
+        mGUIDArgRefTo = GetReferent(mGUIDArg, "GUID", false);
+        if (mGUIDArgRefTo == NULL)
+            return 0;
+        ea_t guidAddr = mGUIDArgRefTo->obj_ea;
 
-        // Need to get the type for the GUID variable here
+        // Get interface type name
+        std::string GUIDName;
+        for (auto g : mGuids) {
+            if (guidAddr == g["address"]) {
+                GUIDName = g["name"];
+                break;
+            }
+        }
+        if (GUIDName.empty()) {
+            return false;
+        }
+        std::string interfaceTypeName = GUIDName.substr(0, GUIDName.find("_GUID"));
+
+        DebugPrint("[I] Interface type name: %s\n", interfaceTypeName.c_str());
+
+        // Need to get the type for the interface variable here
         tinfo_t tif;
-        import_type(get_idati(), -1, GUIDName.c_str());
-        if (!tif.get_named_type(get_idati(), GUIDName.c_str())) {
+        import_type(get_idati(), -1, interfaceTypeName.c_str());
+        if (!tif.get_named_type(get_idati(), interfaceTypeName.c_str())) {
             return false;
         }
 
@@ -517,7 +540,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             return false;
         }
 
-        // Get the referent for the output argument.
+        // Get the referent for the interface argument.
         cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);
         if (outArgReferent == NULL)
             return 0;
@@ -538,7 +561,6 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
         // For global variables
         if (outArg->op == cot_obj) {
-            DebugPrint("[I] Address: 0x%a\n", dest_ea);
             // Just apply the type information to the address
             apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
             ++mNumApplied;
