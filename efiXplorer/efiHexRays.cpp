@@ -130,7 +130,7 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
     return out->c_str();
 }
 
-void applyAllTypesForInterfaces(std::vector<json> guids) {
+void applyAllTypesForInterfaces(std::vector<json> protocols) {
     // Descriptors for EFI_BOOT_SERVICES functions
     struct TargetFunctionPointer BootServicesFunctions[3]{
         {"HandleProtocol", 0x98, 3, 1, 2},
@@ -144,24 +144,31 @@ void applyAllTypesForInterfaces(std::vector<json> guids) {
     };
 
     // Initialize
-    ServiceDescriptor sd;
-    sd.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
-    sd.Initialize("_EFI_SMM_SYSTEM_TABLE2", SystemServicesFunctions, 2);
+    ServiceDescriptor sdBs;
+    ServiceDescriptor sdSmm;
+    sdBs.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
+    sdSmm.Initialize("_EFI_SMM_SYSTEM_TABLE2", SystemServicesFunctions, 2);
 
-    ServiceDescriptorMap m;
-    m.Register(sd);
+    ServiceDescriptorMap mBs;
+    ServiceDescriptorMap mSmm;
+    mBs.Register(sdBs);
+    mSmm.Register(sdSmm);
 
-    GUIDRetyper retyper(m);
-    retyper.SetGuids(guids);
+    GUIDRetyper retyperBs(mBs);
+    GUIDRetyper retyperSmm(mSmm);
+    retyperBs.SetProtocols(protocols);
+    retyperSmm.SetProtocols(protocols);
 
     // Handle all functions
     for (auto n = 0; n < get_func_qty(); n++) {
         func_t *func = getn_func(n);
 
-        retyper.SetFuncEa(func->start_ea);
+        retyperBs.SetFuncEa(func->start_ea);
+        retyperSmm.SetFuncEa(func->start_ea);
 
         hexrays_failure_t hf;
         cfuncptr_t cfunc = decompile(func, &hf);
-        retyper.apply_to(&cfunc->body, nullptr);
+        retyperBs.apply_to(&cfunc->body, nullptr);
+        retyperSmm.apply_to(&cfunc->body, nullptr);
     }
 }

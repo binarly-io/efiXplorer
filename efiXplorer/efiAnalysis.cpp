@@ -2268,7 +2268,7 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         showAllChoosers(analyzer);
     }
 
-    applyAllTypesForInterfaces(analyzer.allGuids);
+    applyAllTypesForInterfaces(analyzer.allProtocols);
 
     return true;
 }

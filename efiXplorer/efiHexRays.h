@@ -199,7 +199,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // We need the function ea when setting Hex-Rays variable types.
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
-    void SetGuids(std::vector<json> guids) { mGuids = guids; };
+    void SetProtocols(std::vector<json> protocols) { mProtocols = protocols; };
 
   protected:
     //
@@ -209,8 +209,8 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
     // Function address
     ea_t mFuncEa;
 
-    // GUIDs vector
-    std::vector<json> mGuids;
+    // Protocols
+    std::vector<json> mProtocols;
 
     // Print debug messages?
     bool mDebug;
@@ -508,9 +508,9 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
         // Get interface type name
         std::string GUIDName;
-        for (auto g : mGuids) {
+        for (auto g : mProtocols) {
             if (guidAddr == g["address"]) {
-                GUIDName = g["name"];
+                GUIDName = g["prot_name"];
                 break;
             }
         }
@@ -518,8 +518,6 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             return false;
         }
         std::string interfaceTypeName = GUIDName.substr(0, GUIDName.find("_GUID"));
-
-        DebugPrint("[I] Interface type name: %s\n", interfaceTypeName.c_str());
 
         // Need to get the type for the interface variable here
         tinfo_t tif;
@@ -564,7 +562,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             // Just apply the type information to the address
             apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
             ++mNumApplied;
-            DebugPrint("%a: %s::%s applied type for global variable\n", dest_ea,
+            DebugPrint("%a: %s::%s applied type for global variable\n", mEa,
                        mpService->GetName(), mpTarget->name);
         }
 
