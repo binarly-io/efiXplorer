@@ -20,10 +20,8 @@
  */
 
 #pragma once
-#define _CRT_SECURE_NO_WARNINGS // TODO: need a fix in future
 
 /* 3rd party */
-#include "fort.h"
 #include "json.hpp"
 
 #include <algorithm>
@@ -76,6 +74,7 @@ using namespace nlohmann;
 /* SystemTable->BootServices */
 #define BS_OFFSET_X64 0x60
 #define BS_OFFSET_X86 0x3c
+
 /* SystemTable->RuntimeServices */
 #define RT_OFFSET_X64 0x58
 #define RT_OFFSET_X86 0x38

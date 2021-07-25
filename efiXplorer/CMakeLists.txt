@@ -53,6 +53,3 @@ ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
 add_ida_library(efiXplorer_lib ${efiXplorer_src})
 ida_target_link_libraries(efiXplorer efiXplorer_lib)
-
-add_ida_library(fort ${PROJECT_SOURCE_DIR}/3rd/libfort/fort.cpp)
-ida_target_link_libraries(efiXplorer fort)

@@ -92,6 +92,7 @@ class efiAnalyzer {
     json smmServicesAll;
     json dbProtocols;
     std::vector<ea_t> markedInterfaces;
+
     /* set boot services that work with protocols */
     std::vector<std::string> protBsNames = {"InstallProtocolInterface",
                                             "ReinstallProtocolInterface",
@@ -114,9 +115,11 @@ class efiAnalyzer {
                                              "SmmRegisterProtocolNotify",
                                              "SmmLocateHandle",
                                              "SmmLocateProtocol"};
+
     /* set of pei services that work with PPI */
     std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
                                             "NotifyPpi"};
+
     /* Format-dependent interface-related settings (protocols for DXE, PPIs for PEI) */
     char *if_name;
     char *if_pl;
