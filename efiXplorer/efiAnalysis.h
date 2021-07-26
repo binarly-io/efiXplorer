@@ -91,6 +91,7 @@ class efiAnalyzer {
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
+    std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
     std::vector<ea_t> markedInterfaces;
 
     // Set boot services that work with protocols

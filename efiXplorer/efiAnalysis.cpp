@@ -91,6 +91,11 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     std::ifstream in(guidsJsonPath);
     in >> dbProtocols;
 
+    // get reverse dictionary
+    for (auto g = dbProtocols.begin(); g != dbProtocols.end(); ++g) {
+        dbProtocolsMap[g.value()] = g.key();
+    }
+
     // import necessary types
     const til_t *idati = get_idati();
     import_type(idati, -1, "EFI_GUID");
@@ -996,19 +1001,18 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                 ppiItem["service"] = pei_services_table[i].name;
                 ppiItem["guid"] = guid;
 
-                // find guid name
-                for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-                     ++dbItem) {
-                    if (guid == dbItem.value()) {
-                        ppiItem["ppi_name"] = dbItem.key();
+                // find GUID name
+                auto it = dbProtocolsMap.find(guid);
+                if (it != dbProtocolsMap.end()) {
+                    std::string name = it->second;
+                    ppiItem["ppi_name"] = name;
 
-                        // check if item already exists
-                        auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
-                        if (it == allPPIs.end()) {
-                            allPPIs.push_back(ppiItem);
-                        }
-                        break;
+                    // check if item already exists
+                    auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
+                    if (it == allPPIs.end()) {
+                        allPPIs.push_back(ppiItem);
                     }
+                    break;
                 }
 
                 // proprietary PPI
@@ -1214,20 +1218,19 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                 protocolItem["service"] = bootServicesTableX64[i].service_name;
                 protocolItem["guid"] = guid;
 
-                // find guid name
-                for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-                     ++dbItem) {
-                    if (guid == dbItem.value()) {
-                        protocolItem["prot_name"] = dbItem.key();
+                // find GUID name
+                auto it = dbProtocolsMap.find(guid);
+                if (it != dbProtocolsMap.end()) {
+                    std::string name = it->second;
+                    protocolItem["prot_name"] = name;
 
-                        // check if item already exist
-                        auto it =
-                            find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                        if (it == allProtocols.end()) {
-                            allProtocols.push_back(protocolItem);
-                        }
-                        break;
+                    // check if item already exist
+                    auto it =
+                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
+                    if (it == allProtocols.end()) {
+                        allProtocols.push_back(protocolItem);
                     }
+                    break;
                 }
 
                 // proprietary protocol
@@ -1315,20 +1318,19 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                 protocolItem["service"] = bootServicesTableX86[i].service_name;
                 protocolItem["guid"] = guid;
 
-                // find guid name
-                for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-                     ++dbItem) {
-                    if (guid == dbItem.value()) {
-                        protocolItem["prot_name"] = dbItem.key();
+                // find GUID name
+                auto it = dbProtocolsMap.find(guid);
+                if (it != dbProtocolsMap.end()) {
+                    std::string name = it->second;
+                    protocolItem["prot_name"] = name;
 
-                        // check if item already exist
-                        auto it =
-                            find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                        if (it == allProtocols.end()) {
-                            allProtocols.push_back(protocolItem);
-                        }
-                        break;
+                    // check if item already exist
+                    auto it =
+                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
+                    if (it == allProtocols.end()) {
+                        allProtocols.push_back(protocolItem);
                     }
+                    break;
                 }
 
                 // proprietary protocol
@@ -1405,20 +1407,19 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                 protocolItem["service"] = smmServicesProtX64[i].service_name;
                 protocolItem["guid"] = guid;
 
-                // find guid name
-                for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-                     ++dbItem) {
-                    if (guid == dbItem.value()) {
-                        protocolItem["prot_name"] = dbItem.key();
+                // find GUID name
+                auto it = dbProtocolsMap.find(guid);
+                if (it != dbProtocolsMap.end()) {
+                    std::string name = it->second;
+                    protocolItem["prot_name"] = name;
 
-                        // check if item already exist
-                        auto it =
-                            find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                        if (it == allProtocols.end()) {
-                            allProtocols.push_back(protocolItem);
-                        }
-                        break;
+                    // check if item already exist
+                    auto it =
+                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
+                    if (it == allProtocols.end()) {
+                        allProtocols.push_back(protocolItem);
                     }
+                    break;
                 }
 
                 // proprietary protocol
@@ -1490,40 +1491,37 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
             }
             auto guid = getGuidByAddr(ea);
 
-            // find guid name
-            for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
-                 ++dbItem) {
-                if (guid == dbItem.value()) {
+            // find GUID name
+            auto it = dbProtocolsMap.find(guid);
+            if (it != dbProtocolsMap.end()) {
+                std::string guidName = it->second;
 
-                    // mark .data guid
-                    char hexAddr[21] = {};
-                    snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
-                    std::string name =
-                        dbItem.key() + "_" + static_cast<std::string>(hexAddr);
-                    set_name(ea, name.c_str(), SN_CHECK);
-                    setGuidType(ea);
+                char hexAddr[21] = {};
+                snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
+                std::string name = guidName + "_" + static_cast<std::string>(hexAddr);
+                set_name(ea, name.c_str(), SN_CHECK);
+                setGuidType(ea);
 
-                    std::string comment = "EFI_GUID " + dbItem.key();
-                    DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n", plugin_name, ea,
-                              comment.c_str());
+                std::string comment = "EFI_GUID " + guidName;
+                DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n", plugin_name, ea,
+                          comment.c_str());
 
-                    json guidItem;
-                    guidItem["address"] = ea;
-                    guidItem["name"] = dbItem.key();
-                    char guidValue[37] = {0};
-                    snprintf(
-                        guidValue, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-                        static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
-                        static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
-                        static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-                        static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
-                        static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
-                        static_cast<uint8_t>(guid[10]));
-                    guidItem["guid"] = guidValue;
-                    allGuids.push_back(guidItem);
-                    dataGuids.push_back(guidItem);
-                    break;
-                }
+                json guidItem;
+                guidItem["address"] = ea;
+                guidItem["name"] = guidName;
+                char guidValue[37] = {0};
+                snprintf(guidValue, 37,
+                         "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                         static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+                         static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+                         static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+                         static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+                         static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+                         static_cast<uint8_t>(guid[10]));
+                guidItem["guid"] = guidValue;
+                allGuids.push_back(guidItem);
+                dataGuids.push_back(guidItem);
+                break;
             }
             ea += 1;
         }
@@ -1576,7 +1574,7 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                         if (gData1 == static_cast<uint32_t>(guid[0]) &&
                             gData2 == static_cast<uint16_t>(guid[1])) {
 
-                            // mark local guid
+                            // mark local GUID
                             char hexAddr[21] = {};
                             snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
                             std::string name =
