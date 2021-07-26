@@ -94,17 +94,17 @@ uint8_t getArch() {
     auto fileTypeStr = static_cast<std::string>(fileType);
     size_t index = fileTypeStr.find("AMD64");
     if (index != std::string::npos) {
-        /* Portable executable for AMD64 (PE) */
+        // Portable executable for AMD64 (PE)
         return X64;
     }
     index = fileTypeStr.find("80386");
     if (index != std::string::npos) {
-        /* Portable executable for 80386 (PE) */
+        // Portable executable for 80386 (PE)
         return X86;
     }
     index = fileTypeStr.find("UEFI");
     if (index != std::string::npos) {
-        /* UEFI firmware */
+        // UEFI firmware
         return UEFI;
     }
     return 0;
@@ -160,7 +160,7 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
 uint8_t getFileType(std::vector<json> *allGuids) {
     uint8_t arch = getArch();
     if (arch == UEFI || g_args.disable_ui) {
-        // skip UI for efiXloader or if disable_ui argument passed
+        // Skip UI for efiXloader or if disable_ui argument passed
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);
@@ -277,10 +277,10 @@ std::string getRtComment(ea_t offset, uint8_t arch) {
 ea_t findUnknownBsVarX64(ea_t ea) {
     ea_t resAddr = 0;
     insn_t insn;
-    /* 10 instructions below */
+
+    // Check 10 instructions below
     for (int i = 0; i < 10; i++) {
         decode_insn(&insn, ea);
-        /* check if insn like 'mov rax, cs:<gBS>' */
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
             DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
@@ -307,7 +307,7 @@ std::vector<ea_t> getXrefs(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// op_stroff wrapper
+// Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type) {
     insn_t insn;
     decode_insn(&insn, addr);
@@ -338,7 +338,6 @@ void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
 //--------------------------------------------------------------------------
 // Check for guids.json file exist
 bool guidsJsonExists() {
-    /* get guids.json path */
     std::filesystem::path guidsJsonPath;
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
@@ -452,14 +451,14 @@ qstring getModuleNameLoader(ea_t address) {
 std::vector<json> getDependenciesLoader() {
     std::vector<json> depJson;
 
-    /* read summary and get allProtocols (also can be taken from memory) */
+    // Read summary and get allProtocols (also can be taken from memory)
     std::filesystem::path logFile = getSummaryFile();
     std::ifstream in(logFile);
     json summary;
     in >> summary;
     std::vector<json> allProtocols = summary["protocols"];
 
-    /* get depJson */
+    // Get depJson
     std::vector<std::string> locate{"LocateProtocol", "OpenProtocol"};
     std::vector<std::string> install{"InstallProtocolInterface",
                                      "InstallMultipleProtocolInterfaces"};
@@ -470,10 +469,12 @@ std::vector<json> getDependenciesLoader() {
         if (find(install.begin(), install.end(), service) == install.end()) {
             continue;
         }
-        /* get module name by address */
+
+        // Get module name by address
         ea_t address = static_cast<ea_t>(protocol["xref"]);
         qstring module_name = getModuleNameLoader(address);
-        /* get depJsonItem */
+
+        // Get depJsonItem
         json depJsonItem;
         depJsonItem["module_name"] = static_cast<std::string>(module_name.c_str());
         depJsonItem["protocol_name"] = protocol["prot_name"];
@@ -535,7 +536,8 @@ std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> 
         std::string nodeFrom = static_cast<std::string>(dep["module_name"]);
         for (auto i = 0; i < len; i++) {
             std::string nodeTo = static_cast<std::string>(dep["used_by"][i]);
-            /* get node id for nodeFrom and nodeTo */
+
+            // Get node id for nodeFrom and nodeTo
             auto nodeFromId = -1;
             auto nodeToId = -1;
             for (auto n = 0; n < depNodes.size(); n++) {

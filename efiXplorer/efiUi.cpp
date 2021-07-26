@@ -21,21 +21,21 @@
 
 #include "efiUi.h"
 
-/* guids column widths */
+// guids column widths
 const int guids_chooser_t::widths_guids[] = {
     16, // Address
     32, // GUID
     32  // Name
 };
 
-/* guids column headers */
+// guids column headers
 const char *const guids_chooser_t::header_guids[] = {
     "Address", // 0
     "GUID",    // 1
     "Name"     // 2
 };
 
-/* protocols column widths */
+// protocols column widths
 const int interfaces_chooser_t::widths_protocols[] = {
     16, // Address
     32, // GUID
@@ -43,7 +43,7 @@ const int interfaces_chooser_t::widths_protocols[] = {
     32  // Service
 };
 
-/* protocols column headers */
+// protocols column headers
 const char *const interfaces_chooser_t::header_protocols[] = {
     "Address", // 0
     "GUID",    // 1
@@ -51,14 +51,14 @@ const char *const interfaces_chooser_t::header_protocols[] = {
     "Service"  // 3
 };
 
-/* services column widths */
+// services column widths
 const int s_chooser_t::widths_s[] = {
     16, // Address
     32, // Service name
     32, // Table name
 };
 
-/* services column widths */
+// services column widths
 const char *const s_chooser_t::header_s[] = {
     "Address",      // 0
     "Service name", // 1
@@ -75,7 +75,6 @@ inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
 void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
                                      size_t n) const {
     ea_t ea = list[n];
-    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_guids[n];
     std::string guid = static_cast<std::string>(item["guid"]);
@@ -99,7 +98,6 @@ inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
 void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
                                           size_t n) const {
     ea_t ea = list[n];
-    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
     auto guid = item["guid"];
@@ -129,7 +127,6 @@ inline s_chooser_t::s_chooser_t(const char *title_, bool ok, std::vector<json> s
 void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
                                  size_t n) const {
     ea_t ea = list[n];
-    /* generate the line */
     qstrvec_t &cols = *cols_;
     json item = chooser_s[n];
     std::string service_name = static_cast<std::string>(item["service_name"]);
@@ -142,38 +139,38 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
 
 bool guids_show(std::vector<json> guids, qstring title) {
     bool ok;
-    /* open the window */
+    // open the window
     guids_chooser_t *ch = new guids_chooser_t(title.c_str(), ok, guids);
-    /* default cursor position is 0 (first row) */
+    // default cursor position is 0 (first row)
     ch->choose();
     return true;
 }
 
 bool protocols_show(std::vector<json> protocols, qstring title) {
     bool ok;
-    /* open the window */
+    // open the window
     interfaces_chooser_t *ch =
         new interfaces_chooser_t(title.c_str(), ok, protocols, "prot_name");
-    /* default cursor position is 0 (first row) */
+    // default cursor position is 0 (first row)
     ch->choose();
     return true;
 }
 
 bool ppis_show(std::vector<json> ppis, qstring title) {
     bool ok;
-    /* open the window */
+    // open the window
     interfaces_chooser_t *ch =
         new interfaces_chooser_t(title.c_str(), ok, ppis, "ppi_name");
-    /* default cursor position is 0 (first row) */
+    // default cursor position is 0 (first row)
     ch->choose();
     return true;
 }
 
 bool services_show(std::vector<json> services, qstring title) {
     bool ok;
-    /* open the window */
+    // open the window
     s_chooser_t *ch = new s_chooser_t(title.c_str(), ok, services);
-    /* default cursor position is 0 (first row) */
+    // default cursor position is 0 (first row)
     ch->choose();
     return true;
 }

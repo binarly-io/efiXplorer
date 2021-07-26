@@ -19,7 +19,7 @@
  *
  */
 
-/* boot services offsets (X64) */
+// Boot services offsets (64-bit)
 #define x64RaiseTPLOffset 0x18
 #define x64RestoreTPLOffset 0x20
 #define x64AllocatePagesOffset 0x28
@@ -63,7 +63,8 @@
 #define x64CopyMemOffset 0x160
 #define x64SetMemOffset 0x168
 #define x64CreateEventExOffset 0x170
-/* boot services offsets (X86) */
+
+// Boot services offsets (32-bit) */
 #define x86RaiseTPLOffset 0x18
 #define x86RestoreTPLOffset 0x1c
 #define x86AllocatePagesOffset 0x20
@@ -108,7 +109,7 @@
 #define x86SetMemOffset 0xc0
 #define x86CreateEventExOffset 0xc4
 
-/* runtime services offsets (X64) */
+// Runtime services offsets (64-bit)
 #define x64GetTimeOffset 0x18
 #define x64SetTimeOffset 0x20
 #define x64GetWakeupTimeOffset 0x28
@@ -123,7 +124,8 @@
 #define x64UpdateCapsuleOffset 0x70
 #define x64QueryCapsuleCapabilitiesOffset 0x78
 #define x64QueryVariableInfoOffset 0x80
-/* runtime services offsets (X86) */
+
+// Runtime services offsets (32-bit)
 #define x86GetTimeOffset 0x18
 #define x86SetTimeOffset 0x1c
 #define x86GetWakeupTimeOffset 0x20
@@ -139,7 +141,7 @@
 #define x86QueryCapsuleCapabilitiesOffset 0x48
 #define x86QueryVariableInfoOffset 0x4c
 
-/* smm services offsets (X64) */
+// SMM services offsets (64-bit)
 #define x64SmmInstallConfigurationTableOffset 0x28
 #define x64SmmAllocatePoolOffset 0x50
 #define x64SmmFreePoolOffset 0x58
@@ -155,7 +157,8 @@
 #define x64SmiManageOffset 0xd8
 #define x64SmiHandlerRegisterOffset 0xe0
 #define x64SmiHandlerUnRegisterOffset 0xe8
-/* smm services offsets (X86) */
+
+// SMM services offsets (32-bit)
 #define x86SmmInstallConfigurationTableOffset 0x20
 #define x86SmmAllocatePoolOffset 0x34
 #define x86SmmFreePoolOffset 0x38

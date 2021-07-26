@@ -38,7 +38,7 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "\\__/_//_/_/|_/ .__/_/\\___/_/  \\__/_/\n"
                                   "            /_/\n";
 
-// default arguments
+// Default arguments
 struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 
 #if BATCH
@@ -300,7 +300,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         mutable_graph_t *g = va_arg(va, mutable_graph_t *);
         if (GRAPH_DEBUG)
             msg("%p: refresh\n", g);
-        /* add all edges to graph */
+        // add all edges to graph
         if (g->empty())
             g->resize(depNodes.size());
         for (std::vector<json>::iterator edge = depEdges.begin(); edge != depEdges.end();
@@ -384,10 +384,8 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         char buf[MAXSTR];
         buf[0] = '\0';
         if (mousenode != -1)
-            /* Hint for node %d */
             qsnprintf(buf, sizeof(buf), "node: %d", mousenode);
         else if (mouseedge_src != -1)
-            /* Hovering on (%d,%d) */
             qsnprintf(buf, sizeof(buf), "hovering on: (%d,%d)", mouseedge_src,
                       mouseedge_dst);
         if (buf[0] != '\0')
@@ -426,11 +424,11 @@ static const char wanted_title[] = "efiXplorer: dependency graph";
 bool idaapi plugin_ctx_t::run(size_t arg) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    // parse arguments
-    // arg = 0 (00): default
-    // arg = 1 (01): disable_ui
-    // arg = 2 (10): disable_vuln_hunt
-    // arg = 3 (11): disable_ui & disable_vuln_hunt
+    // Parse arguments
+    // * arg = 0 (00): default
+    // * arg = 1 (01): disable_ui
+    // * arg = 2 (10): disable_vuln_hunt
+    // * arg = 3 (11): disable_ui & disable_vuln_hunt
     if (arg >> 0 & 1) {
         g_args.disable_ui = 1;
     }
@@ -459,15 +457,14 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
         efiAnalysis::efiAnalyzerMainX86();
     }
     if (arch == UEFI) {
-        /* warning to user */
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
-        /* analyzer staff */
         DEBUG_MSG("[%s] input file is UEFI firmware\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
+
         if (summaryJsonExist()) {
-            /* build dependency graph (based on ugraph example from idasdk) */
-            /* TODO: move it to separate file */
+
+            // Build dependency graph (based on ugraph example from idasdk)
             depJson = getDependenciesLoader();
             depNodes = getNodes(depJson);
             depEdges = getEdges(depNodes, depJson);
@@ -475,7 +472,8 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
             if (widget != nullptr) {
                 close_widget(widget, 0);
             }
-            /* get a unique graph id */
+
+            // Get a unique graph id
             netnode id;
             id.create("$ efiXplorer graph");
             gv = create_graph_viewer(wanted_title, id, gr_callback, this, 0);
@@ -486,13 +484,15 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
                 viewer_attach_menu_item(gv, change_layout_desc.name);
             }
         }
-        /* clear */
+
         depJson.clear();
         depNodes.clear();
         depEdges.clear();
     }
-    /* reset arguments */
+
+    // Reset arguments
     g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
+
     return true;
 }
 

@@ -40,38 +40,39 @@ std::vector<ea_t> gRtServicesList;
 std::vector<json> stackGuids;
 std::vector<json> dataGuids;
 
-/* all .text and .data segments for compatibility with the efiLoader */
+// all .text and .data segments for compatibility with the efiLoader
 std::vector<segment_t *> textSegments;
 std::vector<segment_t *> dataSegments;
 
-/* for smm callouts finding */
+// for smm callouts finding
 std::vector<ea_t> calloutAddrs;
 std::vector<func_t *> excFunctions;
 std::vector<ea_t> readSaveStateCalls;
 
-/* for GetVariable stack overflow finding */
+// for GetVariable stack overflow finding
 std::vector<ea_t> getVariableStackOverflow;
 std::vector<ea_t> getVariableOverflow;
 std::vector<ea_t> smmGetVariableOverflow;
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
-    /* get guids.json path */
+    // get guids.json path
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
 
-    /* get base address */
+    // get base address
     base = get_imagebase();
 
     func_t *start_func = nullptr;
     func_t *end_func = nullptr;
 
-    /* get start address for scan */
+    // get start address for scan
     start_func = getn_func(0);
     if (start_func) {
         startAddress = start_func->start_ea;
     }
-    /* get end address for scan */
+
+    // get end address for scan
     end_func = getn_func(get_func_qty() - 1);
     if (end_func) {
         endAddress = end_func->end_ea;
@@ -86,11 +87,11 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
         smmServices[service] = addrs;
     }
 
-    /* load protocols from guids/guids.json file */
+    // load protocols from guids/guids.json file
     std::ifstream in(guidsJsonPath);
     in >> dbProtocols;
 
-    /* import necessary types */
+    // import necessary types
     const til_t *idati = get_idati();
     import_type(idati, -1, "EFI_GUID");
     import_type(idati, -1, "EFI_SYSTEM_TABLE");
@@ -163,13 +164,13 @@ void efiAnalysis::efiAnalyzer::getSegments() {
         }
     }
 
-    /* print all .text segments addresses */
+    // print all .text segments addresses
     for (auto seg : textSegments) {
         segment_t *s = seg;
         DEBUG_MSG("[%s] .text segment: 0x%016llX\n", plugin_name, s->start_ea);
     }
 
-    /* print all .data segments addresses */
+    // print all .data segments addresses
     for (auto seg : dataSegments) {
         segment_t *s = seg;
         DEBUG_MSG("[%s] .data segment: 0x%016llX\n", plugin_name, s->start_ea);
@@ -185,11 +186,11 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
-        /* get address of entry point */
+        // get address of entry point
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
 
-        /* ImageHandle finding, first 8 instructions checking */
+        // `ImageHandle` finding, first 8 instructions checking
         for (auto i = 0; i < 8; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -202,7 +203,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
                 set_cmt(ea, "EFI_IMAGE_HANDLE gImageHandle", true);
                 std::string name = "gImageHandle_" + static_cast<std::string>(hexAddr);
 
-                /* set type and name */
+                // set type and name
                 setTypeAndName(insn.ops[0].addr, name, "EFI_IMAGE_HANDLE");
                 gImageHandleList.push_back(insn.ops[0].addr);
                 break;
@@ -222,11 +223,11 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
-        /* get address of entry point */
+        // get address of entry point
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
 
-        /* SystemTable finding, first 16 instructions checking */
+        // `SystemTable` finding, first 16 instructions checking
         for (int i = 0; i < 16; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -239,7 +240,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
                 std::string name = "gST_" + static_cast<std::string>(hexAddr);
 
-                /* set type and name */
+                // set type and name
                 setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                 gStList.push_back(insn.ops[0].addr);
                 return true;
@@ -270,7 +271,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
 
-    /* init architecture-specific constants */
+    // init architecture-specific constants
     auto BS_OFFSET = BS_OFFSET_X64;
     auto REG_SP = REG_RSP;
     if (arch == X86) {
@@ -297,7 +298,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                     auto stFound = false;
                     ea_t baseInsnAddr;
 
-                    /* found BS_OFFSET, need to check 10 instructions below */
+                    // found `BS_OFFSET`, need to check 10 instructions below
                     for (auto i = 0; i < 10; i++) {
                         decode_insn(&insn, ea);
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -322,7 +323,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 }
                                 bsFound = true;
                             }
-                            /* here you can also find gST */
+                            // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != bsRegister) {
                                 DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
@@ -355,7 +356,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
 
                         if (bsFound && !stFound) {
 
-                            /* check 8 instructions above baseInsnAddr */
+                            // check 8 instructions above `baseInsnAddr`
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
                                 decode_insn(&insn, addr);
@@ -404,7 +405,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
 
-    /* init architecture-specific constants */
+    // init architecture-specific constants
     auto RT_OFFSET = RT_OFFSET_X64;
     auto REG_SP = REG_RSP;
 
@@ -432,7 +433,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                     auto stFound = false;
                     ea_t baseInsnAddr;
 
-                    /* found RT_OFFSET, need to check 10 instructions below */
+                    // found `RT_OFFSET`, need to check 10 instructions below
                     for (auto i = 0; i < 10; i++) {
                         decode_insn(&insn, ea);
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -458,7 +459,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 rtFound = true;
                             }
 
-                            /* here you can also find gST */
+                            // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != rtRegister) {
                                 DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
@@ -491,7 +492,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 
                         if (rtFound && !stFound) {
 
-                            /* check 8 instructions above baseInsnAddr */
+                            // check 8 instructions above `baseInsnAddr`
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
                                 decode_insn(&insn, addr);
@@ -544,7 +545,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
         return;
     }
 
-    /* init architecture-specific constants */
+    // init architecture-specific constants
     auto REG_AX = REG_RAX;
     if (arch == X86) {
         REG_AX = REG_EAX;
@@ -564,13 +565,13 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                     insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
                     ea_t addr = next_head(ea, BADADDR);
 
-                    /* 16 instructions below */
+                    // 16 instructions below
                     for (auto i = 0; i < 16; i++) {
                         decode_insn(&insn, addr);
                         if (insn.itype == NN_callni && insn.ops[0].reg == REG_AX) {
                             for (int j = 0; j < bootServicesTableAllLength; j++) {
 
-                                /* architecture-specific variables */
+                                // architecture-specific variables
                                 auto offset = bootServicesTableAll[j].offset64;
                                 if (arch == X86) {
                                     offset = bootServicesTableAll[j].offset86;
@@ -589,7 +590,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                                             .service_name)]
                                         .push_back(addr);
 
-                                    /* add item to allBootServices */
+                                    // add item to allBootServices
                                     json bsItem;
                                     bsItem["address"] = addr;
                                     bsItem["service_name"] = static_cast<std::string>(
@@ -635,12 +636,14 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                 if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                     insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
                     ea_t addr = next_head(ea, BADADDR);
-                    /* 16 instructions below */
+
+                    // 16 instructions below
                     for (int i = 0; i < 16; i++) {
                         decode_insn(&insn, addr);
                         if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
                             for (int j = 0; j < runtimeServicesTableAllLength; j++) {
-                                /* architecture-specific variables */
+
+                                // architecture-specific variables
                                 auto offset = runtimeServicesTableAll[j].offset64;
                                 if (arch == X86) {
                                     offset = runtimeServicesTableAll[j].offset86;
@@ -659,7 +662,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                                                            runtimeServicesTableAll[j]
                                                                .service_name)]
                                         .push_back(addr);
-                                    /* add item to allRuntimeServices */
+
+                                    // add item to allRuntimeServices
                                     json rtItem;
                                     rtItem["address"] = addr;
                                     rtItem["service_name"] = static_cast<std::string>(
@@ -710,7 +714,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                     insn.ops[1].type == o_mem && insn.ops[1].addr == smms) {
                     ea_t addr = ea;
 
-                    /* 10 instructions below */
+                    // 10 instructions below
                     for (auto i = 0; i < 10; i++) {
                         decode_insn(&insn, addr);
                         if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
@@ -728,7 +732,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                               static_cast<char *>(
                                                   smmServicesTableAll[j].service_name));
 
-                                    /* add address to smmServices[...] */
+                                    // add address to `smmServices[...]`
                                     if (find(protSmmNames.begin(), protSmmNames.end(),
                                              smmServicesTableAll[j].service_name) !=
                                         protSmmNames.end()) {
@@ -740,7 +744,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                                            .service_name)]
                                         .push_back(addr);
 
-                                    /* add item to allSmmServices */
+                                    // add item to allSmmServices
                                     json smmsItem;
                                     smmsItem["address"] = addr;
                                     smmsItem["service_name"] = static_cast<std::string>(
@@ -790,7 +794,7 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
                     insn_t aboveInst;
                     uint16_t src_reg = 0xffff;
 
-                    /* 15 instructions above */
+                    // 15 instructions above
                     for (auto j = 0; j < 15; j++) {
                         address = prev_head(address, startAddress);
                         decode_insn(&aboveInst, address);
@@ -804,7 +808,7 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
 
                     bool found_push = false;
 
-                    /* 15 instructions above */
+                    // 15 instructions above
                     address = ea;
                     for (auto j = 0; j < 15; j++) {
                         address = prev_head(address, startAddress);
@@ -932,7 +936,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
 
         std::vector<ea_t> addrs = peiServicesAll[pei_services_table[i].name];
 
-        /* for each pei service */
+        // for each PEI service
         for (auto ea : addrs) {
             ea_t address = ea;
 
@@ -942,7 +946,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
             auto found = false;
             uint16_t pushNumber = pei_services_table[i].ppi_guid_push_number;
 
-            /* 10 instructions above */
+            // 10 instructions above
             uint16_t pushCounter = 0;
             DEBUG_MSG("[%s] looking for PPIs in the 0x%016llX area \n", plugin_name,
                       address, pushNumber);
@@ -985,20 +989,20 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                     continue;
                 }
 
-                /* get PPI item */
+                // get PPI item
                 json ppiItem;
                 ppiItem["address"] = guidDataAddress;
                 ppiItem["xref"] = guidCodeAddress;
                 ppiItem["service"] = pei_services_table[i].name;
                 ppiItem["guid"] = guid;
 
-                /* find guid name */
+                // find guid name
                 for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         ppiItem["ppi_name"] = dbItem.key();
 
-                        /* check if item already exists */
+                        // check if item already exists
                         auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
                         if (it == allPPIs.end()) {
                             allPPIs.push_back(ppiItem);
@@ -1007,11 +1011,11 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                     }
                 }
 
-                /* proprietary Ppi */
+                // proprietary PPI
                 if (ppiItem["ppi_name"].is_null()) {
                     ppiItem["ppi_name"] = "ProprietaryPpi";
 
-                    /* check if item already exists */
+                    // check if item already exists
                     auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
                     if (it == allPPIs.end()) {
                         allPPIs.push_back(ppiItem);
@@ -1052,7 +1056,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                                          bootServicesTableX64[i].service_name)]
                             .push_back(ea);
 
-                        /* add item to allBootServices */
+                        // add item to `allBootServices`
                         json bsItem;
                         bsItem["address"] = ea;
                         bsItem["service_name"] = static_cast<std::string>(
@@ -1099,7 +1103,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                                      bootServicesTableX86[i].service_name)]
                         .push_back(ea);
 
-                    /* add item to allBootServices */
+                    // add item to `allBootServices`
                     json bsItem;
                     bsItem["address"] = ea;
                     bsItem["service_name"] =
@@ -1168,7 +1172,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
     for (int i = 0; i < bootServicesTableX64Length; i++) {
         std::vector<ea_t> addrs = bootServices[bootServicesTableX64[i].service_name];
 
-        /* for each boot service */
+        // for each boot service
         for (auto ea : addrs) {
             ea_t address = ea;
             DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
@@ -1178,7 +1182,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
             ea_t guidDataAddress = 0;
             auto found = false;
 
-            /* 10 instructions above */
+            // 10 instructions above
             for (auto j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
@@ -1192,6 +1196,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                     }
                 }
             }
+
             if (found) {
                 DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016llX\n",
                           plugin_name, guidCodeAddress);
@@ -1202,20 +1207,20 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                     continue;
                 }
 
-                /* get protocol item */
+                // get protocol item
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTableX64[i].service_name;
                 protocolItem["guid"] = guid;
 
-                /* find guid name */
+                // find guid name
                 for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
 
-                        /* check if item already exist */
+                        // check if item already exist
                         auto it =
                             find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
@@ -1225,11 +1230,11 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                     }
                 }
 
-                /* proprietary protocol */
+                // proprietary protocol
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
 
-                    /* check if item already exist */
+                    // check if item already exist
                     auto it =
                         find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
@@ -1256,7 +1261,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
     for (int i = 0; i < bootServicesTableX86Length; i++) {
         std::vector<ea_t> addrs = bootServices[bootServicesTableX86[i].service_name];
 
-        /* for each boot service */
+        // for each boot service
         for (auto ea : addrs) {
             ea_t address = ea;
             DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
@@ -1267,12 +1272,12 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
             auto found = false;
             uint16_t pushNumber = bootServicesTableX86[i].push_number;
 
-            /* if service is not currently being processed */
+            // if service is not currently being processed
             if (pushNumber == PUSH_NONE) {
                 break;
             }
 
-            /* 10 instructions above */
+            // 10 instructions above
             uint16_t pushCounter = 0;
             for (auto j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
@@ -1303,20 +1308,20 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                     continue;
                 }
 
-                /* get protocol item */
+                // get protocol item
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTableX86[i].service_name;
                 protocolItem["guid"] = guid;
 
-                /* find guid name */
+                // find guid name
                 for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
 
-                        /* check if item already exist */
+                        // check if item already exist
                         auto it =
                             find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
@@ -1326,11 +1331,11 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                     }
                 }
 
-                /* proprietary protocol */
+                // proprietary protocol
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
 
-                    /* check if item already exist */
+                    // check if item already exist
                     auto it =
                         find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
@@ -1358,7 +1363,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
     for (int i = 0; i < smmServicesProtX64Length; i++) {
         auto addrs = smmServices[smmServicesProtX64[i].service_name];
 
-        /* for each smm service */
+        // for each SMM service
         for (auto ea : addrs) {
             ea_t address = ea;
             DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
@@ -1368,7 +1373,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
             ea_t guidDataAddress = 0;
             auto found = false;
 
-            /* 10 instructions above */
+            // 10 instructions above
             for (auto j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
@@ -1393,20 +1398,20 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                     continue;
                 }
 
-                /* get protocol item */
+                // get protocol item
                 json protocolItem;
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = smmServicesProtX64[i].service_name;
                 protocolItem["guid"] = guid;
 
-                /* find guid name */
+                // find guid name
                 for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                      ++dbItem) {
                     if (guid == dbItem.value()) {
                         protocolItem["prot_name"] = dbItem.key();
 
-                        /* check if item already exist */
+                        // check if item already exist
                         auto it =
                             find(allProtocols.begin(), allProtocols.end(), protocolItem);
                         if (it == allProtocols.end()) {
@@ -1416,11 +1421,11 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                     }
                 }
 
-                /* proprietary protocol */
+                // proprietary protocol
                 if (protocolItem["prot_name"].is_null()) {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
 
-                    /* check if item already exist */
+                    // check if item already exist
                     auto it =
                         find(allProtocols.begin(), allProtocols.end(), protocolItem);
                     if (it == allProtocols.end()) {
@@ -1443,7 +1448,7 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
         json ifItem = *ifItemIt;
         ea_t address = static_cast<ea_t>(ifItem["address"]);
 
-        /* check if guid on this address already marked */
+        // check if guid on this address already marked
         bool marked = false;
         for (auto markedAddress = markedInterfaces.begin();
              markedAddress != markedInterfaces.end(); ++markedAddress) {
@@ -1485,12 +1490,12 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
             }
             auto guid = getGuidByAddr(ea);
 
-            /* find guid name */
+            // find guid name
             for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                  ++dbItem) {
                 if (guid == dbItem.value()) {
 
-                    /* mark .data guid */
+                    // mark .data guid
                     char hexAddr[21] = {};
                     snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
                     std::string name =
@@ -1540,11 +1545,11 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
 
-            /* check if insn like 'mov dword ptr [...], gData1' */
+            // check if insn like `mov dword ptr [...], gData1`
             if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
                 insn.ops[1].type == o_imm) {
 
-                /* get guid->data1 value */
+                // get guid->data1 value
                 uint32_t gData1 = static_cast<uint32_t>(insn.ops[1].value);
                 if (gData1 == 0x00000000 || gData1 == 0xffffffff) {
                     ea = next_head(ea, BADADDR);
@@ -1553,26 +1558,25 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                 ea_t eaNext = next_head(ea, BADADDR);
                 decode_insn(&insnNext, eaNext);
 
-                /* check if insn like 'mov dword ptr [...], gData2' */
+                // check if insn like `mov dword ptr [...], gData2`
                 if (insnNext.itype == NN_mov && insnNext.ops[0].type == o_displ &&
                     insnNext.ops[1].type == o_imm) {
 
-                    /* get guid->data2 value */
+                    // get guid->data2 value
                     uint16_t gData2 = static_cast<uint16_t>(insnNext.ops[1].value);
                     if (gData2 == 0x0000 || gData2 == 0xffff) {
                         ea = next_head(ea, BADADDR);
                         continue;
                     }
 
-                    /* found guid->data1 and guid->data2 values, try to get guid
-                     * name */
+                    // found guid->data1 and guid->data2 values, try to get guid name
                     for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                          ++dbItem) {
                         auto guid = dbItem.value();
                         if (gData1 == static_cast<uint32_t>(guid[0]) &&
                             gData2 == static_cast<uint16_t>(guid[1])) {
 
-                            /* mark local guid */
+                            // mark local guid
                             char hexAddr[21] = {};
                             snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
                             std::string name =
@@ -1632,10 +1636,10 @@ void findCalloutRec(func_t *func) {
             }
         }
 
-        /* find callouts with gBS */
+        // find callouts with `gBS`
         for (auto bs : gBsList) {
 
-            /* check if insn is 'mov rax, cs:gBS' */
+            // check if insn is `mov rax, cs:gBS`
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
                 DEBUG_MSG("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
@@ -1643,10 +1647,10 @@ void findCalloutRec(func_t *func) {
             }
         }
 
-        /* find callouts with gRT */
+        // find callouts with `gRT`
         for (auto rt : gRtList) {
 
-            /* check if insn is 'mov rax, cs:gRT' */
+            // check if insn is `mov rax, cs:gRT`
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
                 DEBUG_MSG("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
@@ -1665,8 +1669,7 @@ void efiAnalysis::efiAnalyzer::findSwSmiHandlers() {
 //--------------------------------------------------------------------------
 // Find callouts inside SwSmiHandler function:
 //  * find SwSmiHandler function
-//  * find gBS->service_name and gRT->service_name inside SmiHandler
-//  function
+//  * find gBS->service_name and gRT->service_name inside SmiHandler function
 bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -1717,7 +1720,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                   "VariablePPI.GetVariable_2: 0x%016x\n",
                   plugin_name, prev_addr, curr_addr);
 
-        /* check code from GetVariable_1 to GetVariable_2 */
+        // check code from `GetVariable_1` to `GetVariable_2`
         ea_t ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         insn_t insn;
@@ -1878,7 +1881,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         DEBUG_MSG("[%s] GetVariable_1: 0x%016x, GetVariable_2: 0x%016x\n", plugin_name,
                   prev_addr, curr_addr);
 
-        /* get dataSizeStackAddr */
+        // get `dataSizeStackAddr`
         int dataSizeStackAddr = 0;
         ea = prev_head(static_cast<ea_t>(curr_addr), 0);
         for (auto i = 0; i < 10; ++i) {
@@ -1891,7 +1894,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
             ea = prev_head(ea, 0);
         }
 
-        /* check code from GetVariable_1 to GetVariable_2 */
+        // check code from `GetVariable_1` to `GetVariable_2`
         ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
@@ -1910,7 +1913,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         }
         if (ok) {
 
-            /* check for wrong GetVariable detection */
+            // check for wrong GetVariable detection
             bool wrong_detection = false;
             ea = prev_head(static_cast<ea_t>(curr_addr), 0);
             for (auto i = 0; i < 8; ++i) {
@@ -1926,7 +1929,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 ea = prev_head(ea, 0);
             }
 
-            /* check DataSize initialization */
+            // check `DataSize` initialization
             bool init_ok = false;
             decode_insn(&insn, prev_head(curr_addr, 0));
             if (!wrong_detection &&
@@ -1935,8 +1938,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 init_ok = true;
             }
 
-            /* check that the DataSize argument variable is the same for two
-             * calls */
+            // check that the DataSize argument variable is the same for two calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
                 for (auto i = 0; i < 10; ++i) {
@@ -1980,7 +1982,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
         DEBUG_MSG("[%s] SmmGetVariable_1: 0x%016x, SmmGetVariable_2: 0x%016x\n",
                   plugin_name, prev_addr, curr_addr);
 
-        /* get dataSizeStackAddr */
+        // get `dataSizeStackAddr`
         uint32_t dataSizeStackAddr = 0xffffffff;
         ea = prev_head(static_cast<ea_t>(curr_addr), 0);
         for (auto i = 0; i < 10; ++i) {
@@ -1993,7 +1995,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
             ea = prev_head(ea, 0);
         }
 
-        /* check code from SmmGetVariable_1 to SmmGetVariable_2 */
+        // check code from `SmmGetVariable_1` to `SmmGetVariable_2`
         ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
@@ -2008,7 +2010,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
 
         if (ok) {
 
-            /* check DataSize initialization */
+            // check DataSize initialization
             bool init_ok = false;
             decode_insn(&insn, prev_head(curr_addr, 0));
             if (!(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
@@ -2016,8 +2018,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
                 init_ok = true;
             }
 
-            /* check that the DataSize argument variable is the same for two
-             * calls */
+            // check that the `DataSize` argument variable is the same for two calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
                 for (auto i = 0; i < 10; ++i) {
@@ -2110,27 +2111,27 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
 void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
     qstring title;
 
-    /* open window with all services */
+    // open window with all services
     if (analyzer.allServices.size()) {
         title = "efiXplorer: services";
         services_show(analyzer.allServices, title);
     }
 
-    /* open window with protocols */
+    // open window with protocols
     if (analyzer.fileType == FTYPE_PEI) {
         if (analyzer.allPPIs.size()) {
             title = "efiXplorer: PPIs";
             ppis_show(analyzer.allPPIs, title);
         }
 
-    } else { /* FTYPE_DXE_AND_THE_LIKE */
+    } else { // FTYPE_DXE_AND_THE_LIKE
         if (analyzer.allProtocols.size()) {
             title = "efiXplorer: protocols";
             protocols_show(analyzer.allProtocols, title);
         }
     }
 
-    /* open window with data guids */
+    // open window with data guids
     if (analyzer.allGuids.size()) {
         qstring title = "efiXplorer: guids";
         guids_show(analyzer.allGuids, title);
@@ -2146,10 +2147,10 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         auto_wait();
     };
 
-    /* find .text and .data segments */
+    // find .text and .data segments
     analyzer.getSegments();
 
-    /* mark GUIDs */
+    // mark GUIDs
     analyzer.markDataGuids();
     analyzer.markLocalGuidsX64();
 
@@ -2157,7 +2158,7 @@ bool efiAnalysis::efiAnalyzerMainX64() {
 
     analyzer.setStrings();
 
-    /* find global vars for gImageHandle, gST, gBS, gRT, gSmst */
+    // find global vars for `gImageHandle`, `gST`, `gBS`, `gRT`, `gSmst`
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
         analyzer.findImageHandleX64();
         analyzer.findSystemTableX64();
@@ -2165,31 +2166,31 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         analyzer.findRuntimeServicesTables(X64);
         analyzer.findSmstX64();
 
-        /* find boot services and runtime services */
+        // find Boot services and Runtime services
         analyzer.getProtBootServicesX64();
         analyzer.findOtherBsTablesX64();
         analyzer.getAllBootServices(X64);
         analyzer.getAllRuntimeServices(X64);
 
-        /* find smm services */
+        // find SMM services
         analyzer.getAllSmmServicesX64();
 
-        /* print and mark protocols */
+        // print and mark protocols
         analyzer.getBsProtNamesX64();
         analyzer.getSmmProtNamesX64();
         analyzer.markInterfaces();
 
-        /* search for vulnerabilities */
+        // search for vulnerabilities
         if (!g_args.disable_vuln_hunt) {
 
-            /* find potential smm callouts */
+            // find potential SMM callouts
             analyzer.findSwSmiHandlers();
             analyzer.findSmmCallout();
 
-            /* find potential vuln in GetVariable function */
+            // find potential OOB RW with `GetVariable` function
             analyzer.findGetVariableOveflow(analyzer.allServices);
 
-            /* find potential vuln in SmmGetVariable function */
+            // find potential OOB RW with `SmmGetVariable` function
             analyzer.findSmmGetVariableOveflow();
             analyzer.efiSmmCpuProtocolResolver();
         }
@@ -2198,10 +2199,10 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         DEBUG_MSG("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
     }
 
-    /* dump info to JSON file */
+    // dump info to JSON file
     analyzer.dumpInfo();
 
-    /* show all choosers windows */
+    // show all choosers windows
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
@@ -2220,10 +2221,10 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         auto_wait();
     };
 
-    /* find .text and .data segments */
+    // find .text and .data segments
     analyzer.getSegments();
 
-    /* mark GUIDs */
+    // mark GUIDs
     analyzer.markDataGuids();
 
     analyzer.fileType = getFileType(&analyzer.allGuids);
@@ -2232,16 +2233,16 @@ bool efiAnalysis::efiAnalyzerMainX86() {
 
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
 
-        /* find global vars for gST, gBS, gRT */
+        // find global vars for `gST`, `gBS`, `gRT`
         analyzer.findBootServicesTables(X86);
         analyzer.findRuntimeServicesTables(X86);
 
-        /* find boot services and runtime services */
+        // find boot services and runtime services
         analyzer.getAllRuntimeServices(X86);
         analyzer.getProtBootServicesX86();
         analyzer.getAllBootServices(X86);
 
-        /* print and mark protocols */
+        // print and mark protocols
         analyzer.getBsProtNamesX86();
         analyzer.markInterfaces();
 
@@ -2252,16 +2253,16 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         analyzer.getAllVariablePPICallsX86();
         analyzer.markInterfaces();
 
-        /* search for vulnerabilities */
+        // search for vulnerabilities
         if (!g_args.disable_vuln_hunt) {
             analyzer.findPPIGetVariableStackOveflow();
         }
     }
 
-    /* dump info to JSON file */
+    // dump info to JSON file
     analyzer.dumpInfo();
 
-    /* show all choosers windows */
+    // show all choosers windows
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }

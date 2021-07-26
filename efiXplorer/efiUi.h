@@ -24,7 +24,7 @@
 #include "efiUtils.h"
 
 //-------------------------------------------------------------------------
-// guids chooser
+// Guids chooser
 class guids_chooser_t : public chooser_t {
   protected:
     static const int widths_guids[];
@@ -34,25 +34,25 @@ class guids_chooser_t : public chooser_t {
     eavec_t list;
     json chooser_guids;
 
-    /* this object must be allocated using `new` */
+    // this object must be allocated using `new`
     guids_chooser_t(const char *title, bool ok, std::vector<json> guids);
 
-    /* function that is used to decide whether a new chooser should be opened or
-     * we can use the existing one. The contents of the window are completely
-     * determined by its title */
+    // function that is used to decide whether a new chooser should be opened or
+    // we can use the existing one. The contents of the window are completely
+    // determined by its title
     virtual const void *get_obj_id(size_t *len) const {
         *len = strlen(title);
         return title;
     }
 
-    /* function that returns number of lines in the list */
+    // function that returns number of lines in the list
     virtual size_t idaapi get_count() const { return list.size(); }
 
-    /* function that generates the list line */
+    // function that generates the list line
     virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
                                 size_t n) const;
 
-    /* function that is called when the user hits Enter */
+    // function that is called when the user hits `Enter`
     virtual cbret_t idaapi enter(size_t n) {
         if (n < list.size())
             jumpto(list[n]);
@@ -61,10 +61,9 @@ class guids_chooser_t : public chooser_t {
 
   protected:
     void build_list(bool ok, std::vector<json> guids) {
-        /* iterate the array */
         size_t n = 0;
-        for (std::vector<json>::iterator g = guids.begin(); g != guids.end(); ++g) {
-            json guid = *g;
+        for (auto g : guids) {
+            json guid = g;
             list.push_back(guid["address"]);
             chooser_guids[n] = guid;
             n++;
@@ -74,38 +73,37 @@ class guids_chooser_t : public chooser_t {
 };
 
 //-------------------------------------------------------------------------
-// protocols chooser
+// Protocols chooser
 class interfaces_chooser_t : public chooser_t {
   protected:
     static const int widths_protocols[];
     static const char *const header_protocols[];
 
   public:
-    /* remember the addresses in this qstd::vector:: */
     eavec_t list;
     json chooser_protocols;
     std::string name_key;
 
-    /* this object must be allocated using `new` */
+    // this object must be allocated using `new`
     interfaces_chooser_t(const char *title, bool ok, std::vector<json> interfaces,
                          std::string name_key);
 
-    /* function that is used to decide whether a new chooser should be opened or
-     * we can use the existing one. The contents of the window are completely
-     * determined by its title */
+    // function that is used to decide whether a new chooser should be opened or
+    // we can use the existing one. The contents of the window are completely
+    // determined by its title
     virtual const void *get_obj_id(size_t *len) const {
         *len = strlen(title);
         return title;
     }
 
-    /* function that returns number of lines in the list */
+    // function that returns number of lines in the list
     virtual size_t idaapi get_count() const { return list.size(); }
 
-    /* function that generates the list line */
+    // function that generates the list line
     virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
                                 size_t n) const;
 
-    /* function that is called when the user hits Enter */
+    // function that is called when the user hits `Enter`
     virtual cbret_t idaapi enter(size_t n) {
         if (n < list.size())
             jumpto(list[n]);
@@ -114,11 +112,9 @@ class interfaces_chooser_t : public chooser_t {
 
   protected:
     void build_list(bool ok, std::vector<json> protocols) {
-        /* iterate the array */
         size_t n = 0;
-        for (std::vector<json>::iterator p = protocols.begin(); p != protocols.end();
-             ++p) {
-            json protocol = *p;
+        for (auto p : protocols) {
+            json protocol = p;
             list.push_back(protocol["address"]);
             chooser_protocols[n] = protocol;
             n++;
@@ -128,7 +124,7 @@ class interfaces_chooser_t : public chooser_t {
 };
 
 //-------------------------------------------------------------------------
-// service chooser (address : service_name)
+// Service chooser (address : service_name)
 class s_chooser_t : public chooser_t {
   protected:
     static const int widths_s[];
@@ -138,25 +134,25 @@ class s_chooser_t : public chooser_t {
     eavec_t list;
     json chooser_s;
 
-    /* this object must be allocated using `new` */
+    // this object must be allocated using `new`
     s_chooser_t(const char *title, bool ok, std::vector<json> services);
 
-    /* function that is used to decide whether a new chooser should be opened or
-     * we can use the existing one. The contents of the window are completely
-     * determined by its title */
+    // function that is used to decide whether a new chooser should be opened or
+    // we can use the existing one. The contents of the window are completely
+    // determined by its title
     virtual const void *get_obj_id(size_t *len) const {
         *len = strlen(title);
         return title;
     }
 
-    /* function that returns number of lines in the list */
+    // function that returns number of lines in the list
     virtual size_t idaapi get_count() const { return list.size(); }
 
-    /* function that generates the list line */
+    // function that generates the list line
     virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
                                 size_t n) const;
 
-    /* function that is called when the user hits Enter */
+    // function that is called when the user hits `Enter`
     virtual cbret_t idaapi enter(size_t n) {
         if (n < list.size())
             jumpto(list[n]);
@@ -165,10 +161,9 @@ class s_chooser_t : public chooser_t {
 
   protected:
     void build_list(bool ok, std::vector<json> services) {
-        /* iterate the array */
         size_t n = 0;
-        for (std::vector<json>::iterator s = services.begin(); s != services.end(); ++s) {
-            json j_service = *s;
+        for (auto s : services) {
+            json j_service = s;
             list.push_back(j_service["address"]);
             chooser_s[n] = j_service;
             n++;

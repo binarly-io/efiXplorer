@@ -19,9 +19,9 @@
  *
  */
 
-/* arguments configuration */
 struct args {
     int disable_ui;
     int disable_vuln_hunt;
 };
+
 extern struct args g_args;

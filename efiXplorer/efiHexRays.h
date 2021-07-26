@@ -213,7 +213,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
     std::vector<json> mProtocols;
 
     // Print debug messages?
-    bool mDebug;
+    bool mDebug = true;
 
     // Used for looking up calls to function pointers in structures
     ServiceDescriptorMap &mServices;
@@ -271,14 +271,14 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         mEa = BADADDR;
         mTif.clear();
         mTifNoPtr.clear();
-        mpService = NULL;
+        mpService = nullptr;
         mOrdinal = 0;
         mOffset = -1;
-        mpTarget = NULL;
-        mArgs = NULL;
-        mGUIDArg = NULL;
-        mOutArg = NULL;
-        mGUIDArgRefTo = NULL;
+        mpTarget = nullptr;
+        mArgs = nullptr;
+        mGUIDArg = nullptr;
+        mOutArg = nullptr;
+        mGUIDArgRefTo = nullptr;
         mGUIDEa = BADADDR;
     };
 
@@ -412,7 +412,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
                        Expr2String(e, &estr), bIsPodArray);
 
             // If it is a POD array, good, we'll take it.
-            return bIsPodArray ? x : NULL;
+            return bIsPodArray ? x : nullptr;
         }
 
         // For everything else, we really want it to be a reference: either to a
@@ -423,7 +423,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
                        "reference\n",
                        mEa, mpService->GetName(), mpTarget->name, desc,
                        Expr2String(e, &estr));
-            return NULL;
+            return nullptr;
         }
 
         // If we get here, we know it's a reference. Return the referent.
@@ -502,7 +502,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         // Also needs to handle the case where the name is unknown and return 0
         // Until I know how to do that, I'm hard-coding this example string
         mGUIDArgRefTo = GetReferent(mGUIDArg, "GUID", false);
-        if (mGUIDArgRefTo == NULL)
+        if (mGUIDArgRefTo == nullptr)
             return 0;
         ea_t guidAddr = mGUIDArgRefTo->obj_ea;
 
@@ -529,6 +529,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         qstring tStr;
         if (!tif.get_type_name(&tStr)) {
             DebugPrint("[E] Can't get type name\n");
+            return false;
         }
 
         DebugPrint("[I] Protocol type name: %s\n", tStr.c_str());
@@ -540,7 +541,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
         // Get the referent for the interface argument.
         cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);
-        if (outArgReferent == NULL)
+        if (outArgReferent == nullptr)
             return 0;
 
         // Apply the type to the output referent.

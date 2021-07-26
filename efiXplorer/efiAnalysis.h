@@ -93,7 +93,7 @@ class efiAnalyzer {
     json dbProtocols;
     std::vector<ea_t> markedInterfaces;
 
-    /* set boot services that work with protocols */
+    // Set boot services that work with protocols
     std::vector<std::string> protBsNames = {"InstallProtocolInterface",
                                             "ReinstallProtocolInterface",
                                             "UninstallProtocolInterface",
@@ -108,7 +108,7 @@ class efiAnalyzer {
                                             "InstallMultipleProtocolInterfaces",
                                             "UninstallMultipleProtocolInterfaces"};
 
-    /* set smm services that work with protocols */
+    // Set smm services that work with protocols
     std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
                                              "SmmUninstallProtocolInterface",
                                              "SmmHandleProtocol",
@@ -116,11 +116,11 @@ class efiAnalyzer {
                                              "SmmLocateHandle",
                                              "SmmLocateProtocol"};
 
-    /* set of pei services that work with PPI */
+    // Set of PEI services that work with PPI
     std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
                                             "NotifyPpi"};
 
-    /* Format-dependent interface-related settings (protocols for DXE, PPIs for PEI) */
+    // Format-dependent interface-related settings (protocols for DXE, PPIs for PEI)
     char *if_name;
     char *if_pl;
     char *if_key;
