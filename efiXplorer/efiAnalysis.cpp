@@ -953,7 +953,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
 
             // 10 instructions above
             uint16_t pushCounter = 0;
-            DEBUG_MSG("[%s] looking for PPIs in the 0x%016llX area \n", plugin_name,
+            DEBUG_MSG("[%s] looking for PPIs in the 0x%016llX area\n", plugin_name,
                       address, pushNumber);
             for (auto j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
@@ -1008,8 +1008,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                     ppiItem["ppi_name"] = name;
 
                     // check if item already exists
-                    auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
-                    if (it == allPPIs.end()) {
+                    if (find(allPPIs.begin(), allPPIs.end(), ppiItem) == allPPIs.end()) {
                         allPPIs.push_back(ppiItem);
                     }
                     break;
@@ -1020,8 +1019,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
                     ppiItem["ppi_name"] = "ProprietaryPpi";
 
                     // check if item already exists
-                    auto it = find(allPPIs.begin(), allPPIs.end(), ppiItem);
-                    if (it == allPPIs.end()) {
+                    if (find(allPPIs.begin(), allPPIs.end(), ppiItem) == allPPIs.end()) {
                         allPPIs.push_back(ppiItem);
                     }
                     continue;
@@ -1325,9 +1323,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                     protocolItem["prot_name"] = name;
 
                     // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
+                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
+                        allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
                     }
                     break;
@@ -1338,9 +1335,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
 
                     // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
+                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
+                        allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
                     }
                     continue;
@@ -1427,9 +1423,8 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                     protocolItem["prot_name"] = "ProprietaryProtocol";
 
                     // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
+                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
+                        allProtocols.end()) {
                         allProtocols.push_back(protocolItem);
                     }
                     continue;
@@ -1689,8 +1684,8 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
 bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    DEBUG_MSG("[%s] Looking for ppi getvariable stack overflow, "
-              "allServices.size() = %d \n",
+    DEBUG_MSG("[%s] Looking for PPI GetVariable buffer overflow, "
+              "allServices.size() = %d\n",
               plugin_name, allServices.size());
     std::vector<ea_t> getVariableServicesCalls;
     std::string getVariableStr("VariablePPI.GetVariable");
@@ -1704,7 +1699,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
         }
     }
     DEBUG_MSG("[%s] Finished iterating over allServices, "
-              "getVariableServicesCalls.size() = %d \n",
+              "getVariableServicesCalls.size() = %d\n",
               plugin_name, getVariableServicesCalls.size());
     sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
     if (getVariableServicesCalls.size() < 2) {
@@ -1714,8 +1709,8 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
     ea_t prev_addr = getVariableServicesCalls.at(0);
     for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
         ea_t curr_addr = getVariableServicesCalls.at(i);
-        DEBUG_MSG("[%s] VariablePPI.GetVariable_1: 0x%016x, "
-                  "VariablePPI.GetVariable_2: 0x%016x\n",
+        DEBUG_MSG("[%s] VariablePPI.GetVariable_1: 0x%016llX, "
+                  "VariablePPI.GetVariable_2: 0x%016llX\n",
                   plugin_name, prev_addr, curr_addr);
 
         // check code from `GetVariable_1` to `GetVariable_2`
@@ -1775,8 +1770,8 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            DEBUG_MSG("[%s] curr_datasize_addr = 0x%016x, datasize_addr_found "
-                      "= %d \n",
+            DEBUG_MSG("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found "
+                      "= %d\n",
                       plugin_name, curr_datasize_addr, datasize_addr_found);
 
             if (!datasize_addr_found) {
@@ -1829,8 +1824,8 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            DEBUG_MSG("[%s] prev_datasize_addr = 0x%016x, datasize_addr_found = %d, "
-                      "(prev_datasize_addr == curr_datasize_addr) = %d \n",
+            DEBUG_MSG("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = %d, "
+                      "(prev_datasize_addr == curr_datasize_addr) = %d\n",
                       plugin_name, prev_datasize_addr, datasize_addr_found,
                       (prev_datasize_addr == curr_datasize_addr));
 
@@ -1841,7 +1836,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
             } else if (prev_datasize_addr == curr_datasize_addr) {
                 getVariableStackOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX "
-                          "(prev_datasize_addr == curr_datasize_addr) \n",
+                          "(prev_datasize_addr == curr_datasize_addr)\n",
                           plugin_name, curr_addr);
             }
         }
@@ -1876,8 +1871,8 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
     insn_t insn;
     for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
         ea_t curr_addr = getVariableServicesCalls.at(i);
-        DEBUG_MSG("[%s] GetVariable_1: 0x%016x, GetVariable_2: 0x%016x\n", plugin_name,
-                  prev_addr, curr_addr);
+        DEBUG_MSG("[%s] GetVariable_1: 0x%016llX, GetVariable_2: 0x%016llX\n",
+                  plugin_name, prev_addr, curr_addr);
 
         // get `dataSizeStackAddr`
         int dataSizeStackAddr = 0;
@@ -1977,7 +1972,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
     insn_t insn;
     for (auto i = 1; i < smmGetVariableCalls.size(); ++i) {
         ea_t curr_addr = smmGetVariableCalls.at(i);
-        DEBUG_MSG("[%s] SmmGetVariable_1: 0x%016x, SmmGetVariable_2: 0x%016x\n",
+        DEBUG_MSG("[%s] SmmGetVariable_1: 0x%016llX, SmmGetVariable_2: 0x%016llX\n",
                   plugin_name, prev_addr, curr_addr);
 
         // get `dataSizeStackAddr`
@@ -2030,7 +2025,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
                             break;
                         }
                         DEBUG_MSG("[%s] \tDataSize argument variable is not the "
-                                  "same: 0x%016x\n",
+                                  "same: 0x%016llX\n",
                                   plugin_name, curr_addr);
                     }
                     ea = prev_head(ea, 0);

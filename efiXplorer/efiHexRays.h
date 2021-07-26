@@ -515,7 +515,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             }
         }
         if (GUIDName.empty()) {
-            return false;
+            return 0;
         }
         std::string interfaceTypeName = GUIDName.substr(0, GUIDName.find("_GUID"));
 
@@ -523,20 +523,20 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         tinfo_t tif;
         import_type(get_idati(), -1, interfaceTypeName.c_str());
         if (!tif.get_named_type(get_idati(), interfaceTypeName.c_str())) {
-            return false;
+            return 0;
         }
 
         qstring tStr;
         if (!tif.get_type_name(&tStr)) {
             DebugPrint("[E] Can't get type name\n");
-            return false;
+            return 0;
         }
 
         DebugPrint("[I] Protocol type name: %s\n", tStr.c_str());
 
         tinfo_t tifGuidPtr;
         if (!tifGuidPtr.create_ptr(tif)) {
-            return false;
+            return 0;
         }
 
         // Get the referent for the interface argument.
@@ -546,7 +546,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
         // Apply the type to the output referent.
         ApplyType(outArgReferent, tifGuidPtr);
-        return 0;
+        return 1;
     }
 
   protected:

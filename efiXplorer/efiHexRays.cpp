@@ -138,7 +138,7 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
         {"OpenProtocol", 0x118, 6, 1, 2}};
 
     // Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
-    struct TargetFunctionPointer SystemServicesFunctions[2]{
+    struct TargetFunctionPointer SmmServicesFunctions[2]{
         {"SmmHandleProtocol", 0xb8, 3, 1, 2},
         {"SmmLocateProtocol", 0xd0, 3, 0, 2},
     };
@@ -147,7 +147,7 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
     ServiceDescriptor sdBs;
     ServiceDescriptor sdSmm;
     sdBs.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
-    sdSmm.Initialize("_EFI_SMM_SYSTEM_TABLE2", SystemServicesFunctions, 2);
+    sdSmm.Initialize("_EFI_SMM_SYSTEM_TABLE2", SmmServicesFunctions, 2);
 
     ServiceDescriptorMap mBs;
     ServiceDescriptorMap mSmm;
@@ -159,15 +159,18 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
     retyperBs.SetProtocols(protocols);
     retyperSmm.SetProtocols(protocols);
 
-    // Handle all functions
-    for (auto n = 0; n < get_func_qty(); n++) {
-        func_t *func = getn_func(n);
-
-        retyperBs.SetFuncEa(func->start_ea);
-        retyperSmm.SetFuncEa(func->start_ea);
+    // Handle all protocols
+    for (auto protocol : protocols) {
+        auto code_addr = protocol["xref"];
+        func_t *f = get_func(code_addr);
+        if (f == nullptr) {
+            continue;
+        }
+        retyperBs.SetFuncEa(f->start_ea);
+        retyperSmm.SetFuncEa(f->start_ea);
 
         hexrays_failure_t hf;
-        cfuncptr_t cfunc = decompile(func, &hf);
+        cfuncptr_t cfunc = decompile(f, &hf);
         retyperBs.apply_to(&cfunc->body, nullptr);
         retyperSmm.apply_to(&cfunc->body, nullptr);
     }

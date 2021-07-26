@@ -33,6 +33,7 @@ struct pei_services_entry {
     uint16_t ppi_guid_push_number;
     uint16_t guid_offset;
 };
+
 extern struct pei_services_entry pei_services_table[];
 extern size_t pei_services_table_size;
 
