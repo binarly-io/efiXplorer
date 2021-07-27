@@ -177,21 +177,18 @@ uint8_t getFileType(std::vector<json> *allGuids) {
 
 //--------------------------------------------------------------------------
 // Get boot service description comment
-std::string getBsComment(ea_t offset, uint8_t arch) {
-    ea_t offset_arch;
-    std::string cmt = "";
-    cmt += "gBS->";
+std::string getBsComment(uint32_t offset, uint8_t arch) {
+    uint32_t offset_current;
+    std::string cmt = "gBS->";
     for (auto i = 0; i < BTABLE_LEN; i++) {
-        offset_arch = (ea_t)boot_services_table[i].offset64;
+        offset_current = boot_services_table[i].offset64;
         if (arch == X86) {
-            offset_arch = (ea_t)boot_services_table[i].offset86;
+            offset_current = boot_services_table[i].offset32;
         }
-        if (offset == offset_arch) {
-            cmt += boot_services_table[i].name;
-            cmt += "()\n";
-            cmt += boot_services_table[i].prototype;
-            cmt += "\n";
-            cmt += boot_services_table[i].parameters;
+        if (offset == offset_current) {
+            cmt += static_cast<std::string>(boot_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(boot_services_table[i].prototype) + "\n" +
+                   static_cast<std::string>(boot_services_table[i].parameters);
             break;
         }
     }
@@ -200,14 +197,12 @@ std::string getBsComment(ea_t offset, uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get Pei service description comment (X86 is assumed)
-std::string getPeiSvcComment(ea_t offset) {
-    std::string cmt = "";
-    cmt += "gPS->";
+std::string getPeiSvcComment(uint32_t offset) {
+    std::string cmt = "gPS->";
     for (auto i = 0; i < pei_services_table_size; i++) {
         if (offset == pei_services_table[i].offset) {
-            cmt += pei_services_table[i].name;
-            cmt += "()\n";
-            cmt += pei_services_table[i].prototype;
+            cmt += static_cast<std::string>(pei_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(pei_services_table[i].prototype);
             break;
         }
     }
@@ -216,14 +211,12 @@ std::string getPeiSvcComment(ea_t offset) {
 
 //--------------------------------------------------------------------------
 // Get PPI service description comment (X86 is assumed)
-std::string getPPICallComment(ea_t offset, std::string name) {
-    std::string cmt = "";
-    cmt += name + "->"; // VariablePpi
+std::string getPPICallComment(uint32_t offset, std::string name) {
+    std::string cmt = name + "->"; // VariablePpi
     for (auto i = 0; i < variable_ppi_table_size; i++) {
         if (offset == variable_ppi_table[i].offset) {
-            cmt += variable_ppi_table[i].name;
-            cmt += "()\n";
-            cmt += variable_ppi_table[i].prototype;
+            cmt += static_cast<std::string>(variable_ppi_table[i].name) + "()\n" +
+                   static_cast<std::string>(variable_ppi_table[i].prototype);
             break;
         }
     }
@@ -233,7 +226,6 @@ std::string getPPICallComment(ea_t offset, std::string name) {
 //--------------------------------------------------------------------------
 // Get SMM service description comment
 std::string getSmmVarComment() {
-    ea_t offset = 0;
     std::string name = "EFI_SMM_VARIABLE_PROTOCOL";
     std::string prototype = "EFI_STATUS (EFIAPI *EFI_GET_VARIABLE)"
                             "(IN CHAR16 *VariableName, "
@@ -242,31 +234,24 @@ std::string getSmmVarComment() {
                             "IN OUT UINTN *DataSize, "
                             "OUT VOID *Data OPTIONAL);";
 
-    std::string cmt = "";
-    cmt += name + "->";
-    cmt += "SmmGetVariable";
-    cmt += "()\n";
-    cmt += prototype;
+    std::string cmt = name + "->SmmGetVariable()\n" + prototype;
     return cmt;
 }
 
 //--------------------------------------------------------------------------
 // Get runtime service description comment
-std::string getRtComment(ea_t offset, uint8_t arch) {
+std::string getRtComment(uint32_t offset, uint8_t arch) {
     ea_t offset_arch;
-    std::string cmt = "";
-    cmt += "gRT->";
+    std::string cmt = "gRT->";
     for (auto i = 0; i < RTABLE_LEN; i++) {
-        offset_arch = (ea_t)runtime_services_table[i].offset64;
+        offset_arch = runtime_services_table[i].offset64;
         if (arch == X86) {
-            offset_arch = (ea_t)runtime_services_table[i].offset86;
+            offset_arch = runtime_services_table[i].offset32;
         }
         if (offset == offset_arch) {
-            cmt += runtime_services_table[i].name;
-            cmt += "()\n";
-            cmt += runtime_services_table[i].prototype;
-            cmt += "\n";
-            cmt += runtime_services_table[i].parameters;
+            cmt += static_cast<std::string>(runtime_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(runtime_services_table[i].prototype) + "\n" +
+                   static_cast<std::string>(runtime_services_table[i].parameters);
             break;
         }
     }
@@ -463,37 +448,36 @@ std::vector<json> getDependenciesLoader() {
     std::vector<std::string> locate{"LocateProtocol", "OpenProtocol"};
     std::vector<std::string> install{"InstallProtocolInterface",
                                      "InstallMultipleProtocolInterfaces"};
-    for (std::vector<json>::iterator protocolItem = allProtocols.begin();
-         protocolItem != allProtocols.end(); ++protocolItem) {
-        json protocol = *protocolItem;
-        std::string service = static_cast<std::string>(protocol["service"]);
-        if (find(install.begin(), install.end(), service) == install.end()) {
+
+    for (auto protocolInstall : allProtocols) {
+        auto serviceInstall = static_cast<std::string>(protocolInstall["service"]);
+        if (find(install.begin(), install.end(), serviceInstall) == install.end()) {
             continue;
         }
 
         // Get module name by address
-        ea_t address = static_cast<ea_t>(protocol["xref"]);
-        qstring module_name = getModuleNameLoader(address);
+        ea_t address = static_cast<ea_t>(protocolInstall["xref"]);
+        auto moduleInstall = getModuleNameLoader(address);
 
-        // Get depJsonItem
+        // Get `depJsonItem`
         json depJsonItem;
-        depJsonItem["module_name"] = static_cast<std::string>(module_name.c_str());
-        depJsonItem["protocol_name"] = protocol["prot_name"];
-        depJsonItem["guid"] = protocol["guid"];
-        depJsonItem["service"] = protocol["service"];
+        depJsonItem["module_name"] = static_cast<std::string>(moduleInstall.c_str());
+        depJsonItem["protocol_name"] = protocolInstall["prot_name"];
+        depJsonItem["guid"] = protocolInstall["guid"];
+        depJsonItem["service"] = protocolInstall["service"];
+
+        // Find modules that are input nodes
         std::vector<std::string> used_by;
-        for (std::vector<json>::iterator protocolItem = allProtocols.begin();
-             protocolItem != allProtocols.end(); ++protocolItem) {
-            json protocol = *protocolItem;
-            std::string service = static_cast<std::string>(protocol["service"]);
-            if (find(locate.begin(), locate.end(), service) == locate.end()) {
+        for (auto protocolLocate : allProtocols) {
+            auto serviceLocate = static_cast<std::string>(protocolLocate["service"]);
+            if (find(locate.begin(), locate.end(), serviceLocate) == locate.end()) {
                 continue;
             }
-            if (depJsonItem["guid"] == protocol["guid"]) {
-                address = static_cast<ea_t>(protocol["xref"]);
-                qstring module_name = getModuleNameLoader(address);
-                std::string mod_name(module_name.c_str());
-                used_by.push_back(mod_name);
+            if (depJsonItem["guid"] == protocolLocate["guid"]) {
+                address = static_cast<ea_t>(protocolLocate["xref"]);
+                auto moduleLocate = getModuleNameLoader(address);
+                std::string moduleLocateStr(moduleLocate.c_str());
+                used_by.push_back(moduleLocateStr);
             }
         }
         depJsonItem["used_by"] = used_by;
@@ -506,9 +490,7 @@ std::vector<json> getDependenciesLoader() {
 // Get name for each node
 std::vector<std::string> getNodes(std::vector<json> depJson) {
     std::vector<std::string> nodes;
-    for (std::vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
-         ++depItem) {
-        json dep = *depItem;
+    for (auto dep : depJson) {
         std::string name = static_cast<std::string>(dep["module_name"]);
         if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
             nodes.push_back(name);
@@ -528,9 +510,7 @@ std::vector<std::string> getNodes(std::vector<json> depJson) {
 // Get edges
 std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> depJson) {
     std::vector<json> edges;
-    for (std::vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
-         ++depItem) {
-        json dep = *depItem;
+    for (auto dep : depJson) {
         size_t len = dep["used_by"].size();
         if (!len)
             continue;
@@ -538,7 +518,7 @@ std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> 
         for (auto i = 0; i < len; i++) {
             std::string nodeTo = static_cast<std::string>(dep["used_by"][i]);
 
-            // Get node id for nodeFrom and nodeTo
+            // Get node id for `nodeFrom` and `nodeTo`
             auto nodeFromId = -1;
             auto nodeToId = -1;
             for (auto n = 0; n < depNodes.size(); n++) {
@@ -573,9 +553,25 @@ json getGuidByAddr(ea_t addr) {
 //--------------------------------------------------------------------------
 // Validate GUID value
 bool checkGuid(json guid) {
-    if ((static_cast<uint32_t>(guid[0]) == 0x00000000 && (uint16_t)guid[1] == 0x0000) ||
-        (static_cast<uint32_t>(guid[0]) == 0xffffffff && (uint16_t)guid[1] == 0xffff)) {
+    if (static_cast<uint32_t>(guid[0]) == 0x00000000 && (uint16_t)guid[1] == 0x0000) {
+        return false;
+    }
+    if (static_cast<uint32_t>(guid[0]) == 0xffffffff && (uint16_t)guid[1] == 0xffff) {
         return false;
     }
     return true;
+}
+
+//--------------------------------------------------------------------------
+// Convert GUID value to string
+std::string getGuidFromValue(json guid) {
+    char guidStr[37] = {0};
+    snprintf(guidStr, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+             static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+             static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+             static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+             static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+             static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+             static_cast<uint8_t>(guid[10]));
+    return static_cast<std::string>(guidStr);
 }

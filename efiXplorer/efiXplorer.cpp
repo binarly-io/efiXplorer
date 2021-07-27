@@ -108,10 +108,10 @@ struct change_layout_ah_t : public action_handler_t {
 //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t, public event_listener_t {
     change_layout_ah_t change_layout_ah = change_layout_ah_t(*this);
-    const action_desc_t change_layout_desc = ACTION_DESC_LITERAL_PLUGMOD(
-        "ugraph:ChangeLayout", "User function", &change_layout_ah, this, NULL, NULL, -1);
+    const action_desc_t change_layout_desc =
+        ACTION_DESC_LITERAL_PLUGMOD("depgraph:ChangeLayout", "Change layout type",
+                                    &change_layout_ah, this, NULL, NULL, -1);
 
-    qstrvec_t graph_text;
     graph_viewer_t *gv = nullptr;
 
     plugin_ctx_t() { hook_event_listener(HT_VIEW, this); }
@@ -147,13 +147,6 @@ action_state_t idaapi change_layout_ah_t::update(action_update_ctx_t *ctx) {
         return AST_ENABLE_FOR_WIDGET;
     else
         return AST_DISABLE_FOR_WIDGET;
-}
-
-//--------------------------------------------------------------------------
-static const char *get_node_name(int n) {
-    if (n >= depNodes.size())
-        return "?";
-    return depNodes[n].c_str();
 }
 
 //--------------------------------------------------------------------------
@@ -303,9 +296,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         // add all edges to graph
         if (g->empty())
             g->resize(depNodes.size());
-        for (std::vector<json>::iterator edge = depEdges.begin(); edge != depEdges.end();
-             ++edge) {
-            json e = *edge;
+        for (auto e : depEdges) {
             g->add_edge(e["from"], e["to"], NULL);
         }
         result = true;
@@ -323,7 +314,9 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
         int node = va_arg(va, int);
         const char **text = va_arg(va, const char **);
         bgcolor_t *bgcolor = va_arg(va, bgcolor_t *);
-        *text = ctx.graph_text[node].c_str();
+        // TODO: rewrite to new sdk
+        // grcode_user_gentext removed from idasdk76
+        *text = "?";
         if (bgcolor != NULL)
             *bgcolor = DEFCOLOR;
         result = true;
@@ -399,7 +392,7 @@ ssize_t idaapi plugin_ctx_t::gr_callback(void *ud, int code, va_list va) {
 
 //-------------------------------------------------------------------------
 ssize_t idaapi plugin_ctx_t::on_event(ssize_t code, va_list va) {
-    if (code == view_close) {
+    if (code == static_cast<ssize_t>(view_close)) {
         TWidget *view = va_arg(va, TWidget *);
         if (view == (TWidget *)gv)
             gv = nullptr;
@@ -424,38 +417,42 @@ static const char wanted_title[] = "efiXplorer: dependency graph";
 bool idaapi plugin_ctx_t::run(size_t arg) {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
-    // Parse arguments
-    // * arg = 0 (00): default
-    // * arg = 1 (01): disable_ui
-    // * arg = 2 (10): disable_vuln_hunt
-    // * arg = 3 (11): disable_ui & disable_vuln_hunt
-    if (arg >> 0 & 1) {
+    if (arg >> 0 & 1) { // arg = 0 (00): default
+                        // arg = 1 (01): disable_ui
+                        // arg = 2 (10): disable_vuln_hunt
+                        // arg = 3 (11): disable_ui & disable_vuln_hunt
         g_args.disable_ui = 1;
     }
     if (arg >> 1 & 1) {
         g_args.disable_vuln_hunt = 1;
     }
+
     DEBUG_MSG("[%s] plugin run with argument %lu\n", plugin_name, arg);
     DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
               g_args.disable_ui, g_args.disable_vuln_hunt);
+
     bool guidsJsonOk = guidsJsonExists();
     DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
+
     if (!guidsJsonOk) {
-        std::string msg_text = "guids.json file not found, copy \"guids\" directory "
-                               "to <IDA_DIR>/plugins";
+        std::string msg_text =
+            "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
         DEBUG_MSG("[%s] %s\n", plugin_name, msg_text.c_str());
         warning("%s: %s\n", plugin_name, msg_text.c_str());
         return false;
     }
+
     uint8_t arch = getArch();
     if (arch == X64) {
         DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
     }
+
     if (arch == X86) {
         DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
+
     if (arch == UEFI) {
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
@@ -468,6 +465,15 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
             depJson = getDependenciesLoader();
             depNodes = getNodes(depJson);
             depEdges = getEdges(depNodes, depJson);
+            if (GRAPH_DEBUG) {
+                for (auto node : depNodes) {
+                    DEBUG_MSG("[node] %s\n", node.c_str());
+                }
+                for (auto edge : depEdges) {
+                    std::string edgeStr = edge.dump(2);
+                    DEBUG_MSG("[edge] %s\n", edgeStr.c_str());
+                }
+            }
             TWidget *widget = find_widget(wanted_title);
             if (widget != nullptr) {
                 close_widget(widget, 0);

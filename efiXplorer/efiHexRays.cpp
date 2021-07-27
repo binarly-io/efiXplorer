@@ -1,21 +1,23 @@
-/* All of this stuff should compile with no warnings or errors. However, it's
-   currently an incomplete port of my IDAPython version. What needs to happen:
-
-   * I need to be able to get the name of a protocol GUID, either by address,
-     or by raw byte values of the GUID. I can generate addresses that I think
-     are GUIDs, no problem.
-
-   * It's not clear how to best integrate this functionality with the rest of
-     the plugin. As as right-click Hex-Rays menu item? To be able to be applied
-     to all functions in the database? To be able to be applied to any function
-     specified by address?
-
-   * It's not tested, at all. I haven't even executed it. That's okay, because
-     the rest of the code contains no references to this functionality. It is
-     dead code that will never be executed in the present state of affairs. But
-     obviously, before it's integrated as user functionality, that will need to
-     change.
-*/
+/*
+ * efiXplorer
+ * Copyright (C) 2020-2021 Binarly, Rolf Rolles
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * efiHexRays.cpp
+ *
+ */
 
 #include "efiHexRays.h"
 

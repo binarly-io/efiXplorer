@@ -72,12 +72,12 @@ using namespace nlohmann;
 #define MZ 0x5A4D
 
 // SystemTable->BootServices
-#define BS_OFFSET_X64 0x60
-#define BS_OFFSET_X86 0x3c
+#define BS_OFFSET_64BIT 0x60
+#define BS_OFFSET_32BIT 0x3c
 
 // SystemTable->RuntimeServices
-#define RT_OFFSET_X64 0x58
-#define RT_OFFSET_X86 0x38
+#define RT_OFFSET_64BIT 0x58
+#define RT_OFFSET_32BIT 0x38
 
 // 64-bit registers
 #define REG_RAX 0x00
@@ -140,19 +140,19 @@ bool opStroff(ea_t addr, std::string type);
 void createGuidStructure(ea_t ea);
 
 // Get boot service description comment
-std::string getBsComment(ea_t offset, uint8_t arch);
+std::string getBsComment(uint32_t offset, uint8_t arch);
 
 // Get PEI service description comment (X86 is assumed)
-std::string getPeiSvcComment(ea_t offset);
+std::string getPeiSvcComment(uint32_t offset);
 
 // Get PPI service description comment (X86 is assumed)
-std::string getPPICallComment(ea_t offset, std::string name);
+std::string getPPICallComment(uint32_t offset, std::string name);
 
 // Get SMM service description comment
 std::string getSmmVarComment();
 
 // Get runtime service description comment
-std::string getRtComment(ea_t offset, uint8_t arch);
+std::string getRtComment(uint32_t offset, uint8_t arch);
 
 // Find address of global gBS variable
 // for X64 module for each service
@@ -203,3 +203,6 @@ json getGuidByAddr(ea_t addr);
 
 // Validate GUID value
 bool checkGuid(json guid);
+
+// Convert GUID value to string
+std::string getGuidFromValue(json guid);
