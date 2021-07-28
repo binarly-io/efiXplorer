@@ -1699,7 +1699,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 if (insn.itype == NN_push) {
                     pushCounter += 1;
                     if (pushCounter == pushNumber) {
-                        if (insn.ops[0].type = o_reg) {
+                        if (insn.ops[0].type == o_reg) {
                             arg5_reg = insn.ops[0].reg;
                         } else {
                             // if it's not push <reg>, just let the pattern
@@ -1753,7 +1753,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 if (insn.itype == NN_push) {
                     pushCounter += 1;
                     if (pushCounter == pushNumber) {
-                        if (insn.ops[0].type = o_reg) {
+                        if (insn.ops[0].type == o_reg) {
                             arg5_reg = insn.ops[0].reg;
                         } else {
                             // if it's not push <reg>, just let the pattern
