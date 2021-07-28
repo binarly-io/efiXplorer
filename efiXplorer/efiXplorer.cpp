@@ -151,20 +151,8 @@ struct base_depgraph_ah_t : public action_handler_t {
     bool for_each_node(const action_ctx_base_t &ctx, node_visitor_t &visitor);
 };
 
-//-------------------------------------------------------------------------
-struct change_layout_ah_t : public base_depgraph_ah_t {
-    change_layout_ah_t(plugin_ctx_t &_plg) : base_depgraph_ah_t(_plg) {}
-
-    virtual int idaapi activate(action_activation_ctx_t *ctx) override;
-};
-
 //--------------------------------------------------------------------------
 struct plugin_ctx_t : public plugmod_t, public event_listener_t {
-    change_layout_ah_t change_layout_ah = change_layout_ah_t(*this);
-    const action_desc_t change_layout_desc =
-        ACTION_DESC_LITERAL_PLUGMOD("depgraph:ChangeLayout", "Change layout type",
-                                    &change_layout_ah, this, NULL, NULL, -1);
-
     graph_data_t data;
     graph_viewer_t *gv = nullptr;
 
@@ -293,17 +281,6 @@ bool base_depgraph_ah_t::for_each_node(const action_ctx_base_t &ctx,
     return ok;
 }
 
-//-------------------------------------------------------------------------
-int idaapi change_layout_ah_t::activate(action_activation_ctx_t *) {
-    mutable_graph_t *g = get_viewer_graph(plg.gv);
-    int code = ask_buttons("Circle", "Tree", "Digraph", 1, "Please select layout type");
-    g->current_layout = code + 2;
-    g->circle_center = point_t(200, 200);
-    g->circle_radius = 200;
-    refresh_viewer(plg.gv);
-    return 1;
-}
-
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init() {
     uint8_t arch = getArch();
@@ -381,9 +358,7 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
             if (gv != nullptr) {
                 display_widget(gv, WOPN_DP_TAB);
                 viewer_fit_window(gv);
-                register_action(change_layout_desc);
                 widget = find_widget(wanted_title);
-                attach_action_to_popup(widget, nullptr, change_layout_desc.name);
             }
         }
 
