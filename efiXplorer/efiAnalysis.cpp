@@ -50,7 +50,7 @@ std::vector<func_t *> excFunctions;
 std::vector<ea_t> readSaveStateCalls;
 
 // for GetVariable stack overflow finding
-std::vector<ea_t> getVariableStackOverflow;
+std::vector<ea_t> peiGetVariableOverflow;
 std::vector<ea_t> getVariableOverflow;
 std::vector<ea_t> smmGetVariableOverflow;
 
@@ -126,7 +126,7 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
     excFunctions.clear();
     readSaveStateCalls.clear();
 
-    getVariableStackOverflow.clear();
+    peiGetVariableOverflow.clear();
     getVariableOverflow.clear();
     smmGetVariableOverflow.clear();
 }
@@ -314,9 +314,11 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 if (find(gBsList.begin(), gBsList.end(),
                                          insn.ops[0].addr) == gBsList.end()) {
                                     set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string hexstr =
+                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
                                     std::string name = "gBS_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_BOOT_SERVICES");
+                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                                      "EFI_BOOT_SERVICES");
                                     gBsList.push_back(insn.ops[0].addr);
                                 }
                                 bsFound = true;
@@ -336,9 +338,11 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                                    std::string name ="gST_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                                    std::string hexstr =
+                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string name = "gST_" + hexstr;
+                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                                      "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
                                 stFound = true;
@@ -369,9 +373,11 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                        std::string hexstr = getHex(
+                                            static_cast<uint64_t>(insn.ops[0].addr));
                                         std::string name = "gST_" + hexstr;
-                                        setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                                        setPtrTypeAndName(insn.ops[0].addr, name,
+                                                          "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
                                     stFound = true;
@@ -438,9 +444,11 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 if (find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
-                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string hexstr =
+                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
                                     std::string name = "gRT_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_RUNTIME_SERVICES");
+                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                                      "EFI_RUNTIME_SERVICES");
                                     gRtList.push_back(insn.ops[0].addr);
                                 }
                                 rtFound = true;
@@ -460,9 +468,11 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string hexstr =
+                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
                                     std::string name = "gST_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                                      "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
                                 stFound = true;
@@ -493,9 +503,11 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                        std::string hexstr = getHex(
+                                            static_cast<uint64_t>(insn.ops[0].addr));
                                         std::string name = "gST_" + hexstr;
-                                        setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                                        setPtrTypeAndName(insn.ops[0].addr, name,
+                                                          "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
                                     stFound = true;
@@ -1535,7 +1547,8 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
 
                             // mark local GUID
                             std::string hexstr = getHex(static_cast<uint64_t>(ea));
-                            std::string name = dbItem.key() + "_" + static_cast<std::string>(hexstr);
+                            std::string name =
+                                dbItem.key() + "_" + static_cast<std::string>(hexstr);
                             std::string comment = "EFI_GUID " + dbItem.key();
                             DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n",
                                       plugin_name, ea, comment.c_str());
@@ -1699,7 +1712,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
             }
 
             if (same_datasize) {
-                getVariableStackOverflow.push_back(curr_addr);
+                peiGetVariableOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
                           curr_addr);
                 continue;
@@ -1723,7 +1736,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
             if (!datasize_addr_found) {
                 // if datasize wasn't found, just let the pattern
                 // trigger - for manual review
-                getVariableStackOverflow.push_back(curr_addr);
+                peiGetVariableOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
                           curr_addr);
                 continue;
@@ -1753,7 +1766,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
             }
 
             if (same_datasize) {
-                getVariableStackOverflow.push_back(curr_addr);
+                peiGetVariableOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
                           curr_addr);
                 continue;
@@ -1776,11 +1789,11 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                       (prev_datasize_addr == curr_datasize_addr));
 
             if (!datasize_addr_found) {
-                getVariableStackOverflow.push_back(curr_addr);
+                peiGetVariableOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
                           curr_addr);
             } else if (prev_datasize_addr == curr_datasize_addr) {
-                getVariableStackOverflow.push_back(curr_addr);
+                peiGetVariableOverflow.push_back(curr_addr);
                 DEBUG_MSG("[%s] overflow can occur here: 0x%016llX "
                           "(prev_datasize_addr == curr_datasize_addr)\n",
                           plugin_name, curr_addr);
@@ -1788,7 +1801,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
         }
         prev_addr = curr_addr;
     }
-    return (getVariableStackOverflow.size() > 0);
+    return (peiGetVariableOverflow.size() > 0);
 }
 
 //--------------------------------------------------------------------------
@@ -2013,14 +2026,14 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     if (calloutAddrs.size()) {
         info["vulns"]["smm_callout"] = calloutAddrs;
     }
-    if (getVariableStackOverflow.size()) {
-        info["vulns"]["pei_get_variable_stack_over"] = getVariableStackOverflow;
+    if (peiGetVariableOverflow.size()) {
+        info["vulns"]["pei_get_variable_buffer_overflow"] = peiGetVariableOverflow;
     }
     if (getVariableOverflow.size()) {
-        info["vulns"]["get_variable_over"] = getVariableOverflow;
+        info["vulns"]["get_variable_buffer_overflow"] = getVariableOverflow;
     }
     if (smmGetVariableOverflow.size()) {
-        info["vulns"]["smm_get_variable_over"] = smmGetVariableOverflow;
+        info["vulns"]["smm_get_variable_buffer_overflow"] = smmGetVariableOverflow;
     }
     info["pei_all"] = peiServicesAll;
 
@@ -2074,6 +2087,42 @@ void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
     if (analyzer.allGuids.size()) {
         qstring title = "efiXplorer: guids";
         guids_show(analyzer.allGuids, title);
+    }
+
+    // open window with vulnerabilities
+    if (calloutAddrs.size() + peiGetVariableOverflow.size() + getVariableOverflow.size() +
+        smmGetVariableOverflow.size()) {
+        std::vector<json> vulns;
+
+        for (auto addr : calloutAddrs) {
+            json item;
+            item["type"] = "smm_callout";
+            item["address"] = addr;
+            vulns.push_back(item);
+        }
+
+        for (auto addr : peiGetVariableOverflow) {
+            json item;
+            item["type"] = "pei_get_variable_buffer_overflow";
+            item["address"] = addr;
+            vulns.push_back(item);
+        }
+
+        for (auto addr : getVariableOverflow) {
+            json item;
+            item["type"] = "get_variable_buffer_overflow";
+            item["address"] = addr;
+            vulns.push_back(item);
+        }
+
+        for (auto addr : smmGetVariableOverflow) {
+            json item;
+            item["type"] = "smm_get_variable_buffer_overflow";
+            item["address"] = addr;
+            vulns.push_back(item);
+        }
+        qstring title = "efiXplorer: vulns";
+        vulns_show(vulns, title);
     }
 }
 
@@ -2205,6 +2254,8 @@ bool efiAnalysis::efiAnalyzerMainX86() {
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
+
+    applyAllTypesForInterfaces(analyzer.allProtocols);
 
     return true;
 }

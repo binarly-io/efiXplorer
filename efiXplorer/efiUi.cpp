@@ -21,6 +21,18 @@
 
 #include "efiUi.h"
 
+// vulns column widths
+const int vulns_chooser_t::widths_vulns[] = {
+    16, // Address
+    32, // Vuln type
+};
+
+// vulns column headers
+const char *const vulns_chooser_t::header_vulns[] = {
+    "Address", // 0
+    "Type",    // 1
+};
+
 // guids column widths
 const int guids_chooser_t::widths_guids[] = {
     16, // Address
@@ -64,6 +76,24 @@ const char *const s_chooser_t::header_s[] = {
     "Service name", // 1
     "Table name"    // 2
 };
+
+inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok,
+                                        std::vector<json> vulns)
+    : chooser_t(0, qnumber(widths_vulns), widths_vulns, header_vulns, title_), list() {
+    CASSERT(qnumber(widths_vulns) == qnumber(header_vulns));
+    build_list(ok, vulns);
+}
+
+void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+                                     size_t n) const {
+    ea_t ea = list[n];
+    qstrvec_t &cols = *cols_;
+    json item = chooser_vulns[n];
+    std::string type = static_cast<std::string>(item["type"]);
+    cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
+    cols[1].sprnt("%s", type.c_str());
+    CASSERT(qnumber(header_vulns) == 2);
+}
 
 inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
                                         std::vector<json> guids)
@@ -135,6 +165,15 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
     CASSERT(qnumber(header_s) == 3);
+}
+
+bool vulns_show(std::vector<json> vulns, qstring title) {
+    bool ok;
+    // open the window
+    vulns_chooser_t *ch = new vulns_chooser_t(title.c_str(), ok, vulns);
+    // default cursor position is 0 (first row)
+    ch->choose();
+    return true;
 }
 
 bool guids_show(std::vector<json> guids, qstring title) {
