@@ -183,7 +183,7 @@ void efiAnalysis::efiAnalyzer::getSegments() {
 }
 
 //--------------------------------------------------------------------------
-// Find gImageHandle address for X64 modules
+// Find `gImageHandle` address for X64 modules
 bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
     DEBUG_MSG("[%s] ========================================================\n",
               plugin_name);
@@ -200,13 +200,11 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == REG_RCX && insn.ops[0].type == o_mem) {
-                DEBUG_MSG("[%s] found ImageHandle at 0x%016llX, address = "
-                          "0x%016llX\n",
+                DEBUG_MSG("[%s] found ImageHandle at 0x%016llX, address = 0x%016llX\n",
                           plugin_name, ea, insn.ops[0].addr);
-                char hexAddr[21] = {};
-                snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_IMAGE_HANDLE gImageHandle", true);
-                std::string name = "gImageHandle_" + static_cast<std::string>(hexAddr);
+                std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                std::string name = "gImageHandle_" + hexstr;
 
                 // set type and name
                 setTypeAndName(insn.ops[0].addr, name, "EFI_IMAGE_HANDLE");
@@ -240,10 +238,9 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                 DEBUG_MSG("[%s] found SystemTable at 0x%016llX, address = "
                           "0x%016llX\n",
                           plugin_name, ea, insn.ops[0].addr);
-                char hexAddr[21] = {};
-                snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                std::string name = "gST_" + static_cast<std::string>(hexAddr);
+                std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                std::string name = hexstr;
 
                 // set type and name
                 setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
@@ -316,18 +313,15 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 baseInsnAddr = ea;
                                 if (find(gBsList.begin(), gBsList.end(),
                                          insn.ops[0].addr) == gBsList.end()) {
-                                    char hexAddr[21] = {};
-                                    snprintf(hexAddr, 21, "%llX",
-                                             static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                                    std::string name =
-                                        "gBS_" + static_cast<std::string>(hexAddr);
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
-                                                      "EFI_BOOT_SERVICES");
+                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string name = "gBS_" + hexstr;
+                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_BOOT_SERVICES");
                                     gBsList.push_back(insn.ops[0].addr);
                                 }
                                 bsFound = true;
                             }
+
                             // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != bsRegister) {
@@ -341,14 +335,10 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                          insn.ops[0].addr) == gBsList.end() &&
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
-                                    char hexAddr[21] = {};
-                                    snprintf(hexAddr, 21, "%llX",
-                                             static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string name =
-                                        "gST_" + static_cast<std::string>(hexAddr);
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
-                                                      "EFI_SYSTEM_TABLE");
+                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string name ="gST_" + hexstr;
+                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
                                 stFound = true;
@@ -378,14 +368,10 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                              insn.ops[0].addr) == gBsList.end() &&
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
-                                        char hexAddr[21] = {};
-                                        snprintf(hexAddr, 21, "%llX",
-                                                 static_cast<uint64_t>(insn.ops[0].addr));
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string name =
-                                            "gST_" + static_cast<std::string>(hexAddr);
-                                        setPtrTypeAndName(insn.ops[0].addr, name,
-                                                          "EFI_SYSTEM_TABLE");
+                                        std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                        std::string name = "gST_" + hexstr;
+                                        setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
                                     stFound = true;
@@ -451,14 +437,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 baseInsnAddr = ea;
                                 if (find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
-                                    char hexAddr[21] = {};
-                                    snprintf(hexAddr, 21, "%llX",
-                                             static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
-                                    std::string name =
-                                        "gRT_" + static_cast<std::string>(hexAddr);
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
-                                                      "EFI_RUNTIME_SERVICES");
+                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string name = "gRT_" + hexstr;
+                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_RUNTIME_SERVICES");
                                     gRtList.push_back(insn.ops[0].addr);
                                 }
                                 rtFound = true;
@@ -477,14 +459,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                          insn.ops[0].addr) == gBsList.end() &&
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
-                                    char hexAddr[21] = {};
-                                    snprintf(hexAddr, 21, "%llX",
-                                             static_cast<uint64_t>(insn.ops[0].addr));
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string name =
-                                        "gST_" + static_cast<std::string>(hexAddr);
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
-                                                      "EFI_SYSTEM_TABLE");
+                                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                    std::string name = "gST_" + hexstr;
+                                    setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
                                 stFound = true;
@@ -514,14 +492,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                              insn.ops[0].addr) == gBsList.end() &&
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
-                                        char hexAddr[21] = {};
-                                        snprintf(hexAddr, 21, "%llX",
-                                                 static_cast<uint64_t>(insn.ops[0].addr));
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string name =
-                                            "gST_" + static_cast<std::string>(hexAddr);
-                                        setPtrTypeAndName(insn.ops[0].addr, name,
-                                                          "EFI_SYSTEM_TABLE");
+                                        std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
+                                        std::string name = "gST_" + hexstr;
+                                        setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
                                     stFound = true;
@@ -1152,9 +1126,8 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
         DEBUG_MSG("[%s] found BootServices table at 0x%016llX, address = "
                   "0x%016llX\n",
                   plugin_name, addr, addrBs);
-        char hexAddr[21] = {};
-        snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(addrBs));
-        std::string name = "gBS_" + static_cast<std::string>(hexAddr);
+        std::string hexstr = getHex(static_cast<uint64_t>(addrBs));
+        std::string name = "gBS_" + hexstr;
         setPtrTypeAndName(addrBs, name, "EFI_BOOT_SERVICES");
         if (find(gRtList.begin(), gRtList.end(), addrBs) == gRtList.end()) {
             gBsList.push_back(addrBs);
@@ -1459,10 +1432,9 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
         if (marked) {
             continue;
         }
-        char hexAddr[21] = {};
-        snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(address));
+        std::string hexstr = getHex(static_cast<uint64_t>(address));
         std::string svcName = static_cast<std::string>(ifItem[if_key]);
-        std::string name = svcName + "_" + static_cast<std::string>(hexAddr);
+        std::string name = svcName + "_" + hexstr;
         set_name(address, name.c_str(), SN_CHECK);
         setGuidType(address);
         std::string comment = "EFI_GUID " + svcName;
@@ -1494,9 +1466,8 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
             if (it != dbProtocolsMap.end()) {
                 std::string guidName = it->second;
 
-                char hexAddr[21] = {};
-                snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
-                std::string name = guidName + "_" + static_cast<std::string>(hexAddr);
+                std::string hexstr = getHex(static_cast<uint64_t>(ea));
+                std::string name = guidName + "_" + hexstr;
                 set_name(ea, name.c_str(), SN_CHECK);
                 setGuidType(ea);
 
@@ -1563,11 +1534,8 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                             gData2 == static_cast<uint16_t>(guid[1])) {
 
                             // mark local GUID
-                            char hexAddr[21] = {};
-                            snprintf(hexAddr, 21, "%llX", static_cast<uint64_t>(ea));
-                            std::string name =
-                                dbItem.key() + "_" + static_cast<std::string>(hexAddr);
-
+                            std::string hexstr = getHex(static_cast<uint64_t>(ea));
+                            std::string name = dbItem.key() + "_" + static_cast<std::string>(hexstr);
                             std::string comment = "EFI_GUID " + dbItem.key();
                             DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n",
                                       plugin_name, ea, comment.c_str());

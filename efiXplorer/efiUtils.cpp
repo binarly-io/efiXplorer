@@ -575,3 +575,11 @@ std::string getGuidFromValue(json guid) {
              static_cast<uint8_t>(guid[10]));
     return static_cast<std::string>(guidStr);
 }
+
+//--------------------------------------------------------------------------
+// Convert 64-bit value to hex string
+std::string getHex(uint64_t value) {
+    char hexstr[21] = {};
+    snprintf(hexstr, 21, "%llX", value);
+    return static_cast<std::string>(hexstr);
+}

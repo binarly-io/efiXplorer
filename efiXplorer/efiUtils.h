@@ -206,3 +206,6 @@ bool checkGuid(json guid);
 
 // Convert GUID value to string
 std::string getGuidFromValue(json guid);
+
+// Convert 64-bit value to hex string
+std::string getHex(uint64_t value);

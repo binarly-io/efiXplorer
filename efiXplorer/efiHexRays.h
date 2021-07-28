@@ -497,10 +497,6 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         if (!ValidateCallAndGUID(e))
             return 0;
 
-        // At this point, the address of the GUID is in member mGUIDEa
-        // I need to look that up in the GUID information and get its name
-        // Also needs to handle the case where the name is unknown and return 0
-        // Until I know how to do that, I'm hard-coding this example string
         mGUIDArgRefTo = GetReferent(mGUIDArg, "GUID", false);
         if (mGUIDArgRefTo == nullptr)
             return 0;
