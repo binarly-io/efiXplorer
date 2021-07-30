@@ -21,7 +21,7 @@
 #ifndef EFILOADER_IDA_CORE_H
 #define EFILOADER_IDA_CORE_H
 
-#define USE_STANDARD_FILE_FUNCTIONS
+#define USE_STANDARD_FILE_FUNCTIONS 1
 
 #include <auto.hpp>
 #include <bytes.hpp>

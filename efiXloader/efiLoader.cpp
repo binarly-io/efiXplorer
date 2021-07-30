@@ -63,9 +63,9 @@ void idaapi wait(void) {
     }
 }
 
-//
+//------------------------
 // IDA analyzing
-//
+//------------------------
 
 void inline idaapi reanalyze_all(void) {
     plan_range(inf_get_min_ea(), inf_get_max_ea());
@@ -80,7 +80,7 @@ void efi_til_init(const char *til_name) {
     if (!res) {
         loader_failure("failed to load %s", til_name);
     } else {
-        msg("[efiloader] lib %s is ready: %#x\n", res);
+        msg("[efiloader] lib %s is ready\n", til_name);
     }
 }
 
@@ -131,14 +131,6 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
         for (int i = 0; i < uefiParser.files.size(); i++) {
             li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
             peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
-        }
-    } else {
-        efiloader::Utils utils;
-        std::vector<qstring> files = utils.get_images();
-        for (int i = 0; i < files.size(); i++) {
-            msg("[efiloader] current file: %s\n", files[i].c_str());
-            li = open_linput(files[i].c_str(), false);
-            peManager.process(li, files[i].c_str(), i);
         }
     }
 }

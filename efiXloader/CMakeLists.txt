@@ -1,6 +1,14 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.7)
 
 project(efiXloader)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
+
+find_package(IdaSdk REQUIRED)
 
 file(
   GLOB
@@ -32,22 +40,11 @@ file(
 # efiLoader sources
 file(GLOB efiloader_src "*.h" "*.c" "*.cpp")
 
-add_library(efiXloader SHARED ${efiloader_src} ${uefitool_src} uefitool.cpp
-                              uefitool.h)
+add_ida_loader(efiXloader ${PROJECT_SOURCE_DIR}/efiLoader.cpp)
 
-set(IDA_SDK ${IdaSdk_ROOT_DIR})
+set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
+ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC "${IDA_SDK}/include")
-
-if(WIN32)
-  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__X64__")
-  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__NT__")
-  target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC "__EA64__")
-  set(IDA_LIB_DIR
-      "${IDA_SDK}/lib/x64_win_vc_64"
-      CACHE PATH "IDA SDK library path" FORCE)
-  target_link_libraries(${CMAKE_PROJECT_NAME} "${IDA_LIB_DIR}/ida.lib"
-                        "${IDA_LIB_DIR}/pro.lib")
-  target_link_options(${CMAKE_PROJECT_NAME} PUBLIC "/EXPORT:LDSC")
-  set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "efiXloader64")
-endif()
+add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src}
+                uefitool.cpp uefitool.h)
+ida_target_link_libraries(efiXloader efiXloader_lib)
