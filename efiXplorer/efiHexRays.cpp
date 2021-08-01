@@ -164,6 +164,7 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
     // Handle all protocols
     for (auto protocol : protocols) {
         auto code_addr = protocol["xref"];
+
         func_t *f = get_func(code_addr);
         if (f == nullptr) {
             continue;
@@ -173,6 +174,12 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
 
         hexrays_failure_t hf;
         cfuncptr_t cfunc = decompile(f, &hf);
+
+        // Сheck that the function is decompiled
+        if (cfunc == nullptr) {
+            continue;
+        }
+
         retyperBs.apply_to(&cfunc->body, nullptr);
         retyperSmm.apply_to(&cfunc->body, nullptr);
     }
