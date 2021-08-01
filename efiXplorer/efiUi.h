@@ -161,7 +161,7 @@ class interfaces_chooser_t : public chooser_t {
     void build_list(bool ok, std::vector<json> protocols) {
         size_t n = 0;
         for (auto protocol : protocols) {
-            list.push_back(protocol["address"]);
+            list.push_back(protocol["xref"]);
             chooser_protocols[n] = protocol;
             n++;
         }
