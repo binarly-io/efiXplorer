@@ -20,11 +20,14 @@
  */
 
 #include "efiAnalysis.h"
-#include "efiHexRays.h"
 #include "efiPluginArgs.h"
 #include "efiUi.h"
 #include "tables/efi_pei_tables.h"
 #include "tables/efi_services.h"
+
+#ifdef HEX_RAYS
+#include "efiHexRays.h"
+#endif
 
 using namespace efiAnalysis;
 
@@ -2195,7 +2198,9 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         showAllChoosers(analyzer);
     }
 
+#ifdef HEX_RAYS
     applyAllTypesForInterfaces(analyzer.allProtocols);
+#endif
 
     return true;
 }
@@ -2255,7 +2260,9 @@ bool efiAnalysis::efiAnalyzerMainX86() {
         showAllChoosers(analyzer);
     }
 
+#ifdef HEX_RAYS
     applyAllTypesForInterfaces(analyzer.allProtocols);
+#endif
 
     return true;
 }

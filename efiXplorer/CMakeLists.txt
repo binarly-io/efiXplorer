@@ -27,15 +27,10 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 include_directories(${PROJECT_SOURCE_DIR}/3rd/libfort)
 
-set(HexRaysSdk_INCLUDE_DIRS ${HexRaysSdk_ROOT_DIR}/include)
-include_directories(${HexRaysSdk_INCLUDE_DIRS})
-
 # efiXplorer sources
 set(efiXplorer_src
     "efiAnalysis.cpp"
     "efiAnalysis.h"
-    "efiHexRays.cpp"
-    "efiHexRays.h"
     "efiPluginArgs.h"
     "efiSmmUtils.cpp"
     "efiSmmUtils.h"
@@ -45,6 +40,13 @@ set(efiXplorer_src
     "efiUtils.h"
     "efiXplorer.cpp"
     "efiXplorer.h")
+
+if(HexRaysSdk_ROOT_DIR)
+  add_definitions(-DHEX_RAYS=1)
+  set(HexRaysSdk_INCLUDE_DIRS ${HexRaysSdk_ROOT_DIR}/include)
+  include_directories(${HexRaysSdk_INCLUDE_DIRS})
+  list(APPEND efiXplorer_src "efiHexRays.cpp" "efiHexRays.h")
+endif()
 
 add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efiXplorer.cpp)
 

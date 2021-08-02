@@ -32,7 +32,6 @@
 #include <filesystem>
 #include <fstream>
 #include <graph.hpp>
-#include <hexrays.hpp>
 #include <ida.hpp>
 #include <idp.hpp>
 #include <iostream>
@@ -45,6 +44,10 @@
 #include <string>
 #include <struct.hpp>
 #include <typeinf.hpp>
+
+#ifdef HEX_RAYS
+#include <hexrays.hpp>
+#endif
 
 using namespace nlohmann;
 
