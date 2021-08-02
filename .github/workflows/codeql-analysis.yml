@@ -64,7 +64,7 @@ jobs:
         cd efiXplorer/efiXplorer
         mkdir build
         cd build
-        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76"
+        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
         cmake --build . --config Release
 
     - name: Perform CodeQL Analysis

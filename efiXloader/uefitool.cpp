@@ -1,13 +1,6 @@
 /*
- *        __ ___   ___                 _
- *       / _(_) \ / / |               | |
- *   ___| |_ _ \ V /| | ___   __ _  __| | ___ _ __
- *  / _ \  _| | > < | |/ _ \ / _` |/ _` |/ _ \ '__|
- * |  __/ | | |/ . \| | (_) | (_| | (_| |  __/ |
- *  \___|_| |_/_/ \_\_|\___/ \__,_|\__,_|\___|_|
- *
  * efiXloader
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * uefitool.cpp
  */
@@ -47,20 +40,26 @@ void efiloader::Uefitool::show_messages() {
 
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
-    qstring tmp("");
+    qstring module_name("");
+    qstring module_guid("");
+    UString guid;
+
     switch (model.subtype(index)) {
     case EFI_SECTION_PE32:
         file->is_pe = true;
         file->ubytes = model.body(index);
         break;
     case EFI_SECTION_USER_INTERFACE:
+        file->has_ui = true;
         if (file->is_pe) {
             file->uname = model.body(index);
-            utf16_utf8(&tmp, reinterpret_cast<const wchar16_t *>(file->uname.data()));
-            file->qname.swap(tmp);
+            utf16_utf8(&module_name,
+                       reinterpret_cast<const wchar16_t *>(file->uname.data()));
+            file->qname.swap(module_name);
             file->write();
             files.push_back(file);
         }
+        break;
     case EFI_SECTION_COMPRESSION:
         for (int i = 0; i < model.rowCount(index); i++) {
             dump(index.child(i, 0), i, file);
@@ -69,6 +68,18 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     default:
         break;
     }
+
+    // if there is no UI section, then the image name is GUID
+    if (file->is_pe && !file->has_ui) {
+        // get parent body and read GUID
+        guid = guidToUString(readUnaligned(
+            (const EFI_GUID *)(model.header(model.parent(index)).constData())));
+        module_guid = reinterpret_cast<char *>(guid.data);
+        file->qname.swap(module_guid);
+        file->write();
+        files.push_back(file);
+    }
+
     return dump(index);
 }
 

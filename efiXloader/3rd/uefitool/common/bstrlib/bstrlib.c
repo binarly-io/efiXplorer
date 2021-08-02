@@ -1098,9 +1098,9 @@ int binstr (const_bstring b1, int pos, const_bstring b2) {
 int j, ii, ll, lf;
 unsigned char * d0;
 unsigned char c0;
-register unsigned char * d1;
-register unsigned char c1;
-register int i;
+unsigned char * d1;
+unsigned char c1;
+int i;
 
 	if (b1 == NULL || b1->data == NULL || b1->slen < 0 ||
 	    b2 == NULL || b2->data == NULL || b2->slen < 0) return BSTR_ERR;

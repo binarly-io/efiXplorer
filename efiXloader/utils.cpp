@@ -1,13 +1,6 @@
 /*
- *        __ ___   ___                 _
- *       / _(_) \ / / |               | |
- *   ___| |_ _ \ V /| | ___   __ _  __| | ___ _ __
- *  / _ \  _| | > < | |/ _ \ / _` |/ _` |/ _ \ '__|
- * |  __/ | | |/ . \| | (_) | (_| | (_| |  __/ |
- *  \___|_| |_/_/ \_\_|\___/ \__,_|\__,_|\___|_|
- *
  * efiXloader
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * utils.cpp
  */
@@ -95,27 +88,4 @@ void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size, size_t coun
     default:
         break;
     }
-}
-
-std::vector<qstring> efiloader::Utils::get_images() {
-    std::vector<qstring> names;
-    /* ask directory name */
-    warning("The loader was unable to extract images from the firmware on its "
-            "own. Try to extract the images in a different way and specify the "
-            "path to the images directory.");
-    qstring images_path;
-    ask_str(&images_path, HIST_FILE, "Directory with images");
-    msg("[efiloader] loading images from %s directory\n", images_path.c_str());
-    qstring search_path = images_path + qstring("/*.*");
-    WIN32_FIND_DATA fd;
-    HANDLE hFind = ::FindFirstFile(search_path.c_str(), &fd);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        do {
-            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-                names.push_back(images_path + qstring("/") + qstring(fd.cFileName));
-            }
-        } while (::FindNextFile(hFind, &fd));
-        ::FindClose(hFind);
-    }
-    return names;
 }

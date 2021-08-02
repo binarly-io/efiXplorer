@@ -141,6 +141,42 @@ function(_ida_plugin name ea64 link_script) # ARGN contains sources
   endif()
 endfunction()
 
+function(_ida_loader name ea64 link_script)
+  if(ea64)
+    set(t ${name}${_so64})
+  else()
+    set(t ${name}${_so})
+  endif()
+
+  # Define a module with the specified sources.
+  add_library(${t} MODULE ${ARGN})
+  _ida_common_target_settings(${t} ${ea64})
+
+  set_target_properties(${t} PROPERTIES PREFIX "" SUFFIX "")
+  if(UNIX)
+    target_compile_options(${t} PUBLIC ${_ida_compile_options})
+    if(APPLE)
+      target_link_libraries(${t} ${_ida_compile_options} -Wl,-flat_namespace
+                            -Wl,-undefined,warning -Wl,-exported_symbol,_LDSC)
+    else()
+      # Always use the linker script needed for IDA.
+      target_link_libraries(${t} ${_ida_compile_options} -Wl,--version-script
+                            ${IdaSdk_DIR}/${link_script})
+    endif()
+
+    # For qrefcnt_obj_t in ida.hpp
+    # TODO(cblichmann): This belongs in an interface library instead.
+    target_compile_options(${t} PUBLIC -Wno-non-virtual-dtor -Wno-varargs)
+  elseif(WIN32)
+    if(ea64)
+      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_64/ida.lib)
+    else()
+      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_32/ida.lib)
+    endif()
+    target_link_options(${t} PUBLIC "/EXPORT:LDSC")
+  endif()
+endfunction()
+
 macro(_ida_check_bitness)
   if(opt_NOEA32 AND opt_NOEA64)
     message(FATAL_ERROR "NOEA32 and NOEA64 cannot be used at the same time")
@@ -188,10 +224,10 @@ function(add_ida_loader name)
   _ida_check_bitness(opt_NOEA32 opt_NOEA64)
 
   if(NOT opt_NOEA32)
-    _ida_plugin(${name} FALSE ldr/exports.def ${opt_UNPARSED_ARGUMENTS})
+    _ida_loader(${name} FALSE ldr/exports.def ${opt_UNPARSED_ARGUMENTS})
   endif()
   if(NOT opt_NOEA64)
-    _ida_plugin(${name} TRUE ldr/exports.def ${opt_UNPARSED_ARGUMENTS})
+    _ida_loader(${name} TRUE ldr/exports.def ${opt_UNPARSED_ARGUMENTS})
   endif()
 endfunction()
 

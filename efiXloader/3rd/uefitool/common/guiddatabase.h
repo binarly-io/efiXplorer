@@ -17,24 +17,23 @@ WITHWARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <string>
 
 #include "basetypes.h"
-#include "ustring.h"
-#include "ffsparser.h"
 #include "ffs.h"
+#include "ffsparser.h"
+#include "ustring.h"
 #include "utility.h"
 
-struct OperatorLessForGuids : public std::binary_function<EFI_GUID, EFI_GUID, bool>
-{
-    bool operator()(const EFI_GUID& lhs, const EFI_GUID& rhs) const
-    {
+
+struct OperatorLessForGuids {
+    bool operator()(const EFI_GUID &lhs, const EFI_GUID &rhs) const {
         return (memcmp(&lhs, &rhs, sizeof(EFI_GUID)) < 0);
     }
 };
 
 typedef std::map<EFI_GUID, UString, OperatorLessForGuids> GuidDatabase;
 
-UString guidDatabaseLookup(const EFI_GUID & guid);
-void initGuidDatabase(const UString & path = "", UINT32* numEntries = NULL);
-GuidDatabase guidDatabaseFromTreeRecursive(TreeModel * model, const UModelIndex index);
-USTATUS guidDatabaseExportToFile(const UString & outPath, GuidDatabase & db);
+UString guidDatabaseLookup(const EFI_GUID &guid);
+void initGuidDatabase(const UString &path = "", UINT32 *numEntries = NULL);
+GuidDatabase guidDatabaseFromTreeRecursive(TreeModel *model, const UModelIndex index);
+USTATUS guidDatabaseExportToFile(const UString &outPath, GuidDatabase &db);
 
 #endif // GUID_DATABASE_H

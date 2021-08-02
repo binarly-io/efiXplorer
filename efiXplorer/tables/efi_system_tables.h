@@ -41,7 +41,7 @@
 struct services_entry {
     char name[256];
     uint32_t offset64;
-    uint32_t offset86;
+    uint32_t offset32;
     char description[1024];
     uint32_t nr_args;
     char prototype[512];

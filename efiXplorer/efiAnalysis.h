@@ -1,15 +1,6 @@
 /*
- *        __ ___   __      _
- *       / _(_) \ / /     | |
- *   ___| |_ _ \ V / _ __ | | ___  _ __ ___ _ __
- *  / _ \  _| | > < | '_ \| |/ _ \| '__/ _ \ '__|
- * |  __/ | | |/ . \| |_) | | (_) | | |  __/ |
- *  \___|_| |_/_/ \_\ .__/|_|\___/|_|  \___|_|
- *                  | |
- *                  |_|
- *
  * efiXplorer
- * Copyright (C) 2020-2021  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +13,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * efiAnalysis.h
  *
  */
+
+#pragma once
 
 #include "efiSmmUtils.h"
 #include "efiUtils.h"
@@ -35,11 +28,11 @@ namespace efiAnalysis {
 
 class efiAnalyzer {
   public:
-    vector<json> allGuids;
-    vector<json> allProtocols;
-    vector<json> allPPIs;
-    vector<json> allServices;
-    vector<func_t *> smiHandlers;
+    std::vector<json> allGuids;
+    std::vector<json> allProtocols;
+    std::vector<json> allPPIs;
+    std::vector<json> allServices;
+    std::vector<func_t *> smiHandlers;
 
     void getSegments();
     void setStrings();
@@ -72,7 +65,7 @@ class efiAnalyzer {
 
     bool efiSmmCpuProtocolResolver();
     void findSwSmiHandlers();
-    bool findGetVariableOveflow(vector<json> allServices);
+    bool findGetVariableOveflow(std::vector<json> allServices);
     bool findPPIGetVariableStackOveflow();
     bool findSmmGetVariableOveflow();
     bool findSmmCallout();
@@ -88,7 +81,7 @@ class efiAnalyzer {
     ea_t startAddress = 0;
     ea_t endAddress = 0;
     ea_t mainAddress{};
-    path guidsJsonPath;
+    std::filesystem::path guidsJsonPath;
     json bootServices;
     json bootServicesAll;
     json peiServices;
@@ -98,36 +91,41 @@ class efiAnalyzer {
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
-    vector<ea_t> markedInterfaces;
-    /* set boot services that work with protocols */
-    vector<string> protBsNames = {"InstallProtocolInterface",
-                                  "ReinstallProtocolInterface",
-                                  "UninstallProtocolInterface",
-                                  "HandleProtocol",
-                                  "RegisterProtocolNotify",
-                                  "OpenProtocol",
-                                  "CloseProtocol",
-                                  "OpenProtocolInformation",
-                                  "ProtocolsPerHandle",
-                                  "LocateHandleBuffer",
-                                  "LocateProtocol",
-                                  "InstallMultipleProtocolInterfaces",
-                                  "UninstallMultipleProtocolInterfaces"};
+    std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
+    std::vector<ea_t> markedInterfaces;
 
-    /* set smm services that work with protocols */
-    vector<string> protSmmNames = {"SmmInstallProtocolInterface",
-                                   "SmmUninstallProtocolInterface",
-                                   "SmmHandleProtocol",
-                                   "SmmRegisterProtocolNotify",
-                                   "SmmLocateHandle",
-                                   "SmmLocateProtocol"};
-    /* set of pei services that work with PPI */
-    vector<string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi", "NotifyPpi"};
-    /* Format-dependent interface-related settings (protocols for DXE, PPIs for PEI) */
+    // Set boot services that work with protocols
+    std::vector<std::string> protBsNames = {"InstallProtocolInterface",
+                                            "ReinstallProtocolInterface",
+                                            "UninstallProtocolInterface",
+                                            "HandleProtocol",
+                                            "RegisterProtocolNotify",
+                                            "OpenProtocol",
+                                            "CloseProtocol",
+                                            "OpenProtocolInformation",
+                                            "ProtocolsPerHandle",
+                                            "LocateHandleBuffer",
+                                            "LocateProtocol",
+                                            "InstallMultipleProtocolInterfaces",
+                                            "UninstallMultipleProtocolInterfaces"};
+
+    // Set smm services that work with protocols
+    std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
+                                             "SmmUninstallProtocolInterface",
+                                             "SmmHandleProtocol",
+                                             "SmmRegisterProtocolNotify",
+                                             "SmmLocateHandle",
+                                             "SmmLocateProtocol"};
+
+    // Set of PEI services that work with PPI
+    std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
+                                            "NotifyPpi"};
+
+    // Format-dependent interface-related settings (protocols for DXE, PPIs for PEI)
     char *if_name;
     char *if_pl;
     char *if_key;
-    vector<json> *if_tbl;
+    std::vector<json> *if_tbl;
 };
 
 bool efiAnalyzerMainX64();

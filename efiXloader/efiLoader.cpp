@@ -1,13 +1,6 @@
 /*
- *        __ ___   ___                 _
- *       / _(_) \ / / |               | |
- *   ___| |_ _ \ V /| | ___   __ _  __| | ___ _ __
- *  / _ \  _| | > < | |/ _ \ / _` |/ _` |/ _ \ '__|
- * |  __/ | | |/ . \| | (_) | (_| | (_| |  __/ |
- *  \___|_| |_/_/ \_\_|\___/ \__,_|\__,_|\___|_|
- *
  * efiXloader
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * efiLoader.cpp
  */
@@ -70,9 +63,9 @@ void idaapi wait(void) {
     }
 }
 
-//
+//------------------------
 // IDA analyzing
-//
+//------------------------
 
 void inline idaapi reanalyze_all(void) {
     plan_range(inf_get_min_ea(), inf_get_max_ea());
@@ -87,7 +80,7 @@ void efi_til_init(const char *til_name) {
     if (!res) {
         loader_failure("failed to load %s", til_name);
     } else {
-        msg("[efiloader] lib %s is ready: %#x\n", res);
+        msg("[efiloader] lib %s is ready\n", til_name);
     }
 }
 
@@ -138,14 +131,6 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
         for (int i = 0; i < uefiParser.files.size(); i++) {
             li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
             peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
-        }
-    } else {
-        efiloader::Utils utils;
-        std::vector<qstring> files = utils.get_images();
-        for (int i = 0; i < files.size(); i++) {
-            msg("[efiloader] current file: %s\n", files[i].c_str());
-            li = open_linput(files[i].c_str(), false);
-            peManager.process(li, files[i].c_str(), i);
         }
     }
 }

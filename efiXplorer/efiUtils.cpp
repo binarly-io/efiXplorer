@@ -1,15 +1,6 @@
 /*
- *        __ ___   __      _
- *       / _(_) \ / /     | |
- *   ___| |_ _ \ V / _ __ | | ___  _ __ ___ _ __
- *  / _ \  _| | > < | '_ \| |/ _ \| '__/ _ \ '__|
- * |  __/ | | |/ . \| |_) | | (_) | | |  __/ |
- *  \___|_| |_/_/ \_\ .__/|_|\___/|_|  \___|_|
- *                  | |
- *                  |_|
- *
  * efiXplorer
- * Copyright (C) 2020-2021  Binarly
+ * Copyright (C) 2020-2021 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * efiUtils.cpp
  *
@@ -42,6 +33,7 @@ struct pei_services_entry {
     uint16_t ppi_guid_push_number;
     uint16_t guid_offset;
 };
+
 extern struct pei_services_entry pei_services_table[];
 extern size_t pei_services_table_size;
 
@@ -87,7 +79,7 @@ void setGuidType(ea_t ea) {
 
 //--------------------------------------------------------------------------
 // Set type and name
-void setTypeAndName(ea_t ea, string name, string type) {
+void setTypeAndName(ea_t ea, std::string name, std::string type) {
     set_name(ea, name.c_str(), SN_CHECK);
     tinfo_t tinfo;
     if (tinfo.get_named_type(get_idati(), type.c_str())) {
@@ -96,24 +88,24 @@ void setTypeAndName(ea_t ea, string name, string type) {
 }
 
 //--------------------------------------------------------------------------
-// Get input file architecture (bit width X64 or X86)
+// Get input file type (64-bit, 32-bit image or UEFI firmware)
 uint8_t getArch() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
-    auto fileTypeStr = static_cast<string>(fileType);
+    auto fileTypeStr = static_cast<std::string>(fileType);
     size_t index = fileTypeStr.find("AMD64");
-    if (index != string::npos) {
-        /* Portable executable for AMD64 (PE) */
+    if (index != std::string::npos) {
+        // Portable executable for AMD64 (PE)
         return X64;
     }
     index = fileTypeStr.find("80386");
-    if (index != string::npos) {
-        /* Portable executable for 80386 (PE) */
+    if (index != std::string::npos) {
+        // Portable executable for 80386 (PE)
         return X86;
     }
     index = fileTypeStr.find("UEFI");
-    if (index != string::npos) {
-        /* UEFI firmware */
+    if (index != std::string::npos) {
+        // UEFI firmware
         return UEFI;
     }
     return 0;
@@ -122,7 +114,7 @@ uint8_t getArch() {
 //--------------------------------------------------------------------------
 // Get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
+uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     if (arch == UEFI) {
         return FTYPE_DXE_AND_THE_LIKE;
     }
@@ -136,8 +128,8 @@ uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
     for (auto guid = allGuids->begin(); guid != allGuids->end(); guid++) {
         json guidVal = *guid;
 
-        if (static_cast<string>(guidVal["name"]).find("PEI") != string::npos ||
-            static_cast<string>(guidVal["name"]).find("Pei") != string::npos) {
+        if (static_cast<std::string>(guidVal["name"]).find("PEI") != std::string::npos ||
+            static_cast<std::string>(guidVal["name"]).find("Pei") != std::string::npos) {
             hasPeiGuids = true;
             break;
         }
@@ -146,9 +138,9 @@ uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
     bool hasPeiInPath = false;
     char fileName[0x1000] = {0};
     get_input_file_path(fileName, sizeof(fileName));
-    auto fileNameStr = static_cast<string>(fileName);
-    if ((fileNameStr.find("Pei") != string::npos ||
-         fileNameStr.find("pei") != string::npos || signature == VZ) &&
+    auto fileNameStr = static_cast<std::string>(fileName);
+    if ((fileNameStr.find("Pei") != std::string::npos ||
+         fileNameStr.find("pei") != std::string::npos || signature == VZ) &&
         arch == X86) {
         hasPeiInPath = true;
     }
@@ -166,10 +158,10 @@ uint8_t guessFileType(uint8_t arch, vector<json> *allGuids) {
     }
 }
 
-uint8_t getFileType(vector<json> *allGuids) {
+uint8_t getFileType(std::vector<json> *allGuids) {
     uint8_t arch = getArch();
     if (arch == UEFI || g_args.disable_ui) {
-        // skip UI for efiXloader or if disable_ui argument passed
+        // Skip UI for efiXloader or if disable_ui argument passed
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);
@@ -185,21 +177,18 @@ uint8_t getFileType(vector<json> *allGuids) {
 
 //--------------------------------------------------------------------------
 // Get boot service description comment
-string getBsComment(ea_t offset, uint8_t arch) {
-    ea_t offset_arch;
-    string cmt = "";
-    cmt += "gBS->";
+std::string getBsComment(uint32_t offset, uint8_t arch) {
+    uint32_t offset_current;
+    std::string cmt = "gBS->";
     for (auto i = 0; i < BTABLE_LEN; i++) {
-        offset_arch = (ea_t)boot_services_table[i].offset64;
+        offset_current = boot_services_table[i].offset64;
         if (arch == X86) {
-            offset_arch = (ea_t)boot_services_table[i].offset86;
+            offset_current = boot_services_table[i].offset32;
         }
-        if (offset == offset_arch) {
-            cmt += boot_services_table[i].name;
-            cmt += "()\n";
-            cmt += boot_services_table[i].prototype;
-            cmt += "\n";
-            cmt += boot_services_table[i].parameters;
+        if (offset == offset_current) {
+            cmt += static_cast<std::string>(boot_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(boot_services_table[i].prototype) + "\n" +
+                   static_cast<std::string>(boot_services_table[i].parameters);
             break;
         }
     }
@@ -208,14 +197,12 @@ string getBsComment(ea_t offset, uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get Pei service description comment (X86 is assumed)
-string getPeiSvcComment(ea_t offset) {
-    string cmt = "";
-    cmt += "gPS->";
+std::string getPeiSvcComment(uint32_t offset) {
+    std::string cmt = "gPS->";
     for (auto i = 0; i < pei_services_table_size; i++) {
         if (offset == pei_services_table[i].offset) {
-            cmt += pei_services_table[i].name;
-            cmt += "()\n";
-            cmt += pei_services_table[i].prototype;
+            cmt += static_cast<std::string>(pei_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(pei_services_table[i].prototype);
             break;
         }
     }
@@ -224,14 +211,12 @@ string getPeiSvcComment(ea_t offset) {
 
 //--------------------------------------------------------------------------
 // Get PPI service description comment (X86 is assumed)
-string getPPICallComment(ea_t offset, string name) {
-    string cmt = "";
-    cmt += name + "->"; // VariablePpi
+std::string getPPICallComment(uint32_t offset, std::string name) {
+    std::string cmt = name + "->"; // VariablePpi
     for (auto i = 0; i < variable_ppi_table_size; i++) {
         if (offset == variable_ppi_table[i].offset) {
-            cmt += variable_ppi_table[i].name;
-            cmt += "()\n";
-            cmt += variable_ppi_table[i].prototype;
+            cmt += static_cast<std::string>(variable_ppi_table[i].name) + "()\n" +
+                   static_cast<std::string>(variable_ppi_table[i].prototype);
             break;
         }
     }
@@ -240,41 +225,33 @@ string getPPICallComment(ea_t offset, string name) {
 
 //--------------------------------------------------------------------------
 // Get SMM service description comment
-string getSmmVarComment() {
-    ea_t offset = 0;
-    string name = "EFI_SMM_VARIABLE_PROTOCOL";
-    string prototype = "EFI_STATUS (EFIAPI *EFI_GET_VARIABLE)"
-                       "(IN CHAR16 *VariableName, "
-                       "IN EFI_GUID *VendorGuid, "
-                       "OUT UINT32 *Attributes, OPTIONAL "
-                       "IN OUT UINTN *DataSize, "
-                       "OUT VOID *Data OPTIONAL);";
+std::string getSmmVarComment() {
+    std::string name = "EFI_SMM_VARIABLE_PROTOCOL";
+    std::string prototype = "EFI_STATUS (EFIAPI *EFI_GET_VARIABLE)"
+                            "(IN CHAR16 *VariableName, "
+                            "IN EFI_GUID *VendorGuid, "
+                            "OUT UINT32 *Attributes, OPTIONAL "
+                            "IN OUT UINTN *DataSize, "
+                            "OUT VOID *Data OPTIONAL);";
 
-    string cmt = "";
-    cmt += name + "->";
-    cmt += "SmmGetVariable";
-    cmt += "()\n";
-    cmt += prototype;
+    std::string cmt = name + "->SmmGetVariable()\n" + prototype;
     return cmt;
 }
 
 //--------------------------------------------------------------------------
 // Get runtime service description comment
-string getRtComment(ea_t offset, uint8_t arch) {
+std::string getRtComment(uint32_t offset, uint8_t arch) {
     ea_t offset_arch;
-    string cmt = "";
-    cmt += "gRT->";
+    std::string cmt = "gRT->";
     for (auto i = 0; i < RTABLE_LEN; i++) {
-        offset_arch = (ea_t)runtime_services_table[i].offset64;
+        offset_arch = runtime_services_table[i].offset64;
         if (arch == X86) {
-            offset_arch = (ea_t)runtime_services_table[i].offset86;
+            offset_arch = runtime_services_table[i].offset32;
         }
         if (offset == offset_arch) {
-            cmt += runtime_services_table[i].name;
-            cmt += "()\n";
-            cmt += runtime_services_table[i].prototype;
-            cmt += "\n";
-            cmt += runtime_services_table[i].parameters;
+            cmt += static_cast<std::string>(runtime_services_table[i].name) + "()\n" +
+                   static_cast<std::string>(runtime_services_table[i].prototype) + "\n" +
+                   static_cast<std::string>(runtime_services_table[i].parameters);
             break;
         }
     }
@@ -286,10 +263,10 @@ string getRtComment(ea_t offset, uint8_t arch) {
 ea_t findUnknownBsVarX64(ea_t ea) {
     ea_t resAddr = 0;
     insn_t insn;
-    /* 10 instructions below */
+
+    // Check 10 instructions below
     for (int i = 0; i < 10; i++) {
         decode_insn(&insn, ea);
-        /* check if insn like 'mov rax, cs:<gBS>' */
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
             DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
@@ -305,8 +282,8 @@ ea_t findUnknownBsVarX64(ea_t ea) {
 
 //--------------------------------------------------------------------------
 // Get all data xrefs for address
-vector<ea_t> getXrefs(ea_t addr) {
-    vector<ea_t> xrefs;
+std::vector<ea_t> getXrefs(ea_t addr) {
+    std::vector<ea_t> xrefs;
     ea_t xref = get_first_dref_to(addr);
     while (xref != BADADDR) {
         xrefs.push_back(xref);
@@ -316,8 +293,8 @@ vector<ea_t> getXrefs(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// op_stroff wrapper
-bool opStroff(ea_t addr, string type) {
+// Wrapper for op_stroff function
+bool opStroff(ea_t addr, std::string type) {
     insn_t insn;
     decode_insn(&insn, addr);
     tid_t struc_id = get_struc_id(type.c_str());
@@ -326,7 +303,7 @@ bool opStroff(ea_t addr, string type) {
 
 //--------------------------------------------------------------------------
 // Get pointer to named type and apply it
-bool setPtrType(ea_t addr, string type) {
+bool setPtrType(ea_t addr, std::string type) {
     tinfo_t tinfo;
     if (!tinfo.get_named_type(get_idati(), type.c_str())) {
         return false;
@@ -339,7 +316,7 @@ bool setPtrType(ea_t addr, string type) {
 
 //--------------------------------------------------------------------------
 // Set name and apply pointer to named type
-void setPtrTypeAndName(ea_t ea, string name, string type) {
+void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
     set_name(ea, name.c_str(), SN_CHECK);
     setPtrType(ea, type.c_str());
 }
@@ -347,8 +324,7 @@ void setPtrTypeAndName(ea_t ea, string name, string type) {
 //--------------------------------------------------------------------------
 // Check for guids.json file exist
 bool guidsJsonExists() {
-    /* get guids.json path */
-    path guidsJsonPath;
+    std::filesystem::path guidsJsonPath;
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
@@ -357,10 +333,10 @@ bool guidsJsonExists() {
 
 //--------------------------------------------------------------------------
 // Get json summary file name
-path getSummaryFile() {
-    string idbPath;
+std::filesystem::path getSummaryFile() {
+    std::string idbPath;
     idbPath = get_path(PATH_TYPE_IDB);
-    path logFile;
+    std::filesystem::path logFile;
     logFile /= idbPath;
     logFile.replace_extension(".json");
     return logFile;
@@ -369,9 +345,9 @@ path getSummaryFile() {
 //--------------------------------------------------------------------------
 // Check for summary json file exist
 bool summaryJsonExist() {
-    string idbPath;
+    std::string idbPath;
     idbPath = get_path(PATH_TYPE_IDB);
-    path logFile;
+    std::filesystem::path logFile;
     logFile /= idbPath;
     logFile.replace_extension(".json");
     return std::filesystem::exists(logFile);
@@ -438,11 +414,11 @@ uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
 }
 
 //--------------------------------------------------------------------------
-// Print vector<json> object
-void printVectorJson(vector<json> in) {
-    for (vector<json>::iterator item = in.begin(); item != in.end(); ++item) {
+// Print std::vector<json> object
+void printVectorJson(std::vector<json> in) {
+    for (std::vector<json>::iterator item = in.begin(); item != in.end(); ++item) {
         json currentJson = *item;
-        string s = currentJson.dump();
+        std::string s = currentJson.dump();
         DEBUG_MSG("[%s] %s\n", plugin_name, s.c_str());
     }
 }
@@ -458,49 +434,50 @@ qstring getModuleNameLoader(ea_t address) {
 
 //--------------------------------------------------------------------------
 // Collect information for dependency browser and dependency graph
-vector<json> getDependenciesLoader() {
-    vector<json> depJson;
+std::vector<json> getDependenciesLoader() {
+    std::vector<json> depJson;
 
-    /* read summary and get allProtocols (also can be taken from memory) */
-    path logFile = getSummaryFile();
+    // Read summary and get allProtocols (also can be taken from memory)
+    std::filesystem::path logFile = getSummaryFile();
     std::ifstream in(logFile);
     json summary;
     in >> summary;
-    vector<json> allProtocols = summary["protocols"];
+    std::vector<json> allProtocols = summary["protocols"];
 
-    /* get depJson */
-    vector<string> locate{"LocateProtocol", "OpenProtocol"};
-    vector<string> install{"InstallProtocolInterface",
-                           "InstallMultipleProtocolInterfaces"};
-    for (vector<json>::iterator protocolItem = allProtocols.begin();
-         protocolItem != allProtocols.end(); ++protocolItem) {
-        json protocol = *protocolItem;
-        string service = static_cast<string>(protocol["service"]);
-        if (find(install.begin(), install.end(), service) == install.end()) {
+    // Get depJson
+    std::vector<std::string> locate{"LocateProtocol", "OpenProtocol"};
+    std::vector<std::string> install{"InstallProtocolInterface",
+                                     "InstallMultipleProtocolInterfaces"};
+
+    for (auto protocolInstall : allProtocols) {
+        auto serviceInstall = static_cast<std::string>(protocolInstall["service"]);
+        if (find(install.begin(), install.end(), serviceInstall) == install.end()) {
             continue;
         }
-        /* get module name by address */
-        ea_t address = static_cast<ea_t>(protocol["xref"]);
-        qstring module_name = getModuleNameLoader(address);
-        /* get depJsonItem */
+
+        // Get module name by address
+        ea_t address = static_cast<ea_t>(protocolInstall["xref"]);
+        auto moduleInstall = getModuleNameLoader(address);
+
+        // Get `depJsonItem`
         json depJsonItem;
-        depJsonItem["module_name"] = static_cast<string>(module_name.c_str());
-        depJsonItem["protocol_name"] = protocol["prot_name"];
-        depJsonItem["guid"] = protocol["guid"];
-        depJsonItem["service"] = protocol["service"];
-        vector<string> used_by;
-        for (vector<json>::iterator protocolItem = allProtocols.begin();
-             protocolItem != allProtocols.end(); ++protocolItem) {
-            json protocol = *protocolItem;
-            string service = static_cast<string>(protocol["service"]);
-            if (find(locate.begin(), locate.end(), service) == locate.end()) {
+        depJsonItem["module_name"] = static_cast<std::string>(moduleInstall.c_str());
+        depJsonItem["protocol_name"] = protocolInstall["prot_name"];
+        depJsonItem["guid"] = protocolInstall["guid"];
+        depJsonItem["service"] = protocolInstall["service"];
+
+        // Find modules that are input nodes
+        std::vector<std::string> used_by;
+        for (auto protocolLocate : allProtocols) {
+            auto serviceLocate = static_cast<std::string>(protocolLocate["service"]);
+            if (find(locate.begin(), locate.end(), serviceLocate) == locate.end()) {
                 continue;
             }
-            if (depJsonItem["guid"] == protocol["guid"]) {
-                address = static_cast<ea_t>(protocol["xref"]);
-                qstring module_name = getModuleNameLoader(address);
-                string mod_name(module_name.c_str());
-                used_by.push_back(mod_name);
+            if (depJsonItem["guid"] == protocolLocate["guid"]) {
+                address = static_cast<ea_t>(protocolLocate["xref"]);
+                auto moduleLocate = getModuleNameLoader(address);
+                std::string moduleLocateStr(moduleLocate.c_str());
+                used_by.push_back(moduleLocateStr);
             }
         }
         depJsonItem["used_by"] = used_by;
@@ -511,18 +488,16 @@ vector<json> getDependenciesLoader() {
 
 //--------------------------------------------------------------------------
 // Get name for each node
-vector<string> getNodes(vector<json> depJson) {
-    vector<string> nodes;
-    for (vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
-         ++depItem) {
-        json dep = *depItem;
-        string name = static_cast<string>(dep["module_name"]);
+std::vector<std::string> getNodes(std::vector<json> depJson) {
+    std::vector<std::string> nodes;
+    for (auto dep : depJson) {
+        std::string name = static_cast<std::string>(dep["module_name"]);
         if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
             nodes.push_back(name);
         }
         size_t len = dep["used_by"].size();
         for (auto i = 0; i < len; i++) {
-            string name = static_cast<string>(dep["used_by"][i]);
+            std::string name = static_cast<std::string>(dep["used_by"][i]);
             if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
                 nodes.push_back(name);
             }
@@ -533,18 +508,17 @@ vector<string> getNodes(vector<json> depJson) {
 
 //--------------------------------------------------------------------------
 // Get edges
-vector<json> getEdges(vector<string> depNodes, vector<json> depJson) {
-    vector<json> edges;
-    for (vector<json>::iterator depItem = depJson.begin(); depItem != depJson.end();
-         ++depItem) {
-        json dep = *depItem;
+std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> depJson) {
+    std::vector<json> edges;
+    for (auto dep : depJson) {
         size_t len = dep["used_by"].size();
         if (!len)
             continue;
-        string nodeFrom = static_cast<string>(dep["module_name"]);
+        std::string nodeFrom = static_cast<std::string>(dep["module_name"]);
         for (auto i = 0; i < len; i++) {
-            string nodeTo = static_cast<string>(dep["used_by"][i]);
-            /* get node id for nodeFrom and nodeTo */
+            std::string nodeTo = static_cast<std::string>(dep["used_by"][i]);
+
+            // Get node id for `nodeFrom` and `nodeTo`
             auto nodeFromId = -1;
             auto nodeToId = -1;
             for (auto n = 0; n < depNodes.size(); n++) {
@@ -564,4 +538,48 @@ vector<json> getEdges(vector<string> depNodes, vector<json> depJson) {
         }
     }
     return edges;
+}
+
+//--------------------------------------------------------------------------
+// Get GUID data by address
+json getGuidByAddr(ea_t addr) {
+    return json::array(
+        {get_wide_dword(addr), get_wide_word(addr + 4), get_wide_word(addr + 6),
+         get_wide_byte(addr + 8), get_wide_byte(addr + 9), get_wide_byte(addr + 10),
+         get_wide_byte(addr + 11), get_wide_byte(addr + 12), get_wide_byte(addr + 13),
+         get_wide_byte(addr + 14), get_wide_byte(addr + 15)});
+}
+
+//--------------------------------------------------------------------------
+// Validate GUID value
+bool checkGuid(json guid) {
+    if (static_cast<uint32_t>(guid[0]) == 0x00000000 && (uint16_t)guid[1] == 0x0000) {
+        return false;
+    }
+    if (static_cast<uint32_t>(guid[0]) == 0xffffffff && (uint16_t)guid[1] == 0xffff) {
+        return false;
+    }
+    return true;
+}
+
+//--------------------------------------------------------------------------
+// Convert GUID value to string
+std::string getGuidFromValue(json guid) {
+    char guidStr[37] = {0};
+    snprintf(guidStr, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+             static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+             static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+             static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+             static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+             static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+             static_cast<uint8_t>(guid[10]));
+    return static_cast<std::string>(guidStr);
+}
+
+//--------------------------------------------------------------------------
+// Convert 64-bit value to hex string
+std::string getHex(uint64_t value) {
+    char hexstr[21] = {};
+    snprintf(hexstr, 21, "%llX", value);
+    return static_cast<std::string>(hexstr);
 }
