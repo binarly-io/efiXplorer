@@ -96,6 +96,7 @@ class File {
     qstring qname;
     qstring dump_name;
     bool is_pe = false;
+    bool has_ui = false;
 };
 
 class Uefitool {
