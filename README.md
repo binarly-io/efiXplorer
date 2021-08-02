@@ -7,9 +7,7 @@ __Supported versions of Hex-Rays products:__ everytime we focus on last versions
 
 __Why not IDApython:__ all code developed in C++ because it's a more stable and performant way to support a complex plugin and get full power of most recent SDK's features.
 
-__Supported Platforms:__ Windows, Linux and OSX (x86/x64).
-
-![overview](pics/efiXplorer_new_1.gif)
+__Supported Platforms:__ Windows, Linux and OSX.
 
 ## [efiXplorer core features](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
 
