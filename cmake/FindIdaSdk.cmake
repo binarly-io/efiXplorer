@@ -173,7 +173,7 @@ function(_ida_loader name ea64 link_script)
     else()
       target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_32/ida.lib)
     endif()
-    target_link_options(${CMAKE_PROJECT_NAME} PUBLIC "/EXPORT:LDSC")
+    target_link_options(${t} PUBLIC "/EXPORT:LDSC")
   endif()
 endfunction()
 

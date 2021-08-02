@@ -6,6 +6,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(APPLE)
+  # to build Mach-O universal binaries with 2 architectures
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC -arch x86_64")
+else()
+  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 find_package(IdaSdk REQUIRED)
@@ -40,11 +47,11 @@ file(
 # efiLoader sources
 file(GLOB efiloader_src "*.h" "*.c" "*.cpp")
 
-add_ida_loader(efiXloader ${PROJECT_SOURCE_DIR}/efiLoader.cpp)
+add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efiLoader.cpp)
 
 set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src}
-                uefitool.cpp uefitool.h)
+add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src} uefitool.cpp
+                uefitool.h)
 ida_target_link_libraries(efiXloader efiXloader_lib)
