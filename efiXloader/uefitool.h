@@ -21,8 +21,6 @@
 #ifndef EFILOADER_UEFITOOL_H
 #define EFILOADER_UEFITOOL_H
 
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-
 #include "3rd/uefitool/common/LZMA/LzmaCompress.h"
 #include "3rd/uefitool/common/LZMA/LzmaDecompress.h"
 #include "3rd/uefitool/common/Tiano/EfiTianoCompress.h"
@@ -122,10 +120,13 @@ class Uefitool {
     bool is_file_index(const UModelIndex &index) {
         return model.type(index) == Types::File;
     };
+    bool get_unique_name(qstring &image_name);
+    void get_image_guid(qstring &image_guid, UModelIndex index);
     TreeModel model;
     const char *buffer;
     uint32_t buffer_size;
     std::vector<std::pair<UString, UModelIndex>> messages;
+    std::vector<qstring> unique_names;
     std::vector<efiloader::File *> files;
     USTATUS err;
 };
