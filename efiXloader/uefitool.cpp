@@ -22,8 +22,6 @@
 #include <codecvt>
 #include <vector>
 
-#define DEBUG
-
 void efiloader::File::print() {
     msg("[UEFITOOL PARSER] file ( %s )  \n", qname.c_str());
     for (int i = 0; i < 0x10; i++) {
@@ -38,11 +36,28 @@ void efiloader::Uefitool::show_messages() {
     }
 }
 
+void efiloader::Uefitool::get_unique_name(qstring &name) {
+    // If the given name is already in use, create a new one
+    qstring new_name = name;
+    std::string suf;
+    int index = 0;
+    while (!(unique_names.insert(new_name).second)) {
+        suf = "_" + std::to_string(++index);
+        new_name = name + static_cast<qstring>(suf.c_str());
+    }
+    name = new_name;
+}
+
+void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index) {
+    // get parent header and read GUID
+    UString guid = guidToUString(
+        readUnaligned((const EFI_GUID *)(model.header(model.parent(index)).constData())));
+    image_guid = reinterpret_cast<char *>(guid.data);
+}
+
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
     qstring module_name("");
-    qstring module_guid("");
-    UString guid;
 
     switch (model.subtype(index)) {
     case EFI_SECTION_PE32:
@@ -55,6 +70,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
             file->uname = model.body(index);
             utf16_utf8(&module_name,
                        reinterpret_cast<const wchar16_t *>(file->uname.data()));
+            get_unique_name(module_name);
             file->qname.swap(module_name);
             file->write();
             files.push_back(file);
@@ -66,18 +82,14 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         }
         break;
     default:
+        // if there is no UI section, then the image name is GUID
+        if (file->is_pe && !file->has_ui) {
+            get_image_guid(module_name, index);
+            file->qname.swap(module_name);
+            file->write();
+            files.push_back(file);
+        }
         break;
-    }
-
-    // if there is no UI section, then the image name is GUID
-    if (file->is_pe && !file->has_ui) {
-        // get parent body and read GUID
-        guid = guidToUString(readUnaligned(
-            (const EFI_GUID *)(model.header(model.parent(index)).constData())));
-        module_guid = reinterpret_cast<char *>(guid.data);
-        file->qname.swap(module_guid);
-        file->write();
-        files.push_back(file);
     }
 
     return dump(index);
