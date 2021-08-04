@@ -36,25 +36,16 @@ void efiloader::Uefitool::show_messages() {
     }
 }
 
-bool efiloader::Uefitool::get_unique_name(qstring &name) {
-    if (find(unique_names.begin(), unique_names.end(), name) == unique_names.end()) {
-        unique_names.push_back(name);
-        return true;
-    }
+void efiloader::Uefitool::get_unique_name(qstring &name) {
     // If the given name is already in use, create a new one
-    qstring new_name("");
-    int index = 1;
-    while (true) {
-        std::string suf = "_" + std::to_string(index);
+    qstring new_name = name;
+    std::string suf;
+    int index = 0;
+    while (!(unique_names.insert(new_name).second)) {
+        suf = "_" + std::to_string(++index);
         new_name = name + static_cast<qstring>(suf.c_str());
-        if (find(unique_names.begin(), unique_names.end(), name) != unique_names.end()) {
-            name = new_name;
-            break;
-        }
-        index += 1;
     }
-    unique_names.push_back(name);
-    return true;
+    name = new_name;
 }
 
 void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index) {
