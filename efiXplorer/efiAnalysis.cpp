@@ -240,7 +240,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                     plugin_name, ea, insn.ops[0].addr);
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
                 std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                std::string name = hexstr;
+                std::string name = "gST_" + hexstr;
 
                 // set type and name
                 setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
