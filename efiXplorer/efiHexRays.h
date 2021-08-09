@@ -199,6 +199,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // We need the function ea when setting Hex-Rays variable types.
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
+    void SetCodeEa(ea_t ea) { mCodeEa = ea; };
     void SetProtocols(std::vector<json> protocols) { mProtocols = protocols; };
 
   protected:
@@ -208,6 +209,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // Function address
     ea_t mFuncEa;
+    ea_t mCodeEa;
 
     // Protocols
     std::vector<json> mProtocols;
@@ -296,6 +298,10 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
     bool GetICallOrdAndOffset(cexpr_t *e) {
         // Set instance variable for call address
         mEa = e->ea;
+
+        if (mEa != mCodeEa) {
+            return false;
+        }
 
         // If it's not a call, we're done.
         if (e->op != cot_call)

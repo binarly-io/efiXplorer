@@ -1188,6 +1188,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable64[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1287,6 +1288,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable32[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1373,6 +1375,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = smmServicesProt64[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
