@@ -120,7 +120,7 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     }
     segment_t *hdr_seg = get_segm_by_name("HEADER");
     if (hdr_seg == NULL) {
-        DEBUG_MSG("[%s] hdr_seg == NULL \n", plugin_name);
+        msg("[%s] hdr_seg == NULL \n", plugin_name);
         return FTYPE_DXE_AND_THE_LIKE;
     }
     uint64_t signature = get_wide_word(hdr_seg->start_ea);
@@ -146,14 +146,14 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     }
 
     if (arch == X86 && (signature == VZ || hasPeiGuids)) {
-        DEBUG_MSG("[%s] Parsing binary file as PEI, signature = %x, "
-                  "hasPeiGuids = %d\n",
-                  plugin_name, signature, hasPeiGuids);
+        msg("[%s] Parsing binary file as PEI, signature = %x, "
+            "hasPeiGuids = %d\n",
+            plugin_name, signature, hasPeiGuids);
         return FTYPE_PEI;
     } else {
-        DEBUG_MSG("[%s] Parsing binary file as DXE/SMM, signature = %x, "
-                  "hasPeiGuids = %d\n",
-                  plugin_name, signature, hasPeiGuids);
+        msg("[%s] Parsing binary file as DXE/SMM, signature = %x, "
+            "hasPeiGuids = %d\n",
+            plugin_name, signature, hasPeiGuids);
         return FTYPE_DXE_AND_THE_LIKE;
     }
 }
@@ -269,8 +269,8 @@ ea_t findUnknownBsVarX64(ea_t ea) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
-            DEBUG_MSG("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
-                      insn.ops[1].addr);
+            msg("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
+                insn.ops[1].addr);
             resAddr = insn.ops[1].addr;
             set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
             break;
@@ -362,20 +362,19 @@ void setEntryArgToPeiSvc() {
         ea_t start_ea = get_entry(ord);
         tinfo_t tif_ea;
         if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
-            DEBUG_MSG("[%s] guess_tinfo failed, start_ea = 0x%016X, idx=%d\n",
-                      plugin_name, start_ea, idx);
+            msg("[%s] guess_tinfo failed, start_ea = 0x%016X, idx=%d\n", plugin_name,
+                start_ea, idx);
             continue;
         }
         func_type_data_t funcdata;
         if (!tif_ea.get_func_details(&funcdata)) {
-            DEBUG_MSG("[%s] get_func_details failed, %d\n", plugin_name, idx);
+            msg("[%s] get_func_details failed, %d\n", plugin_name, idx);
             continue;
         }
         tinfo_t tif_pei;
         bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
         if (!res) {
-            DEBUG_MSG("[%s] get_named_type failed, res = %d, idx=%d\n", plugin_name, res,
-                      idx);
+            msg("[%s] get_named_type failed, res = %d, idx=%d\n", plugin_name, res, idx);
             continue;
         }
         tinfo_t ptrTinfo;
@@ -387,11 +386,11 @@ void setEntryArgToPeiSvc() {
             funcdata[1].name = "PeiServices";
             tinfo_t func_tinfo;
             if (!func_tinfo.create_func(funcdata)) {
-                DEBUG_MSG("[%s] create_func failed, idx=%d\n", plugin_name, idx);
+                msg("[%s] create_func failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
             if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-                DEBUG_MSG("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
+                msg("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
         }
@@ -419,7 +418,7 @@ void printVectorJson(std::vector<json> in) {
     for (std::vector<json>::iterator item = in.begin(); item != in.end(); ++item) {
         json currentJson = *item;
         std::string s = currentJson.dump();
-        DEBUG_MSG("[%s] %s\n", plugin_name, s.c_str());
+        msg("[%s] %s\n", plugin_name, s.c_str());
     }
 }
 

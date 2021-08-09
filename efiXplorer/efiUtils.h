@@ -25,6 +25,7 @@
 #include "json.hpp"
 
 #include <algorithm>
+#include <allins.hpp>
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
@@ -50,15 +51,6 @@
 #endif
 
 using namespace nlohmann;
-
-// Undefine to hide debug messages
-#define DEBUG
-
-#ifdef DEBUG
-#define DEBUG_MSG(format, ...) msg(format, ##__VA_ARGS__);
-#else
-#define DEBUG_MSG(format, ...) {};
-#endif
 
 #define BTOA(x) ((x) ? "true" : "false")
 
@@ -114,14 +106,6 @@ using namespace nlohmann;
 #define PUSH_NONE 0xffff
 #define GUID_OFFSET_NONE 0xffff
 #define GUID_OFFSET_DWORD 4
-
-// From allins.h
-#define NN_call 16
-#define NN_callni 18
-#define NN_lea 92
-#define NN_mov 122
-#define NN_push 143
-#define NN_retn 159
 
 // Get input file type
 // (64-bit, 32-bit image or UEFI firmware)
