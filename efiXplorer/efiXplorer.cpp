@@ -55,20 +55,19 @@ plugmod_t *idaapi init(void) {
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     g_args.disable_ui = 1;
     g_args.disable_vuln_hunt = 1;
-    DEBUG_MSG("[%s] plugin run\n", plugin_name);
-    DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
-              g_args.disable_ui, g_args.disable_vuln_hunt);
+    msg("[%s] plugin run\n", plugin_name);
+    msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name, g_args.disable_ui,
+        g_args.disable_vuln_hunt);
     uint8_t arch = getArch();
     if (arch == X64) {
-        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
+        msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
     }
     if (arch == X86) {
-        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
+        msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
     return true;
@@ -296,8 +295,7 @@ static plugmod_t *idaapi init() {
 //--------------------------------------------------------------------------
 static const char wanted_title[] = "efiXplorer: dependency graph";
 bool idaapi plugin_ctx_t::run(size_t arg) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     if (arg >> 0 & 1) { // arg = 0 (00): default
                         // arg = 1 (01): disable_ui
                         // arg = 2 (10): disable_vuln_hunt
@@ -308,36 +306,36 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
         g_args.disable_vuln_hunt = 1;
     }
 
-    DEBUG_MSG("[%s] plugin run with argument %lu\n", plugin_name, arg);
-    DEBUG_MSG("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name,
-              g_args.disable_ui, g_args.disable_vuln_hunt);
+    msg("[%s] plugin run with argument %lu\n", plugin_name, arg);
+    msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name, g_args.disable_ui,
+        g_args.disable_vuln_hunt);
 
     bool guidsJsonOk = guidsJsonExists();
-    DEBUG_MSG("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
+    msg("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
 
     if (!guidsJsonOk) {
         std::string msg_text =
             "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
-        DEBUG_MSG("[%s] %s\n", plugin_name, msg_text.c_str());
+        msg("[%s] %s\n", plugin_name, msg_text.c_str());
         warning("%s: %s\n", plugin_name, msg_text.c_str());
         return false;
     }
 
     uint8_t arch = getArch();
     if (arch == X64) {
-        DEBUG_MSG("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
+        msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
     }
 
     if (arch == X86) {
-        DEBUG_MSG("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
+        msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX86();
     }
 
     if (arch == UEFI) {
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
-        DEBUG_MSG("[%s] input file is UEFI firmware\n", plugin_name);
+        msg("[%s] input file is UEFI firmware\n", plugin_name);
         efiAnalysis::efiAnalyzerMainX64();
 
         if (summaryJsonExist()) {

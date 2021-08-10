@@ -163,12 +163,16 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
 
     // Handle all protocols
     for (auto protocol : protocols) {
-        auto code_addr = protocol["xref"];
+        auto code_addr = protocol["ea"];
+        auto service = protocol["service"];
 
         func_t *f = get_func(code_addr);
         if (f == nullptr) {
             continue;
         }
+
+        retyperBs.SetCodeEa(code_addr);
+        retyperSmm.SetCodeEa(code_addr);
         retyperBs.SetFuncEa(f->start_ea);
         retyperSmm.SetFuncEa(f->start_ea);
 

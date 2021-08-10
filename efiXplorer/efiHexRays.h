@@ -128,7 +128,7 @@ class ServiceDescriptor {
         // of the plugin's logic. After all, we're looking at every access to the
         // selected structures, and so, quite rightly, we'll want to ignore the
         // function pointers that we're not tracking.
-        msg("[I] Could not find function pointer with offset 0x%a\n", offset);
+        msg("[I] Could not find function pointer with offset %x\n", offset);
         return false;
     }
 };
@@ -199,6 +199,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // We need the function ea when setting Hex-Rays variable types.
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
+    void SetCodeEa(ea_t ea) { mCodeEa = ea; };
     void SetProtocols(std::vector<json> protocols) { mProtocols = protocols; };
 
   protected:
@@ -208,6 +209,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 
     // Function address
     ea_t mFuncEa;
+    ea_t mCodeEa;
 
     // Protocols
     std::vector<json> mProtocols;
@@ -297,6 +299,10 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         // Set instance variable for call address
         mEa = e->ea;
 
+        if (mEa != mCodeEa) {
+            return false;
+        }
+
         // If it's not a call, we're done.
         if (e->op != cot_call)
             return false;
@@ -324,7 +330,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         // reference (i.e., through a structure held on the stack as a local
         // variable).
         if (!mTif.is_ptr()) {
-            DebugPrint("%a: variable is not a pointer?\n", mEa);
+            DebugPrint("%016llX: variable is not a pointer?\n", mEa);
             return false;
         }
 
@@ -406,10 +412,11 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
             bool bIsPodArray = IsPODArray(destVar.tif, 1);
 
             // Debug printing
-            DebugPrint("[I] %a Was indirect call from %s::%s, but %s arg was %s, not "
-                       "reference [IsPODArray: %d]\n",
-                       mEa, mpService->GetName(), mpTarget->name, desc,
-                       Expr2String(e, &estr), bIsPodArray);
+            DebugPrint(
+                "[I] %016llX Was indirect call from %s::%s, but %s arg was %s, not "
+                "reference [IsPODArray: %d]\n",
+                mEa, mpService->GetName(), mpTarget->name, desc, Expr2String(e, &estr),
+                bIsPodArray);
 
             // If it is a POD array, good, we'll take it.
             return bIsPodArray ? x : nullptr;
@@ -419,10 +426,10 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         // global or local variable. If it's not a reference, we can't get the
         // referent, so fail.
         if (x->op != cot_ref) {
-            DebugPrint("[I] %a Was indirect call from %s::%s, but %s arg was %s, not "
-                       "reference\n",
-                       mEa, mpService->GetName(), mpTarget->name, desc,
-                       Expr2String(e, &estr));
+            DebugPrint(
+                "[I] %016llX Was indirect call from %s::%s, but %s arg was %s, not "
+                "reference\n",
+                mEa, mpService->GetName(), mpTarget->name, desc, Expr2String(e, &estr));
             return nullptr;
         }
 
@@ -445,10 +452,11 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
         // something is a global variable.
         if (mGUIDArgRefTo->op != cot_obj) {
             qstring estr;
-            DebugPrint("[I] %a Was indirect call from %s::%s, but GUID arg was %s, not "
-                       "reference to global\n",
-                       mEa, mpService->GetName(), mpTarget->name,
-                       Expr2String(mGUIDArgRefTo, &estr));
+            DebugPrint(
+                "[I] %016llX Was indirect call from %s::%s, but GUID arg was %s, not "
+                "reference to global\n",
+                mEa, mpService->GetName(), mpTarget->name,
+                Expr2String(mGUIDArgRefTo, &estr));
             return false;
         }
 
@@ -559,7 +567,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             // Just apply the type information to the address
             apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
             ++mNumApplied;
-            DebugPrint("%a: %s::%s applied type for global variable\n", mEa,
+            DebugPrint("%016llX: %s::%s applied type for global variable\n", mEa,
                        mpService->GetName(), mpTarget->name);
         }
 
@@ -570,7 +578,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             // Set the Hex-Rays variable type
             if (SetHexRaysVariableType(mFuncEa, destVar, ptrTif)) {
                 ++mNumApplied;
-                DebugPrint("%a: %s::%s applied type\n", mEa, mpService->GetName(),
+                DebugPrint("%016llX: %s::%s applied type\n", mEa, mpService->GetName(),
                            mpTarget->name);
             }
         }
@@ -578,9 +586,10 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         // For anything else, make an note of it and throw it away
         else {
             qstring estr;
-            DebugPrint(
-                "%a: %s::%s argument was %s, not global/variable. Could not apply type\n",
-                mEa, mpService->GetName(), mpTarget->name, Expr2String(outArg, &estr));
+            DebugPrint("%016llX: %s::%s argument was %s, not global/variable. Could not "
+                       "apply type\n",
+                       mEa, mpService->GetName(), mpTarget->name,
+                       Expr2String(outArg, &estr));
         }
     }
 };

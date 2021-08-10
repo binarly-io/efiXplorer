@@ -153,8 +153,7 @@ void efiAnalysis::efiAnalyzer::setStrings() {
 //--------------------------------------------------------------------------
 // Get all .text and .data segments
 void efiAnalysis::efiAnalyzer::getSegments() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     for (segment_t *s = get_first_seg(); s != NULL; s = get_next_seg(s->start_ea)) {
         qstring seg_name;
         get_segm_name(&seg_name, s);
@@ -175,22 +174,21 @@ void efiAnalysis::efiAnalyzer::getSegments() {
     // print all .text segments addresses
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] .text segment: 0x%016llX\n", plugin_name, s->start_ea);
+        msg("[%s] .text segment: 0x%016llX\n", plugin_name, s->start_ea);
     }
 
     // print all .data segments addresses
     for (auto seg : dataSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] .data segment: 0x%016llX\n", plugin_name, s->start_ea);
+        msg("[%s] .data segment: 0x%016llX\n", plugin_name, s->start_ea);
     }
 }
 
 //--------------------------------------------------------------------------
 // Find `gImageHandle` address for X64 modules
 bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] ImageHandle finding\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] ImageHandle finding\n", plugin_name);
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
@@ -203,8 +201,8 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == REG_RCX && insn.ops[0].type == o_mem) {
-                DEBUG_MSG("[%s] found ImageHandle at 0x%016llX, address = 0x%016llX\n",
-                          plugin_name, ea, insn.ops[0].addr);
+                msg("[%s] found ImageHandle at 0x%016llX, address = 0x%016llX\n",
+                    plugin_name, ea, insn.ops[0].addr);
                 set_cmt(ea, "EFI_IMAGE_HANDLE gImageHandle", true);
                 std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
                 std::string name = "gImageHandle_" + hexstr;
@@ -223,9 +221,8 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
 //--------------------------------------------------------------------------
 // Find gST address for X64 modules
 bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] SystemTable finding\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] SystemTable finding\n", plugin_name);
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
@@ -238,12 +235,12 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == REG_RDX && insn.ops[0].type == o_mem) {
-                DEBUG_MSG("[%s] found SystemTable at 0x%016llX, address = "
-                          "0x%016llX\n",
-                          plugin_name, ea, insn.ops[0].addr);
+                msg("[%s] found SystemTable at 0x%016llX, address = "
+                    "0x%016llX\n",
+                    plugin_name, ea, insn.ops[0].addr);
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
                 std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                std::string name = hexstr;
+                std::string name = "gST_" + hexstr;
 
                 // set type and name
                 setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
@@ -259,9 +256,8 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable address for X64 module
 bool efiAnalysis::efiAnalyzer::findSmstX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] SMST finding\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] SMST finding\n", plugin_name);
     std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
     std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
     gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
@@ -273,8 +269,7 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
 //--------------------------------------------------------------------------
 // Find gBS addresses for X86/X64 modules
 bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
 
     // init architecture-specific constants
     auto BS_OFFSET = BS_OFFSET_64BIT;
@@ -287,8 +282,8 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
     insn_t insn;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] BootServices tables finding from 0x%016llX to 0x%016llX\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        msg("[%s] BootServices tables finding from 0x%016llX to 0x%016llX\n", plugin_name,
+            s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         uint16_t bsRegister = 0;
         uint16_t stRegister = 0;
@@ -309,10 +304,10 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                             insn.ops[0].type == o_mem) {
                             if (insn.ops[1].reg == bsRegister && !bsFound) {
-                                DEBUG_MSG("[%s] found BootServices table at 0x%016llX, "
-                                          "address = "
-                                          "0x%016llX\n",
-                                          plugin_name, ea, insn.ops[0].addr);
+                                msg("[%s] found BootServices table at 0x%016llX, "
+                                    "address = "
+                                    "0x%016llX\n",
+                                    plugin_name, ea, insn.ops[0].addr);
                                 baseInsnAddr = ea;
                                 if (find(gBsList.begin(), gBsList.end(),
                                          insn.ops[0].addr) == gBsList.end()) {
@@ -330,10 +325,10 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                             // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != bsRegister) {
-                                DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
-                                          "address = "
-                                          "0x%016llX\n",
-                                          plugin_name, ea, insn.ops[0].addr);
+                                msg("[%s] found SystemTable at 0x%016llX, "
+                                    "address = "
+                                    "0x%016llX\n",
+                                    plugin_name, ea, insn.ops[0].addr);
                                 if (find(gStList.begin(), gStList.end(),
                                          insn.ops[0].addr) == gStList.end() &&
                                     find(gBsList.begin(), gBsList.end(),
@@ -365,10 +360,10 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                                     insn.ops[1].reg == stRegister &&
                                     insn.ops[0].type == o_mem) {
-                                    DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
-                                              "address = "
-                                              "0x%016llX\n",
-                                              plugin_name, addr, insn.ops[0].addr);
+                                    msg("[%s] found SystemTable at 0x%016llX, "
+                                        "address = "
+                                        "0x%016llX\n",
+                                        plugin_name, addr, insn.ops[0].addr);
                                     if (find(gStList.begin(), gStList.end(),
                                              insn.ops[0].addr) == gStList.end() &&
                                         find(gBsList.begin(), gBsList.end(),
@@ -402,8 +397,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
 //--------------------------------------------------------------------------
 // Find gRT addresses for X86/X64 modules
 bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
 
     // init architecture-specific constants
     auto RT_OFFSET = RT_OFFSET_64BIT;
@@ -417,8 +411,8 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
     insn_t insn;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] RuntimeServices tables finding from 0x%016llX to 0x%016llX\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        msg("[%s] RuntimeServices tables finding from 0x%016llX to 0x%016llX\n",
+            plugin_name, s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         uint16_t rtRegister = 0;
         uint16_t stRegister = 0;
@@ -439,10 +433,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                             insn.ops[0].type == o_mem) {
                             if (insn.ops[1].reg == rtRegister && !rtFound) {
-                                DEBUG_MSG("[%s] found RuntimeServices table at "
-                                          "0x%016llX, address "
-                                          "= 0x%016llX\n",
-                                          plugin_name, ea, insn.ops[0].addr);
+                                msg("[%s] found RuntimeServices table at "
+                                    "0x%016llX, address "
+                                    "= 0x%016llX\n",
+                                    plugin_name, ea, insn.ops[0].addr);
                                 baseInsnAddr = ea;
                                 if (find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
@@ -460,10 +454,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                             // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != rtRegister) {
-                                DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
-                                          "address = "
-                                          "0x%016llX\n",
-                                          plugin_name, ea, insn.ops[0].addr);
+                                msg("[%s] found SystemTable at 0x%016llX, "
+                                    "address = "
+                                    "0x%016llX\n",
+                                    plugin_name, ea, insn.ops[0].addr);
                                 if (find(gStList.begin(), gStList.end(),
                                          insn.ops[0].addr) == gStList.end() &&
                                     find(gBsList.begin(), gBsList.end(),
@@ -495,10 +489,10 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                                     insn.ops[1].reg == stRegister &&
                                     insn.ops[0].type == o_mem) {
-                                    DEBUG_MSG("[%s] found SystemTable at 0x%016llX, "
-                                              "address = "
-                                              "0x%016llX\n",
-                                              plugin_name, addr, insn.ops[0].addr);
+                                    msg("[%s] found SystemTable at 0x%016llX, "
+                                        "address = "
+                                        "0x%016llX\n",
+                                        plugin_name, addr, insn.ops[0].addr);
                                     if (find(gStList.begin(), gStList.end(),
                                              insn.ops[0].addr) == gStList.end() &&
                                         find(gBsList.begin(), gBsList.end(),
@@ -532,8 +526,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 //--------------------------------------------------------------------------
 // Get all boot services for X86/X64 modules
 void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
 
     if (!gBsList.size()) {
         return;
@@ -549,8 +542,8 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
     auto found = false;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] BootServices finding from 0x%016llX to 0x%016llX (all)\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (all)\n", plugin_name,
+            s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
@@ -576,9 +569,9 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                         getBsComment(static_cast<uint32_t>(offset), arch);
                                     set_cmt(addr, cmt.c_str(), true);
                                     opStroff(addr, "EFI_BOOT_SERVICES");
-                                    DEBUG_MSG("[%s] 0x%016llX : %s\n", plugin_name, addr,
-                                              static_cast<char *>(
-                                                  bootServicesTableAll[j].service_name));
+                                    msg("[%s] 0x%016llX : %s\n", plugin_name, addr,
+                                        static_cast<char *>(
+                                            bootServicesTableAll[j].service_name));
                                     bootServicesAll[static_cast<std::string>(
                                                         bootServicesTableAll[j]
                                                             .service_name)]
@@ -612,8 +605,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
 //--------------------------------------------------------------------------
 // Get all runtime services for X86/X64 modules
 void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     if (!gRtList.size()) {
         return;
     }
@@ -621,8 +613,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     auto found = false;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] RuntimeServices finding from 0x%016llX to 0x%016llX\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        msg("[%s] RuntimeServices finding from 0x%016llX to 0x%016llX\n", plugin_name,
+            s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
@@ -648,8 +640,7 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
                                         getRtComment(static_cast<uint32_t>(offset), arch);
                                     set_cmt(addr, cmt.c_str(), true);
                                     opStroff(addr, "EFI_RUNTIME_SERVICES");
-                                    DEBUG_MSG(
-                                        "[%s] 0x%016llX : %s\n", plugin_name, addr,
+                                    msg("[%s] 0x%016llX : %s\n", plugin_name, addr,
                                         static_cast<char *>(
                                             runtimeServicesTableAll[j].service_name));
                                     runtimeServicesAll[static_cast<std::string>(
@@ -686,9 +677,8 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
 //--------------------------------------------------------------------------
 // Get all smm services for X64 modules
 void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] SmmServices finding (all)\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] SmmServices finding (all)\n", plugin_name);
 
     if (!gSmstList.size()) {
         return;
@@ -698,8 +688,8 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
     auto found = false;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] SmmServices finding from 0x%016llX to 0x%016llX\n", plugin_name,
-                  s->start_ea, s->end_ea);
+        msg("[%s] SmmServices finding from 0x%016llX to 0x%016llX\n", plugin_name,
+            s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
@@ -723,9 +713,9 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                             smmServicesTableAll[j].service_name);
                                     set_cmt(addr, cmt.c_str(), true);
                                     opStroff(addr, "_EFI_SMM_SYSTEM_TABLE2");
-                                    DEBUG_MSG("[%s] 0x%016llX : %s\n", plugin_name, addr,
-                                              static_cast<char *>(
-                                                  smmServicesTableAll[j].service_name));
+                                    msg("[%s] 0x%016llX : %s\n", plugin_name, addr,
+                                        static_cast<char *>(
+                                            smmServicesTableAll[j].service_name));
 
                                     // add address to `smmServices[...]`
                                     if (find(protSmmNames.begin(), protSmmNames.end(),
@@ -770,10 +760,9 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
 // EFI_PEI_SET_MEM, EFI_PEI_RESET2_SYSTEM, and "Future Installed Services"
 // (EFI_PEI_FFS_FIND_BY_NAME, etc.)
 void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] PeiServices finding from 0x%016llX to 0x%016llX (all)\n", plugin_name,
-              startAddress, endAddress);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] PeiServices finding from 0x%016llX to 0x%016llX (all)\n", plugin_name,
+        startAddress, endAddress);
     ea_t ea = startAddress;
     insn_t insn;
     auto found = false;
@@ -823,8 +812,8 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
                             static_cast<uint32_t>(pei_services_table[j].offset));
                         set_cmt(ea, cmt.c_str(), true);
                         opStroff(ea, "EFI_PEI_SERVICES");
-                        DEBUG_MSG("[%s] 0x%016llX : %s\n", plugin_name, ea,
-                                  static_cast<char *>(pei_services_table[j].name));
+                        msg("[%s] 0x%016llX : %s\n", plugin_name, ea,
+                            static_cast<char *>(pei_services_table[j].name));
                         peiServicesAll[static_cast<std::string>(
                                            pei_services_table[j].name)]
                             .push_back(ea);
@@ -851,10 +840,9 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
 //--------------------------------------------------------------------------
 // Get all EFI_PEI_READ_ONLY_VARIABLE2_PPI (GetVariable, NextVariableName)
 void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] Variable PPI calls finding from 0x%016llX to 0x%016llX (all)\n",
-              plugin_name, startAddress, endAddress);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] Variable PPI calls finding from 0x%016llX to 0x%016llX (all)\n",
+        plugin_name, startAddress, endAddress);
     ea_t ea = startAddress;
     insn_t insn;
     auto found = false;
@@ -887,8 +875,8 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
                             static_cast<std::string>(variable_ppi_name));
                         set_cmt(ea, cmt.c_str(), true);
                         opStroff(ea, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
-                        DEBUG_MSG("[%s] 0x%016llX : %s\n", plugin_name, ea,
-                                  static_cast<char *>(variable_ppi_table[j].name));
+                        msg("[%s] 0x%016llX : %s\n", plugin_name, ea,
+                            static_cast<char *>(variable_ppi_table[j].name));
                         std::string ppi_call =
                             static_cast<std::string>(variable_ppi_name) + "." +
                             static_cast<std::string>(variable_ppi_table[j].name);
@@ -917,9 +905,8 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
 //--------------------------------------------------------------------------
 // Get PPI names for X86 PEI modules
 void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] PPI finding (PEI services)\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] PPI finding (PEI services)\n", plugin_name);
     ea_t start = startAddress;
     segment_t *seg_info = get_segm_by_name(".text");
     if (seg_info != nullptr) {
@@ -945,8 +932,8 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
 
             // 10 instructions above
             uint16_t pushCounter = 0;
-            DEBUG_MSG("[%s] looking for PPIs in the 0x%016llX area\n", plugin_name,
-                      address, pushNumber);
+            msg("[%s] looking for PPIs in the 0x%016llX area\n", plugin_name, address,
+                pushNumber);
             for (auto j = 0; j < 10; j++) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
@@ -977,12 +964,12 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
             }
 
             if (found) {
-                DEBUG_MSG("[%s] found PPI GUID parameter at 0x%016llX\n", plugin_name,
-                          guidCodeAddress);
+                msg("[%s] found PPI GUID parameter at 0x%016llX\n", plugin_name,
+                    guidCodeAddress);
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
-                    DEBUG_MSG("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
-                              guidCodeAddress);
+                    msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
+                        guidCodeAddress);
                     continue;
                 }
 
@@ -1024,13 +1011,12 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
 //--------------------------------------------------------------------------
 // Get boot services by protocols for X64 modules
 void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     insn_t insn;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
-                  plugin_name, s->start_ea, s->end_ea);
+        msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
+            plugin_name, s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         uint16_t bsRegister = 0;
         while (ea <= s->end_ea) {
@@ -1043,8 +1029,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                             static_cast<uint32_t>(bootServicesTable64[i].offset), X64);
                         set_cmt(ea, cmt.c_str(), true);
                         opStroff(ea, "EFI_BOOT_SERVICES");
-                        DEBUG_MSG(
-                            "[%s] 0x%016llX : %s\n", plugin_name, ea,
+                        msg("[%s] 0x%016llX : %s\n", plugin_name, ea,
                             static_cast<char *>(bootServicesTable64[i].service_name));
                         bootServices[static_cast<std::string>(
                                          bootServicesTable64[i].service_name)]
@@ -1074,10 +1059,9 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
 //--------------------------------------------------------------------------
 // Get boot services by protocols for X86 modules
 void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
-              plugin_name, startAddress, endAddress);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
+        plugin_name, startAddress, endAddress);
     ea_t ea = startAddress;
     insn_t insn;
     uint16_t bsRegister = 0;
@@ -1091,8 +1075,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
                         static_cast<uint32_t>(bootServicesTable32[i].offset), X86);
                     set_cmt(ea, cmt.c_str(), true);
                     opStroff(ea, "EFI_BOOT_SERVICES");
-                    DEBUG_MSG("[%s] 0x%016llX : %s\n", plugin_name, ea,
-                              static_cast<char *>(bootServicesTable32[i].service_name));
+                    msg("[%s] 0x%016llX : %s\n", plugin_name, ea,
+                        static_cast<char *>(bootServicesTable32[i].service_name));
                     bootServices[static_cast<std::string>(
                                      bootServicesTable32[i].service_name)]
                         .push_back(ea);
@@ -1119,9 +1103,8 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
 //--------------------------------------------------------------------------
 // find other addresses of global gBS vars for X64 modules
 void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] finding of other addresses of global gBS variables\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] finding of other addresses of global gBS variables\n", plugin_name);
     for (auto s : allServices) {
         json jService = s;
         std::string table_name = jService["table_name"];
@@ -1133,14 +1116,14 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
             continue;
         }
         ea_t addr = static_cast<ea_t>(jService["address"]);
-        DEBUG_MSG("[%s] current service: 0x%016llX\n", plugin_name, addr);
+        msg("[%s] current service: 0x%016llX\n", plugin_name, addr);
         ea_t addrBs = findUnknownBsVarX64(addr);
         if (!addrBs || !(find(gBsList.begin(), gBsList.end(), addrBs) == gBsList.end())) {
             continue;
         }
-        DEBUG_MSG("[%s] found BootServices table at 0x%016llX, address = "
-                  "0x%016llX\n",
-                  plugin_name, addr, addrBs);
+        msg("[%s] found BootServices table at 0x%016llX, address = "
+            "0x%016llX\n",
+            plugin_name, addr, addrBs);
         std::string hexstr = getHex(static_cast<uint64_t>(addrBs));
         std::string name = "gBS_" + hexstr;
         setPtrTypeAndName(addrBs, name, "EFI_BOOT_SERVICES");
@@ -1153,23 +1136,22 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X64 modules
 void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     if (!textSegments.size()) {
         return;
     }
     segment_t *s = textSegments.at(0);
     ea_t start = s->start_ea;
-    DEBUG_MSG("[%s] protocols finding (boot services, start address = 0x%016llX)\n",
-              plugin_name, start);
+    msg("[%s] protocols finding (boot services, start address = 0x%016llX)\n",
+        plugin_name, start);
     for (int i = 0; i < bootServicesTable64Length; i++) {
         std::vector<ea_t> addrs = bootServices[bootServicesTable64[i].service_name];
 
         // for each boot service
         for (auto ea : addrs) {
             ea_t address = ea;
-            DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
-                      address);
+            msg("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
+                address);
             insn_t insn;
             ea_t guidCodeAddress = 0;
             ea_t guidDataAddress = 0;
@@ -1191,12 +1173,12 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
             }
 
             if (found) {
-                DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016llX\n",
-                          plugin_name, guidCodeAddress);
+                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
+                    guidCodeAddress);
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
-                    DEBUG_MSG("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
-                              guidCodeAddress);
+                    msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
+                        guidCodeAddress);
                     continue;
                 }
 
@@ -1206,6 +1188,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable64[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1242,9 +1225,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X86 modules
 void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] protocols finding (boot services)\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] protocols finding (boot services)\n", plugin_name);
     ea_t start = startAddress;
     segment_t *seg_info = get_segm_by_name(".text");
     if (seg_info != nullptr) {
@@ -1256,8 +1238,8 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
         // for each boot service
         for (auto ea : addrs) {
             ea_t address = ea;
-            DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
-                      address);
+            msg("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
+                address);
             insn_t insn;
             ea_t guidCodeAddress = 0;
             ea_t guidDataAddress = 0;
@@ -1291,12 +1273,12 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
             }
 
             if (found) {
-                DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016llX\n",
-                          plugin_name, guidCodeAddress);
+                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
+                    guidCodeAddress);
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
-                    DEBUG_MSG("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
-                              guidCodeAddress);
+                    msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
+                        guidCodeAddress);
                     continue;
                 }
 
@@ -1306,6 +1288,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable32[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1340,23 +1323,22 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
 //--------------------------------------------------------------------------
 // Get smm services protocols names for X64 modules
 void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     if (!textSegments.size()) {
         return;
     }
     segment_t *s = textSegments.at(0);
     ea_t start = s->start_ea;
-    DEBUG_MSG("[%s] protocols finding (smm services, start address = 0x%016llX)\n",
-              plugin_name, start);
+    msg("[%s] protocols finding (smm services, start address = 0x%016llX)\n", plugin_name,
+        start);
     for (int i = 0; i < smmServicesProt64Length; i++) {
         auto addrs = smmServices[smmServicesProt64[i].service_name];
 
         // for each SMM service
         for (auto ea : addrs) {
             ea_t address = ea;
-            DEBUG_MSG("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
-                      address);
+            msg("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
+                address);
             insn_t insn;
             ea_t guidCodeAddress = 0;
             ea_t guidDataAddress = 0;
@@ -1378,12 +1360,12 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
             }
 
             if (found) {
-                DEBUG_MSG("[%s] found protocol GUID parameter at 0x%016llX\n",
-                          plugin_name, guidCodeAddress);
+                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
+                    guidCodeAddress);
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
-                    DEBUG_MSG("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
-                              guidCodeAddress);
+                    msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
+                        guidCodeAddress);
                     continue;
                 }
 
@@ -1393,6 +1375,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = smmServicesProt64[i].service_name;
                 protocolItem["guid"] = guid;
+                protocolItem["ea"] = ea;
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1428,9 +1411,8 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
 //--------------------------------------------------------------------------
 // Mark protocols
 void efiAnalysis::efiAnalyzer::markInterfaces() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] %s marking\n", plugin_name, if_pl);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] %s marking\n", plugin_name, if_pl);
     for (auto ifItemIt = if_tbl->begin(); ifItemIt != if_tbl->end(); ++ifItemIt) {
         json ifItem = *ifItemIt;
         ea_t address = static_cast<ea_t>(ifItem["address"]);
@@ -1454,20 +1436,19 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
         setGuidType(address);
         std::string comment = "EFI_GUID " + svcName;
         markedInterfaces.push_back(address);
-        DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n", plugin_name, address,
-                  comment.c_str());
+        msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name, address,
+            comment.c_str());
     }
 }
 
 //--------------------------------------------------------------------------
 // Mark GUIDs found in the .data segment
 void efiAnalysis::efiAnalyzer::markDataGuids() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     for (auto seg : dataSegments) {
         segment_t *s = seg;
-        DEBUG_MSG("[%s] marking .data GUIDs from 0x%016llX to 0x%016llX\n", plugin_name,
-                  s->start_ea, s->end_ea);
+        msg("[%s] marking .data GUIDs from 0x%016llX to 0x%016llX\n", plugin_name,
+            s->start_ea, s->end_ea);
         ea_t ea = s->start_ea;
         while (ea != BADADDR && ea <= s->end_ea - 15) {
             if (get_wide_dword(ea) == 0x00000000 || get_wide_dword(ea) == 0xffffffff) {
@@ -1487,8 +1468,8 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
                 setGuidType(ea);
 
                 std::string comment = "EFI_GUID " + guidName;
-                DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n", plugin_name, ea,
-                          comment.c_str());
+                msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name, ea,
+                    comment.c_str());
 
                 json guidItem;
                 guidItem["address"] = ea;
@@ -1505,15 +1486,14 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 //--------------------------------------------------------------------------
 // Mark GUIDs found in local variables for X64 modules
 void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     for (auto seg : textSegments) {
         segment_t *s = seg;
         ea_t ea = s->start_ea;
         insn_t insn;
         insn_t insnNext;
-        DEBUG_MSG("[%s] local GUIDs finding from 0x%016llX to 0x%016llX\n", plugin_name,
-                  s->start_ea, s->end_ea);
+        msg("[%s] local GUIDs finding from 0x%016llX to 0x%016llX\n", plugin_name,
+            s->start_ea, s->end_ea);
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
 
@@ -1553,8 +1533,8 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                             std::string name =
                                 dbItem.key() + "_" + static_cast<std::string>(hexstr);
                             std::string comment = "EFI_GUID " + dbItem.key();
-                            DEBUG_MSG("[%s] address: 0x%016llX, comment: %s\n",
-                                      plugin_name, ea, comment.c_str());
+                            msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name, ea,
+                                comment.c_str());
                             set_cmt(ea, comment.c_str(), true);
 
                             json guidItem;
@@ -1597,7 +1577,7 @@ void findCalloutRec(func_t *func) {
             // check if insn is `mov rax, cs:gBS`
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
-                DEBUG_MSG("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
+                msg("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
                 calloutAddrs.push_back(ea);
             }
         }
@@ -1608,7 +1588,7 @@ void findCalloutRec(func_t *func) {
             // check if insn is `mov rax, cs:gRT`
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
-                DEBUG_MSG("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
+                msg("[%s] SMM callout found: 0x%016llX\n", plugin_name, ea);
                 calloutAddrs.push_back(ea);
             }
         }
@@ -1626,14 +1606,13 @@ void efiAnalysis::efiAnalyzer::findSwSmiHandlers() {
 //  * find SwSmiHandler function
 //  * find gBS->service_name and gRT->service_name inside SmiHandler function
 bool efiAnalysis::efiAnalyzer::findSmmCallout() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] Looking for SMM callout\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] Looking for SMM callout\n", plugin_name);
     if (!gBsList.size() && !gRtList.size()) {
         return false;
     }
     if (!smiHandlers.size()) {
-        DEBUG_MSG("[%s] can't find a SwSmiHandler functions\n", plugin_name);
+        msg("[%s] can't find a SwSmiHandler functions\n", plugin_name);
         return false;
     }
     for (auto f : smiHandlers) {
@@ -1644,11 +1623,10 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
 }
 
 bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] Looking for PPI GetVariable buffer overflow, "
-              "allServices.size() = %d\n",
-              plugin_name, allServices.size());
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] Looking for PPI GetVariable buffer overflow, "
+        "allServices.size() = %d\n",
+        plugin_name, allServices.size());
     std::vector<ea_t> getVariableServicesCalls;
     std::string getVariableStr("VariablePPI.GetVariable");
     for (auto j_service : allServices) {
@@ -1660,20 +1638,20 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
             getVariableServicesCalls.push_back(addr);
         }
     }
-    DEBUG_MSG("[%s] Finished iterating over allServices, "
-              "getVariableServicesCalls.size() = %d\n",
-              plugin_name, getVariableServicesCalls.size());
+    msg("[%s] Finished iterating over allServices, "
+        "getVariableServicesCalls.size() = %d\n",
+        plugin_name, getVariableServicesCalls.size());
     sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
     if (getVariableServicesCalls.size() < 2) {
-        DEBUG_MSG("[%s] less than 2 VariablePPI.GetVariable calls found\n", plugin_name);
+        msg("[%s] less than 2 VariablePPI.GetVariable calls found\n", plugin_name);
         return false;
     }
     ea_t prev_addr = getVariableServicesCalls.at(0);
     for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
         ea_t curr_addr = getVariableServicesCalls.at(i);
-        DEBUG_MSG("[%s] VariablePPI.GetVariable_1: 0x%016llX, "
-                  "VariablePPI.GetVariable_2: 0x%016llX\n",
-                  plugin_name, prev_addr, curr_addr);
+        msg("[%s] VariablePPI.GetVariable_1: 0x%016llX, "
+            "VariablePPI.GetVariable_2: 0x%016llX\n",
+            plugin_name, prev_addr, curr_addr);
 
         // check code from `GetVariable_1` to `GetVariable_2`
         ea_t ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
@@ -1716,8 +1694,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
 
             if (same_datasize) {
                 peiGetVariableOverflow.push_back(curr_addr);
-                DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
-                          curr_addr);
+                msg("[%s] overflow can occur here: 0x%016llX\n", plugin_name, curr_addr);
                 continue;
             }
 
@@ -1732,16 +1709,15 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            DEBUG_MSG("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found "
-                      "= %d\n",
-                      plugin_name, curr_datasize_addr, datasize_addr_found);
+            msg("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found "
+                "= %d\n",
+                plugin_name, curr_datasize_addr, datasize_addr_found);
 
             if (!datasize_addr_found) {
                 // if datasize wasn't found, just let the pattern
                 // trigger - for manual review
                 peiGetVariableOverflow.push_back(curr_addr);
-                DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
-                          curr_addr);
+                msg("[%s] overflow can occur here: 0x%016llX\n", plugin_name, curr_addr);
                 continue;
             }
 
@@ -1770,8 +1746,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
 
             if (same_datasize) {
                 peiGetVariableOverflow.push_back(curr_addr);
-                DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
-                          curr_addr);
+                msg("[%s] overflow can occur here: 0x%016llX\n", plugin_name, curr_addr);
                 continue;
             }
 
@@ -1786,20 +1761,19 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            DEBUG_MSG("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = %d, "
-                      "(prev_datasize_addr == curr_datasize_addr) = %d\n",
-                      plugin_name, prev_datasize_addr, datasize_addr_found,
-                      (prev_datasize_addr == curr_datasize_addr));
+            msg("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = %d, "
+                "(prev_datasize_addr == curr_datasize_addr) = %d\n",
+                plugin_name, prev_datasize_addr, datasize_addr_found,
+                (prev_datasize_addr == curr_datasize_addr));
 
             if (!datasize_addr_found) {
                 peiGetVariableOverflow.push_back(curr_addr);
-                DEBUG_MSG("[%s] overflow can occur here: 0x%016llX\n", plugin_name,
-                          curr_addr);
+                msg("[%s] overflow can occur here: 0x%016llX\n", plugin_name, curr_addr);
             } else if (prev_datasize_addr == curr_datasize_addr) {
                 peiGetVariableOverflow.push_back(curr_addr);
-                DEBUG_MSG("[%s] overflow can occur here: 0x%016llX "
-                          "(prev_datasize_addr == curr_datasize_addr)\n",
-                          plugin_name, curr_addr);
+                msg("[%s] overflow can occur here: 0x%016llX "
+                    "(prev_datasize_addr == curr_datasize_addr)\n",
+                    plugin_name, curr_addr);
             }
         }
         prev_addr = curr_addr;
@@ -1810,9 +1784,8 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double GetVariable calls
 bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServices) {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] Looking for GetVariable stack/heap overflow\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] Looking for GetVariable stack/heap overflow\n", plugin_name);
     std::vector<ea_t> getVariableServicesCalls;
     std::string getVariableStr("GetVariable");
     for (auto j_service : allServices) {
@@ -1825,7 +1798,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
     }
     sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
     if (getVariableServicesCalls.size() < 2) {
-        DEBUG_MSG("[%s] less than 2 GetVariable calls found\n", plugin_name);
+        msg("[%s] less than 2 GetVariable calls found\n", plugin_name);
         return false;
     }
     ea_t prev_addr = getVariableServicesCalls.at(0);
@@ -1833,8 +1806,8 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
     insn_t insn;
     for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
         ea_t curr_addr = getVariableServicesCalls.at(i);
-        DEBUG_MSG("[%s] GetVariable_1: 0x%016llX, GetVariable_2: 0x%016llX\n",
-                  plugin_name, prev_addr, curr_addr);
+        msg("[%s] GetVariable_1: 0x%016llX, GetVariable_2: 0x%016llX\n", plugin_name,
+            prev_addr, curr_addr);
 
         // get `dataSizeStackAddr`
         int dataSizeStackAddr = 0;
@@ -1902,8 +1875,8 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                         insn.ops[0].reg == REG_R9) {
                         if (dataSizeStackAddr == insn.ops[1].addr) {
                             getVariableOverflow.push_back(curr_addr);
-                            DEBUG_MSG("[%s] \toverflow can occur here: 0x%016llX\n",
-                                      plugin_name, curr_addr);
+                            msg("[%s] \toverflow can occur here: 0x%016llX\n",
+                                plugin_name, curr_addr);
                             break;
                         }
                     }
@@ -1919,14 +1892,13 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double SmmGetVariable calls
 bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] Looking for SmmGetVariable stack/heap overflow\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] Looking for SmmGetVariable stack/heap overflow\n", plugin_name);
     std::vector<ea_t> smmGetVariableCalls =
         findSmmGetVariableCalls(dataSegments, &allServices);
     sort(smmGetVariableCalls.begin(), smmGetVariableCalls.end());
     if (smmGetVariableCalls.size() < 2) {
-        DEBUG_MSG("[%s] less than 2 GetVariable calls found\n", plugin_name);
+        msg("[%s] less than 2 GetVariable calls found\n", plugin_name);
         return false;
     }
     ea_t prev_addr = smmGetVariableCalls.at(0);
@@ -1934,8 +1906,8 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
     insn_t insn;
     for (auto i = 1; i < smmGetVariableCalls.size(); ++i) {
         ea_t curr_addr = smmGetVariableCalls.at(i);
-        DEBUG_MSG("[%s] SmmGetVariable_1: 0x%016llX, SmmGetVariable_2: 0x%016llX\n",
-                  plugin_name, prev_addr, curr_addr);
+        msg("[%s] SmmGetVariable_1: 0x%016llX, SmmGetVariable_2: 0x%016llX\n",
+            plugin_name, prev_addr, curr_addr);
 
         // get `dataSizeStackAddr`
         uint32_t dataSizeStackAddr = 0xffffffff;
@@ -1982,13 +1954,13 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
                         insn.ops[0].reg == REG_R9) {
                         if (dataSizeStackAddr == insn.ops[1].addr) {
                             smmGetVariableOverflow.push_back(curr_addr);
-                            DEBUG_MSG("[%s] \toverflow can occur here: 0x%016llX\n",
-                                      plugin_name, curr_addr);
+                            msg("[%s] \toverflow can occur here: 0x%016llX\n",
+                                plugin_name, curr_addr);
                             break;
                         }
-                        DEBUG_MSG("[%s] \tDataSize argument variable is not the "
-                                  "same: 0x%016llX\n",
-                                  plugin_name, curr_addr);
+                        msg("[%s] \tDataSize argument variable is not the "
+                            "same: 0x%016llX\n",
+                            plugin_name, curr_addr);
                     }
                     ea = prev_head(ea, 0);
                 }
@@ -2002,8 +1974,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
 //--------------------------------------------------------------------------
 // Resolve EFI_SMM_CPU_PROTOCOL
 bool efiAnalysis::efiAnalyzer::efiSmmCpuProtocolResolver() {
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
     readSaveStateCalls = resolveEfiSmmCpuProtocol(stackGuids, dataGuids, &allServices);
     return true;
 }
@@ -2056,9 +2027,8 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
     logFile.replace_extension(".json");
     std::ofstream out(logFile);
     out << std::setw(4) << info << std::endl;
-    DEBUG_MSG("[%s] ========================================================\n",
-              plugin_name);
-    DEBUG_MSG("[%s] the log is saved in a JSON file\n", plugin_name);
+    msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] the log is saved in a JSON file\n", plugin_name);
 }
 
 //--------------------------------------------------------------------------
@@ -2187,7 +2157,7 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         }
 
     } else {
-        DEBUG_MSG("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
+        msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
     }
 
     // dump info to JSON file
