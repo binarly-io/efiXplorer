@@ -444,7 +444,7 @@ std::vector<json> getDependenciesLoader() {
     std::vector<json> allProtocols = summary["protocols"];
 
     // Get depJson
-    std::vector<std::string> locate{"LocateProtocol", "OpenProtocol"};
+    std::vector<std::string> locate{"LocateProtocol", "OpenProtocol", "HandleProtocol"};
     std::vector<std::string> install{"InstallProtocolInterface",
                                      "InstallMultipleProtocolInterfaces"};
 
