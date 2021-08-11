@@ -146,12 +146,12 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     }
 
     if (arch == X86 && (signature == VZ || hasPeiGuids)) {
-        msg("[%s] Parsing binary file as PEI, signature = %x, "
+        msg("[%s] Parsing binary file as PEI, signature = %lx, "
             "hasPeiGuids = %d\n",
             plugin_name, signature, hasPeiGuids);
         return FTYPE_PEI;
     } else {
-        msg("[%s] Parsing binary file as DXE/SMM, signature = %x, "
+        msg("[%s] Parsing binary file as DXE/SMM, signature = %lx, "
             "hasPeiGuids = %d\n",
             plugin_name, signature, hasPeiGuids);
         return FTYPE_DXE_AND_THE_LIKE;
@@ -269,7 +269,7 @@ ea_t findUnknownBsVarX64(ea_t ea) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
-            msg("[%s] found gBS at 0x%016X, address = 0x%016X\n", plugin_name, ea,
+            msg("[%s] found gBS at 0x%016llX, address = 0x%016llX\n", plugin_name, ea,
                 insn.ops[1].addr);
             resAddr = insn.ops[1].addr;
             set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
