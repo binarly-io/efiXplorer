@@ -1640,7 +1640,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
 
 bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
     msg("[%s] ========================================================\n", plugin_name);
-    msg("[%s] Looking for PPI GetVariable buffer overflow, allServices.size() = %d\n",
+    msg("[%s] Looking for PPI GetVariable buffer overflow, allServices.size() = %lu\n",
         plugin_name, allServices.size());
     std::vector<ea_t> getVariableServicesCalls;
     std::string getVariableStr("VariablePPI.GetVariable");
@@ -1654,7 +1654,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
         }
     }
     msg("[%s] Finished iterating over allServices, getVariableServicesCalls.size() = "
-        "%d\n",
+        "%lu\n",
         plugin_name, getVariableServicesCalls.size());
     sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
     if (getVariableServicesCalls.size() < 2) {
