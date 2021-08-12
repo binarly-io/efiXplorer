@@ -55,7 +55,8 @@ bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif) {
     lsi.ll = ll;
     lsi.type = tif;
     if (!modify_user_lvar_info(funcEa, MLI_TYPE, lsi)) {
-        msg("[E] %a: could not modify lvar type for %s\n", funcEa, ll.name.c_str());
+        msg("[E] %016llX: could not modify lvar type for %s\n",
+            static_cast<uint64_t>(funcEa), ll.name.c_str());
         return false;
     }
     return true;
