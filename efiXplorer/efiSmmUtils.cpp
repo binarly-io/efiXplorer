@@ -640,3 +640,28 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
     }
     return readSaveStateCalls;
 }
+
+void markSmiHandler(ea_t ea) {
+    insn_t insn;
+    auto addr = prev_head(ea, 0);
+    decode_insn(&insn, addr);
+    while (!is_basic_block_end(insn, false)) {
+
+        // for next iteration
+        decode_insn(&insn, addr);
+        addr = prev_head(addr, 0);
+
+        // check current instruction
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RCX) {
+            if (insn.ops[1].type != o_mem) {
+                continue;
+            }
+            // mark `Handler` argument
+            std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[1].addr));
+            std::string name = "SmiHandler_" + hexstr;
+            set_name(insn.ops[1].addr, name.c_str(), SN_CHECK);
+            break;
+        }
+    }
+}
