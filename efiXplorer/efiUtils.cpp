@@ -580,3 +580,30 @@ std::string getHex(uint64_t value) {
     snprintf(hexstr, 21, "%llX", value);
     return static_cast<std::string>(hexstr);
 }
+
+//--------------------------------------------------------------------------
+// Make sure the first argument looks like protocol
+bool bootServiceProtCheck(ea_t callAddr) {
+    bool valid = false;
+    insn_t insn;
+    auto addr = prev_head(callAddr, 0);
+    decode_insn(&insn, addr);
+    while (!is_basic_block_end(insn, false)) {
+
+        // for next iteration
+        decode_insn(&insn, addr);
+        addr = prev_head(addr, 0);
+
+        // check current instruction
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RCX) {
+            if (insn.ops[1].type == o_mem) {
+                // will still be a false positive if the Handle in
+                // SmmInstallProtocolInterface is a global variable)
+                valid = true;
+            }
+            break;
+        }
+    }
+    return valid;
+}

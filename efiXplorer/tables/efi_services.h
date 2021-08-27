@@ -227,8 +227,9 @@ struct pServicePush bootServicesTable32[] = {
 size_t bootServicesTable32Length = sizeof(bootServicesTable64) / sizeof(pServicePush);
 
 struct service bootServicesTableAll[] = {
-    {"RaiseTPL", RaiseTPLOffset64, RaiseTPLOffset32},
-    {"RestoreTPL", RestoreTPLOffset64, RestoreTPLOffset32},
+    // difficult to check false positives
+    // {"RaiseTPL", RaiseTPLOffset64, RaiseTPLOffset32},
+    // {"RestoreTPL", RestoreTPLOffset64, RestoreTPLOffset32},
     {"AllocatePages", AllocatePagesOffset64, AllocatePagesOffset32},
     {"FreePages", FreePagesOffset64, FreePagesOffset32},
     {"GetMemoryMap", GetMemoryMapOffset64, GetMemoryMapOffset32},

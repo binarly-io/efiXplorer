@@ -532,6 +532,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 // Get all boot services for X86/X64 modules
 void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] BootServices finding (all)\n", plugin_name);
 
     if (!gBsList.size()) {
         return;
@@ -568,7 +569,19 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
                                 if (arch == X86) {
                                     offset = bootServicesTableAll[j].offset32;
                                 }
+
                                 if (insn.ops[0].addr == static_cast<uint32_t>(offset)) {
+
+                                    // additional check for gBS->RegisterProtocolNotify
+                                    // (can be confused with
+                                    // gSmst->SmmInstallProtocolInterface)
+                                    if (static_cast<uint32_t>(offset) ==
+                                        RegisterProtocolNotifyOffset64) {
+                                        if (!bootServiceProtCheck(addr)) {
+                                            break;
+                                        }
+                                    }
+
                                     found = true;
                                     std::string cmt =
                                         getBsComment(static_cast<uint32_t>(offset), arch);
@@ -612,9 +625,12 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
 // Get all runtime services for X86/X64 modules
 void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
+    msg("[%s] RuntimeServices finding (all)\n", plugin_name);
+
     if (!gRtList.size()) {
         return;
     }
+
     insn_t insn;
     auto found = false;
     for (auto seg : textSegments) {
@@ -713,6 +729,14 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                 if (insn.ops[0].addr ==
                                     static_cast<uint32_t>(
                                         smmServicesTableAll[j].offset64)) {
+
+                                    if (static_cast<uint32_t>(
+                                            smmServicesTableAll[j].offset64) ==
+                                        SmiHandlerRegisterOffset64) {
+                                        // set name for `Handler` argument
+                                        markSmiHandler(addr);
+                                    }
+
                                     found = true;
                                     std::string cmt =
                                         "gSmst->" +
@@ -1037,6 +1061,16 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
                 for (auto i = 0; i < bootServicesTable64Length; i++) {
                     if (insn.ops[0].addr ==
                         static_cast<uint32_t>(bootServicesTable64[i].offset)) {
+
+                        // additional check for gBS->RegisterProtocolNotify
+                        // (can be confused with gSmst->SmmInstallProtocolInterface)
+                        if (static_cast<uint32_t>(bootServicesTable64[i].offset) ==
+                            RegisterProtocolNotifyOffset64) {
+                            if (!bootServiceProtCheck(ea)) {
+                                break;
+                            }
+                        }
+
                         std::string cmt = getBsComment(
                             static_cast<uint32_t>(bootServicesTable64[i].offset), X64);
                         set_cmt(ea, cmt.c_str(), true);
@@ -1171,10 +1205,16 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
             ea_t guidDataAddress = 0;
             auto found = false;
 
-            // 10 instructions above
-            for (auto j = 0; j < 10; j++) {
+            // check current basic block
+            while (true) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
+
+                // exit from loop if end of previous basic block found
+                if (is_basic_block_end(insn, false)) {
+                    break;
+                }
+
                 if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == bootServicesTable64[i].reg) {
                     guidCodeAddress = address;
@@ -1265,11 +1305,17 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
                 break;
             }
 
-            // 10 instructions above
+            // check current basic block
             uint16_t pushCounter = 0;
-            for (auto j = 0; j < 10; j++) {
+            while (true) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
+
+                // exit from loop if end of previous basic block found
+                if (is_basic_block_end(insn, false)) {
+                    break;
+                }
+
                 if (insn.itype == NN_push) {
                     pushCounter += 1;
                     if (pushCounter > pushNumber) {
@@ -1358,10 +1404,16 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
             ea_t guidDataAddress = 0;
             auto found = false;
 
-            // 10 instructions above
-            for (auto j = 0; j < 10; j++) {
+            // check current basic block
+            while (true) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
+
+                // exit from loop if end of previous basic block found
+                if (is_basic_block_end(insn, false)) {
+                    break;
+                }
+
                 if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == smmServicesProt64[i].reg) {
                     guidCodeAddress = address;
@@ -1631,8 +1683,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
         msg("[%s] can't find a SwSmiHandler functions\n", plugin_name);
         return false;
     }
-    for (auto f : smiHandlers) {
-        func_t *func = f;
+    for (auto func : smiHandlers) {
         findCalloutRec(func);
     }
     return true;

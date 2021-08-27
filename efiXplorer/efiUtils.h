@@ -191,6 +191,9 @@ json getGuidByAddr(ea_t addr);
 // Validate GUID value
 bool checkGuid(json guid);
 
+// Make sure the first argument looks like protocol
+bool bootServiceProtCheck(ea_t callAddr);
+
 // Convert GUID value to string
 std::string getGuidFromValue(json guid);
 
