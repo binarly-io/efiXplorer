@@ -50,6 +50,7 @@ std::vector<segment_t *> dataSegments;
 // for smm callouts finding
 std::vector<ea_t> calloutAddrs;
 std::vector<func_t *> excFunctions;
+std::vector<func_t *> childSmiHandlers;
 std::vector<ea_t> readSaveStateCalls;
 
 // for GetVariable stack overflow finding
@@ -158,30 +159,34 @@ void efiAnalysis::efiAnalyzer::getSegments() {
         qstring seg_name;
         get_segm_name(&seg_name, s);
 
-        size_t index = seg_name.find(".text");
-        if (index != std::string::npos) {
-            textSegments.push_back(s);
-            continue;
+        std::vector<std::string> codeSegNames{
+            ".text", ".code"}; // for compatibility with ida-efitools2
+        for (auto name : codeSegNames) {
+            auto index = seg_name.find(name.c_str());
+            if (index != std::string::npos) {
+                textSegments.push_back(s);
+                continue;
+            }
         }
 
-        index = seg_name.find(".data");
+        auto index = seg_name.find(".data");
         if (index != std::string::npos) {
             dataSegments.push_back(s);
             continue;
         }
     }
 
-    // print all .text segments addresses
+    // print all .text and .code segments addresses
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        msg("[%s] .text segment: 0x%016llX\n", plugin_name,
+        msg("[%s] code segment: 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(s->start_ea));
     }
 
     // print all .data segments addresses
     for (auto seg : dataSegments) {
         segment_t *s = seg;
-        msg("[%s] .data segment: 0x%016llX\n", plugin_name,
+        msg("[%s] data segment: 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(s->start_ea));
     }
 }
@@ -734,7 +739,13 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
                                             smmServicesTableAll[j].offset64) ==
                                         SmiHandlerRegisterOffset64) {
                                         // set name for `Handler` argument
-                                        markSmiHandler(addr);
+                                        auto smiHandlerAddr = markSmiHandler(addr);
+                                        // save SMI handler
+                                        func_t *childSmiHandler =
+                                            get_func(smiHandlerAddr);
+                                        if (childSmiHandler != nullptr) {
+                                            childSmiHandlers.push_back(childSmiHandler);
+                                        }
                                     }
 
                                     found = true;
@@ -1679,11 +1690,14 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     if (!gBsList.size() && !gRtList.size()) {
         return false;
     }
-    if (!smiHandlers.size()) {
+    if (!smiHandlers.size() and !childSmiHandlers.size()) {
         msg("[%s] can't find a SwSmiHandler functions\n", plugin_name);
         return false;
     }
     for (auto func : smiHandlers) {
+        findCalloutRec(func);
+    }
+    for (auto func : childSmiHandlers) {
         findCalloutRec(func);
     }
     return true;

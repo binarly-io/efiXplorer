@@ -641,7 +641,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
     return readSaveStateCalls;
 }
 
-void markSmiHandler(ea_t ea) {
+ea_t markSmiHandler(ea_t ea) {
     insn_t insn;
     auto addr = prev_head(ea, 0);
     decode_insn(&insn, addr);
@@ -661,7 +661,8 @@ void markSmiHandler(ea_t ea) {
             std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[1].addr));
             std::string name = "SmiHandler_" + hexstr;
             set_name(insn.ops[1].addr, name.c_str(), SN_CHECK);
-            break;
+            return insn.ops[1].addr;
         }
     }
+    return BADADDR;
 }
