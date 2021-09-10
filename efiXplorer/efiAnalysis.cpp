@@ -1690,7 +1690,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     if (!gBsList.size() && !gRtList.size()) {
         return false;
     }
-    if (!smiHandlers.size() and !childSmiHandlers.size()) {
+    if (!smiHandlers.size() && !childSmiHandlers.size()) {
         msg("[%s] can't find a SwSmiHandler functions\n", plugin_name);
         return false;
     }
