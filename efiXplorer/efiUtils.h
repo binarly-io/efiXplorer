@@ -154,6 +154,9 @@ void setPtrTypeAndName(ea_t ea, std::string name, std::string type);
 // Check for guids.json file exist
 bool guidsJsonExists();
 
+// Get guids.json file name
+std::filesystem::path getGuidsJsonFile();
+
 // Get json summary file name
 std::filesystem::path getSummaryFile();
 
