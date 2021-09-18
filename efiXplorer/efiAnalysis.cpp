@@ -60,9 +60,7 @@ std::vector<ea_t> smmGetVariableOverflow;
 
 efiAnalysis::efiAnalyzer::efiAnalyzer() {
     // get guids.json path
-    guidsJsonPath /= idadir("plugins");
-    guidsJsonPath /= "guids";
-    guidsJsonPath /= "guids.json";
+    guidsJsonPath /= getGuidsJsonFile();
 
     // get base address
     base = get_imagebase();

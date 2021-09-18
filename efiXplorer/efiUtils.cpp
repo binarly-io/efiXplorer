@@ -322,11 +322,33 @@ void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
 //--------------------------------------------------------------------------
 // Check for guids.json file exist
 bool guidsJsonExists() {
+    return !getGuidsJsonFile().empty();
+}
+
+//--------------------------------------------------------------------------
+// Get guids.json file name
+std::filesystem::path getGuidsJsonFile() {
     std::filesystem::path guidsJsonPath;
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
-    return std::filesystem::exists(guidsJsonPath);
+    if (std::filesystem::exists(guidsJsonPath)) {
+        return guidsJsonPath;
+    }
+
+    // Try to load it from the per-user directory.
+    guidsJsonPath.clear();
+    guidsJsonPath /= get_user_idadir();
+    guidsJsonPath /= "plugins";
+    guidsJsonPath /= "guids";
+    guidsJsonPath /= "guids.json";
+    if (std::filesystem::exists(guidsJsonPath)) {
+        return guidsJsonPath;
+    }
+
+    // Does not exist.
+    guidsJsonPath.clear();
+    return guidsJsonPath;
 }
 
 //--------------------------------------------------------------------------
