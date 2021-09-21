@@ -328,7 +328,15 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     set_cmt(next_ea, "Name", 0);
     op_hex(next_ea, 0);
     size_t segm_name_len = get_max_strlit_length(next_ea, STRTYPE_C);
-    get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len, STRTYPE_C);
+
+    if(segm_name_len){
+        get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len, STRTYPE_C);
+    }
+    else{
+        //if the segm_name_len is 0, it will trigger a crash on segm_names.pop_back() later.
+        segm_names.push_back("UNKNOW");
+    }
+    
     next_ea += 8;
     create_dword(next_ea, 4);
     set_cmt(next_ea, "Virtual size", 0);
