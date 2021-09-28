@@ -33917,17 +33917,17 @@
     66
   ],
   "SMM_BIOS_GUARD_PROTOCOL_GUID": [
-    3286324964,
-    10163,
-    19967,
-    184,
-    150,
-    251,
-    17,
-    59,
-    46,
-    104,
-    181
+    391533329,
+    19313,
+    17216,
+    136,
+    170,
+    220,
+    159,
+    68,
+    34,
+    229,
+    58
   ],
   "EFI_DXE_SYSTEM_BOARD_PROTOCOL_GUID": [
     2776371480,
@@ -36490,7 +36490,7 @@
     253,
     195
   ],
-  "gDellFlashIoSmmProtocolGuid": [
+  "DELL_FLASH_IO_SMM_PROTOCOL_GUID": [
     1106796650,
     63308,
     16541,
@@ -36503,7 +36503,7 @@
     188,
     125
   ],
-  "gDellSmmVariableProtocolGuid": [
+  "DELL_SMM_VARIABLE_PROTOCOL_GUID": [
     240204090,
     59493,
     19518,
@@ -36516,7 +36516,7 @@
     70,
     165
   ],
-  "gDellPropertySmmProtocolGuid": [
+  "DELL_PROPERTY_SMM_PROTOCOL_GUID": [
     3081205713,
     28342,
     18078,
@@ -36529,7 +36529,7 @@
     179,
     255
   ],
-  "gDellPropertyAccessorProtocolGuid": [
+  "DELL_PROPERTY_ACCESSOR_PROTOCOL_GUID": [
     3784303313,
     61234,
     19598,
@@ -36542,7 +36542,7 @@
     251,
     25
   ],
-  "gDellStorageAgentSmmProtocolGuid": [
+  "DELL_STORAGE_AGENT_SMM_PROTOCOL_GUID": [
     1365421601,
     6125,
     17847,
@@ -36555,7 +36555,7 @@
     53,
     37
   ],
-  "gDellSmmEventProtocolGuid": [
+  "DELL_SMM_EVENT_PROTOCOL_GUID": [
     3834818659,
     59462,
     18448,
@@ -36568,7 +36568,7 @@
     151,
     116
   ],
-  "gDellVariableProtocolGuid": [
+  "DELL_VARIABLE_PROTOCOL_GUID": [
     598193751,
     1919,
     19132,
@@ -36581,7 +36581,7 @@
     157,
     190
   ],
-  "gDellStorageAgentSmmRegisterGuid": [
+  "DELL_STORAGE_AGENT_SMM_REGISTER_GUID": [
     2202109274,
     62066,
     20478,
@@ -36594,7 +36594,7 @@
     221,
     199
   ],
-  "gSmmBbsManagerProtocolGuid": [
+  "SMM_BBS_MANAGER_PROTOCOL_GUID": [
     4112354150,
     59242,
     17359,
@@ -36607,7 +36607,7 @@
     246,
     135
   ],
-  "gDellEnhancedVersionProtocolGuid": [
+  "DELL_ENHANCED_VERSION_PROTOCOL_GUID": [
     298970145,
     58728,
     20144,
@@ -36620,7 +36620,7 @@
     182,
     6
   ],
-  "gDellSmmServicesProtocolGuid": [
+  "DELL_SMM_SERVICES_PROTOCOL_GUID": [
     203384192,
     40023,
     18994,
@@ -36633,7 +36633,7 @@
     126,
     125
   ],
-  "gDellVirtRtcSmmProtocolGuid": [
+  "DELL_VIRT_RTC_SMM_PROTOCOL_GUID": [
     1578874102,
     3399,
     18163,
@@ -36646,7 +36646,7 @@
     208,
     249
   ],
-  "gDellBiosAttributesSmmGuid": [
+  "DELL_BIOS_ATTRIBUTES_SMM_GUID": [
     3284288209,
     259,
     19572,
@@ -36659,7 +36659,7 @@
     235,
     206
   ],
-  "gDellSmmTagsProtocolGuid": [
+  "DELL_SMM_TAGS_PROTOCOL_GUID": [
     3697861383,
     27788,
     18839,
@@ -36672,7 +36672,7 @@
     183,
     105
   ],
-  "gDellSmmMfgModeProtocolGuid": [
+  "DELL_SMM_MFG_MODE_PROTOCOL_GUID": [
     858574829,
     58855,
     18859,
@@ -36685,7 +36685,7 @@
     63,
     87
   ],
-  "gEfiSmbSmmDaCiProtocolVer2Guid": [
+  "EFI_SMB_SMM_DA_CI_PROTOCOL_VER2_GUID": [
     1734764392,
     40036,
     19626,
@@ -36698,7 +36698,7 @@
     105,
     122
   ],
-  "gDellPasswordPolicyExtSmmProtocolGuid": [
+  "DELL_PASSWORD_POLICY_EXT_SMM_PROTOCOL_GUID": [
     2665749132,
     49426,
     20047,
@@ -36711,7 +36711,7 @@
     51,
     219
   ],
-  "gDellDevPasswordProtocol": [
+  "DELL_DEV_PASSWORD_PROTOCOL": [
     179738574,
     47392,
     18604,
@@ -36724,7 +36724,7 @@
     205,
     215
   ],
-  "gDellSmbDaTokenCfgPolicyGuidVer2": [
+  "DELL_SMB_DA_TOKEN_CFG_POLICY_GUID_VER2": [
     1786132583,
     16518,
     16620,
@@ -36737,7 +36737,7 @@
     254,
     220
   ],
-  "gDellTagsPolicyGuid": [
+  "DELL_TAGS_POLICY_GUID": [
     492366333,
     47744,
     19015,
@@ -36750,7 +36750,7 @@
     160,
     237
   ],
-  "gDellEcPolicyGuid": [
+  "DELL_EC_POLICY_GUID": [
     2000124362,
     10984,
     16499,
@@ -36763,7 +36763,7 @@
     191,
     213
   ],
-  "gDellGenerationIdPolicyGuid": [
+  "DELL_GENERATION_ID_POLICY_GUID": [
     4014538728,
     40484,
     20152,
@@ -36776,7 +36776,7 @@
     248,
     221
   ],
-  "gDellSmiCpuDecodeProtocolGuid": [
+  "DELL_SMI_CPU_DECODE_PROTOCOL_GUID": [
     577250467,
     6537,
     19820,
@@ -36789,7 +36789,7 @@
     126,
     153
   ],
-  "gDellSbSmmProtocolGuid": [
+  "DELL_SB_SMM_PROTOCOL_GUID": [
     3184524733,
     43713,
     18180,
@@ -36802,7 +36802,7 @@
     36,
     192
   ],
-  "gDellPasswordPolicySmmProtocolGuid": [
+  "DELL_PASSWORD_POLICY_SMM_PROTOCOL_GUID": [
     799436599,
     36243,
     16419,
@@ -36815,7 +36815,7 @@
     207,
     11
   ],
-  "gDellPasswordPolicyDxeProtocolGuid": [
+  "DELL_PASSWORD_POLICY_DXE_PROTOCOL_GUID": [
     559962128,
     21683,
     16649,
@@ -36828,7 +36828,7 @@
     240,
     64
   ],
-  "gDellBfaSmmProtocolGuid": [
+  "DELL_BFA_SMM_PROTOCOL_GUID": [
     783381159,
     26853,
     19072,
@@ -36841,7 +36841,7 @@
     147,
     202
   ],
-  "gDellSmmEcIoProtocolGuid": [
+  "DELL_SMM_EC_IO_PROTOCOL_GUID": [
     1930486414,
     38634,
     17248,
@@ -36854,7 +36854,7 @@
     245,
     49
   ],
-  "gDellOsProtocolAccessGuid": [
+  "DELL_OS_PROTOCOL_ACCESS_GUID": [
     3554477446,
     38765,
     17567,
@@ -36867,7 +36867,7 @@
     125,
     82
   ],
-  "gDellTokenHandlerProtocolGuid": [
+  "DELL_TOKEN_HANDLER_PROTOCOL_GUID": [
     708691735,
     27702,
     20309,
@@ -36880,7 +36880,7 @@
     47,
     23
   ],
-  "gDellSystemPolicyGuid": [
+  "DELL_SYSTEM_POLICY_GUID": [
     2343933041,
     33340,
     18961,
@@ -36893,7 +36893,7 @@
     62,
     177
   ],
-  "gDellSmmGpioControlProtocolGuid": [
+  "DELL_SMM_GPIO_CONTROL_PROTOCOL_GUID": [
     1370456604,
     44463,
     19132,
@@ -36906,7 +36906,7 @@
     186,
     34
   ],
-  "gDellSmmLegacyRegionProtocolGuid": [
+  "DELL_SMM_LEGACY_REGION_PROTOCOL_GUID": [
     807422031,
     17794,
     16494,
@@ -36919,7 +36919,7 @@
     220,
     106
   ],
-  "gDellHotKeysPolicyGuid": [
+  "DELL_HOT_KEYS_POLICY_GUID": [
     2537162355,
     15018,
     18332,
@@ -36932,7 +36932,7 @@
     160,
     180
   ],
-  "gDellEcPolicy2Guid": [
+  "DELL_EC_POLICY2_GUID": [
     1934142791,
     11840,
     18502,
@@ -36945,7 +36945,7 @@
     193,
     48
   ],
-  "gDellEcPolicy3Guid": [
+  "DELL_EC_POLICY3_GUID": [
     4254642530,
     16826,
     19614,
@@ -36958,7 +36958,7 @@
     2,
     240
   ],
-  "gDellBattPolicyGuid": [
+  "DELL_BATT_POLICY_GUID": [
     3866445575,
     36634,
     17734,
@@ -36971,7 +36971,7 @@
     219,
     247
   ],
-  "gDellStealthModePolicyGuid": [
+  "DELL_STEALTH_MODE_POLICY_GUID": [
     228494774,
     23130,
     19035,
@@ -36984,7 +36984,7 @@
     69,
     131
   ],
-  "gDellStealthMode2PolicyGuid": [
+  "DELL_STEALTH_MODE2_POLICY_GUID": [
     2600766611,
     16305,
     20333,
@@ -36997,7 +36997,7 @@
     79,
     253
   ],
-  "gDellSystemIdPolicyGuid": [
+  "DELL_SYSTEM_ID_POLICY_GUID": [
     1721407303,
     42590,
     20281,
@@ -37010,7 +37010,7 @@
     201,
     218
   ],
-  "gDellDockPolicyGuid": [
+  "DELL_DOCK_POLICY_GUID": [
     3342078921,
     16476,
     20304,
@@ -37023,7 +37023,7 @@
     237,
     22
   ],
-  "gDellSmmEcProtocolGuid": [
+  "DELL_SMM_EC_PROTOCOL_GUID": [
     3076643361,
     30444,
     19120,
@@ -37036,7 +37036,7 @@
     44,
     181
   ],
-  "gDellSystemPolicy3Guid": [
+  "DELL_SYSTEM_POLICY3_GUID": [
     1896876567,
     30442,
     18621,
@@ -37049,7 +37049,7 @@
     36,
     56
   ],
-  "gDellPmPolicyProtocolGuid": [
+  "DELL_PM_POLICY_PROTOCOL_GUID": [
     10780878,
     55121,
     19217,
@@ -37062,7 +37062,7 @@
     47,
     77
   ],
-  "gDellSmbQuickSetSupportProtGuid": [
+  "DELL_SMB_QUICK_SET_SUPPORT_PROT_GUID": [
     3858837331,
     30101,
     16538,
@@ -37075,7 +37075,7 @@
     42,
     105
   ],
-  "gDellHotKeySmmProtocolGuid": [
+  "DELL_HOT_KEY_SMM_PROTOCOL_GUID": [
     1840697154,
     2620,
     19401,
@@ -37088,7 +37088,7 @@
     241,
     141
   ],
-  "gDellSmmKeyboardBacklightProtocolGuid": [
+  "DELL_SMM_KEYBOARD_BACKLIGHT_PROTOCOL_GUID": [
     138477446,
     63120,
     20440,
@@ -37101,7 +37101,7 @@
     243,
     36
   ],
-  "gDellAtaAtapiIoProtocolGuid": [
+  "DELL_ATA_ATAPI_IO_PROTOCOL_GUID": [
     599024080,
     15508,
     18701,
@@ -37114,7 +37114,7 @@
     212,
     37
   ],
-  "gDellPropertyReadyGuid": [
+  "DELL_PROPERTY_READY_GUID": [
     4261473010,
     47671,
     19407,
@@ -37127,7 +37127,7 @@
     236,
     218
   ],
-  "gDellStorageAgentConfigPolicyGuid": [
+  "DELL_STORAGE_AGENT_CONFIG_POLICY_GUID": [
     3649582474,
     5503,
     17335,
@@ -37140,7 +37140,7 @@
     220,
     235
   ],
-  "gDellSmmAcpiProtocolGuid": [
+  "DELL_SMM_ACPI_PROTOCOL_GUID": [
     4000400574,
     25684,
     18243,
@@ -37153,7 +37153,7 @@
     91,
     91
   ],
-  "gErrorLogPolicyDxeGuid": [
+  "ERROR_LOG_POLICY_DXE_GUID": [
     2375132141,
     36928,
     18144,
@@ -37166,7 +37166,7 @@
     232,
     8
   ],
-  "gDellDiagsSmmProtocolGuid": [
+  "DELL_DIAGS_SMM_PROTOCOL_GUID": [
     837417748,
     20962,
     18153,
@@ -37179,7 +37179,7 @@
     178,
     180
   ],
-  "gDehSmmProtocolVer3Guid": [
+  "DEH_SMM_PROTOCOL_VER3_GUID": [
     57235770,
     47771,
     17789,
@@ -37192,7 +37192,7 @@
     214,
     254
   ],
-  "gDellErrorHandlerSmmProtocolGuidVer2": [
+  "DELL_ERROR_HANDLER_SMM_PROTOCOL_GUID_VER2": [
     1356740489,
     48435,
     19183,
@@ -37205,7 +37205,7 @@
     136,
     218
   ],
-  "gDellPermanentDevicePolicySmmGuid": [
+  "DELL_PERMANENT_DEVICE_POLICY_SMM_GUID": [
     3632136001,
     8677,
     17574,
@@ -37218,7 +37218,7 @@
     114,
     41
   ],
-  "gDellAcpiPolicyGuid": [
+  "DELL_ACPI_POLICY_GUID": [
     3857099594,
     3453,
     18950,
@@ -37231,7 +37231,7 @@
     155,
     59
   ],
-  "gDellDashPolicyProtocolGuid": [
+  "DELL_DASH_POLICY_PROTOCOL_GUID": [
     3826098180,
     52907,
     17357,
@@ -37244,7 +37244,7 @@
     57,
     135
   ],
-  "gDellDashPolicyVer3ProtocolGuid": [
+  "DELL_DASH_POLICY_VER3_PROTOCOL_GUID": [
     1173020965,
     10781,
     17632,
@@ -37257,7 +37257,7 @@
     136,
     175
   ],
-  "gDellSmmPaidSupDevPolicyProtocolGuid": [
+  "DELL_SMM_PAID_SUP_DEV_POLICY_PROTOCOL_GUID": [
     3852237463,
     32745,
     20018,
@@ -37270,7 +37270,7 @@
     245,
     7
   ],
-  "gDellSmmSysBootDevicesPolicyProtocolGuid": [
+  "DELL_SMM_SYS_BOOT_DEVICES_POLICY_PROTOCOL_GUID": [
     1230837556,
     1491,
     16399,
@@ -37283,7 +37283,7 @@
     92,
     195
   ],
-  "gDellSmmMfgBootListPolicyProtocolGuid": [
+  "DELL_SMM_MFG_BOOT_LIST_POLICY_PROTOCOL_GUID": [
     2044818199,
     7355,
     18981,
@@ -37296,7 +37296,7 @@
     92,
     46
   ],
-  "gDellSmmMfgPolicyProtocolGuid": [
+  "DELL_SMM_MFG_POLICY_PROTOCOL_GUID": [
     3426923731,
     29216,
     17034,
@@ -37309,7 +37309,7 @@
     40,
     9
   ],
-  "gCpuGlobalNvsAreaProtocolGuid": [
+  "CPU_GLOBAL_NVS_AREA_PROTOCOL_GUID": [
     2874822132,
     61655,
     18856,
@@ -37322,7 +37322,7 @@
     37,
     51
   ],
-  "gDellRadioUsbLocationsPolicyGuid": [
+  "DELL_RADIO_USB_LOCATIONS_POLICY_GUID": [
     841669988,
     64289,
     17764,
@@ -37335,7 +37335,7 @@
     100,
     21
   ],
-  "gDellSmmRadioDeviceProtocolGuid": [
+  "DELL_SMM_RADIO_DEVICE_PROTOCOL_GUID": [
     1360486578,
     58493,
     17588,
@@ -37348,7 +37348,7 @@
     29,
     56
   ],
-  "gDellAcpiResetProtocolGuid": [
+  "DELL_ACPI_RESET_PROTOCOL_GUID": [
     444328680,
     1415,
     20149,
@@ -37361,7 +37361,7 @@
     24,
     0
   ],
-  "gOdmGetPchCf9TrapHandleProtocolGuid": [
+  "ODM_GET_PCH_CF9_TRAP_HANDLE_PROTOCOL_GUID": [
     679629394,
     12817,
     13615,
@@ -37374,7 +37374,7 @@
     20,
     25
   ],
-  "gDellWBootCapsuleProtocolGuid": [
+  "DELL_W_BOOT_CAPSULE_PROTOCOL_GUID": [
     1919026612,
     11853,
     17926,
@@ -37387,20 +37387,7 @@
     88,
     228
   ],
-  "gSmmBiosGuardProtocolGuid": [
-    391533329,
-    19313,
-    17216,
-    136,
-    170,
-    220,
-    159,
-    68,
-    34,
-    229,
-    58
-  ],
-  "gDellFnUsbEmulationSmmProtocolGuid": [
+  "DELL_FN_USB_EMULATION_SMM_PROTOCOL_GUID": [
     1854934256,
     54678,
     17377,
@@ -37413,7 +37400,7 @@
     178,
     7
   ],
-  "gDellSmmSystemSioProtocolGuid": [
+  "DELL_SMM_SYSTEM_SIO_PROTOCOL_GUID": [
     3402186753,
     22033,
     17472,
@@ -37426,7 +37413,7 @@
     29,
     52
   ],
-  "gSaGlobalNvsAreaProtocolGuid": [
+  "SA_GLOBAL_NVS_AREA_PROTOCOL_GUID": [
     1036131701,
     56846,
     17152,
@@ -37439,7 +37426,7 @@
     243,
     223
   ],
-  "gDellSmmGpioLookupPolicyGuid": [
+  "DELL_SMM_GPIO_LOOKUP_POLICY_GUID": [
     2784557192,
     29073,
     17051,
@@ -37452,7 +37439,7 @@
     189,
     43
   ],
-  "gDellSmmRadioExecProtocolGuid": [
+  "DELL_SMM_RADIO_EXEC_PROTOCOL_GUID": [
     2983971164,
     3815,
     16993,
@@ -37465,7 +37452,7 @@
     149,
     39
   ],
-  "gDellPStateControlProtocolGuid": [
+  "DELL_P_STATE_CONTROL_PROTOCOL_GUID": [
     4092836633,
     25632,
     17865,
@@ -37478,7 +37465,7 @@
     14,
     80
   ],
-  "gDellNumberOfPStateProtocolGuid": [
+  "DELL_NUMBER_OF_P_STATE_PROTOCOL_GUID": [
     3978133630,
     39519,
     17258,
@@ -37491,7 +37478,7 @@
     217,
     44
   ],
-  "gDellPowerOffPolicyGuid": [
+  "DELL_POWER_OFF_POLICY_GUID": [
     4205920067,
     48962,
     17678,
@@ -37504,7 +37491,7 @@
     214,
     66
   ],
-  "gDellSmmPowerOffProtocolGuid": [
+  "DELL_SMM_POWER_OFF_PROTOCOL_GUID": [
     2396166854,
     54954,
     20456,
@@ -37517,7 +37504,7 @@
     160,
     19
   ],
-  "gEfiOdmemGnvsAreaProtocolGuid": [
+  "EFI_ODMEM_GNVS_AREA_PROTOCOL_GUID": [
     2508899018,
     39172,
     17322,
@@ -37530,7 +37517,7 @@
     18,
     23
   ],
-  "gOdmDebugSmmProtocolGuid": [
+  "ODM_DEBUG_SMM_PROTOCOL_GUID": [
     4118673553,
     7633,
     19559,
@@ -37543,7 +37530,7 @@
     255,
     188
   ],
-  "gDellPropertyDxeProtocolGuid": [
+  "DELL_PROPERTY_DXE_PROTOCOL_GUID": [
     1910209406,
     16741,
     18682,
@@ -37556,7 +37543,7 @@
     197,
     52
   ],
-  "gDellLegUsbBusProtocolGuid": [
+  "DELL_LEG_USB_BUS_PROTOCOL_GUID": [
     3661547425,
     63187,
     16681,
@@ -37569,7 +37556,7 @@
     80,
     6
   ],
-  "gDeviceAddressPolicyProtocolGuid": [
+  "DEVICE_ADDRESS_POLICY_PROTOCOL_GUID": [
     2914899691,
     10162,
     19010,
@@ -37582,7 +37569,7 @@
     216,
     97
   ],
-  "gDellLomPolicyGuid": [
+  "DELL_LOM_POLICY_GUID": [
     3525154484,
     8390,
     20272,
@@ -37595,7 +37582,7 @@
     16,
     73
   ],
-  "gDellSmmLomProtocolGuid": [
+  "DELL_SMM_LOM_PROTOCOL_GUID": [
     349264290,
     21229,
     18013,
@@ -37608,7 +37595,7 @@
     75,
     245
   ],
-  "gSmmBbsManagerInitNotifyProtocolGuid": [
+  "SMM_BBS_MANAGER_INIT_NOTIFY_PROTOCOL_GUID": [
     4004415307,
     25811,
     17187,
@@ -37621,7 +37608,7 @@
     235,
     90
   ],
-  "gDellVideoDevice2ProtocolGuid": [
+  "DELL_VIDEO_DEVICE2_PROTOCOL_GUID": [
     2849207006,
     54903,
     19265,
@@ -37634,7 +37621,7 @@
     25,
     206
   ],
-  "gDellSmmNbDockProtocolGuid": [
+  "DELL_SMM_NB_DOCK_PROTOCOL_GUID": [
     1418970396,
     31176,
     19502,
@@ -37647,7 +37634,7 @@
     19,
     183
   ],
-  "gDellRuntimeSmbiosProtocolGuid": [
+  "DELL_RUNTIME_SMBIOS_PROTOCOL_GUID": [
     3755840049,
     62935,
     19597,
@@ -37660,7 +37647,7 @@
     64,
     243
   ],
-  "gDellVideoProtocolGuid": [
+  "DELL_VIDEO_PROTOCOL_GUID": [
     83360183,
     4680,
     18812,
@@ -37673,7 +37660,7 @@
     202,
     240
   ],
-  "gDellSmmDpstProtocolGuid": [
+  "DELL_SMM_DPST_PROTOCOL_GUID": [
     1889096964,
     55210,
     19386,
@@ -37686,7 +37673,7 @@
     163,
     126
   ],
-  "gDellSmmNbProtocolGuid": [
+  "DELL_SMM_NB_PROTOCOL_GUID": [
     3522967299,
     26001,
     19177,
@@ -37699,7 +37686,7 @@
     82,
     54
   ],
-  "gDellThrottlingControlProtocolGuid": [
+  "DELL_THROTTLING_CONTROL_PROTOCOL_GUID": [
     719214768,
     53949,
     19175,
@@ -37712,7 +37699,7 @@
     89,
     133
   ],
-  "gDellNbThermalProtocolGuid": [
+  "DELL_NB_THERMAL_PROTOCOL_GUID": [
     941799526,
     57634,
     17342,
@@ -37725,7 +37712,7 @@
     110,
     120
   ],
-  "gDellMemoryThrottleProtocolGuid": [
+  "DELL_MEMORY_THROTTLE_PROTOCOL_GUID": [
     2307134881,
     1777,
     19489,
@@ -37738,7 +37725,7 @@
     35,
     100
   ],
-  "gDellSmmThermalDebugProtocolGuid": [
+  "DELL_SMM_THERMAL_DEBUG_PROTOCOL_GUID": [
     3210975301,
     53318,
     17401,
@@ -37751,7 +37738,7 @@
     88,
     113
   ],
-  "gDellSataPortNumMapPolicyGuid": [
+  "DELL_SATA_PORT_NUM_MAP_POLICY_GUID": [
     4035492656,
     55954,
     19455,
