@@ -2225,6 +2225,11 @@ bool efiAnalysis::efiAnalyzerMainX64() {
         analyzer.getSmmProtNamesX64();
         analyzer.markInterfaces();
 
+        // search for copies of global variables
+        markCopiesForGlobalVars(gSmstList, "gSmst");
+        markCopiesForGlobalVars(gBsList, "gBS");
+        markCopiesForGlobalVars(gRtList, "gRT");
+
         // search for vulnerabilities
         if (!g_args.disable_vuln_hunt) {
 

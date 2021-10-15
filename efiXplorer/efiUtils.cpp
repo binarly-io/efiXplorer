@@ -120,7 +120,6 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     }
     segment_t *hdr_seg = get_segm_by_name("HEADER");
     if (hdr_seg == NULL) {
-        msg("[%s] hdr_seg == NULL \n", plugin_name);
         return FTYPE_DXE_AND_THE_LIKE;
     }
     uint64_t signature = get_wide_word(hdr_seg->start_ea);
@@ -279,7 +278,7 @@ ea_t findUnknownBsVarX64(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// Get all data xrefs for address
+// Get all xrefs for given address
 std::vector<ea_t> getXrefs(ea_t addr) {
     std::vector<ea_t> xrefs;
     ea_t xref = get_first_dref_to(addr);
@@ -321,9 +320,7 @@ void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
 
 //--------------------------------------------------------------------------
 // Check for guids.json file exist
-bool guidsJsonExists() {
-    return !getGuidsJsonFile().empty();
-}
+bool guidsJsonExists() { return !getGuidsJsonFile().empty(); }
 
 //--------------------------------------------------------------------------
 // Get guids.json file name
@@ -628,4 +625,70 @@ bool bootServiceProtCheck(ea_t callAddr) {
         }
     }
     return valid;
+}
+
+bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
+    insn_t insn;
+    int reg = -1;
+    ea_t ea = codeAddr;
+    ea_t varCopy = BADADDR;
+    for (auto i = 0; i < 16; ++i) {
+        decode_insn(&insn, ea);
+
+        // get `reg` value
+        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[1].type == o_mem && insn.ops[1].addr == varAddr) {
+            reg = insn.ops[0].value;
+        }
+
+        // minimize FP
+        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[0].value == reg && insn.ops[1].type == o_mem &&
+            insn.ops[1].addr != varAddr) {
+            break;
+        }
+
+        // get `varCopy`
+        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_mem &&
+            insn.ops[1].type == o_reg && insn.ops[1].value == reg) {
+            varCopy = insn.ops[0].addr;
+            break;
+        }
+
+        ea = next_head(ea, BADADDR);
+    }
+
+    if (varCopy == BADADDR) {
+        return false;
+    }
+
+    std::string hexstr = getHex(static_cast<uint64_t>(varCopy));
+    std::string name;
+
+    if (type == std::string("gSmst")) {
+        name = "gSmst_" + hexstr;
+        setPtrTypeAndName(varCopy, name, "_EFI_SMM_SYSTEM_TABLE2");
+    }
+
+    if (type == std::string("gBS")) {
+        name = "gBS_" + hexstr;
+        setPtrTypeAndName(varCopy, name, "EFI_BOOT_SERVICES");
+    }
+
+    if (type == std::string("gRT")) {
+        name = "gRT_" + hexstr;
+        setPtrTypeAndName(varCopy, name, "EFI_RUNTIME_SERVICES");
+    }
+
+    return true;
+}
+
+bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type) {
+    for (auto var : globalVars) {
+        auto xrefs = getXrefs(var);
+        for (auto addr : xrefs) {
+            markCopy(addr, var, type);
+        }
+    }
+    return true;
 }

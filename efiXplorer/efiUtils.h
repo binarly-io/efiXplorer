@@ -202,3 +202,7 @@ std::string getGuidFromValue(json guid);
 
 // Convert 64-bit value to hex string
 std::string getHex(uint64_t value);
+
+// Mark copies for global variables
+bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type);
+bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type);
