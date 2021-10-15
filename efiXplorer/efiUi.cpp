@@ -52,7 +52,8 @@ const int interfaces_chooser_t::widths_protocols[] = {
     16, // Address
     32, // GUID
     32, // Name
-    32  // Service
+    32, // Service
+    32  // Module
 };
 
 // protocols column headers
@@ -60,7 +61,8 @@ const char *const interfaces_chooser_t::header_protocols[] = {
     "Address", // 0
     "GUID",    // 1
     "Name",    // 2
-    "Service"  // 3
+    "Service", // 3
+    "Module"   // 4
 };
 
 // services column widths
@@ -133,19 +135,17 @@ void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_
     auto guid = item["guid"];
     std::string name = static_cast<std::string>(item[name_key]);
     std::string service = static_cast<std::string>(item["service"]);
-    char protGuid[37] = {0};
-    snprintf(protGuid, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-             static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
-             static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
-             static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-             static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
-             static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
-             static_cast<uint8_t>(guid[10]));
+    std::string protGuid = getGuidFromValue(guid);
+    qstring moduleName("Current");
+    if (getArch() == UEFI) { // to see dependencies between modules in efiloader instance
+        moduleName = getModuleNameLoader(ea);
+    }
     cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
-    cols[1].sprnt("%s", protGuid);
+    cols[1].sprnt("%s", protGuid.c_str());
     cols[2].sprnt("%s", name.c_str());
     cols[3].sprnt("%s", service.c_str());
-    CASSERT(qnumber(header_protocols) == 4);
+    cols[4].sprnt("%s", moduleName.c_str());
+    CASSERT(qnumber(header_protocols) == 5);
 }
 
 inline s_chooser_t::s_chooser_t(const char *title_, bool ok, std::vector<json> services)

@@ -41,10 +41,6 @@ venv.bak/
 .vs/
 .idea/
 test/
-build/
-
-# CMake
-build*/
 
 # OSX
 .DS_Store
