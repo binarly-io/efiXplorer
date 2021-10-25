@@ -641,17 +641,16 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
             reg = insn.ops[0].value;
         }
 
-        // minimize FP
-        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-            insn.ops[0].value == reg && insn.ops[1].type == o_mem &&
-            insn.ops[1].addr != varAddr) {
-            break;
-        }
-
         // get `varCopy`
         if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_mem &&
             insn.ops[1].type == o_reg && insn.ops[1].value == reg) {
             varCopy = insn.ops[0].addr;
+            break;
+        }
+
+        // minimize FP (register value override)
+        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[0].value == reg && insn.ops[1].addr != varAddr) {
             break;
         }
 
