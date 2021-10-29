@@ -24,9 +24,9 @@
 #include "efiUtils.h"
 
 void applyAllTypesForInterfaces(std::vector<json> guids);
-bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif);
-bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset);
-bool IsPODArray(tinfo_t tif, unsigned int ptrDepth);
+bool setHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
+bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
+bool isPODArray(tinfo_t tif, unsigned int ptrDepth);
 const char *Expr2String(cexpr_t *e, qstring *out);
 
 // Description of a function pointer within a structure. Ultimately, this
@@ -86,7 +86,7 @@ class ServiceDescriptor {
 
             // Retrieve the offsets of each named function pointer
             unsigned int offset;
-            if (!OffsetOf(mType, targets[i].name, &offset)) {
+            if (!offsetOf(mType, targets[i].name, &offset)) {
                 msg("[E] Could not get offset of %s\n", targets[i].name);
                 return false;
             }
@@ -410,17 +410,17 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
             lvar_t destVar = varRef.mba->vars[varRef.idx];
 
             // Ensure that it's an array of POD types, or pointers to them
-            bool bIsPodArray = IsPODArray(destVar.tif, 1);
+            bool bisPODArray = isPODArray(destVar.tif, 1);
 
             // Debug printing
             DebugPrint(
                 "[I] %016llX Was indirect call from %s::%s, but %s arg was %s, not "
-                "reference [IsPODArray: %d]\n",
+                "reference [isPODArray: %d]\n",
                 static_cast<uint64_t>(mEa), mpService->GetName(), mpTarget->name, desc,
-                Expr2String(e, &estr), bIsPodArray);
+                Expr2String(e, &estr), bisPODArray);
 
             // If it is a POD array, good, we'll take it.
-            return bIsPodArray ? x : nullptr;
+            return bisPODArray ? x : nullptr;
         }
 
         // For everything else, we really want it to be a reference: either to a
@@ -551,7 +551,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             return 0;
 
         // Apply the type to the output referent.
-        ApplyType(outArgReferent, tifGuidPtr);
+        ApplyType(outArgReferent, tifGuidPtr, tStr);
         return 1;
     }
 
@@ -561,7 +561,7 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
     // Given an expression (either a local or global variable) and a type to
     // apply, apply the type. This is just a bit of IDA/Hex-Rays type system
     // skullduggery.
-    void ApplyType(cexpr_t *outArg, tinfo_t ptrTif) {
+    void ApplyType(cexpr_t *outArg, tinfo_t ptrTif, qstring tStr) {
         ea_t dest_ea = outArg->obj_ea;
 
         // For global variables
@@ -571,6 +571,10 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             ++mNumApplied;
             DebugPrint("%016llX: %s::%s applied type for global variable\n",
                        static_cast<uint64_t>(mEa), mpService->GetName(), mpTarget->name);
+
+            // Rename global variable
+            auto name = "g" + typeToName(static_cast<std::string>(tStr.c_str()));
+            set_name(dest_ea, name.c_str(), SN_FORCE);
         }
 
         // For local variables
@@ -578,7 +582,8 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             var_ref_t varRef = outArg->v;
             lvar_t &destVar = varRef.mba->vars[varRef.idx];
             // Set the Hex-Rays variable type
-            if (SetHexRaysVariableType(mFuncEa, destVar, ptrTif)) {
+            auto name = typeToName(static_cast<std::string>(tStr.c_str()));
+            if (setHexRaysVariableType(mFuncEa, destVar, ptrTif, name)) {
                 ++mNumApplied;
                 DebugPrint("%016llX: %s::%s applied type\n", static_cast<uint64_t>(mEa),
                            mpService->GetName(), mpTarget->name);

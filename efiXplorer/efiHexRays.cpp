@@ -23,7 +23,7 @@
 
 // Given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.
-bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
+bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     // Get the udt details
     udt_type_data_t udt;
     if (!tif.get_udt_details(&udt)) {
@@ -50,14 +50,18 @@ bool OffsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
 }
 
 // Utility function to set a Hex-Rays variable type
-bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif) {
+bool setHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
     if (!modify_user_lvar_info(funcEa, MLI_TYPE, lsi)) {
         msg("[E] %016llX: could not modify lvar type for %s\n",
             static_cast<uint64_t>(funcEa), ll.name.c_str());
-        return false;
+    }
+    lsi.name = name.c_str();
+    if (!modify_user_lvar_info(funcEa, MLI_NAME, lsi)) {
+        msg("[E] %016llX: could not modify lvar name for %s\n",
+            static_cast<uint64_t>(funcEa), ll.name.c_str());
     }
     return true;
 }
@@ -70,7 +74,7 @@ bool SetHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif) {
 // types, or perhaps pointers to POD types. The final argument allows the
 // caller to specify the maximum depth "depth" of the pointers. E.g. at
 // depth 1, "int *[10]" is acceptable. At depth 2, "int **[10]" is acceptable.
-bool IsPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
+bool isPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
     // If it's not an array, we're done
     if (!tif.is_array())
         return false;
@@ -101,7 +105,7 @@ bool IsPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
 
         // Debug printing
         et.get_type_name(&tstr);
-        msg("[I] IsPodArray[%d]: elem_type = %s, b1 = %d, b2 = %d\n", iDepth,
+        msg("[I] isPODArray[%d]: elem_type = %s, b1 = %d, b2 = %d\n", iDepth,
             tstr.c_str(), b1, b2);
 
         // If it was an integer type, return true

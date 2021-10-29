@@ -64,11 +64,11 @@ bool idaapi run(size_t) {
     uint8_t arch = getArch();
     if (arch == X64) {
         msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
-        efiAnalysis::efiAnalyzerMainX64();
+        EfiAnalysis::efiAnalyzerMainX64();
     }
     if (arch == X86) {
         msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
-        efiAnalysis::efiAnalyzerMainX86();
+        EfiAnalysis::efiAnalyzerMainX86();
     }
     return true;
 }
@@ -324,19 +324,19 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
     uint8_t arch = getArch();
     if (arch == X64) {
         msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
-        efiAnalysis::efiAnalyzerMainX64();
+        EfiAnalysis::efiAnalyzerMainX64();
     }
 
     if (arch == X86) {
         msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
-        efiAnalysis::efiAnalyzerMainX86();
+        EfiAnalysis::efiAnalyzerMainX86();
     }
 
     if (arch == UEFI) {
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
         msg("[%s] input file is UEFI firmware\n", plugin_name);
-        efiAnalysis::efiAnalyzerMainX64();
+        EfiAnalysis::efiAnalyzerMainX64();
 
         if (summaryJsonExist()) {
 

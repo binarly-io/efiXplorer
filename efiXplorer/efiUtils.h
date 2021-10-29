@@ -204,5 +204,6 @@ std::string getGuidFromValue(json guid);
 std::string getHex(uint64_t value);
 
 // Mark copies for global variables
-bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type);
 bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type);
+//  Generate name string from type
+std::string typeToName(std::string type);

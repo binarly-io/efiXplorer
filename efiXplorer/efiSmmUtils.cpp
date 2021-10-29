@@ -76,9 +76,7 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList,
                         continue;
                     }
                     set_cmt(curAddr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-                    std::string hexstr = getHex(static_cast<uint64_t>(resAddr));
-                    std::string name = "gSmst_" + hexstr;
-                    setPtrTypeAndName(resAddr, name, "_EFI_SMM_SYSTEM_TABLE2");
+                    setPtrTypeAndName(resAddr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
                     resAddrs.push_back(resAddr);
                     break;
                 }
@@ -141,9 +139,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList,
                         continue;
                     }
                     set_cmt(curAddr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-                    std::string hexstr = getHex(static_cast<uint64_t>(resAddr));
-                    std::string name = "gSmst_" + hexstr;
-                    setPtrTypeAndName(resAddr, name, "_EFI_SMM_SYSTEM_TABLE2");
+                    setPtrTypeAndName(resAddr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
                     resAddrs.push_back(resAddr);
                     break;
                 }
@@ -256,9 +252,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address) {
             }
 
             // Make name for SwSmiHandler function
-            std::string hexstr = getHex(static_cast<uint64_t>(smiHandler->start_ea));
-            std::string name = "SwSmiHandler_" + hexstr;
-            set_name(smiHandler->start_ea, name.c_str(), SN_CHECK);
+            set_name(smiHandler->start_ea, "SwSmiHandler", SN_FORCE);
 
             smiHandlers.push_back(smiHandler);
             msg("[%s] found SmiHandler: 0x%016llX\n", plugin_name,
@@ -424,12 +418,8 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                     insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
                     msg("[%s] gSmmVar address: 0x%016llX\n", plugin_name,
                         static_cast<uint64_t>(insn.ops[1].addr));
-
-                    // Set name and type
                     set_cmt(ea, "EFI_SMM_VARIABLE_PROTOCOL *gSmmVar", true);
-                    std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[1].addr));
-                    std::string name = "gSmmVar_" + hexstr;
-                    setPtrTypeAndName(insn.ops[1].addr, name,
+                    setPtrTypeAndName(insn.ops[1].addr, "gSmmVar",
                                       "EFI_SMM_VARIABLE_PROTOCOL");
                     gSmmVarAddrs.push_back(insn.ops[1].addr);
                     break;
@@ -564,12 +554,8 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
                 insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
                 msg("[%s] gSmmCpu address: 0x%016llX\n", plugin_name,
                     static_cast<uint64_t>(insn.ops[1].addr));
-
-                // Set name and type
                 set_cmt(ea, "EFI_SMM_CPU_PROTOCOL *gSmmCpu", true);
-                std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[1].addr));
-                std::string name = "gSmmCpu_" + hexstr;
-                setPtrTypeAndName(insn.ops[1].addr, name, "EFI_SMM_CPU_PROTOCOL");
+                setPtrTypeAndName(insn.ops[1].addr, "gSmmCpu", "EFI_SMM_CPU_PROTOCOL");
                 gSmmCpuAddrs.push_back(insn.ops[1].addr);
                 break;
             }
@@ -657,10 +643,7 @@ ea_t markSmiHandler(ea_t ea) {
             if (insn.ops[1].type != o_mem) {
                 continue;
             }
-            // mark `Handler` argument
-            std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[1].addr));
-            std::string name = "SmiHandler_" + hexstr;
-            set_name(insn.ops[1].addr, name.c_str(), SN_CHECK);
+            set_name(insn.ops[1].addr, "SmiHandler", SN_FORCE);
             return insn.ops[1].addr;
         }
     }

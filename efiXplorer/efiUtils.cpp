@@ -80,7 +80,7 @@ void setGuidType(ea_t ea) {
 //--------------------------------------------------------------------------
 // Set type and name
 void setTypeAndName(ea_t ea, std::string name, std::string type) {
-    set_name(ea, name.c_str(), SN_CHECK);
+    set_name(ea, name.c_str(), SN_FORCE);
     tinfo_t tinfo;
     if (tinfo.get_named_type(get_idati(), type.c_str())) {
         apply_tinfo(ea, tinfo, TINFO_DEFINITE);
@@ -314,7 +314,7 @@ bool setPtrType(ea_t addr, std::string type) {
 //--------------------------------------------------------------------------
 // Set name and apply pointer to named type
 void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
-    set_name(ea, name.c_str(), SN_CHECK);
+    set_name(ea, name.c_str(), SN_FORCE);
     setPtrType(ea, type.c_str());
 }
 
@@ -649,8 +649,8 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         }
 
         // minimize FP (register value override)
-        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-            insn.ops[0].value == reg && insn.ops[1].addr != varAddr) {
+        if (reg > -1 && insn.ops[0].type == o_reg && insn.ops[0].value == reg &&
+            insn.ops[1].addr != varAddr) {
             break;
         }
 
@@ -661,22 +661,18 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         return false;
     }
 
-    std::string hexstr = getHex(static_cast<uint64_t>(varCopy));
     std::string name;
 
     if (type == std::string("gSmst")) {
-        name = "gSmst_" + hexstr;
-        setPtrTypeAndName(varCopy, name, "_EFI_SMM_SYSTEM_TABLE2");
+        setPtrTypeAndName(varCopy, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
     }
 
     if (type == std::string("gBS")) {
-        name = "gBS_" + hexstr;
-        setPtrTypeAndName(varCopy, name, "EFI_BOOT_SERVICES");
+        setPtrTypeAndName(varCopy, "gBS", "EFI_BOOT_SERVICES");
     }
 
     if (type == std::string("gRT")) {
-        name = "gRT_" + hexstr;
-        setPtrTypeAndName(varCopy, name, "EFI_RUNTIME_SERVICES");
+        setPtrTypeAndName(varCopy, "gRT", "EFI_RUNTIME_SERVICES");
     }
 
     return true;
@@ -690,4 +686,34 @@ bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type) {
         }
     }
     return true;
+}
+
+//--------------------------------------------------------------------------
+// Generate name string from type
+std::string typeToName(std::string type) {
+    std::string result;
+    size_t counter = 0;
+    for (char const &c : type) {
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            result.push_back(c);
+            counter += 1;
+            continue;
+        }
+
+        if (c >= 'A' && c <= 'Z') {
+            if (counter > 0) {
+                result.push_back(c + 32);
+            } else
+                result.push_back(c);
+            counter += 1;
+            continue;
+        }
+
+        if (c == '_') {
+            counter = 0;
+        } else {
+            counter += 1;
+        }
+    }
+    return result;
 }

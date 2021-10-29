@@ -29,7 +29,7 @@
 #include "efiHexRays.h"
 #endif
 
-using namespace efiAnalysis;
+using namespace EfiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
 
@@ -58,7 +58,7 @@ std::vector<ea_t> peiGetVariableOverflow;
 std::vector<ea_t> getVariableOverflow;
 std::vector<ea_t> smmGetVariableOverflow;
 
-efiAnalysis::efiAnalyzer::efiAnalyzer() {
+EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
     // get guids.json path
     guidsJsonPath /= getGuidsJsonFile();
 
@@ -110,7 +110,7 @@ efiAnalysis::efiAnalyzer::efiAnalyzer() {
     import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
 }
 
-efiAnalysis::efiAnalyzer::~efiAnalyzer() {
+EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
     gStList.clear();
     gPeiSvcList.clear();
     gBsList.clear();
@@ -133,7 +133,7 @@ efiAnalysis::efiAnalyzer::~efiAnalyzer() {
     smmGetVariableOverflow.clear();
 }
 
-void efiAnalysis::efiAnalyzer::setStrings() {
+void EfiAnalysis::EfiAnalyzer::setStrings() {
 
     if (fileType == FTYPE_DXE_AND_THE_LIKE) {
         if_name = " Protocol name ";
@@ -151,7 +151,7 @@ void efiAnalysis::efiAnalyzer::setStrings() {
 
 //--------------------------------------------------------------------------
 // Get all .text and .data segments
-void efiAnalysis::efiAnalyzer::getSegments() {
+void EfiAnalysis::EfiAnalyzer::getSegments() {
     msg("[%s] ========================================================\n", plugin_name);
     for (segment_t *s = get_first_seg(); s != NULL; s = get_next_seg(s->start_ea)) {
         qstring seg_name;
@@ -191,7 +191,7 @@ void efiAnalysis::efiAnalyzer::getSegments() {
 
 //--------------------------------------------------------------------------
 // Find `gImageHandle` address for X64 modules
-bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
+bool EfiAnalysis::EfiAnalyzer::findImageHandleX64() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] ImageHandle finding\n", plugin_name);
     insn_t insn;
@@ -210,11 +210,9 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
                     plugin_name, static_cast<uint64_t>(ea),
                     static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_IMAGE_HANDLE gImageHandle", true);
-                std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                std::string name = "gImageHandle_" + hexstr;
 
                 // set type and name
-                setTypeAndName(insn.ops[0].addr, name, "EFI_IMAGE_HANDLE");
+                setTypeAndName(insn.ops[0].addr, "gImageHandle", "EFI_IMAGE_HANDLE");
                 gImageHandleList.push_back(insn.ops[0].addr);
                 break;
             }
@@ -226,7 +224,7 @@ bool efiAnalysis::efiAnalyzer::findImageHandleX64() {
 
 //--------------------------------------------------------------------------
 // Find gST address for X64 modules
-bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
+bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] SystemTable finding\n", plugin_name);
     insn_t insn;
@@ -245,11 +243,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
                     plugin_name, static_cast<uint64_t>(ea),
                     static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                std::string hexstr = getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                std::string name = "gST_" + hexstr;
-
-                // set type and name
-                setPtrTypeAndName(insn.ops[0].addr, name, "EFI_SYSTEM_TABLE");
+                setPtrTypeAndName(insn.ops[0].addr, "gST", "EFI_SYSTEM_TABLE");
                 gStList.push_back(insn.ops[0].addr);
                 return true;
             }
@@ -261,7 +255,7 @@ bool efiAnalysis::efiAnalyzer::findSystemTableX64() {
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable address for X64 module
-bool efiAnalysis::efiAnalyzer::findSmstX64() {
+bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] SMST finding\n", plugin_name);
     std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
@@ -274,7 +268,7 @@ bool efiAnalysis::efiAnalyzer::findSmstX64() {
 
 //--------------------------------------------------------------------------
 // Find gBS addresses for X86/X64 modules
-bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
+bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
 
     // init architecture-specific constants
@@ -318,10 +312,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 if (find(gBsList.begin(), gBsList.end(),
                                          insn.ops[0].addr) == gBsList.end()) {
                                     set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                                    std::string hexstr =
-                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                                    std::string name = "gBS_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                    setPtrTypeAndName(insn.ops[0].addr, "gBS",
                                                       "EFI_BOOT_SERVICES");
                                     gBsList.push_back(insn.ops[0].addr);
                                 }
@@ -342,10 +333,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string hexstr =
-                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                                    std::string name = "gST_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                    setPtrTypeAndName(insn.ops[0].addr, "gST",
                                                       "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
@@ -377,10 +365,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string hexstr = getHex(
-                                            static_cast<uint64_t>(insn.ops[0].addr));
-                                        std::string name = "gST_" + hexstr;
-                                        setPtrTypeAndName(insn.ops[0].addr, name,
+                                        setPtrTypeAndName(insn.ops[0].addr, "gST",
                                                           "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
@@ -402,7 +387,7 @@ bool efiAnalysis::efiAnalyzer::findBootServicesTables(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Find gRT addresses for X86/X64 modules
-bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
+bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
 
     // init architecture-specific constants
@@ -449,10 +434,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 if (find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
-                                    std::string hexstr =
-                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                                    std::string name = "gRT_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                    setPtrTypeAndName(insn.ops[0].addr, "gRT",
                                                       "EFI_RUNTIME_SERVICES");
                                     gRtList.push_back(insn.ops[0].addr);
                                 }
@@ -473,10 +455,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                     find(gRtList.begin(), gRtList.end(),
                                          insn.ops[0].addr) == gRtList.end()) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    std::string hexstr =
-                                        getHex(static_cast<uint64_t>(insn.ops[0].addr));
-                                    std::string name = "gST_" + hexstr;
-                                    setPtrTypeAndName(insn.ops[0].addr, name,
+                                    setPtrTypeAndName(insn.ops[0].addr, "gST",
                                                       "EFI_SYSTEM_TABLE");
                                     gStList.push_back(insn.ops[0].addr);
                                 }
@@ -508,10 +487,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                         find(gRtList.begin(), gRtList.end(),
                                              insn.ops[0].addr) == gRtList.end()) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        std::string hexstr = getHex(
-                                            static_cast<uint64_t>(insn.ops[0].addr));
-                                        std::string name = "gST_" + hexstr;
-                                        setPtrTypeAndName(insn.ops[0].addr, name,
+                                        setPtrTypeAndName(insn.ops[0].addr, "gST",
                                                           "EFI_SYSTEM_TABLE");
                                         gStList.push_back(insn.ops[0].addr);
                                     }
@@ -533,7 +509,7 @@ bool efiAnalysis::efiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get all boot services for X86/X64 modules
-void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
+void EfiAnalysis::EfiAnalyzer::getAllBootServices(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] BootServices finding (all)\n", plugin_name);
 
@@ -626,7 +602,7 @@ void efiAnalysis::efiAnalyzer::getAllBootServices(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get all runtime services for X86/X64 modules
-void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
+void EfiAnalysis::EfiAnalyzer::getAllRuntimeServices(uint8_t arch) {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] RuntimeServices finding (all)\n", plugin_name);
 
@@ -702,7 +678,7 @@ void efiAnalysis::efiAnalyzer::getAllRuntimeServices(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get all smm services for X64 modules
-void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
+void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] SmmServices finding (all)\n", plugin_name);
 
@@ -800,7 +776,7 @@ void efiAnalysis::efiAnalyzer::getAllSmmServicesX64() {
 // Currently should cover all PeiServices except EFI_PEI_COPY_MEM,
 // EFI_PEI_SET_MEM, EFI_PEI_RESET2_SYSTEM, and "Future Installed Services"
 // (EFI_PEI_FFS_FIND_BY_NAME, etc.)
-void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
+void EfiAnalysis::EfiAnalyzer::getAllPeiServicesX86() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] PeiServices finding from 0x%016llX to 0x%016llX (all)\n", plugin_name,
         static_cast<uint64_t>(startAddress), static_cast<uint64_t>(endAddress));
@@ -881,7 +857,7 @@ void efiAnalysis::efiAnalyzer::getAllPeiServicesX86() {
 
 //--------------------------------------------------------------------------
 // Get all EFI_PEI_READ_ONLY_VARIABLE2_PPI (GetVariable, NextVariableName)
-void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
+void EfiAnalysis::EfiAnalyzer::getAllVariablePPICallsX86() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] Variable PPI calls finding from 0x%016llX to 0x%016llX (all)\n",
         plugin_name, static_cast<uint64_t>(startAddress),
@@ -948,7 +924,7 @@ void efiAnalysis::efiAnalyzer::getAllVariablePPICallsX86() {
 
 //--------------------------------------------------------------------------
 // Get PPI names for X86 PEI modules
-void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
+void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] PPI finding (PEI services)\n", plugin_name);
     ea_t start = startAddress;
@@ -1054,7 +1030,7 @@ void efiAnalysis::efiAnalyzer::getPpiNamesX86() {
 
 //--------------------------------------------------------------------------
 // Get boot services by protocols for X64 modules
-void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
+void EfiAnalysis::EfiAnalyzer::getProtBootServicesX64() {
     msg("[%s] ========================================================\n", plugin_name);
     insn_t insn;
     for (auto seg : textSegments) {
@@ -1114,7 +1090,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX64() {
 
 //--------------------------------------------------------------------------
 // Get boot services by protocols for X86 modules
-void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
+void EfiAnalysis::EfiAnalyzer::getProtBootServicesX86() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
         plugin_name, static_cast<uint64_t>(startAddress),
@@ -1159,7 +1135,7 @@ void efiAnalysis::efiAnalyzer::getProtBootServicesX86() {
 
 //--------------------------------------------------------------------------
 // find other addresses of global gBS vars for X64 modules
-void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
+void EfiAnalysis::EfiAnalyzer::findOtherBsTablesX64() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] finding of other addresses of global gBS variables\n", plugin_name);
     for (auto s : allServices) {
@@ -1181,9 +1157,7 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
         }
         msg("[%s] found BootServices table at 0x%016llX, address = 0x%016llX\n",
             plugin_name, static_cast<uint64_t>(addr), static_cast<uint64_t>(addrBs));
-        std::string hexstr = getHex(static_cast<uint64_t>(addrBs));
-        std::string name = "gBS_" + hexstr;
-        setPtrTypeAndName(addrBs, name, "EFI_BOOT_SERVICES");
+        setPtrTypeAndName(addrBs, "gBS", "EFI_BOOT_SERVICES");
         if (find(gRtList.begin(), gRtList.end(), addrBs) == gRtList.end()) {
             gBsList.push_back(addrBs);
         }
@@ -1192,7 +1166,7 @@ void efiAnalysis::efiAnalyzer::findOtherBsTablesX64() {
 
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X64 modules
-void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
+void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
     msg("[%s] ========================================================\n", plugin_name);
     if (!textSegments.size()) {
         return;
@@ -1287,7 +1261,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX64() {
 
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X86 modules
-void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
+void EfiAnalysis::EfiAnalyzer::getBsProtNamesX86() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] protocols finding (boot services)\n", plugin_name);
     ea_t start = startAddress;
@@ -1391,7 +1365,7 @@ void efiAnalysis::efiAnalyzer::getBsProtNamesX86() {
 
 //--------------------------------------------------------------------------
 // Get smm services protocols names for X64 modules
-void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
+void EfiAnalysis::EfiAnalyzer::getSmmProtNamesX64() {
     msg("[%s] ========================================================\n", plugin_name);
     if (!textSegments.size()) {
         return;
@@ -1485,7 +1459,7 @@ void efiAnalysis::efiAnalyzer::getSmmProtNamesX64() {
 
 //--------------------------------------------------------------------------
 // Mark protocols
-void efiAnalysis::efiAnalyzer::markInterfaces() {
+void EfiAnalysis::EfiAnalyzer::markInterfaces() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] %s marking\n", plugin_name, if_pl);
     for (auto ifItemIt = if_tbl->begin(); ifItemIt != if_tbl->end(); ++ifItemIt) {
@@ -1501,13 +1475,13 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
                 break;
             }
         }
+
         if (marked) {
             continue;
         }
-        std::string hexstr = getHex(static_cast<uint64_t>(address));
+
         std::string svcName = static_cast<std::string>(ifItem[if_key]);
-        std::string name = svcName + "_" + hexstr;
-        set_name(address, name.c_str(), SN_CHECK);
+        set_name(address, svcName.c_str(), SN_FORCE);
         setGuidType(address);
         std::string comment = "EFI_GUID " + svcName;
         markedInterfaces.push_back(address);
@@ -1518,7 +1492,7 @@ void efiAnalysis::efiAnalyzer::markInterfaces() {
 
 //--------------------------------------------------------------------------
 // Mark GUIDs found in the .data segment
-void efiAnalysis::efiAnalyzer::markDataGuids() {
+void EfiAnalysis::EfiAnalyzer::markDataGuids() {
     msg("[%s] ========================================================\n", plugin_name);
     for (auto seg : dataSegments) {
         segment_t *s = seg;
@@ -1536,10 +1510,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
             auto it = dbProtocolsMap.find(guid);
             if (it != dbProtocolsMap.end()) {
                 std::string guidName = it->second;
-
-                std::string hexstr = getHex(static_cast<uint64_t>(ea));
-                std::string name = guidName + "_" + hexstr;
-                set_name(ea, name.c_str(), SN_CHECK);
+                set_name(ea, guidName.c_str(), SN_FORCE);
                 setGuidType(ea);
 
                 std::string comment = "EFI_GUID " + guidName;
@@ -1560,7 +1531,7 @@ void efiAnalysis::efiAnalyzer::markDataGuids() {
 
 //--------------------------------------------------------------------------
 // Mark GUIDs found in local variables for X64 modules
-void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
+void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
     msg("[%s] ========================================================\n", plugin_name);
     for (auto seg : textSegments) {
         segment_t *s = seg;
@@ -1604,9 +1575,6 @@ void efiAnalysis::efiAnalyzer::markLocalGuidsX64() {
                             gData2 == static_cast<uint16_t>(guid[1])) {
 
                             // mark local GUID
-                            std::string hexstr = getHex(static_cast<uint64_t>(ea));
-                            std::string name =
-                                dbItem.key() + "_" + static_cast<std::string>(hexstr);
                             std::string comment = "EFI_GUID " + dbItem.key();
                             msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name,
                                 static_cast<uint64_t>(ea), comment.c_str());
@@ -1674,7 +1642,7 @@ void findCalloutRec(func_t *func) {
 
 //--------------------------------------------------------------------------
 // Find SwSmiHandler function inside SMM drivers
-void efiAnalysis::efiAnalyzer::findSwSmiHandlers() {
+void EfiAnalysis::EfiAnalyzer::findSwSmiHandlers() {
     smiHandlers = findSmiHandlersSmmSwDispatch(dataSegments, stackGuids);
 }
 
@@ -1682,7 +1650,7 @@ void efiAnalysis::efiAnalyzer::findSwSmiHandlers() {
 // Find callouts inside SwSmiHandler function:
 //  * find SwSmiHandler function
 //  * find gBS->service_name and gRT->service_name inside SmiHandler function
-bool efiAnalysis::efiAnalyzer::findSmmCallout() {
+bool EfiAnalysis::EfiAnalyzer::findSmmCallout() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] Looking for SMM callout\n", plugin_name);
     if (!gBsList.size() && !gRtList.size()) {
@@ -1701,7 +1669,7 @@ bool efiAnalysis::efiAnalyzer::findSmmCallout() {
     return true;
 }
 
-bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
+bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] Looking for PPI GetVariable buffer overflow, allServices.size() = %lu\n",
         plugin_name, allServices.size());
@@ -1866,7 +1834,7 @@ bool efiAnalysis::efiAnalyzer::findPPIGetVariableStackOveflow() {
 
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double GetVariable calls
-bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServices) {
+bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServices) {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] Looking for GetVariable stack/heap overflow\n", plugin_name);
     std::vector<ea_t> getVariableServicesCalls;
@@ -1974,7 +1942,7 @@ bool efiAnalysis::efiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
 
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double SmmGetVariable calls
-bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
+bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
     msg("[%s] ========================================================\n", plugin_name);
     msg("[%s] Looking for SmmGetVariable stack/heap overflow\n", plugin_name);
     std::vector<ea_t> smmGetVariableCalls =
@@ -2057,7 +2025,7 @@ bool efiAnalysis::efiAnalyzer::findSmmGetVariableOveflow() {
 
 //--------------------------------------------------------------------------
 // Resolve EFI_SMM_CPU_PROTOCOL
-bool efiAnalysis::efiAnalyzer::efiSmmCpuProtocolResolver() {
+bool EfiAnalysis::EfiAnalyzer::efiSmmCpuProtocolResolver() {
     msg("[%s] ========================================================\n", plugin_name);
     readSaveStateCalls = resolveEfiSmmCpuProtocol(stackGuids, dataGuids, &allServices);
     return true;
@@ -2065,7 +2033,7 @@ bool efiAnalysis::efiAnalyzer::efiSmmCpuProtocolResolver() {
 
 //--------------------------------------------------------------------------
 // Dump all info to JSON file
-void efiAnalysis::efiAnalyzer::dumpInfo() {
+void EfiAnalysis::EfiAnalyzer::dumpInfo() {
     json info;
     info["gST"] = gStList;
     info["gBS"] = gBsList;
@@ -2117,7 +2085,7 @@ void efiAnalysis::efiAnalyzer::dumpInfo() {
 
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
-void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
+void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
     qstring title;
 
     // open window with all services
@@ -2185,8 +2153,8 @@ void showAllChoosers(efiAnalysis::efiAnalyzer analyzer) {
 
 //--------------------------------------------------------------------------
 // Main function for X64 modules
-bool efiAnalysis::efiAnalyzerMainX64() {
-    efiAnalysis::efiAnalyzer analyzer;
+bool EfiAnalysis::efiAnalyzerMainX64() {
+    EfiAnalysis::EfiAnalyzer analyzer;
 
     while (!auto_is_ok()) {
         auto_wait();
@@ -2266,8 +2234,8 @@ bool efiAnalysis::efiAnalyzerMainX64() {
 
 //--------------------------------------------------------------------------
 // Main function for X86 modules
-bool efiAnalysis::efiAnalyzerMainX86() {
-    efiAnalysis::efiAnalyzer analyzer;
+bool EfiAnalysis::efiAnalyzerMainX86() {
+    EfiAnalysis::EfiAnalyzer analyzer;
 
     while (!auto_is_ok()) {
         auto_wait();

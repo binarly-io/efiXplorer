@@ -24,9 +24,9 @@
 #include "efiSmmUtils.h"
 #include "efiUtils.h"
 
-namespace efiAnalysis {
+namespace EfiAnalysis {
 
-class efiAnalyzer {
+class EfiAnalyzer {
   public:
     std::vector<json> allGuids;
     std::vector<json> allProtocols;
@@ -71,8 +71,8 @@ class efiAnalyzer {
     bool findSmmCallout();
     void dumpInfo();
 
-    efiAnalyzer();
-    ~efiAnalyzer();
+    EfiAnalyzer();
+    ~EfiAnalyzer();
 
     uint8_t fileType = 0;
 
@@ -130,6 +130,6 @@ class efiAnalyzer {
 
 bool efiAnalyzerMainX64();
 bool efiAnalyzerMainX86();
-}; // namespace efiAnalysis
+}; // namespace EfiAnalysis
 
-void showAllChoosers(efiAnalysis::efiAnalyzer analyzer);
+void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer);
