@@ -458,7 +458,7 @@ std::vector<json> getDependenciesLoader() {
     std::ifstream in(logFile);
     json summary;
     in >> summary;
-    std::vector<json> allProtocols = summary["protocols"];
+    std::vector<json> allProtocols = summary["allProtocols"];
 
     // Get depJson
     std::vector<std::string> locate{"LocateProtocol", "OpenProtocol", "HandleProtocol"};

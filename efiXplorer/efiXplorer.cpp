@@ -22,6 +22,7 @@
 #include "efiXplorer.h"
 #include "efiAnalysis.h"
 #include "efiPluginArgs.h"
+#include "efiUi.h"
 
 static bool inited = false;
 static const char plugin_name[] = "efiXplorer";
@@ -55,7 +56,6 @@ plugmod_t *idaapi init(void) {
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t) {
-    msg("[%s] ========================================================\n", plugin_name);
     g_args.disable_ui = 1;
     g_args.disable_vuln_hunt = 1;
     msg("[%s] plugin run\n", plugin_name);
@@ -286,8 +286,14 @@ static plugmod_t *idaapi init() {
     if ((arch != X86 && arch != X64 && arch != UEFI) || !is_idaq()) {
         return nullptr;
     }
+
     msg(welcome_msg);
     msg("%s\n\n", COPYRIGHT);
+
+    // Register action
+    register_action(action_load_report);
+    attach_action_to_menu("File/Load file/", action_load_report.name, SETMENU_APP);
+
     inited = true;
     return new plugin_ctx_t;
 }
@@ -295,7 +301,6 @@ static plugmod_t *idaapi init() {
 //--------------------------------------------------------------------------
 static const char wanted_title[] = "efiXplorer: dependency graph";
 bool idaapi plugin_ctx_t::run(size_t arg) {
-    msg("[%s] ========================================================\n", plugin_name);
     if (arg >> 0 & 1) { // arg = 0 (00): default
                         // arg = 1 (01): disable_ui
                         // arg = 2 (10): disable_vuln_hunt

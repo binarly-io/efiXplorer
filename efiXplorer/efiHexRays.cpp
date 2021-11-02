@@ -29,7 +29,6 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     if (!tif.get_udt_details(&udt)) {
         qstring str;
         tif.get_type_name(&str);
-        msg("[E] Could not retrieve udt_type_data_t for %s\n", str.c_str());
         return false;
     }
 
@@ -40,7 +39,6 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     if (fIdx < 0) {
         qstring tstr;
         tif.get_type_name(&tstr);
-        msg("[E] Could not find UDT member %s::%s\n", tstr.c_str(), name);
         return false;
     }
 
@@ -54,10 +52,7 @@ bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string na
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
-    if (!modify_user_lvar_info(funcEa, MLI_TYPE, lsi)) {
-        msg("[E] %016llX: could not modify lvar type for %s\n",
-            static_cast<uint64_t>(funcEa), ll.name.c_str());
-    }
+    modify_user_lvar_info(funcEa, MLI_TYPE, lsi);
 
     // Set lvar name
     if (ll.is_stk_var()) { // Rename local variable on stack
@@ -100,7 +95,6 @@ bool isPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
     array_type_data_t atd;
     if (!tif.get_array_details(&atd)) {
         tif.get_type_name(&tstr);
-        msg("[E] %s: can't get array details, despite being an array\n", tstr.c_str());
         return false;
     }
 
@@ -120,8 +114,6 @@ bool isPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
 
         // Debug printing
         et.get_type_name(&tstr);
-        msg("[I] isPODArray[%d]: elem_type = %s, b1 = %d, b2 = %d\n", iDepth,
-            tstr.c_str(), b1, b2);
 
         // If it was an integer type, return true
         if (b1 || b2)

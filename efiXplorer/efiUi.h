@@ -217,6 +217,8 @@ class s_chooser_t : public chooser_t {
     };
 };
 
+extern action_desc_t action_load_report;
+
 bool vulns_show(std::vector<json> vulns, qstring title);
 bool guids_show(std::vector<json> guid, qstring title);
 bool protocols_show(std::vector<json> protocols, qstring title);

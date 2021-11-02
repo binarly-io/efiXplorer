@@ -21,6 +21,8 @@
 
 #include "efiUi.h"
 
+static const char plugin_name[] = "efiXplorer";
+
 // vulns column widths
 const int vulns_chooser_t::widths_vulns[] = {
     16, // Address
@@ -213,3 +215,56 @@ bool services_show(std::vector<json> services, qstring title) {
     ch->choose();
     return true;
 }
+
+//-------------------------------------------------------------------------
+// Action handler (load efiXplorer analysis report)
+struct action_handler_loadreport_t : public action_handler_t {
+    virtual int idaapi activate(action_activation_ctx_t *ctx) {
+        std::filesystem::path reportPath;
+        reportPath /= ask_file(false, "*.json", "Load efiXplorer analysis report");
+        msg("[%s] loading report from %s file\n", plugin_name, reportPath.c_str());
+        json reportData;
+        std::ifstream in(reportPath);
+        in >> reportData;
+
+        // Show all choosers with data from report
+        qstring title;
+
+        auto protocols = reportData["allProtocols"];
+        if (!protocols.is_null()) { // show protocols
+            title = "efiXplorer: protocols";
+            protocols_show(protocols, title);
+        }
+        auto ppis = reportData["allPPIs"];
+        if (!ppis.is_null()) { // show PPIs
+            title = "efiXplorer: PPIs";
+            protocols_show(ppis, title);
+        }
+        auto services = reportData["allServices"];
+        if (!services.is_null()) { // show services
+            title = "efiXplorer: services";
+            services_show(services, title);
+        }
+        auto guids = reportData["allGuids"];
+        if (!guids.is_null()) { // show GUIDs
+            title = "efiXplorer: GUIDs";
+            guids_show(guids, title);
+        }
+        return 0;
+    }
+
+    virtual action_state_t idaapi update(action_update_ctx_t *ctx) {
+        return AST_ENABLE_ALWAYS;
+    }
+};
+static action_handler_loadreport_t load_report_handler;
+
+//-------------------------------------------------------------------------
+// Action to load efiXplorer analysis report
+action_desc_t action_load_report =
+    ACTION_DESC_LITERAL("efiXplorer:loadReport",         // The action name
+                        "efiXplorer analysis report...", // The action description
+                        &load_report_handler,            // The action handler
+                        "",                              // The action shortcut
+                        "",                              // The action tooltip
+                        -1);                             // The action icon
