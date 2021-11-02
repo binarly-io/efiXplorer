@@ -754,7 +754,7 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
                 plugin_name, ea, typeName.c_str());
             break;
         }
-        // If the RAX value is overridden, you must exit
+        // If the RAX value is overridden
         if (insn.ops[0].reg == REG_RAX) {
             break;
         }
@@ -764,7 +764,6 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
 void opstroffForInterface(xreflist_t localXrefs, qstring typeName) {
     insn_t insn;
     for (auto xref : localXrefs) {
-        msg("%s, %016llX\n", typeName.c_str(), xref.ea);
         decode_insn(&insn, xref.ea);
         if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
             opstroffForAddress(xref.ea, typeName);

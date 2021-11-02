@@ -69,8 +69,6 @@ bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string na
         modify_user_lvar_info(funcEa, MLI_NAME, lsi);
     }
 
-    msg("[I] Applyed type and name for variable %s\n", name.c_str());
-
     // Get xrefs to local variable
     xreflist_t xrefs = xrefsToStackVar(funcEa, static_cast<qstring>(name.c_str()));
     qstring typeName;
