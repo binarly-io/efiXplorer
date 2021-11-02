@@ -379,7 +379,7 @@ void setEntryArgToPeiSvc() {
         ea_t start_ea = get_entry(ord);
         tinfo_t tif_ea;
         if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
-            msg("[%s] guess_tinfo failed, start_ea = 0x%016X, idx=%d\n", plugin_name,
+            msg("[%s] guess_tinfo failed, start_ea = 0x%016llX, idx=%d\n", plugin_name,
                 start_ea, idx);
             continue;
         }
@@ -716,4 +716,58 @@ std::string typeToName(std::string type) {
         }
     }
     return result;
+}
+
+xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName) {
+    struc_t *frame = get_frame(funcEa);
+    func_t *func = get_func(funcEa);
+    member_t member; // Get member by name
+    bool found = false;
+    for (int i = 0; i < frame->memqty; i++) {
+        member = frame->members[i];
+        qstring name;
+        get_member_name(&name, frame->members[i].id);
+        if (name == varName) {
+            found = true;
+            break;
+        }
+    }
+    xreflist_t xrefs_list; // Get xrefs
+    if (found) {
+        build_stkvar_xrefs(&xrefs_list, func, &member);
+    }
+    return xrefs_list;
+}
+
+void opstroffForAddress(ea_t ea, qstring typeName) {
+    insn_t insn;
+    for (auto i = 0; i < 16; i++) {
+        ea = next_head(ea, BADADDR);
+        decode_insn(&insn, ea);
+        // Found interface function call
+        if ((insn.itype == NN_call || insn.itype == NN_callfi ||
+             insn.itype == NN_callni) &&
+            (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
+            insn.ops[0].reg == REG_RAX) {
+            opStroff(ea, static_cast<std::string>(typeName.c_str()));
+            msg("[%s] Mark arguments at address 0x%016llx (interface type: %s)\n",
+                plugin_name, ea, typeName.c_str());
+            break;
+        }
+        // If the RAX value is overridden, you must exit
+        if (insn.ops[0].reg == REG_RAX) {
+            break;
+        }
+    }
+}
+
+void opstroffForInterface(xreflist_t localXrefs, qstring typeName) {
+    insn_t insn;
+    for (auto xref : localXrefs) {
+        msg("%s, %016llX\n", typeName.c_str(), xref.ea);
+        decode_insn(&insn, xref.ea);
+        if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
+            opstroffForAddress(xref.ea, typeName);
+        }
+    }
 }

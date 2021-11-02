@@ -24,7 +24,7 @@
 #include "efiUtils.h"
 
 void applyAllTypesForInterfaces(std::vector<json> guids);
-bool setHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
+bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
 bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool isPODArray(tinfo_t tif, unsigned int ptrDepth);
 const char *Expr2String(cexpr_t *e, qstring *out);
@@ -583,10 +583,8 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             lvar_t &destVar = varRef.mba->vars[varRef.idx];
             // Set the Hex-Rays variable type
             auto name = typeToName(static_cast<std::string>(tStr.c_str()));
-            if (setHexRaysVariableType(mFuncEa, destVar, ptrTif, name)) {
+            if (setHexRaysVariableInfo(mFuncEa, destVar, ptrTif, name)) {
                 ++mNumApplied;
-                DebugPrint("%016llX: %s::%s applied type\n", static_cast<uint64_t>(mEa),
-                           mpService->GetName(), mpTarget->name);
             }
         }
 

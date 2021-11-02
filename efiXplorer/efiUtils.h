@@ -31,6 +31,7 @@
 #include <diskio.hpp>
 #include <entry.hpp>
 #include <filesystem>
+#include <frame.hpp>
 #include <fstream>
 #include <graph.hpp>
 #include <ida.hpp>
@@ -205,5 +206,9 @@ std::string getHex(uint64_t value);
 
 // Mark copies for global variables
 bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type);
+
 //  Generate name string from type
 std::string typeToName(std::string type);
+
+xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName);
+void opstroffForInterface(xreflist_t localXrefs, qstring typeStr);

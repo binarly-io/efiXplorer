@@ -49,8 +49,8 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     return true;
 }
 
-// Utility function to set a Hex-Rays variable type
-bool setHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
+// Utility function to set a Hex-Rays variable type and name
+bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
@@ -58,11 +58,28 @@ bool setHexRaysVariableType(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string na
         msg("[E] %016llX: could not modify lvar type for %s\n",
             static_cast<uint64_t>(funcEa), ll.name.c_str());
     }
-    lsi.name = name.c_str();
-    if (!modify_user_lvar_info(funcEa, MLI_NAME, lsi)) {
-        msg("[E] %016llX: could not modify lvar name for %s\n",
-            static_cast<uint64_t>(funcEa), ll.name.c_str());
+
+    // Set lvar name
+    if (ll.is_stk_var()) { // Rename local variable on stack
+        sval_t stkoff = ll.get_stkoff();
+        struc_t *frame = get_frame(funcEa);
+        set_member_name(frame, stkoff, name.c_str());
+    } else { // Modufy user lvar info
+        lsi.name = static_cast<qstring>(name.c_str());
+        modify_user_lvar_info(funcEa, MLI_NAME, lsi);
     }
+
+    msg("[I] Applyed type and name for variable %s\n", name.c_str());
+
+    // Get xrefs to local variable
+    xreflist_t xrefs = xrefsToStackVar(funcEa, static_cast<qstring>(name.c_str()));
+    qstring typeName;
+    ptr_type_data_t pi;
+    tif.get_ptr_details(&pi);
+    pi.obj_type.get_type_name(&typeName);
+    // Handling all interface functions (to rename function arguments)
+    opstroffForInterface(xrefs, typeName);
+
     return true;
 }
 
