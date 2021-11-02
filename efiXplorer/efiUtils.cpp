@@ -380,7 +380,7 @@ void setEntryArgToPeiSvc() {
         tinfo_t tif_ea;
         if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
             msg("[%s] guess_tinfo failed, start_ea = 0x%016llX, idx=%d\n", plugin_name,
-                start_ea, idx);
+                static_cast<uint64_t>(start_ea), idx);
             continue;
         }
         func_type_data_t funcdata;
@@ -750,8 +750,8 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
             (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
             insn.ops[0].reg == REG_RAX) {
             opStroff(ea, static_cast<std::string>(typeName.c_str()));
-            msg("[%s] Mark arguments at address 0x%016llx (interface type: %s)\n",
-                plugin_name, ea, typeName.c_str());
+            msg("[%s] Mark arguments at address 0x%016llX (interface type: %s)\n",
+                plugin_name, static_cast<uint64_t>(ea), typeName.c_str());
             break;
         }
         // If the RAX value is overridden
@@ -761,12 +761,28 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
     }
 }
 
+//--------------------------------------------------------------------------
+// Mark the arguments of each function from an interface derived from
+// a local variable
 void opstroffForInterface(xreflist_t localXrefs, qstring typeName) {
     insn_t insn;
     for (auto xref : localXrefs) {
         decode_insn(&insn, xref.ea);
         if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
             opstroffForAddress(xref.ea, typeName);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------
+// Mark the arguments of each function from an interface derived from
+// a global variable
+void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName) {
+    insn_t insn;
+    for (auto ea : xrefs) {
+        decode_insn(&insn, ea);
+        if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
+            opstroffForAddress(ea, typeName);
         }
     }
 }

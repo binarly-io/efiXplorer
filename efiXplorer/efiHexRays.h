@@ -575,6 +575,15 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             // Rename global variable
             auto name = "g" + typeToName(static_cast<std::string>(tStr.c_str()));
             set_name(dest_ea, name.c_str(), SN_FORCE);
+
+            // Get xrefs to global variable
+            auto xrefs = getXrefs(dest_ea);
+            qstring typeName;
+            ptr_type_data_t pi;
+            ptrTif.get_ptr_details(&pi);
+            pi.obj_type.get_type_name(&typeName);
+            // Handling all interface functions (to rename function arguments)
+            opstroffForGlobalInterface(xrefs, typeName);
         }
 
         // For local variables

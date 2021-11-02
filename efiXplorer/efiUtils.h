@@ -210,5 +210,11 @@ bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type);
 //  Generate name string from type
 std::string typeToName(std::string type);
 
+// Get XREFs to stack variable
 xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName);
-void opstroffForInterface(xreflist_t localXrefs, qstring typeStr);
+
+// Mark the arguments of each function from an interface derived from a local variable
+void opstroffForInterface(xreflist_t localXrefs, qstring typeName);
+
+// Mark the arguments of each function from an interface derived from a global variable
+void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName);
