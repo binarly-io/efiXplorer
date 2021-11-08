@@ -171,15 +171,6 @@ void setEntryArgToPeiSvc();
 // Set type and name
 void setTypeAndName(ea_t ea, std::string name, std::string type);
 
-// Collect information for dependency browser and dependency graph
-std::vector<json> getDependenciesLoader();
-
-// Get name for each node
-std::vector<std::string> getNodes(std::vector<json> depJson);
-
-// Get edges
-std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> depJson);
-
 // Get module name by address
 qstring getModuleNameLoader(ea_t address);
 

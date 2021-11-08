@@ -984,7 +984,7 @@ void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
                 ppiItem["address"] = guidDataAddress;
                 ppiItem["xref"] = guidCodeAddress;
                 ppiItem["service"] = pei_services_table[i].name;
-                ppiItem["guid"] = guid;
+                ppiItem["guid"] = getGuidFromValue(guid);
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1206,8 +1206,16 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable64[i].service_name;
-                protocolItem["guid"] = guid;
+                protocolItem["guid"] = getGuidFromValue(guid);
                 protocolItem["ea"] = ea;
+
+                // get module name
+                qstring moduleName("Current");
+                if (getArch() ==
+                    UEFI) { // to see dependencies between modules in efiloader instance
+                    moduleName = getModuleNameLoader(ea);
+                }
+                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1311,8 +1319,16 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX86() {
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = bootServicesTable32[i].service_name;
-                protocolItem["guid"] = guid;
+                protocolItem["guid"] = getGuidFromValue(guid);
                 protocolItem["ea"] = ea;
+
+                // get module name
+                qstring moduleName("Current");
+                if (getArch() ==
+                    UEFI) { // to see dependencies between modules in efiloader instance
+                    moduleName = getModuleNameLoader(ea);
+                }
+                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -1403,8 +1419,16 @@ void EfiAnalysis::EfiAnalyzer::getSmmProtNamesX64() {
                 protocolItem["address"] = guidDataAddress;
                 protocolItem["xref"] = guidCodeAddress;
                 protocolItem["service"] = smmServicesProt64[i].service_name;
-                protocolItem["guid"] = guid;
+                protocolItem["guid"] = getGuidFromValue(guid);
                 protocolItem["ea"] = ea;
+
+                // get module name
+                qstring moduleName("Current");
+                if (getArch() ==
+                    UEFI) { // to see dependencies between modules in efiloader instance
+                    moduleName = getModuleNameLoader(ea);
+                }
+                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);

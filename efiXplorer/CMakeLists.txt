@@ -31,6 +31,8 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/libfort)
 set(efiXplorer_src
     "efiAnalysis.cpp"
     "efiAnalysis.h"
+    "efiDeps.cpp"
+    "efiDeps.h"
     "efiPluginArgs.h"
     "efiSmmUtils.cpp"
     "efiSmmUtils.h"

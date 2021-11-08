@@ -121,7 +121,7 @@ class guids_chooser_t : public chooser_t {
 
 //-------------------------------------------------------------------------
 // Protocols chooser
-class interfaces_chooser_t : public chooser_t {
+class protocols_chooser_t : public chooser_t {
   protected:
     static const int widths_protocols[];
     static const char *const header_protocols[];
@@ -132,8 +132,8 @@ class interfaces_chooser_t : public chooser_t {
     std::string name_key;
 
     // this object must be allocated using `new`
-    interfaces_chooser_t(const char *title, bool ok, std::vector<json> interfaces,
-                         std::string name_key);
+    protocols_chooser_t(const char *title, bool ok, std::vector<json> interfaces,
+                        std::string name_key);
 
     // function that is used to decide whether a new chooser should be opened or
     // we can use the existing one. The contents of the window are completely
