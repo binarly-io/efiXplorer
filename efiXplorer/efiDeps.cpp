@@ -46,16 +46,18 @@ json EfiDependencies::getDeps(std::string guid) {
 
     // DEBUG: print res
     std::string s = res.dump(2);
-    msg("res: %s\n", s.c_str());
 
     return res;
 }
 
 void EfiDependencies::getProtocolsByGuids(std::vector<json> protocols) {
     for (auto p : protocols) {
+        // check if entry for GUID already exist
         std::string guid = p["guid"];
-        auto deps = getDeps(guid);
-        protocolsByGuids[guid].push_back(deps);
+        auto deps = protocolsByGuids[guid];
+        if (deps.is_null()) {
+            protocolsByGuids[guid] = getDeps(guid);
+        }
     }
 }
 

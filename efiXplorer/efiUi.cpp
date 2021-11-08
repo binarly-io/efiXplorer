@@ -230,7 +230,8 @@ struct protocols_deps_handler_t : public action_handler_t {
         // print dependencies for current
         // protocol in output window
         std::string s = d.dump(2);
-        msg("[%s] %s\n", plugin_name, s.c_str());
+        msg("[%s] dependencies for protocol with GUID %s: %s\n", plugin_name,
+            guid.c_str(), s.c_str());
 
         return 0;
     }
