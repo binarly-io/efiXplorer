@@ -261,7 +261,12 @@ void attachActionProtocolsDeps() {
 struct action_handler_loadreport_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
         std::filesystem::path reportPath;
-        reportPath /= ask_file(false, "*.json", "Load efiXplorer analysis report");
+        char *file = ask_file(false, "*.json", "Load efiXplorer analysis report");
+        if (file == nullptr) {
+            msg("[%s] report file not specified\n", plugin_name);
+            return -1;
+        }
+        reportPath /= file;
         msg("[%s] loading report from %s file\n", plugin_name, reportPath.c_str());
         json reportData;
         std::ifstream in(reportPath);
