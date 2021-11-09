@@ -209,3 +209,9 @@ void opstroffForInterface(xreflist_t localXrefs, qstring typeName);
 
 // Mark the arguments of each function from an interface derived from a global variable
 void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName);
+
+// Find wrappers
+bool addrInVec(std::vector<ea_t> vec, ea_t addr);
+
+bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
+                  std::vector<ea_t> gRtList, ea_t ea);

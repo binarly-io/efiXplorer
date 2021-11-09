@@ -191,7 +191,7 @@ void EfiAnalysis::EfiAnalyzer::getSegments() {
 //--------------------------------------------------------------------------
 // Find `gImageHandle` address for X64 modules
 bool EfiAnalysis::EfiAnalyzer::findImageHandleX64() {
-    msg("[%s] ImageHandle finding\n", plugin_name);
+    msg("[%s] gImageHandle finding\n", plugin_name);
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
@@ -199,7 +199,7 @@ bool EfiAnalysis::EfiAnalyzer::findImageHandleX64() {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
 
-        // `ImageHandle` finding, first 8 instructions checking
+        // EFI_IMAGE_HANDLE finding, first 8 instructions checking
         for (auto i = 0; i < 8; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -223,7 +223,7 @@ bool EfiAnalysis::EfiAnalyzer::findImageHandleX64() {
 //--------------------------------------------------------------------------
 // Find gST address for X64 modules
 bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
-    msg("[%s] SystemTable finding\n", plugin_name);
+    msg("[%s] gEfiSystemTable finding\n", plugin_name);
     insn_t insn;
     for (int idx = 0; idx < get_entry_qty(); idx++) {
 
@@ -231,14 +231,11 @@ bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ea = get_entry(ord);
 
-        // `SystemTable` finding, first 16 instructions checking
+        // EFI_SYSTEM_TABLE finding, first 16 instructions checking
         for (int i = 0; i < 16; i++) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                 insn.ops[1].reg == REG_RDX && insn.ops[0].type == o_mem) {
-                msg("[%s] found SystemTable at 0x%016llX, address = 0x%016llX\n",
-                    plugin_name, static_cast<uint64_t>(ea),
-                    static_cast<uint64_t>(insn.ops[0].addr));
                 set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
                 setPtrTypeAndName(insn.ops[0].addr, "gST", "EFI_SYSTEM_TABLE");
                 gStList.push_back(insn.ops[0].addr);
@@ -253,7 +250,7 @@ bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable address for X64 module
 bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
-    msg("[%s] SMST finding\n", plugin_name);
+    msg("[%s] gSmst finding\n", plugin_name);
     std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
     std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
     gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
@@ -276,11 +273,12 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
     insn_t insn;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        msg("[%s] BootServices tables finding from 0x%016llX to 0x%016llX\n", plugin_name,
+        msg("[%s] gEfiBootServices finding from 0x%016llX to 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(s->start_ea), static_cast<uint64_t>(s->end_ea));
         ea_t ea = s->start_ea;
         uint16_t bsRegister = 0;
         uint16_t stRegister = 0;
+        ea_t varAddr = BADADDR; // current global variable address
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
@@ -298,17 +296,13 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                             insn.ops[0].type == o_mem) {
                             if (insn.ops[1].reg == bsRegister && !bsFound) {
-                                msg("[%s] found BootServices table at 0x%016llX, address "
-                                    "= 0x%016llX\n",
-                                    plugin_name, static_cast<uint64_t>(ea),
-                                    static_cast<uint64_t>(insn.ops[0].addr));
                                 baseInsnAddr = ea;
-                                if (find(gBsList.begin(), gBsList.end(),
-                                         insn.ops[0].addr) == gBsList.end()) {
+                                varAddr = insn.ops[0].addr;
+                                if (!addrInVec(gBsList, varAddr)) {
                                     set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
-                                    setPtrTypeAndName(insn.ops[0].addr, "gBS",
+                                    setPtrTypeAndName(varAddr, "gBS",
                                                       "EFI_BOOT_SERVICES");
-                                    gBsList.push_back(insn.ops[0].addr);
+                                    gBsList.push_back(varAddr);
                                 }
                                 bsFound = true;
                             }
@@ -316,20 +310,11 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
                             // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != bsRegister) {
-                                msg("[%s] found SystemTable at 0x%016llX, address = "
-                                    "0x%016llX\n",
-                                    plugin_name, static_cast<uint64_t>(ea),
-                                    static_cast<uint64_t>(insn.ops[0].addr));
-                                if (find(gStList.begin(), gStList.end(),
-                                         insn.ops[0].addr) == gStList.end() &&
-                                    find(gBsList.begin(), gBsList.end(),
-                                         insn.ops[0].addr) == gBsList.end() &&
-                                    find(gRtList.begin(), gRtList.end(),
-                                         insn.ops[0].addr) == gRtList.end()) {
+                                varAddr = insn.ops[0].addr;
+                                if (!addrInTables(gStList, gBsList, gRtList, varAddr)) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
-                                    setPtrTypeAndName(insn.ops[0].addr, "gST",
-                                                      "EFI_SYSTEM_TABLE");
-                                    gStList.push_back(insn.ops[0].addr);
+                                    setPtrTypeAndName(varAddr, "gST", "EFI_SYSTEM_TABLE");
+                                    gStList.push_back(varAddr);
                                 }
                                 stFound = true;
                             }
@@ -340,7 +325,6 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
                         }
 
                         if (bsFound && !stFound) {
-
                             // check 8 instructions above `baseInsnAddr`
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
@@ -348,20 +332,13 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
                                 if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                                     insn.ops[1].reg == stRegister &&
                                     insn.ops[0].type == o_mem) {
-                                    msg("[%s] found SystemTable at 0x%016llX, address = "
-                                        "0x%016llX\n",
-                                        plugin_name, static_cast<uint64_t>(addr),
-                                        static_cast<uint64_t>(insn.ops[0].addr));
-                                    if (find(gStList.begin(), gStList.end(),
-                                             insn.ops[0].addr) == gStList.end() &&
-                                        find(gBsList.begin(), gBsList.end(),
-                                             insn.ops[0].addr) == gBsList.end() &&
-                                        find(gRtList.begin(), gRtList.end(),
-                                             insn.ops[0].addr) == gRtList.end()) {
+                                    varAddr = insn.ops[0].addr;
+                                    if (!addrInTables(gStList, gBsList, gRtList,
+                                                      varAddr)) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        setPtrTypeAndName(insn.ops[0].addr, "gST",
+                                        setPtrTypeAndName(varAddr, "gST",
                                                           "EFI_SYSTEM_TABLE");
-                                        gStList.push_back(insn.ops[0].addr);
+                                        gStList.push_back(varAddr);
                                     }
                                     stFound = true;
                                     break;
@@ -394,12 +371,12 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
     insn_t insn;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        msg("[%s] RuntimeServices tables finding from 0x%016llX to 0x%016llX\n",
-            plugin_name, static_cast<uint64_t>(s->start_ea),
-            static_cast<uint64_t>(s->end_ea));
+        msg("[%s] gEfiRuntimeServices finding from 0x%016llX to 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(s->start_ea), static_cast<uint64_t>(s->end_ea));
         ea_t ea = s->start_ea;
         uint16_t rtRegister = 0;
         uint16_t stRegister = 0;
+        ea_t varAddr = BADADDR; // current global variable address
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
@@ -417,18 +394,13 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                             insn.ops[0].type == o_mem) {
                             if (insn.ops[1].reg == rtRegister && !rtFound) {
-                                msg("[%s] found RuntimeServices table at 0x%016llX, "
-                                    "address "
-                                    "= 0x%016llX\n",
-                                    plugin_name, static_cast<uint64_t>(ea),
-                                    static_cast<uint64_t>(insn.ops[0].addr));
                                 baseInsnAddr = ea;
-                                if (find(gRtList.begin(), gRtList.end(),
-                                         insn.ops[0].addr) == gRtList.end()) {
+                                varAddr = insn.ops[0].addr;
+                                if (!addrInVec(gRtList, varAddr)) {
                                     set_cmt(ea, "EFI_RUNTIME_SERVICES *gRT", true);
-                                    setPtrTypeAndName(insn.ops[0].addr, "gRT",
+                                    setPtrTypeAndName(varAddr, "gRT",
                                                       "EFI_RUNTIME_SERVICES");
-                                    gRtList.push_back(insn.ops[0].addr);
+                                    gRtList.push_back(varAddr);
                                 }
                                 rtFound = true;
                             }
@@ -436,16 +408,8 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                             // here you can also find `gST`
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != rtRegister) {
-                                msg("[%s] found SystemTable at 0x%016llX, address = "
-                                    "0x%016llX\n",
-                                    plugin_name, static_cast<uint64_t>(ea),
-                                    static_cast<uint64_t>(insn.ops[0].addr));
-                                if (find(gStList.begin(), gStList.end(),
-                                         insn.ops[0].addr) == gStList.end() &&
-                                    find(gBsList.begin(), gBsList.end(),
-                                         insn.ops[0].addr) == gBsList.end() &&
-                                    find(gRtList.begin(), gRtList.end(),
-                                         insn.ops[0].addr) == gRtList.end()) {
+                                varAddr = insn.ops[0].addr;
+                                if (!addrInTables(gStList, gBsList, gRtList, varAddr)) {
                                     set_cmt(ea, "EFI_SYSTEM_TABLE *gST", true);
                                     setPtrTypeAndName(insn.ops[0].addr, "gST",
                                                       "EFI_SYSTEM_TABLE");
@@ -460,7 +424,6 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                         }
 
                         if (rtFound && !stFound) {
-
                             // check 8 instructions above `baseInsnAddr`
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
@@ -468,20 +431,12 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
                                 if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
                                     insn.ops[1].reg == stRegister &&
                                     insn.ops[0].type == o_mem) {
-                                    msg("[%s] found SystemTable at 0x%016llX, address = "
-                                        "0x%016llX\n",
-                                        plugin_name, static_cast<uint64_t>(addr),
-                                        static_cast<uint64_t>(insn.ops[0].addr));
-                                    if (find(gStList.begin(), gStList.end(),
-                                             insn.ops[0].addr) == gStList.end() &&
-                                        find(gBsList.begin(), gBsList.end(),
-                                             insn.ops[0].addr) == gBsList.end() &&
-                                        find(gRtList.begin(), gRtList.end(),
-                                             insn.ops[0].addr) == gRtList.end()) {
+                                    if (!addrInTables(gStList, gBsList, gRtList,
+                                                      varAddr)) {
                                         set_cmt(addr, "EFI_SYSTEM_TABLE *gST", true);
-                                        setPtrTypeAndName(insn.ops[0].addr, "gST",
+                                        setPtrTypeAndName(varAddr, "gST",
                                                           "EFI_SYSTEM_TABLE");
-                                        gStList.push_back(insn.ops[0].addr);
+                                        gStList.push_back(varAddr);
                                     }
                                     stFound = true;
                                     break;
@@ -518,8 +473,6 @@ void EfiAnalysis::EfiAnalyzer::getAllBootServices(uint8_t arch) {
     auto found = false;
     for (auto seg : textSegments) {
         segment_t *s = seg;
-        msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (all)\n", plugin_name,
-            static_cast<uint64_t>(s->start_ea), static_cast<uint64_t>(s->end_ea));
         ea_t ea = s->start_ea;
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);

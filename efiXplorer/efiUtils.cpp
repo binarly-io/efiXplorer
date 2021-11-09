@@ -668,3 +668,12 @@ void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName) {
         }
     }
 }
+
+bool addrInVec(std::vector<ea_t> vec, ea_t addr) {
+    return find(vec.begin(), vec.end(), addr) != vec.end();
+}
+
+bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
+                  std::vector<ea_t> gRtList, ea_t ea) {
+    return (addrInVec(gStList, ea) || addrInVec(gBsList, ea) || addrInVec(gRtList, ea));
+}
