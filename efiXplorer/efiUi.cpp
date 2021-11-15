@@ -272,6 +272,11 @@ struct action_handler_loadreport_t : public action_handler_t {
         std::ifstream in(reportPath);
         in >> reportData;
 
+        // Initialize vuln types list
+        std::vector<std::string> vulnTypes{
+            "smm_callout", "pei_get_variable_buffer_overflow",
+            "get_variable_buffer_overflow", "smm_get_variable_buffer_overflow"};
+
         // Show all choosers with data from report
         qstring title;
 
@@ -295,7 +300,27 @@ struct action_handler_loadreport_t : public action_handler_t {
             title = "efiXplorer: GUIDs";
             guids_show(guids, title);
         }
-        // TODO: add vulns chooser
+        auto vulns = reportData["vulns"];
+        if (!vulns.is_null()) { // show vulns
+            std::vector<json> vulnsRes;
+            for (auto vulnType : vulnTypes) {
+                // For each vuln type add list of vulns in `vulnsRes`
+                auto vulnAddrs = vulns[vulnType];
+                if (vulnAddrs.is_null()) {
+                    continue;
+                }
+                for (auto addr : vulnAddrs) {
+                    json item;
+                    item["type"] = vulnType;
+                    item["address"] = addr;
+                    vulnsRes.push_back(item);
+                }
+            }
+            if (vulnsRes.size()) {
+                title = "efiXplorer: vulns";
+                vulns_show(vulnsRes, title);
+            }
+        }
 
         // Init public EdiDependencies members
         deps.getProtocolsChooser(protocols);

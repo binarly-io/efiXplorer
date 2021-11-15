@@ -2082,6 +2082,7 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
         smmGetVariableOverflow.size()) {
         std::vector<json> vulns;
 
+        // TODO: use map to avoid duplicate code
         for (auto addr : calloutAddrs) {
             json item;
             item["type"] = "smm_callout";
