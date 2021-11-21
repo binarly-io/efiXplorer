@@ -249,7 +249,7 @@ inline size_t efiloader::PE::make_named_qword(ea_t ea, const char *name,
 // Segments processing
 //
 
-segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, char *section_name) {
+segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, const char *section_name) {
     segment_t *seg = new segment_t;
     seg->bitness = 2;
     seg->perm = SEG_DATA;
@@ -261,7 +261,7 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, char *section_
 }
 
 segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                               char *section_name, uint32_t flags) {
+                                               const char* section_name, uint32_t flags) {
     segment_t *generic_segm = new segment_t;
     generic_segm->sel = allocate_selector(0x0);
     generic_segm->start_ea = seg_ea;
@@ -273,27 +273,28 @@ segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
     if (flags & PEST_WRITE)
         generic_segm->perm |= SEGPERM_WRITE;
 
-    if (!qstrstr(section_name, ".")) {
-        qstring tmp_section_name = qstring(section_name) + qstring(".unkn");
-        section_name = (char *)tmp_section_name.c_str();
+    qstring name(section_name);
+
+    if (name.find('.') == qstring::npos) {
+        name += qstring(".unkn");
     }
 
     if (flags & PEST_EXEC) {
         generic_segm->type = SEG_CODE;
-        add_segm_ex(generic_segm, section_name, "CODE", ADDSEG_NOAA);
+        add_segm_ex(generic_segm, name.c_str(), "CODE", ADDSEG_NOAA);
     } else {
         generic_segm->type = SEG_DATA;
-        add_segm_ex(generic_segm, section_name, "DATA", ADDSEG_NOAA);
+        add_segm_ex(generic_segm, name.c_str(), "DATA", ADDSEG_NOAA);
     }
 
-    if (!qstrcmp(section_name, ".text")) {
-        code_segm_name.insert(section_name);
-    } else if (!qstrcmp(section_name, ".data")) {
-        data_segm_name.insert(section_name);
+    if (name == ".text") {
+        code_segm_name.insert(name);
+    } else if (name == ".data") {
+        data_segm_name.insert(name);
         data_segment_sel = get_segm_by_name(data_segm_name.c_str())->sel;
     }
 
-    secs_names.push_back(qstring(section_name));
+    secs_names.push_back(name);
     return generic_segm;
 }
 
@@ -378,14 +379,16 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     op_hex(next_ea, 0);
     uint32_t section_characteristics = get_dword(next_ea);
     next_ea += 4;
+
     qstring section_name = qstring(_image_name.c_str());
     section_name += qstring("_") + qstring(segm_names[0].c_str());
+
     ea_t seg_ea = image_base + segm_entries[0];
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
     msg("[efiloader]\tprocessing: %s\n", segm_names[0].c_str());
 
     segments.push_back(make_generic_segment(
-        seg_ea, seg_ea_end, (char *)section_name.c_str(), section_characteristics));
+        seg_ea, seg_ea_end, section_name.c_str(), section_characteristics));
     segm_names.pop_back();
     segm_sizes.pop_back();
     segm_raw_sizes.pop_back();
