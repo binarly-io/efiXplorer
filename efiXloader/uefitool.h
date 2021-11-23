@@ -36,6 +36,7 @@
 #include "3rd/uefitool/common/ustring.h"
 #include "3rd/uefitool/version.h"
 
+#include "../efiXplorer/3rd/nlohmann_json/json.hpp"
 #include "3rd/uefitool/UEFIExtract/ffsdumper.h"
 #include "3rd/uefitool/UEFIExtract/uefidump.h"
 
@@ -47,6 +48,8 @@
 #else
 #include <sys/stat.h>
 #endif
+
+using namespace nlohmann;
 
 enum FILE_SECTION_TYPE {
     PE_DEPENDENCY_SECTION = 0,
@@ -66,9 +69,7 @@ class File {
     };
     void write() {
         qstring idb_path(get_path(PATH_TYPE_IDB));
-        msg("[efiloader] IDB path %s\n", idb_path.c_str());
         qstring images_path = idb_path + qstring(".efiloader");
-        msg("[efiloader] creating directory %s\n", images_path.c_str());
 #ifdef WIN32
         _mkdir(images_path.c_str());
 #else
@@ -76,7 +77,6 @@ class File {
 #endif
         if (!qname.empty()) {
             qstring image_path = images_path + qstring("/") + qstring(qname.c_str());
-            msg("[efiloader] writing images to %s\n", image_path.c_str());
             std::ofstream file;
             file.open(image_path.c_str(), std::ios::out | std::ios::binary);
             file.write(ubytes.constData(), ubytes.size());
@@ -107,11 +107,10 @@ class Uefitool {
         FfsParser ffs(&model);
         if (ffs.parse(ubuffer)) {
             loader_failure("failed to parse data via UEFITool");
-            ;
         }
         messages = ffs.getMessages();
     }
-    ~Uefitool() { ; }
+    ~Uefitool(){};
     void show_messages();
     bool messages_occurs() { return !messages.empty(); };
     void dump();
@@ -123,6 +122,11 @@ class Uefitool {
     };
     void get_unique_name(qstring &image_name);
     void get_image_guid(qstring &image_guid, UModelIndex index);
+    std::vector<std::string> parseDepexSectionBody(const UModelIndex &index,
+                                                   UString &parsed);
+    void get_deps(UModelIndex index, std::string key);
+    void dump_deps(); // dump JSON with DEPEX information for each image
+    json all_deps;    // DEPEX information for each image
     TreeModel model;
     const char *buffer;
     uint32_t buffer_size;

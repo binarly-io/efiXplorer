@@ -23,11 +23,11 @@
 void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname, int ord) {
     efiloader::PE pe(li, fname, &pe_base, &pe_sel_base, ord);
     if (pe.good() && pe.is_p32_plus()) {
-        msg("[efiloader] PE detected\n");
+        msg("[efiXloader] PE detected\n");
         pe.process();
     } else if (pe.is_p32()) {
-        msg("[efiloader] this loader is not ready for PE32\n");
+        msg("[efiXloader] this loader is not ready for PE32\n");
     } else {
-        warning("[efiloader] not PE\n");
+        warning("[efiXloader] not PE\n");
     }
 }

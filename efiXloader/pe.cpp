@@ -76,7 +76,7 @@ bool efiloader::PE::good() {
     if (is_p32_plus()) {
         _bits = 64;
     } else if (!is_p32()) {
-        loader_failure("[efiLoader] failed to guess PE bitness");
+        loader_failure("[efiXloader] failed to guess PE bitness");
     } else {
         _bits = 32;
     }
@@ -385,7 +385,7 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
     ea_t seg_ea = image_base + segm_entries[0];
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
-    msg("[efiloader]\tprocessing: %s\n", segm_names[0].c_str());
+    msg("[efiXloader]\tprocessing: %s\n", segm_names[0].c_str());
 
     segments.push_back(make_generic_segment(
         seg_ea, seg_ea_end, section_name.c_str(), section_characteristics));
@@ -398,7 +398,7 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
 void efiloader::PE::setup_ds_selector() {
     for (; !secs_names.empty(); secs_names.pop_back()) {
-        msg("[efiloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
+        msg("[efiXloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
             secs_names[secs_names.size() - 1].c_str());
         segment_t *seg = get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
         set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
@@ -489,7 +489,7 @@ void efiloader::PE::preprocess() {
     ea = ea + 0x3c;
     create_dword(ea, 4);
     if (is_loaded(ea) && get_dword(ea)) {
-        msg("[efiloader] making relative offset: %#x\n", ea);
+        msg("[efiXloader] making relative offset: %#x\n", ea);
         op_plain_offset(ea, 0, *pe_base);
     }
     set_cmt(ea, "File address of new exe header", 0);
@@ -580,7 +580,6 @@ void efiloader::PE::preprocess() {
         op_offset_ex(next_ea, 0, &ri);
     }
     set_cmt(next_ea, "Base of code", 0);
-    make_entry(get_dword(next_ea));
     next_ea += 4;
     uint64_t default_image_base = get_qword(next_ea);
     create_qword(next_ea, 8);

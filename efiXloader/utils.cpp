@@ -22,7 +22,7 @@
 
 void efiloader::Utils::show_hex(void *buffer, size_t length, const char *prefix) {
     uint8_t *buf = (uint8_t *)buffer;
-    msg("[efiLoader] %s = ", prefix);
+    msg("[efiXloader] %s = ", prefix);
     for (int i = 0; i < length; i++) {
         msg("%02x", buf[i]);
     }
@@ -96,10 +96,10 @@ std::vector<qstring> efiloader::Utils::get_images() {
     qstring images_path = idb_path + qstring(".efiloader");
     std::filesystem::path dir{images_path.c_str()};
     if (!std::filesystem::exists(dir)) {
-        msg("[efiloader] directory %s does not exist\n", dir.c_str());
+        msg("[efiXloader] directory %s does not exist\n", dir.c_str());
         return names;
     }
-    msg("[efiloader] loading images from %s directory\n", dir.c_str());
+    msg("[efiXloader] loading images from %s directory\n", dir.c_str());
     for (auto dir_entry : std::filesystem::directory_iterator{dir}) {
         names.push_back(static_cast<qstring>(dir_entry.path().c_str()));
     }

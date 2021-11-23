@@ -55,6 +55,121 @@ void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index)
     image_guid = reinterpret_cast<char *>(guid.data);
 }
 
+std::vector<std::string>
+efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &parsed) {
+    // Adopted from FfsParser::parseDepexSectionBody
+    std::vector<std::string> res;
+
+    if (!index.isValid())
+        return res;
+
+    UByteArray body = model.body(index);
+
+    // Check data to be present
+    if (body.size() < 2) { // 2 is a minimal sane value, i.e TRUE + END
+        return res;
+    }
+
+    const EFI_GUID *guid;
+    const UINT8 *current = (const UINT8 *)body.constData();
+
+    // Special cases of first opcode
+    switch (*current) {
+    case EFI_DEP_BEFORE:
+        if (body.size() != 2 * EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
+            return res;
+        }
+        guid = (const EFI_GUID *)(current + EFI_DEP_OPCODE_SIZE);
+        parsed += UString("\nBEFORE ") + guidToUString(readUnaligned(guid));
+        current += EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID);
+        if (*current != EFI_DEP_END) {
+            return res;
+        }
+        return res;
+    case EFI_DEP_AFTER:
+        if (body.size() != 2 * EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
+            return res;
+        }
+        guid = (const EFI_GUID *)(current + EFI_DEP_OPCODE_SIZE);
+        parsed += UString("\nAFTER ") + guidToUString(readUnaligned(guid));
+        current += EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID);
+        if (*current != EFI_DEP_END) {
+            return res;
+        }
+        return res;
+    case EFI_DEP_SOR:
+        if (body.size() <= 2 * EFI_DEP_OPCODE_SIZE) {
+            return res;
+        }
+        parsed += UString("\nSOR");
+        current += EFI_DEP_OPCODE_SIZE;
+        break;
+    }
+
+    // Parse the rest of depex
+    while (current - (const UINT8 *)body.constData() < body.size()) {
+        switch (*current) {
+        case EFI_DEP_BEFORE: {
+            return res;
+        }
+        case EFI_DEP_AFTER: {
+            return res;
+        }
+        case EFI_DEP_SOR: {
+            return res;
+        }
+        case EFI_DEP_PUSH:
+            // Check that the rest of depex has correct size
+            if ((UINT32)body.size() -
+                    (UINT32)(current - (const UINT8 *)body.constData()) <=
+                EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
+                parsed.clear();
+                return res;
+            }
+            guid = (const EFI_GUID *)(current + EFI_DEP_OPCODE_SIZE);
+            parsed += UString("\nPUSH ") + guidToUString(readUnaligned(guid));
+            // Add protocol GUID to result vector
+            res.push_back(
+                reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
+            current += EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID);
+            break;
+        case EFI_DEP_AND:
+            parsed += UString("\nAND");
+            current += EFI_DEP_OPCODE_SIZE;
+            break;
+        case EFI_DEP_OR:
+            parsed += UString("\nOR");
+            current += EFI_DEP_OPCODE_SIZE;
+            break;
+        case EFI_DEP_NOT:
+            parsed += UString("\nNOT");
+            current += EFI_DEP_OPCODE_SIZE;
+            break;
+        case EFI_DEP_TRUE:
+            parsed += UString("\nTRUE");
+            current += EFI_DEP_OPCODE_SIZE;
+            break;
+        case EFI_DEP_FALSE:
+            parsed += UString("\nFALSE");
+            current += EFI_DEP_OPCODE_SIZE;
+            break;
+        case EFI_DEP_END:
+            parsed += UString("\nEND");
+            current += EFI_DEP_OPCODE_SIZE;
+            // Check that END is the last opcode
+            if (current - (const UINT8 *)body.constData() < body.size()) {
+                parsed.clear();
+            }
+            break;
+        default:
+            return res;
+            break;
+        }
+    }
+
+    return res;
+}
+
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
     qstring module_name("");
@@ -80,6 +195,16 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         for (int i = 0; i < model.rowCount(index); i++) {
             dump(index.child(i, 0), i, file);
         }
+        break;
+    // Get DEPEX information
+    case EFI_SECTION_DXE_DEPEX:
+        get_deps(index, "EFI_SECTION_DXE_DEPEX");
+        break;
+    case EFI_SECTION_MM_DEPEX:
+        get_deps(index, "EFI_SECTION_MM_DEPEX");
+        break;
+    case EFI_SECTION_PEI_DEPEX:
+        get_deps(index, "EFI_SECTION_PEI_DEPEX");
         break;
     default:
         // if there is no UI section, then the image name is GUID
@@ -113,3 +238,26 @@ void efiloader::Uefitool::dump(const UModelIndex &index) {
 }
 
 void efiloader::Uefitool::dump() { return dump(model.index(0, 0)); }
+
+void efiloader::Uefitool::get_deps(UModelIndex index, std::string key) {
+    UString parsed;
+    std::vector<std::string> deps;
+    json image_deps;
+    qstring image_guid("");
+
+    get_image_guid(image_guid, index);
+    deps = parseDepexSectionBody(index, parsed);
+    if (deps.size()) {
+        msg("[efiXloader] dependency section for image with GUID %s: %s\n",
+            image_guid.c_str(), parsed.data);
+        all_deps[key][image_guid.c_str()] = deps;
+    }
+}
+
+void efiloader::Uefitool::dump_deps() {
+    std::filesystem::path deps_json;
+    deps_json /= get_path(PATH_TYPE_IDB);
+    deps_json.replace_extension(".deps.json");
+    std::ofstream out(deps_json);
+    out << std::setw(4) << all_deps << std::endl;
+}

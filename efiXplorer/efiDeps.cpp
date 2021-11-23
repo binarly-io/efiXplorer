@@ -21,8 +21,16 @@
 
 #include "efiDeps.h"
 
-EfiDependencies::EfiDependencies(){};
-EfiDependencies::~EfiDependencies() { protocolsByGuids.clear(); };
+EfiDependencies::EfiDependencies() {
+    // Read DEPEX (for protocols) from
+    // .deps.json file if this file exists
+    loadDepsFromUefiTool();
+};
+EfiDependencies::~EfiDependencies() {
+    uefitoolDeps.clear();
+    protocolsChooser.clear();
+    protocolsByGuids.clear();
+};
 
 json EfiDependencies::getDeps(std::string guid) {
     json res;
@@ -66,5 +74,15 @@ void EfiDependencies::getProtocolsChooser(std::vector<json> protocols) {
     for (auto p : protocols) {
         protocolsChooser[i] = p;
         ++i;
+    }
+}
+
+void EfiDependencies::loadDepsFromUefiTool() {
+    std::filesystem::path deps_json;
+    deps_json /= get_path(PATH_TYPE_IDB);
+    deps_json.replace_extension(".deps.json");
+    if (std::filesystem::exists(deps_json)) {
+        std::ifstream file(deps_json);
+        file >> uefitoolDeps;
     }
 }
