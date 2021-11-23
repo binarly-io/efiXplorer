@@ -49,9 +49,18 @@ void efiloader::Uefitool::get_unique_name(qstring &name) {
 }
 
 void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index) {
+    UString guid;
+    UModelIndex guid_index;
+    switch (model.subtype(model.parent(index))) {
+    case EFI_SECTION_COMPRESSION:
+        guid_index = model.parent(model.parent(index));
+        break;
+    default:
+        guid_index = model.parent(index);
+    }
     // get parent header and read GUID
-    UString guid = guidToUString(
-        readUnaligned((const EFI_GUID *)(model.header(model.parent(index)).constData())));
+    guid = guidToUString(
+        readUnaligned((const EFI_GUID *)(model.header(guid_index).constData())));
     image_guid = reinterpret_cast<char *>(guid.data);
 }
 
@@ -173,6 +182,7 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &pa
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
     qstring module_name("");
+    qstring guid("");
 
     switch (model.subtype(index)) {
     case EFI_SECTION_PE32:
@@ -185,10 +195,15 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
             file->uname = model.body(index);
             utf16_utf8(&module_name,
                        reinterpret_cast<const wchar16_t *>(file->uname.data()));
-            get_unique_name(module_name);
-            file->qname.swap(module_name);
-            file->write();
-            files.push_back(file);
+            if (module_name.size()) {
+                // save image to the images_guids
+                get_image_guid(guid, index);
+                images_guids[guid.c_str()] = module_name.c_str();
+                get_unique_name(module_name);
+                file->qname.swap(module_name);
+                file->write();
+                files.push_back(file);
+            }
         }
         break;
     case EFI_SECTION_COMPRESSION:
@@ -213,6 +228,10 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
             file->qname.swap(module_name);
             file->write();
             files.push_back(file);
+            if (module_name.size()) {
+                // save image to the images_guids
+                images_guids[module_name.c_str()] = module_name.c_str();
+            }
         }
         break;
     }
@@ -254,10 +273,15 @@ void efiloader::Uefitool::get_deps(UModelIndex index, std::string key) {
     }
 }
 
-void efiloader::Uefitool::dump_deps() {
-    std::filesystem::path deps_json;
-    deps_json /= get_path(PATH_TYPE_IDB);
-    deps_json.replace_extension(".deps.json");
-    std::ofstream out(deps_json);
-    out << std::setw(4) << all_deps << std::endl;
+void efiloader::Uefitool::dump_jsons() {
+    // Dump deps
+    std::filesystem::path out;
+    out /= get_path(PATH_TYPE_IDB);
+    out.replace_extension(".deps.json");
+    std::ofstream out_deps(out);
+    out_deps << std::setw(4) << all_deps << std::endl;
+    // Dump images
+    out.replace_extension("").replace_extension(".images.json");
+    std::ofstream out_guids(out);
+    out_guids << std::setw(4) << images_guids << std::endl;
 }

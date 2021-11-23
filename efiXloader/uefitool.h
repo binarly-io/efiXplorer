@@ -125,8 +125,9 @@ class Uefitool {
     std::vector<std::string> parseDepexSectionBody(const UModelIndex &index,
                                                    UString &parsed);
     void get_deps(UModelIndex index, std::string key);
-    void dump_deps(); // dump JSON with DEPEX information for each image
-    json all_deps;    // DEPEX information for each image
+    void dump_jsons(); // dump JSON with DEPEX and GUIDs information for each image
+    json all_deps;     // DEPEX information for each image
+    json images_guids; // matching the modules to the parent's GUIDs
     TreeModel model;
     const char *buffer;
     uint32_t buffer_size;

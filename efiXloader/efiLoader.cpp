@@ -111,7 +111,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
         uefiParser.show_messages();
     }
     uefiParser.dump();
-    uefiParser.dump_deps();
+    uefiParser.dump_jsons();
     efiloader::PeManager peManager;
     close_linput(li);
     add_til("uefi.til", ADDTIL_DEFAULT);
