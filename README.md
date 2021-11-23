@@ -1,6 +1,10 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![efiXplorer CI](https://github.com/binarly-io/efiXplorer/actions/workflows/ci-build.yml/badge.svg)](https://github.com/binarly-io/efiXplorer/actions)
 
+<p align="center">
+  <img alt="efiXlorer Logo" src="pics/efiXplorer_logo.png" width="20%">
+</p>
+
 **efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation
 
 __Supported versions of Hex-Rays products:__ everytime we focus on last versions of IDA and Decompiler because we try to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
