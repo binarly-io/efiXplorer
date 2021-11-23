@@ -196,13 +196,16 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
             utf16_utf8(&module_name,
                        reinterpret_cast<const wchar16_t *>(file->uname.data()));
             if (module_name.size()) {
+                get_unique_name(module_name);
                 // save image to the images_guids
                 get_image_guid(guid, index);
-                images_guids[guid.c_str()] = module_name.c_str();
-                get_unique_name(module_name);
-                file->qname.swap(module_name);
-                file->write();
-                files.push_back(file);
+                if (images_guids[guid.c_str()]
+                        .is_null()) { // check if GUID already exists
+                    images_guids[guid.c_str()] = module_name.c_str();
+                    file->qname.swap(module_name);
+                    file->write();
+                    files.push_back(file);
+                }
             }
         }
         break;
