@@ -1100,6 +1100,122 @@ void EfiAnalysis::EfiAnalyzer::findOtherBsTablesX64() {
     }
 }
 
+void EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
+                                           ea_t xrefAddress, ea_t callAddress) {
+    json protocol;
+    auto guid = getGuidByAddr(guidAddress);
+    protocol["address"] = guidAddress;
+    protocol["xref"] = xrefAddress;
+    protocol["service"] = serviceName;
+    protocol["guid"] = getGuidFromValue(guid);
+    protocol["ea"] = callAddress;
+
+    qstring moduleName("Current");
+    if (getArch() == UEFI) {
+        moduleName = getModuleNameLoader(callAddress);
+    }
+    protocol["module"] = static_cast<std::string>(moduleName.c_str());
+
+    // find GUID name
+    auto it = dbProtocolsMap.find(guid);
+    if (it != dbProtocolsMap.end()) {
+        std::string name = it->second;
+        protocol["prot_name"] = name;
+    } else {
+        protocol["prot_name"] = "ProprietaryProtocol";
+    }
+    if (!jsonInVec(allProtocols, protocol)) {
+        allProtocols.push_back(protocol);
+    }
+}
+
+//--------------------------------------------------------------------------
+// Extract protocols from InstallMultipleProtocolInterfaces service call
+bool EfiAnalysis::EfiAnalyzer::InstallMultipleProtocolInterfacesHandler() {
+    std::vector<ea_t> addrs = bootServices["InstallMultipleProtocolInterfaces"];
+    std::map<ea_t, ea_t> stack_params;
+    insn_t insn;
+
+    for (auto ea : addrs) {
+        ea_t address = ea;
+        bool found = false;
+        bool check_stack = true;
+        ea_t handle_arg = BADADDR;
+        stack_params.clear();
+
+        // Check current basic block
+        while (true) {
+            address = prev_head(address, startAddress);
+            decode_insn(&insn, address);
+
+            if (!check_stack && found) {
+                break; // installed only one protocol
+            }
+
+            // Exit loop if end of previous basic block found
+            if (is_basic_block_end(insn, false)) {
+                break;
+            }
+
+            // Get handle stack/data parameter
+            if (handle_arg == BADADDR && insn.itype == NN_lea &&
+                insn.ops[0].reg == REG_RCX) {
+                switch (insn.ops[1].type) {
+                case o_displ:
+                    if (insn.ops[1].reg == REG_RSP || insn.ops[1].reg == REG_RBP) {
+                        handle_arg = insn.ops[1].addr;
+                    }
+                    break;
+                case o_mem:
+                    handle_arg = insn.ops[1].addr;
+                    break;
+                }
+            }
+
+            // Exit from loop if found last argument (NULL)
+            if (insn.itype == NN_xor && insn.ops[0].reg == REG_R9 &&
+                insn.ops[1].reg == REG_R9) {
+                check_stack = false;
+            }
+
+            if (insn.itype == NN_and && insn.ops[0].type == o_displ &&
+                (insn.ops[0].reg == REG_RSP || insn.ops[0].reg == REG_RBP) &&
+                insn.ops[0].addr != handle_arg && insn.ops[1].type == o_imm &&
+                insn.ops[1].value == 0) {
+                check_stack = false;
+                break;
+            }
+
+            if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[1].type == o_mem) {
+
+                switch (insn.ops[0].reg) {
+                case REG_RDX:
+                case REG_R9:
+                    AddProtocol("InstallMultipleProtocolInterfaces", insn.ops[1].addr,
+                                address, ea);
+                    found = true;
+                    break;
+                case REG_RAX:
+                    stack_params.insert(std::make_pair(address, insn.ops[1].addr));
+                    break;
+                }
+            }
+        }
+
+        // Enumerate all stack params
+        auto index = 0;
+        for (auto const &param : stack_params) {
+            if (index++ % 2) {
+                AddProtocol("InstallMultipleProtocolInterfaces", param.second,
+                            param.first, ea);
+            }
+        }
+    }
+
+    return true;
+}
+
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X64 modules
 void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
@@ -1110,10 +1226,16 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
     ea_t start = s->start_ea;
     msg("[%s] protocols finding (boot services, start address = 0x%016llX)\n",
         plugin_name, static_cast<uint64_t>(start));
-    for (int i = 0; i < bootServicesTable64Length; i++) {
-        std::vector<ea_t> addrs = bootServices[bootServicesTable64[i].service_name];
 
-        // for each boot service
+    InstallMultipleProtocolInterfacesHandler();
+    for (int i = 0; i < bootServicesTable64Length; i++) {
+
+        if (bootServicesTable64[i].offset == InstallMultipleProtocolInterfacesOffset64) {
+            // Handle InstallMultipleProtocolInterfaces separately
+            continue;
+        }
+
+        std::vector<ea_t> addrs = bootServices[bootServicesTable64[i].service_name];
         for (auto ea : addrs) {
             ea_t address = ea;
             msg("[%s] looking for protocols in the 0x%016llX area\n", plugin_name,
@@ -1154,49 +1276,8 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
                     continue;
                 }
 
-                // get protocol item
-                json protocolItem;
-                protocolItem["address"] = guidDataAddress;
-                protocolItem["xref"] = guidCodeAddress;
-                protocolItem["service"] = bootServicesTable64[i].service_name;
-                protocolItem["guid"] = getGuidFromValue(guid);
-                protocolItem["ea"] = ea;
-
-                // get module name
-                qstring moduleName("Current");
-                if (getArch() ==
-                    UEFI) { // to see dependencies between modules in efiloader instance
-                    moduleName = getModuleNameLoader(ea);
-                }
-                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
-
-                // find GUID name
-                auto it = dbProtocolsMap.find(guid);
-                if (it != dbProtocolsMap.end()) {
-                    std::string name = it->second;
-                    protocolItem["prot_name"] = name;
-
-                    // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
-
-                // proprietary protocol
-                if (protocolItem["prot_name"].is_null()) {
-                    protocolItem["prot_name"] = "ProprietaryProtocol";
-
-                    // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
+                AddProtocol(bootServicesTable64[i].service_name, guidDataAddress,
+                            guidCodeAddress, ea);
             }
         }
     }
@@ -1267,47 +1348,8 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX86() {
                     continue;
                 }
 
-                // get protocol item
-                json protocolItem;
-                protocolItem["address"] = guidDataAddress;
-                protocolItem["xref"] = guidCodeAddress;
-                protocolItem["service"] = bootServicesTable32[i].service_name;
-                protocolItem["guid"] = getGuidFromValue(guid);
-                protocolItem["ea"] = ea;
-
-                // get module name
-                qstring moduleName("Current");
-                if (getArch() ==
-                    UEFI) { // to see dependencies between modules in efiloader instance
-                    moduleName = getModuleNameLoader(ea);
-                }
-                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
-
-                // find GUID name
-                auto it = dbProtocolsMap.find(guid);
-                if (it != dbProtocolsMap.end()) {
-                    std::string name = it->second;
-                    protocolItem["prot_name"] = name;
-
-                    // check if item already exist
-                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
-                        allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
-
-                // proprietary protocol
-                if (protocolItem["prot_name"].is_null()) {
-                    protocolItem["prot_name"] = "ProprietaryProtocol";
-
-                    // check if item already exist
-                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
-                        allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
+                AddProtocol(bootServicesTable32[i].service_name, guidDataAddress,
+                            guidCodeAddress, ea);
             }
         }
     }
@@ -1367,48 +1409,8 @@ void EfiAnalysis::EfiAnalyzer::getSmmProtNamesX64() {
                     continue;
                 }
 
-                // get protocol item
-                json protocolItem;
-                protocolItem["address"] = guidDataAddress;
-                protocolItem["xref"] = guidCodeAddress;
-                protocolItem["service"] = smmServicesProt64[i].service_name;
-                protocolItem["guid"] = getGuidFromValue(guid);
-                protocolItem["ea"] = ea;
-
-                // get module name
-                qstring moduleName("Current");
-                if (getArch() ==
-                    UEFI) { // to see dependencies between modules in efiloader instance
-                    moduleName = getModuleNameLoader(ea);
-                }
-                protocolItem["module"] = static_cast<std::string>(moduleName.c_str());
-
-                // find GUID name
-                auto it = dbProtocolsMap.find(guid);
-                if (it != dbProtocolsMap.end()) {
-                    std::string name = it->second;
-                    protocolItem["prot_name"] = name;
-
-                    // check if item already exist
-                    auto it =
-                        find(allProtocols.begin(), allProtocols.end(), protocolItem);
-                    if (it == allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
-
-                // proprietary protocol
-                if (protocolItem["prot_name"].is_null()) {
-                    protocolItem["prot_name"] = "ProprietaryProtocol";
-
-                    // check if item already exist
-                    if (find(allProtocols.begin(), allProtocols.end(), protocolItem) ==
-                        allProtocols.end()) {
-                        allProtocols.push_back(protocolItem);
-                    }
-                    continue;
-                }
+                AddProtocol(smmServicesProt64[i].service_name, guidDataAddress,
+                            guidCodeAddress, ea);
             }
         }
     }
@@ -1432,17 +1434,15 @@ void EfiAnalysis::EfiAnalyzer::markInterfaces() {
             }
         }
 
-        if (marked) {
-            continue;
+        if (!marked) {
+            std::string svcName = static_cast<std::string>(ifItem[if_key]);
+            set_name(address, svcName.c_str(), SN_FORCE);
+            setGuidType(address);
+            std::string comment = "EFI_GUID " + svcName;
+            markedInterfaces.push_back(address);
+            msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name,
+                static_cast<uint64_t>(address), comment.c_str());
         }
-
-        std::string svcName = static_cast<std::string>(ifItem[if_key]);
-        set_name(address, svcName.c_str(), SN_FORCE);
-        setGuidType(address);
-        std::string comment = "EFI_GUID " + svcName;
-        markedInterfaces.push_back(address);
-        msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name,
-            static_cast<uint64_t>(address), comment.c_str());
     }
 }
 
@@ -1521,7 +1521,8 @@ void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
                         continue;
                     }
 
-                    // found guid->data1 and guid->data2 values, try to get guid name
+                    // found guid->data1 and guid->data2 values, try to get
+                    // guid name
                     for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                          ++dbItem) {
                         auto guid = dbItem.value();
@@ -1623,7 +1624,8 @@ bool EfiAnalysis::EfiAnalyzer::findSmmCallout() {
 }
 
 bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
-    msg("[%s] Looking for PPI GetVariable buffer overflow, allServices.size() = %lu\n",
+    msg("[%s] Looking for PPI GetVariable buffer overflow, "
+        "allServices.size() = %lu\n",
         plugin_name, allServices.size());
     std::vector<ea_t> getVariableServicesCalls;
     std::string getVariableStr("VariablePPI.GetVariable");
@@ -1636,7 +1638,8 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
             getVariableServicesCalls.push_back(addr);
         }
     }
-    msg("[%s] Finished iterating over allServices, getVariableServicesCalls.size() = "
+    msg("[%s] Finished iterating over allServices, "
+        "getVariableServicesCalls.size() = "
         "%lu\n",
         plugin_name, getVariableServicesCalls.size());
     sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
@@ -1647,7 +1650,8 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
     ea_t prev_addr = getVariableServicesCalls.at(0);
     for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
         ea_t curr_addr = getVariableServicesCalls.at(i);
-        msg("[%s] VariablePPI.GetVariable_1: 0x%016llX, VariablePPI.GetVariable_2: "
+        msg("[%s] VariablePPI.GetVariable_1: 0x%016llX, "
+            "VariablePPI.GetVariable_2: "
             "0x%016llX\n",
             plugin_name, static_cast<uint64_t>(prev_addr),
             static_cast<uint64_t>(curr_addr));
@@ -1709,7 +1713,8 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            msg("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found = %d\n",
+            msg("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found = "
+                "%d\n",
                 plugin_name, static_cast<uint64_t>(curr_datasize_addr),
                 datasize_addr_found);
 
@@ -1763,7 +1768,8 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            msg("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = %d, "
+            msg("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = "
+                "%d, "
                 "(prev_datasize_addr == curr_datasize_addr) = %d\n",
                 plugin_name, static_cast<uint64_t>(prev_datasize_addr),
                 datasize_addr_found, (prev_datasize_addr == curr_datasize_addr));
@@ -1774,7 +1780,8 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
                     static_cast<uint64_t>(curr_addr));
             } else if (prev_datasize_addr == curr_datasize_addr) {
                 peiGetVariableOverflow.push_back(curr_addr);
-                msg("[%s] overflow can occur here: 0x%016llX (prev_datasize_addr == "
+                msg("[%s] overflow can occur here: 0x%016llX "
+                    "(prev_datasize_addr == "
                     "curr_datasize_addr)\n",
                     plugin_name, static_cast<uint64_t>(curr_addr));
             }
@@ -1868,7 +1875,8 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 init_ok = true;
             }
 
-            // check that the DataSize argument variable is the same for two calls
+            // check that the DataSize argument variable is the same for two
+            // calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
                 for (auto i = 0; i < 10; ++i) {
@@ -1947,7 +1955,8 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
                 init_ok = true;
             }
 
-            // check that the `DataSize` argument variable is the same for two calls
+            // check that the `DataSize` argument variable is the same for two
+            // calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
                 for (auto i = 0; i < 10; ++i) {

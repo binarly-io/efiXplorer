@@ -126,6 +126,9 @@ class EfiAnalyzer {
     char *if_pl;
     char *if_key;
     std::vector<json> *if_tbl;
+    void AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
+                     ea_t callAddress);
+    bool InstallMultipleProtocolInterfacesHandler();
 };
 
 bool efiAnalyzerMainX64();
