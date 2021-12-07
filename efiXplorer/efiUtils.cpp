@@ -290,6 +290,23 @@ std::vector<ea_t> getXrefs(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
+// Get all xrefs for given array element
+std::vector<ea_t> getXrefsToArray(ea_t addr) {
+    ea_t first_ea;
+    ea_t ea = addr;
+    while (true) {
+        auto ptr = get_qword(ea);
+        auto xrefs = getXrefs(ptr);
+        if (std::find(xrefs.begin(), xrefs.end(), ea) == xrefs.end()) {
+            break;
+        }
+        first_ea = ea;
+        ea -= 8;
+    }
+    return getXrefs(first_ea);
+}
+
+//--------------------------------------------------------------------------
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type) {
     insn_t insn;
@@ -472,6 +489,82 @@ std::string getGuidFromValue(json guid) {
              static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
              static_cast<uint8_t>(guid[10]));
     return static_cast<std::string>(guidStr);
+}
+
+std::vector<uint8_t> unpackGuid(std::string guid) {
+    std::vector<uint8_t> res;
+    std::string delimiter = "-";
+    std::string byte_str;
+    uint8_t byte;
+    size_t pos = 0;
+
+    auto index = 0;
+    while ((pos = guid.find(delimiter)) != std::string::npos) {
+        std::vector<uint8_t> tmp;
+        auto hex = guid.substr(0, pos);
+        if (hex.size() % 2) {
+            break;
+        }
+        for (auto i = 0; i < hex.size(); i += 2) {
+            byte_str = hex.substr(i, 2);
+            byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+            tmp.push_back(byte);
+        }
+        if (index != 3) {
+            res.insert(res.end(), tmp.rbegin(), tmp.rend());
+        } else {
+            res.insert(res.end(), tmp.begin(), tmp.end());
+        }
+        index += 1;
+        guid.erase(0, pos + delimiter.size());
+        tmp.clear();
+    }
+
+    for (auto i = 0; i < guid.size(); i += 2) {
+        byte_str = guid.substr(i, 2);
+        byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+        res.push_back(byte);
+    }
+
+    return res;
+}
+
+std::vector<ea_t> searchProtocol(std::string protocol) {
+    uchar bytes[17] = {0};
+    std::vector<ea_t> res;
+    auto guid_bytes = unpackGuid(protocol);
+    std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
+    ea_t start = 0;
+    while (true) {
+        ea_t addr = bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+        if (addr == BADADDR) {
+            break;
+        }
+        res.push_back(addr);
+        start = addr + 16;
+    }
+    return res;
+}
+
+bool checkInstallProtocol(ea_t ea) {
+    insn_t insn;
+    // search for `call [REG + offset]` insn
+    // offset in [0x80, 0xA8, 0x148]
+    ea_t addr = ea;
+    for (auto i = 0; i < 16; i++) {
+        addr = next_head(addr, BADADDR);
+        decode_insn(&insn, addr);
+        if ((insn.itype == NN_jmpni || insn.itype == NN_callni) &&
+            insn.ops[0].type == o_displ) {
+            auto service = insn.ops[0].addr;
+            // check for InstallProtocolInterface, InstallMultipleProtocolInterfaces,
+            // SmmInstallProtocolInterface
+            if (service == 0x80 || service == 0xa8 || service == 0x148) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 //--------------------------------------------------------------------------

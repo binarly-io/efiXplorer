@@ -59,6 +59,9 @@ std::vector<ea_t> getVariableOverflow;
 std::vector<ea_t> smmGetVariableOverflow;
 
 EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
+    // 32-bit, 64-bit or UEFI (in loader instance)
+    arch = getArch();
+
     // get guids.json path
     guidsJsonPath /= getGuidsJsonFile();
 
@@ -261,7 +264,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
 
 //--------------------------------------------------------------------------
 // Find gBS addresses for X86/X64 modules
-bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
+bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
     // init architecture-specific constants
     auto BS_OFFSET = BS_OFFSET_64BIT;
     auto REG_SP = REG_RSP;
@@ -358,7 +361,7 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Find gRT addresses for X86/X64 modules
-bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
+bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables() {
     // init architecture-specific constants
     auto RT_OFFSET = RT_OFFSET_64BIT;
     auto REG_SP = REG_RSP;
@@ -456,7 +459,7 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get all boot services for X86/X64 modules
-void EfiAnalysis::EfiAnalyzer::getAllBootServices(uint8_t arch) {
+void EfiAnalysis::EfiAnalyzer::getAllBootServices() {
     msg("[%s] BootServices finding (all)\n", plugin_name);
 
     if (!gBsList.size()) {
@@ -546,7 +549,7 @@ void EfiAnalysis::EfiAnalyzer::getAllBootServices(uint8_t arch) {
 
 //--------------------------------------------------------------------------
 // Get all runtime services for X86/X64 modules
-void EfiAnalysis::EfiAnalyzer::getAllRuntimeServices(uint8_t arch) {
+void EfiAnalysis::EfiAnalyzer::getAllRuntimeServices() {
     msg("[%s] RuntimeServices finding (all)\n", plugin_name);
 
     if (!gRtList.size()) {
@@ -2136,6 +2139,16 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     // find .text and .data segments
     analyzer.getSegments();
 
+    // analyze all
+    if (analyzer.arch == UEFI && textSegments.size() && dataSegments.size()) {
+        segment_t *start_seg = textSegments.at(0);
+        segment_t *end_seg = dataSegments.at(dataSegments.size() - 1);
+        ea_t start_ea = start_seg->start_ea;
+        ea_t end_ea = end_seg->end_ea;
+        auto_mark_range(start_ea, end_ea, AU_USED);
+        plan_and_wait(start_ea, end_ea, 1);
+    }
+
     // mark GUIDs
     analyzer.markDataGuids();
     analyzer.markLocalGuidsX64();
@@ -2148,15 +2161,15 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
         analyzer.findImageHandleX64();
         analyzer.findSystemTableX64();
-        analyzer.findBootServicesTables(X64);
-        analyzer.findRuntimeServicesTables(X64);
+        analyzer.findBootServicesTables();
+        analyzer.findRuntimeServicesTables();
         analyzer.findSmstX64();
 
         // find Boot services and Runtime services
         analyzer.getProtBootServicesX64();
         analyzer.findOtherBsTablesX64();
-        analyzer.getAllBootServices(X64);
-        analyzer.getAllRuntimeServices(X64);
+        analyzer.getAllBootServices();
+        analyzer.getAllRuntimeServices();
 
         // find SMM services
         analyzer.getAllSmmServicesX64();
@@ -2227,13 +2240,13 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
 
         // find global vars for `gST`, `gBS`, `gRT`
-        analyzer.findBootServicesTables(X86);
-        analyzer.findRuntimeServicesTables(X86);
+        analyzer.findBootServicesTables();
+        analyzer.findRuntimeServicesTables();
 
         // find boot services and runtime services
-        analyzer.getAllRuntimeServices(X86);
+        analyzer.getAllRuntimeServices();
         analyzer.getProtBootServicesX86();
-        analyzer.getAllBootServices(X86);
+        analyzer.getAllBootServices();
 
         // print and mark protocols
         analyzer.getBsProtNamesX86();

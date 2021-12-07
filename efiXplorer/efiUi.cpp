@@ -325,6 +325,7 @@ struct action_handler_loadreport_t : public action_handler_t {
         // Init public EdiDependencies members
         deps.getProtocolsChooser(protocols);
         deps.getProtocolsByGuids(protocols);
+        deps.getAdditionalInstallers();
 
         // Save all protocols information to build dependencies
         attachActionProtocolsDeps();

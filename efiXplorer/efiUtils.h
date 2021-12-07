@@ -120,6 +120,7 @@ void setGuidType(ea_t ea);
 
 // Get all data xrefs for address
 std::vector<ea_t> getXrefs(ea_t addr);
+std::vector<ea_t> getXrefsToArray(ea_t addr);
 
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type);
@@ -192,6 +193,9 @@ bool bootServiceProtCheck(ea_t callAddr);
 // Convert GUID value to string
 std::string getGuidFromValue(json guid);
 
+// Convert string GUID to vector of bytes
+std::vector<uint8_t> unpackGuid(std::string guid);
+
 // Convert 64-bit value to hex string
 std::string getHex(uint64_t value);
 
@@ -215,3 +219,8 @@ bool addrInVec(std::vector<ea_t> vec, ea_t addr);
 bool jsonInVec(std::vector<json> vec, json item);
 bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
                   std::vector<ea_t> gRtList, ea_t ea);
+
+// Search protocol GUID bytes in binary
+std::vector<ea_t> searchProtocol(std::string protocol);
+
+bool checkInstallProtocol(ea_t ea);

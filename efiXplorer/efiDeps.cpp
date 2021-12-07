@@ -52,9 +52,6 @@ json EfiDependencies::getDeps(std::string guid) {
         }
     }
 
-    // DEBUG: print res
-    std::string s = res.dump(2);
-
     return res;
 }
 
@@ -85,4 +82,73 @@ void EfiDependencies::loadDepsFromUefiTool() {
         std::ifstream file(deps_json);
         file >> uefitoolDeps;
     }
+}
+
+bool EfiDependencies::installerFound(std::string protocol) {
+    auto deps_prot = protocolsByGuids[protocol];
+    if (deps_prot.is_null()) {
+        return false;
+    }
+    auto installers = deps_prot["installed"];
+    if (installers.is_null()) {
+        return false;
+    }
+    return true;
+}
+
+void EfiDependencies::getProtocolsWithoutInstallers() {
+    // Check DXE_DEPEX and MM_DEPEX
+    std::vector<std::string> sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
+    for (auto section : sections) {
+        auto images = uefitoolDeps[section];
+        for (auto &element : images.items()) {
+            auto protocols = element.value();
+            for (auto p : protocols) {
+                std::string ps = static_cast<std::string>(p);
+                if (!installerFound(ps)) {
+                    protocolsWithoutInstallers.insert(ps);
+                }
+            }
+        }
+    }
+}
+
+void EfiDependencies::getInstallersModules() {
+    // search for this protocols in binary
+    for (auto &protocol : protocolsWithoutInstallers) {
+        auto addrs = searchProtocol(protocol);
+        bool installerFound = false;
+        for (auto addr : addrs) {
+            auto xrefs = getXrefs(addr);
+            if (!xrefs.size()) {
+                continue;
+            }
+            if (xrefs.size() == 1) {
+                func_t *func = get_func(xrefs.at(0));
+                if (func == nullptr) {
+                    xrefs = getXrefsToArray(xrefs.at(0));
+                }
+            }
+            for (auto ea : xrefs) {
+                if (checkInstallProtocol(ea)) {
+                    auto module = getModuleNameLoader(ea);
+                    additionalInstallers[protocol] =
+                        static_cast<std::string>(module.c_str());
+                    installerFound = true;
+                    break;
+                }
+            }
+            if (installerFound) {
+                break;
+            }
+        }
+    }
+}
+
+void EfiDependencies::getAdditionalInstallers() {
+    getProtocolsWithoutInstallers();
+    getInstallersModules();
+    // DEBUG
+    std::string installers = additionalInstallers.dump(2);
+    msg("Additional installers: %s\n", installers.c_str());
 }

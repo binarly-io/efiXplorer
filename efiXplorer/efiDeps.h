@@ -30,10 +30,17 @@ class EfiDependencies {
     json protocolsByGuids; // protocols sorted by GUIDs
     json protocolsChooser; // numbered json with protocols
     json uefitoolDeps;
+    json additionalInstallers;
     // Input: protocols from report
     void getProtocolsByGuids(std::vector<json> protocols);
     void getProtocolsChooser(std::vector<json> protocols);
     json getDeps(std::string protocol); // get dependencies for specific protocol
+    void getAdditionalInstallers();
+
   private:
+    std::set<std::string> protocolsWithoutInstallers;
+    void getInstallersModules();
+    void getProtocolsWithoutInstallers();
     void loadDepsFromUefiTool();
+    bool installerFound(std::string protocol);
 };
