@@ -326,6 +326,8 @@ struct action_handler_loadreport_t : public action_handler_t {
         deps.getProtocolsChooser(protocols);
         deps.getProtocolsByGuids(protocols);
         deps.getAdditionalInstallers();
+        deps.getImagesInfo();
+        deps.buildModulesSequence();
 
         // Save all protocols information to build dependencies
         attachActionProtocolsDeps();
