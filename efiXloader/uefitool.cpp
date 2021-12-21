@@ -20,6 +20,7 @@
 
 #include "uefitool.h"
 #include <codecvt>
+#include <filesystem>
 #include <vector>
 
 void efiloader::File::print() {

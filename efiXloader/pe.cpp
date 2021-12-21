@@ -249,7 +249,8 @@ inline size_t efiloader::PE::make_named_qword(ea_t ea, const char *name,
 // Segments processing
 //
 
-segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, const char *section_name) {
+segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
+                                            const char *section_name) {
     segment_t *seg = new segment_t;
     seg->bitness = 2;
     seg->perm = SEG_DATA;
@@ -261,7 +262,7 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, const char *se
 }
 
 segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                               const char* section_name, uint32_t flags) {
+                                               const char *section_name, uint32_t flags) {
     segment_t *generic_segm = new segment_t;
     generic_segm->sel = allocate_selector(0x0);
     generic_segm->start_ea = seg_ea;
@@ -387,8 +388,8 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
     msg("[efiXloader]\tprocessing: %s\n", segm_names[0].c_str());
 
-    segments.push_back(make_generic_segment(
-        seg_ea, seg_ea_end, section_name.c_str(), section_characteristics));
+    segments.push_back(make_generic_segment(seg_ea, seg_ea_end, section_name.c_str(),
+                                            section_characteristics));
     segm_names.pop_back();
     segm_sizes.pop_back();
     segm_raw_sizes.pop_back();
