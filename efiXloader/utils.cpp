@@ -89,19 +89,3 @@ void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size, size_t coun
         break;
     }
 }
-
-std::vector<qstring> efiloader::Utils::get_images() {
-    std::vector<qstring> names;
-    qstring idb_path(get_path(PATH_TYPE_IDB));
-    qstring images_path = idb_path + qstring(".efiloader");
-    std::filesystem::path dir{images_path.c_str()};
-    if (!std::filesystem::exists(dir)) {
-        msg("[efiXloader] directory %s does not exist\n", dir.c_str());
-        return names;
-    }
-    msg("[efiXloader] loading images from %s directory\n", dir.c_str());
-    for (auto dir_entry : std::filesystem::directory_iterator{dir}) {
-        names.push_back(static_cast<qstring>(dir_entry.path().c_str()));
-    }
-    return names;
-}

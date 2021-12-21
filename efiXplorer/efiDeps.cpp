@@ -133,6 +133,10 @@ void EfiDependencies::getProtocolsWithoutInstallers() {
             }
         }
     }
+    msg("Protocols withoit installers:\n");
+    for (auto &protocol : protocolsWithoutInstallers) {
+        msg("%s\n", protocol.c_str());
+    }
 }
 
 void EfiDependencies::getInstallersModules() {
@@ -242,7 +246,7 @@ json EfiDependencies::getImageInfo(std::string image) {
         for (auto &element : deps_images.items()) {
             std::string dimage_guid = element.key();
             if (imagesGuids[dimage_guid].is_null()) {
-                msg("Can not get name for image with guid: %s\n", dimage_guid.c_str());
+                // Can not get name for image
                 continue;
             }
             std::string dimage_name = imagesGuids[dimage_guid];

@@ -134,13 +134,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
             peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
         }
     } else {
-        efiloader::Utils utils;
-        auto files = utils.get_images();
-        for (auto i = 0; i < files.size(); i++) {
-            msg("[efiXloader] current file: %s\n", files[i].c_str());
-            li = open_linput(files[i].c_str(), false);
-            peManager.process(li, files[i].c_str(), i);
-        }
+        msg("[efiXloader] Can not parse input firmware\n");
     }
 }
 
