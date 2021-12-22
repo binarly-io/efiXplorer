@@ -214,6 +214,8 @@ bool services_show(std::vector<json> services, qstring title) {
     return true;
 }
 
+//-------------------------------------------------------------------------
+// Action handler for protocols dependencies
 struct protocols_deps_handler_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
         auto n = ctx->chooser_selection.at(0);
@@ -254,6 +256,36 @@ void attachActionProtocolsDeps() {
     }
     register_action(protocols_deps);
     attach_action_to_popup(widget, nullptr, protocols_deps.name);
+}
+
+//-------------------------------------------------------------------------
+// Action handler for showing the sequence of execution of modules
+struct modules_seq_handler_t : public action_handler_t {
+    virtual int idaapi activate(action_activation_ctx_t *ctx) {
+        deps.getImagesInfo();
+        deps.buildModulesSequence();
+        return 0;
+    }
+
+    virtual action_state_t idaapi update(action_update_ctx_t *ctx) {
+        return AST_ENABLE_ALWAYS;
+    }
+};
+
+static modules_seq_handler_t modules_seq_ah;
+action_desc_t modules_seq =
+    ACTION_DESC_LITERAL("efiXplorer:modulesSeq", "Show the sequence of modules execution",
+                        &modules_seq_ah, NULL, NULL, -1);
+
+void attachActionModulesSeq() {
+    // Attach action in protocols chooser
+    TWidget *widget = find_widget("efiXplorer: protocols");
+    if (widget == nullptr) {
+        msg("[%s] can not find efiXplorer: protocols chooser", plugin_name);
+        return;
+    }
+    register_action(modules_seq);
+    attach_action_to_popup(widget, nullptr, modules_seq.name);
 }
 
 //-------------------------------------------------------------------------
@@ -326,12 +358,9 @@ struct action_handler_loadreport_t : public action_handler_t {
         deps.getProtocolsChooser(protocols);
         deps.getProtocolsByGuids(protocols);
 
-        // To build sequence of modules execution
-        deps.getImagesInfo();
-        deps.buildModulesSequence();
-
         // Save all protocols information to build dependencies
         attachActionProtocolsDeps();
+        attachActionModulesSeq();
 
         return 0;
     }
