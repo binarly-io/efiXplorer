@@ -32,8 +32,8 @@ class EfiDependencies {
     json uefitoolDeps;
     json imagesGuids;
     json additionalInstallers; // getAdditionalInstallers result
-    json imagesInfo;
-    json modulesSequence; // buildModulesSequence result
+    json imagesInfo;           // getImagesInfo result
+    json modulesSequence;      // buildModulesSequence result
     std::vector<std::string> imagesFromIdb;
     std::set<std::string> untrackedProtocols;
     // Input: protocols from report
@@ -54,4 +54,5 @@ class EfiDependencies {
     bool loadImagesWithGuids();
     bool installerFound(std::string protocol);
     json getImageInfo(std::string image);
+    std::string getInstaller(std::string protocol);
 };

@@ -273,6 +273,18 @@ bool EfiDependencies::getImagesInfo() {
     return true;
 }
 
+std::string EfiDependencies::getInstaller(std::string protocol) {
+    std::string res;
+    for (auto &e : imagesInfo.items()) {
+        std::string image = e.key();
+        std::vector<std::string> installers = imagesInfo[image]["installed_protocols"];
+        if (find(installers.begin(), installers.end(), protocol) != installers.end()) {
+            return image;
+        }
+    }
+    return res;
+}
+
 bool EfiDependencies::buildModulesSequence() {
     if (!modulesSequence.is_null()) {
         return true;
@@ -325,6 +337,7 @@ bool EfiDependencies::buildModulesSequence() {
                     continue;
                 }
                 load = false;
+                break;
             }
 
             if (load) {
@@ -343,8 +356,63 @@ bool EfiDependencies::buildModulesSequence() {
             }
         }
 
-        if (!changed) {
-            break;
+        if (!changed) { // we are in a loop, we need to load a module that installs the
+                        // most popular protocol
+            std::map<std::string, size_t>
+                protocols_usage; // get the most popular protocol
+            for (auto &e : imagesInfo.items()) {
+                std::string image = e.key();
+
+                // check if the image is already loaded
+                if (modulesSeq.find(image) != modulesSeq.end()) {
+                    continue;
+                }
+
+                if (imagesInfo[image]["deps_protocols"].is_null()) {
+                    continue;
+                }
+
+                std::vector<std::string> deps_protocols =
+                    imagesInfo[image]["deps_protocols"];
+                for (auto protocol : deps_protocols) {
+                    if (installed_protocols.find(protocol) != installed_protocols.end()) {
+                        continue;
+                    }
+                    if (protocolsWithoutInstallers.find(protocol) !=
+                        protocolsWithoutInstallers.end()) {
+                        continue;
+                    }
+                    if (protocols_usage.find(protocol) == protocols_usage.end()) {
+                        protocols_usage[protocol] = 1;
+                    } else {
+                        protocols_usage[protocol] += 1;
+                    }
+                }
+            }
+            std::string mprotocol;
+            size_t mnum;
+            for (auto const &[prot, counter] : protocols_usage) {
+                if (counter > mnum) {
+                    mnum = static_cast<size_t>(counter);
+                    mprotocol = static_cast<std::string>(prot);
+                }
+            }
+            // find installer module for mprotocol
+            std::string installer_image = getInstaller(mprotocol);
+            if (!installer_image.size()) {
+                break; // something went wrong, extra mitigation for an infinite loop
+            }
+            // load installer_image
+            std::vector<std::string> current_installers =
+                imagesInfo[installer_image]["installed_protocols"];
+            for (auto protocol : current_installers) {
+                installed_protocols.insert(protocol);
+            }
+            modulesSeq.insert(installer_image);
+            json info;
+            info["image"] = installer_image;
+            info["deps"] = imagesInfo[installer_image]["deps_protocols"];
+            modulesSequence[index++] = info;
         }
     }
 

@@ -2139,9 +2139,12 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     // find .text and .data segments
     analyzer.getSegments();
 
-    // TODO: add conditional analysis
     // analyze all
-    if (analyzer.arch == UEFI && textSegments.size() && dataSegments.size()) {
+    auto res = ASKBTN_NO;
+    if (analyzer.arch == UEFI) {
+        res = ask_yn(1, "Want to further analyze all drivers with auto_mark_range?");
+    }
+    if (res == ASKBTN_YES && textSegments.size() && dataSegments.size()) {
         segment_t *start_seg = textSegments.at(0);
         segment_t *end_seg = dataSegments.at(dataSegments.size() - 1);
         ea_t start_ea = start_seg->start_ea;
