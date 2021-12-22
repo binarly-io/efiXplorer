@@ -37,9 +37,11 @@ EfiDependencies::~EfiDependencies() {
     imagesGuids.clear();
     imagesFromIdb.clear();
     uefitoolDeps.clear();
+    modulesSequence.clear();
     protocolsChooser.clear();
     protocolsByGuids.clear();
     additionalInstallers.clear();
+    protocolsWithoutInstallers.clear();
 };
 
 json EfiDependencies::getDeps(std::string guid) {
