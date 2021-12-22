@@ -169,7 +169,7 @@ void EfiDependencies::getInstallersModules() {
             }
         }
         if (!installerFound) {
-            untrackedProtocols.push_back(protocol);
+            untrackedProtocols.insert(protocol);
         }
     }
 }
@@ -180,7 +180,7 @@ void EfiDependencies::getAdditionalInstallers() {
     std::string installers = additionalInstallers.dump(2);
     msg("Additional installers: %s\n", installers.c_str());
     msg("Untracked protocols:\n");
-    for (auto protocol : untrackedProtocols) {
+    for (auto &protocol : untrackedProtocols) {
         msg("%s\n", protocol.c_str());
     }
 }
@@ -274,64 +274,64 @@ void EfiDependencies::getImagesInfo() {
 }
 
 void EfiDependencies::buildModulesSequence() {
-    std::vector<std::string> modulesSeq;
+    getProtocolsWithoutInstallers(); // hard to find installers for all protocols in
+                                     // statiс
+
+    std::set<std::string> modulesSeq;
     std::set<std::string> installed_protocols;
-    auto imagesToLoad = imagesFromIdb;
 
-    while (!imagesToLoad.empty()) {
+    while (modulesSeq.size() != imagesInfo.size()) {
         bool changed = false;
+        for (auto &e : imagesInfo.items()) {
+            std::string image = e.key(); // current module
 
-        for (auto image : imagesFromIdb) {
-            auto deps = imagesInfo[image]["deps_protocols"];
-            auto prots_module = imagesInfo[image]["installed_protocols"];
-
-            // if image has not any dependencies
-            // add image to list and save all protocols installed by this image
-            if (deps.is_null()) {
-                modulesSeq.push_back(image);
-                remove(imagesToLoad.begin(), imagesToLoad.end(), image);
-                // add installed protocols
-                for (std::string p : prots_module) {
-                    installed_protocols.insert(p);
-                }
-                bool changed = true;
+            // check if the image is already loaded
+            if (modulesSeq.find(image) != modulesSeq.end()) {
                 continue;
             }
 
-            // if image has dependencies
-            // check if it can be loaded
-            bool load = true;
-            for (std::string dep_protocol : deps) {
-                // if all protocols are present in installed protocols or untracked
-                // protocols, we can load this module
-                if (find(untrackedProtocols.begin(), untrackedProtocols.end(),
-                         dep_protocol) != untrackedProtocols.end()) {
-                    continue;
+            std::vector<std::string> installers =
+                imagesInfo[image]["installed_protocols"];
+
+            // if there are no dependencies
+            if (imagesInfo[image]["deps_protocols"].is_null()) {
+                for (auto protocol : installers) {
+                    installed_protocols.insert(protocol);
                 }
-                if (installed_protocols.find(dep_protocol) == installed_protocols.end()) {
-                    load = false;
-                    break;
-                }
+                modulesSeq.insert(image);
+                msg("Load module without dependencies %s\n", image.c_str());
+                changed = true;
+                continue;
             }
 
-            // Load image, add installed protocols
-            if (load) {
-                modulesSeq.push_back(image);
-                remove(imagesToLoad.begin(), imagesToLoad.end(), image);
-                // add installed protocols
-                for (std::string p : prots_module) {
-                    installed_protocols.insert(p);
+            std::vector<std::string> deps = imagesInfo[image]["deps_protocols"];
+
+            bool load = true;
+            int counter = 0;
+            for (auto protocol : deps) {
+                if (installed_protocols.find(protocol) != installed_protocols.end()) {
+                    continue;
                 }
-                bool changed = false;
+                if (protocolsWithoutInstallers.find(protocol) !=
+                    protocolsWithoutInstallers.end()) {
+                    counter++;
+                    continue;
+                }
+                load = false;
+            }
+
+            if (load) {
+                for (auto protocol : installers) {
+                    installed_protocols.insert(protocol);
+                }
+                modulesSeq.insert(image);
+                msg("Load module %s\n", image.c_str());
+                changed = true;
             }
         }
+
         if (!changed) {
             break;
         }
     }
-
-    for (auto module : modulesSeq) {
-        msg("%s\n", module.c_str());
-    }
-    msg("Loaded %lu/%lu modules\n", modulesSeq.size(), imagesFromIdb.size());
 }

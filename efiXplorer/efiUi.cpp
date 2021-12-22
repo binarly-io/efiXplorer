@@ -325,7 +325,8 @@ struct action_handler_loadreport_t : public action_handler_t {
         // Init public EdiDependencies members
         deps.getProtocolsChooser(protocols);
         deps.getProtocolsByGuids(protocols);
-        deps.getAdditionalInstallers();
+
+        // To build sequence of modules execution
         deps.getImagesInfo();
         deps.buildModulesSequence();
 

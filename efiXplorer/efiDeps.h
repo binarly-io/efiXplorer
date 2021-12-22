@@ -31,15 +31,16 @@ class EfiDependencies {
     json protocolsChooser; // numbered json with protocols
     json uefitoolDeps;
     json imagesGuids;
-    json additionalInstallers;
+    json additionalInstallers; // getAdditionalInstallers result
     json imagesInfo;
     std::vector<std::string> imagesFromIdb;
-    std::vector<std::string> untrackedProtocols;
+    std::set<std::string> untrackedProtocols;
     // Input: protocols from report
     void getProtocolsByGuids(std::vector<json> protocols);
     void getProtocolsChooser(std::vector<json> protocols);
     json getDeps(std::string protocol); // get dependencies for specific protocol
-    void getAdditionalInstallers();     // get installers
+    void getAdditionalInstallers(); // get installers by protocol GUIDs by searching in
+                                    // the firmware and analyzing xrefs
     void buildModulesSequence();
     void getImagesInfo();
 

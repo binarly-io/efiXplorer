@@ -2139,6 +2139,7 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     // find .text and .data segments
     analyzer.getSegments();
 
+    // TODO: add conditional analysis
     // analyze all
     if (analyzer.arch == UEFI && textSegments.size() && dataSegments.size()) {
         segment_t *start_seg = textSegments.at(0);
