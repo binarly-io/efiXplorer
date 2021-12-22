@@ -133,10 +133,6 @@ void EfiDependencies::getProtocolsWithoutInstallers() {
             }
         }
     }
-    msg("Protocols withoit installers:\n");
-    for (auto &protocol : protocolsWithoutInstallers) {
-        msg("%s\n", protocol.c_str());
-    }
 }
 
 void EfiDependencies::getInstallersModules() {
@@ -267,19 +263,29 @@ json EfiDependencies::getImageInfo(std::string image) {
     return info;
 }
 
-void EfiDependencies::getImagesInfo() {
+bool EfiDependencies::getImagesInfo() {
+    if (!imagesInfo.is_null()) {
+        return true;
+    }
     for (auto image : imagesFromIdb) {
         imagesInfo[image] = getImageInfo(image);
     }
+    return true;
 }
 
-void EfiDependencies::buildModulesSequence() {
-    getProtocolsWithoutInstallers(); // hard to find installers for all protocols in
-                                     // statiс
+bool EfiDependencies::buildModulesSequence() {
+    if (!modulesSequence.is_null()) {
+        return true;
+    }
 
     std::set<std::string> modulesSeq;
     std::set<std::string> installed_protocols;
 
+    getProtocolsWithoutInstallers(); // hard to find installers for all protocols in
+                                     // statiс
+    getImagesInfo();
+
+    size_t index = 0;
     while (modulesSeq.size() != imagesInfo.size()) {
         bool changed = false;
         for (auto &e : imagesInfo.items()) {
@@ -299,22 +305,23 @@ void EfiDependencies::buildModulesSequence() {
                     installed_protocols.insert(protocol);
                 }
                 modulesSeq.insert(image);
-                msg("Load module without dependencies %s\n", image.c_str());
+                json info;
+                info["module"] = image;
+                modulesSequence[index++] = info;
                 changed = true;
                 continue;
             }
 
             std::vector<std::string> deps = imagesInfo[image]["deps_protocols"];
-
+            std::vector<std::string> unresolved_deps;
             bool load = true;
-            int counter = 0;
             for (auto protocol : deps) {
                 if (installed_protocols.find(protocol) != installed_protocols.end()) {
                     continue;
                 }
                 if (protocolsWithoutInstallers.find(protocol) !=
                     protocolsWithoutInstallers.end()) {
-                    counter++;
+                    unresolved_deps.push_back(protocol);
                     continue;
                 }
                 load = false;
@@ -325,7 +332,13 @@ void EfiDependencies::buildModulesSequence() {
                     installed_protocols.insert(protocol);
                 }
                 modulesSeq.insert(image);
-                msg("Load module %s\n", image.c_str());
+                json info;
+                info["image"] = image;
+                info["deps"] = deps;
+                if (unresolved_deps.size()) {
+                    info["unresolved_deps"] = unresolved_deps;
+                }
+                modulesSequence[index++] = info;
                 changed = true;
             }
         }
@@ -334,4 +347,6 @@ void EfiDependencies::buildModulesSequence() {
             break;
         }
     }
+
+    return true;
 }

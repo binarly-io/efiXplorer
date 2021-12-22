@@ -259,11 +259,12 @@ void attachActionProtocolsDeps() {
 }
 
 //-------------------------------------------------------------------------
-// Action handler for showing the sequence of execution of modules
+// Action handler for showing the sequence of modules execution
 struct modules_seq_handler_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
-        deps.getImagesInfo();
         deps.buildModulesSequence();
+        std::string s = deps.modulesSequence.dump(2);
+        msg("[%s] sequence of modules execution: %s\n", plugin_name, s.c_str());
         return 0;
     }
 

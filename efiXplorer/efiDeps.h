@@ -33,6 +33,7 @@ class EfiDependencies {
     json imagesGuids;
     json additionalInstallers; // getAdditionalInstallers result
     json imagesInfo;
+    json modulesSequence; // buildModulesSequence result
     std::vector<std::string> imagesFromIdb;
     std::set<std::string> untrackedProtocols;
     // Input: protocols from report
@@ -41,8 +42,8 @@ class EfiDependencies {
     json getDeps(std::string protocol); // get dependencies for specific protocol
     void getAdditionalInstallers(); // get installers by protocol GUIDs by searching in
                                     // the firmware and analyzing xrefs
-    void buildModulesSequence();
-    void getImagesInfo();
+    bool buildModulesSequence();
+    bool getImagesInfo();
 
   private:
     void getImages();
