@@ -36,9 +36,9 @@
 #include "3rd/uefitool/common/ustring.h"
 #include "3rd/uefitool/version.h"
 
-#include "../efiXplorer/3rd/nlohmann_json/json.hpp"
 #include "3rd/uefitool/UEFIExtract/ffsdumper.h"
 #include "3rd/uefitool/UEFIExtract/uefidump.h"
+#include "json.hpp"
 
 #include "ida_core.h"
 

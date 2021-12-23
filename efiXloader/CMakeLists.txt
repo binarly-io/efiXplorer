@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
-project(efiXloader)
+project(efiXloader CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,6 +16,8 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 find_package(IdaSdk REQUIRED)
+
+include_directories(${PROJECT_SOURCE_DIR}/../efiXplorer/3rd/nlohmann_json)
 
 file(
   GLOB

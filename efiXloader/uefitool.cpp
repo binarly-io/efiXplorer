@@ -265,7 +265,6 @@ void efiloader::Uefitool::dump() { return dump(model.index(0, 0)); }
 void efiloader::Uefitool::get_deps(UModelIndex index, std::string key) {
     UString parsed;
     std::vector<std::string> deps;
-    json image_deps;
     qstring image_guid("");
 
     get_image_guid(image_guid, index);

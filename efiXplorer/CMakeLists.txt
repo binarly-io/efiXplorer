@@ -25,7 +25,6 @@ find_package(IdaSdk REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
-include_directories(${PROJECT_SOURCE_DIR}/3rd/libfort)
 
 # efiXplorer sources
 set(efiXplorer_src
