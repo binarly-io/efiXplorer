@@ -265,6 +265,7 @@ struct modules_seq_handler_t : public action_handler_t {
         g_deps.buildModulesSequence();
         std::string s = g_deps.modulesSequence.dump(2);
         msg("[%s] sequence of modules execution: %s\n", plugin_name, s.c_str());
+
         return 0;
     }
 
