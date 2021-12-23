@@ -21,9 +21,9 @@
 
 #include "efiUi.h"
 #include "efiDeps.h"
+#include "efiGlobal.h"
 
 static const char plugin_name[] = "efiXplorer";
-EfiDependencies deps;
 
 // vulns column widths
 const int vulns_chooser_t::widths_vulns[] = {
@@ -219,7 +219,7 @@ bool services_show(std::vector<json> services, qstring title) {
 struct protocols_deps_handler_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
         auto n = ctx->chooser_selection.at(0);
-        json info = deps.protocolsChooser[n];
+        json info = g_deps.protocolsChooser[n];
 
         if (info.is_null()) {
             return -1; // protocol not found
@@ -227,7 +227,7 @@ struct protocols_deps_handler_t : public action_handler_t {
 
         // get dependencies for protocol
         std::string guid = info["guid"];
-        json d = deps.protocolsByGuids[guid];
+        json d = g_deps.protocolsByGuids[guid];
 
         // print dependencies for current
         // protocol in output window
@@ -262,8 +262,8 @@ void attachActionProtocolsDeps() {
 // Action handler for showing the sequence of modules execution
 struct modules_seq_handler_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
-        deps.buildModulesSequence();
-        std::string s = deps.modulesSequence.dump(2);
+        g_deps.buildModulesSequence();
+        std::string s = g_deps.modulesSequence.dump(2);
         msg("[%s] sequence of modules execution: %s\n", plugin_name, s.c_str());
         return 0;
     }
@@ -356,8 +356,8 @@ struct action_handler_loadreport_t : public action_handler_t {
         }
 
         // Init public EdiDependencies members
-        deps.getProtocolsChooser(protocols);
-        deps.getProtocolsByGuids(protocols);
+        g_deps.getProtocolsChooser(protocols);
+        g_deps.getProtocolsByGuids(protocols);
 
         // Save all protocols information to build dependencies
         attachActionProtocolsDeps();

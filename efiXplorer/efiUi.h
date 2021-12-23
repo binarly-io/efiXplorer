@@ -224,3 +224,5 @@ bool guids_show(std::vector<json> guid, qstring title);
 bool protocols_show(std::vector<json> protocols, qstring title);
 bool ppis_show(std::vector<json> protocols, qstring title);
 bool services_show(std::vector<json> services, qstring title);
+void attachActionProtocolsDeps();
+void attachActionModulesSeq();

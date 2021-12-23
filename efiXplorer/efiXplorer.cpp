@@ -21,7 +21,7 @@
 
 #include "efiXplorer.h"
 #include "efiAnalysis.h"
-#include "efiPluginArgs.h"
+#include "efiGlobal.h"
 #include "efiUi.h"
 
 static bool inited = false;

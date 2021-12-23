@@ -20,7 +20,7 @@
  */
 
 #include "efiUtils.h"
-#include "efiPluginArgs.h"
+#include "efiGlobal.h"
 #include "tables/efi_system_tables.h"
 
 struct pei_services_entry {

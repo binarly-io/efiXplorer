@@ -20,7 +20,7 @@
  */
 
 #include "efiAnalysis.h"
-#include "efiPluginArgs.h"
+#include "efiGlobal.h"
 #include "efiUi.h"
 #include "tables/efi_pei_tables.h"
 #include "tables/efi_services.h"
@@ -2218,6 +2218,16 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
 #ifdef HEX_RAYS
     applyAllTypesForInterfaces(analyzer.allProtocols);
 #endif
+
+    if (analyzer.arch == UEFI) {
+        // Init public EdiDependencies members
+        g_deps.getProtocolsChooser(analyzer.allProtocols);
+        g_deps.getProtocolsByGuids(analyzer.allProtocols);
+
+        // Save all protocols information to build dependencies
+        attachActionProtocolsDeps();
+        attachActionModulesSeq();
+    }
 
     return true;
 }

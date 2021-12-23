@@ -288,7 +288,7 @@ std::string EfiDependencies::getInstaller(std::string protocol) {
 }
 
 bool EfiDependencies::buildModulesSequence() {
-    if (!modulesSequence.is_null()) {
+    if (modulesSequence.size()) {
         return true;
     }
 

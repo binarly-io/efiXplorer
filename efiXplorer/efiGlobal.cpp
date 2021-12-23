@@ -15,13 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiPluginArgs.h
+ * efiGlobal.cpp
  *
  */
 
-struct args {
-    int disable_ui;
-    int disable_vuln_hunt;
-};
+#include "efiGlobal.h"
 
-extern struct args g_args;
+EfiDependencies g_deps;
