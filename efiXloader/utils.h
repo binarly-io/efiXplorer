@@ -24,7 +24,6 @@
 #include "ida_core.h"
 #include <algorithm>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -38,7 +37,6 @@ class Utils {
     qoff64_t find_vol_new(linput_t *li, char *sig);
     qoff64_t find_vol_test(bytevec_t &data);
     void skip(memory_deserializer_t *ser, size_t size, size_t count);
-    std::vector<qstring> get_images();
 };
 } // namespace efiloader
 

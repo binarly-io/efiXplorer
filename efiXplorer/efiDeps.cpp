@@ -319,7 +319,6 @@ bool EfiDependencies::buildModulesSequence() {
                     installed_protocols.insert(protocol);
                 }
                 modulesSeq.insert(image);
-                msg("Load image: %s\n", image.c_str());
                 json info;
                 info["module"] = image;
                 modulesSequence[index++] = info;
@@ -348,7 +347,6 @@ bool EfiDependencies::buildModulesSequence() {
                     installed_protocols.insert(protocol);
                 }
                 modulesSeq.insert(image);
-                msg("Load image: %s\n", image.c_str());
                 json info;
                 info["image"] = image;
                 info["deps"] = deps;
@@ -413,7 +411,6 @@ bool EfiDependencies::buildModulesSequence() {
                 installed_protocols.insert(protocol);
             }
             modulesSeq.insert(installer_image);
-            msg("Load image: %s\n", installer_image.c_str());
             json info;
             info["image"] = installer_image;
             info["deps"] = imagesInfo[installer_image]["deps_protocols"];
