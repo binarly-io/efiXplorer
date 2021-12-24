@@ -392,16 +392,20 @@ bool EfiDependencies::buildModulesSequence() {
                 }
             }
             std::string mprotocol;
-            size_t mnum;
+            size_t mnum = 0;
             for (auto const &[prot, counter] : protocols_usage) {
                 if (counter > mnum) {
                     mnum = static_cast<size_t>(counter);
                     mprotocol = static_cast<std::string>(prot);
                 }
             }
+            if (!mnum) {
+                break; // the most popular protocol was not found
+            }
             // find installer module for mprotocol
             std::string installer_image = getInstaller(mprotocol);
             if (!installer_image.size()) {
+                msg("Can not find installer for protocol %s\n", mprotocol.c_str());
                 break; // something went wrong, extra mitigation for an infinite loop
             }
             // load installer_image
