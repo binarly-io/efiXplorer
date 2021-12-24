@@ -22,7 +22,7 @@ jobs:
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk76
+          cmake .. -T ClangCL -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk76
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -100,7 +100,7 @@ jobs:
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -T ClangCL -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
