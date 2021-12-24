@@ -52,8 +52,8 @@ jobs:
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
-          name: efiXloader.so
-          path: efiXloader/build/efiXloader.so
+          name: efiXloader64.so
+          path: efiXloader/build/efiXloader64.so
   build_osx_loader:
     runs-on: macos-latest
     steps:
