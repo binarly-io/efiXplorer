@@ -7886,8 +7886,11 @@ scan_number_done:
         }
         else if (number_type == token_type::value_integer)
         {
-            const auto x = std::strtoll(token_buffer.data(), &endptr, 10);
-
+#ifdef WIN32
+            const auto x = strtoull(token_buffer.data(), &endptr, 10);
+#else
+            const auto x = std::strtoull(token_buffer.data(), &endptr, 10);
+#endif
             // we checked the number format before
             JSON_ASSERT(endptr == token_buffer.data() + token_buffer.size());
 
