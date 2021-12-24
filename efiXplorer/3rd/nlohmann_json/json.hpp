@@ -7137,7 +7137,7 @@ scan_number_done:
         }
         else if (number_type == token_type::value_integer)
         {
-#ifdef WIN32
+#if defined(_MSC_VER)
             const auto x = strtoll(token_buffer.data(), &endptr, 10);
 #else
             const auto x = std::strtoll(token_buffer.data(), &endptr, 10);
