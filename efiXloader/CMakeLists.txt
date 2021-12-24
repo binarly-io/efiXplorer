@@ -17,6 +17,8 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 find_package(IdaSdk REQUIRED)
 
+include_directories(${PROJECT_SOURCE_DIR}/../efiXplorer/3rd/nlohmann_json)
+
 file(
   GLOB
   uefitool_src

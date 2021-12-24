@@ -47,7 +47,7 @@ class PE {
     PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base, ushort *sel_base,
        int ord) {
         _image_name = fname.substr(fname.find_last_of("/\\") + 1);
-        msg("[efiloader] image name is %s\n", _image_name.c_str());
+        msg("[efiXloader] image name is %s\n", _image_name.c_str());
         pe_base = base;
         pe_sel_base = sel_base;
         li = i_li;
@@ -165,9 +165,9 @@ class PE {
     qvector<qstring> segm_names;
     qvector<qstring> secs_names;
     ea_t process_section_entry(ea_t ea);
-    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end, char *section_name,
+    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end, const char *section_name,
                                     uint32_t flags);
-    segment_t *make_head_segment(ea_t start, ea_t end, char *name);
+    segment_t *make_head_segment(ea_t start, ea_t end, const char *name);
     void setup_ds_selector();
 };
 } // namespace efiloader

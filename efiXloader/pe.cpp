@@ -76,7 +76,7 @@ bool efiloader::PE::good() {
     if (is_p32_plus()) {
         _bits = 64;
     } else if (!is_p32()) {
-        loader_failure("[efiLoader] failed to guess PE bitness");
+        loader_failure("[efiXloader] failed to guess PE bitness");
     } else {
         _bits = 32;
     }
@@ -249,7 +249,8 @@ inline size_t efiloader::PE::make_named_qword(ea_t ea, const char *name,
 // Segments processing
 //
 
-segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, char *section_name) {
+segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
+                                            const char *section_name) {
     segment_t *seg = new segment_t;
     seg->bitness = 2;
     seg->perm = SEG_DATA;
@@ -261,7 +262,7 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end, char *section_
 }
 
 segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                               char *section_name, uint32_t flags) {
+                                               const char *section_name, uint32_t flags) {
     segment_t *generic_segm = new segment_t;
     generic_segm->sel = allocate_selector(0x0);
     generic_segm->start_ea = seg_ea;
@@ -273,27 +274,28 @@ segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
     if (flags & PEST_WRITE)
         generic_segm->perm |= SEGPERM_WRITE;
 
-    if (!qstrstr(section_name, ".")) {
-        qstring tmp_section_name = qstring(section_name) + qstring(".unkn");
-        section_name = (char *)tmp_section_name.c_str();
+    qstring name(section_name);
+
+    if (name.find('.') == qstring::npos) {
+        name += qstring(".unkn");
     }
 
     if (flags & PEST_EXEC) {
         generic_segm->type = SEG_CODE;
-        add_segm_ex(generic_segm, section_name, "CODE", ADDSEG_NOAA);
+        add_segm_ex(generic_segm, name.c_str(), "CODE", ADDSEG_NOAA);
     } else {
         generic_segm->type = SEG_DATA;
-        add_segm_ex(generic_segm, section_name, "DATA", ADDSEG_NOAA);
+        add_segm_ex(generic_segm, name.c_str(), "DATA", ADDSEG_NOAA);
     }
 
-    if (!qstrcmp(section_name, ".text")) {
-        code_segm_name.insert(section_name);
-    } else if (!qstrcmp(section_name, ".data")) {
-        data_segm_name.insert(section_name);
+    if (name == ".text") {
+        code_segm_name.insert(name);
+    } else if (name == ".data") {
+        data_segm_name.insert(name);
         data_segment_sel = get_segm_by_name(data_segm_name.c_str())->sel;
     }
 
-    secs_names.push_back(qstring(section_name));
+    secs_names.push_back(name);
     return generic_segm;
 }
 
@@ -378,14 +380,16 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
     op_hex(next_ea, 0);
     uint32_t section_characteristics = get_dword(next_ea);
     next_ea += 4;
+
     qstring section_name = qstring(_image_name.c_str());
     section_name += qstring("_") + qstring(segm_names[0].c_str());
+
     ea_t seg_ea = image_base + segm_entries[0];
     ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
-    msg("[efiloader]\tprocessing: %s\n", segm_names[0].c_str());
+    msg("[efiXloader]\tprocessing: %s\n", segm_names[0].c_str());
 
-    segments.push_back(make_generic_segment(
-        seg_ea, seg_ea_end, (char *)section_name.c_str(), section_characteristics));
+    segments.push_back(make_generic_segment(seg_ea, seg_ea_end, section_name.c_str(),
+                                            section_characteristics));
     segm_names.pop_back();
     segm_sizes.pop_back();
     segm_raw_sizes.pop_back();
@@ -395,7 +399,7 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
 void efiloader::PE::setup_ds_selector() {
     for (; !secs_names.empty(); secs_names.pop_back()) {
-        msg("[efiloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
+        msg("[efiXloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
             secs_names[secs_names.size() - 1].c_str());
         segment_t *seg = get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
         set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
@@ -486,7 +490,7 @@ void efiloader::PE::preprocess() {
     ea = ea + 0x3c;
     create_dword(ea, 4);
     if (is_loaded(ea) && get_dword(ea)) {
-        msg("[efiloader] making relative offset: %#x\n", ea);
+        msg("[efiXloader] making relative offset: %#x\n", ea);
         op_plain_offset(ea, 0, *pe_base);
     }
     set_cmt(ea, "File address of new exe header", 0);
@@ -577,7 +581,6 @@ void efiloader::PE::preprocess() {
         op_offset_ex(next_ea, 0, &ri);
     }
     set_cmt(next_ea, "Base of code", 0);
-    make_entry(get_dword(next_ea));
     next_ea += 4;
     uint64_t default_image_base = get_qword(next_ea);
     create_qword(next_ea, 8);

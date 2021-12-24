@@ -33,21 +33,22 @@ class EfiAnalyzer {
     std::vector<json> allPPIs;
     std::vector<json> allServices;
     std::vector<func_t *> smiHandlers;
+    uint8_t arch;
 
     void getSegments();
     void setStrings();
 
     bool findImageHandleX64();
     bool findSystemTableX64();
-    bool findBootServicesTables(uint8_t arch);
-    bool findRuntimeServicesTables(uint8_t arch);
+    bool findBootServicesTables();
+    bool findRuntimeServicesTables();
     bool findSmstX64();
     void findOtherBsTablesX64();
 
     void getProtBootServicesX64();
     void getProtBootServicesX86();
-    void getAllBootServices(uint8_t arch);
-    void getAllRuntimeServices(uint8_t arch);
+    void getAllBootServices();
+    void getAllRuntimeServices();
     void getAllSmmServicesX64();
 
     void getBsProtNamesX64();
@@ -126,6 +127,9 @@ class EfiAnalyzer {
     char *if_pl;
     char *if_key;
     std::vector<json> *if_tbl;
+    void AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
+                     ea_t callAddress);
+    bool InstallMultipleProtocolInterfacesHandler();
 };
 
 bool efiAnalyzerMainX64();

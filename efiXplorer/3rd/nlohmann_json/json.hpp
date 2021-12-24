@@ -7121,8 +7121,11 @@ scan_number_done:
         // try to parse integers first and fall back to floats
         if (number_type == token_type::value_unsigned)
         {
+#if defined(_MSC_VER)
+            const auto x = strtoull(token_buffer.data(), &endptr, 10);
+#else
             const auto x = std::strtoull(token_buffer.data(), &endptr, 10);
-
+#endif
             // we checked the number format before
             JSON_ASSERT(endptr == token_buffer.data() + token_buffer.size());
 
@@ -7137,8 +7140,11 @@ scan_number_done:
         }
         else if (number_type == token_type::value_integer)
         {
+#if defined(_MSC_VER)
+            const auto x = strtoll(token_buffer.data(), &endptr, 10);
+#else
             const auto x = std::strtoll(token_buffer.data(), &endptr, 10);
-
+#endif
             // we checked the number format before
             JSON_ASSERT(endptr == token_buffer.data() + token_buffer.size());
 

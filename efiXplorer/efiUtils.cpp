@@ -20,7 +20,7 @@
  */
 
 #include "efiUtils.h"
-#include "efiPluginArgs.h"
+#include "efiGlobal.h"
 #include "tables/efi_system_tables.h"
 
 struct pei_services_entry {
@@ -290,6 +290,23 @@ std::vector<ea_t> getXrefs(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
+// Get all xrefs for given array element
+std::vector<ea_t> getXrefsToArray(ea_t addr) {
+    ea_t first_ea;
+    ea_t ea = addr;
+    while (true) {
+        auto ptr = get_qword(ea);
+        auto xrefs = getXrefs(ptr);
+        if (std::find(xrefs.begin(), xrefs.end(), ea) == xrefs.end()) {
+            break;
+        }
+        first_ea = ea;
+        ea -= 8;
+    }
+    return getXrefs(first_ea);
+}
+
+//--------------------------------------------------------------------------
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type) {
     insn_t insn;
@@ -430,130 +447,12 @@ uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
 }
 
 //--------------------------------------------------------------------------
-// Print std::vector<json> object
-void printVectorJson(std::vector<json> in) {
-    for (std::vector<json>::iterator item = in.begin(); item != in.end(); ++item) {
-        json currentJson = *item;
-        std::string s = currentJson.dump();
-        msg("[%s] %s\n", plugin_name, s.c_str());
-    }
-}
-
-//--------------------------------------------------------------------------
 // Get module name by address
 qstring getModuleNameLoader(ea_t address) {
     segment_t *seg = getseg(address);
     qstring seg_name;
     get_segm_name(&seg_name, seg);
     return seg_name.remove(seg_name.size() - 7, seg_name.size());
-}
-
-//--------------------------------------------------------------------------
-// Collect information for dependency browser and dependency graph
-std::vector<json> getDependenciesLoader() {
-    std::vector<json> depJson;
-
-    // Read summary and get allProtocols (also can be taken from memory)
-    std::filesystem::path logFile = getSummaryFile();
-    std::ifstream in(logFile);
-    json summary;
-    in >> summary;
-    std::vector<json> allProtocols = summary["allProtocols"];
-
-    // Get depJson
-    std::vector<std::string> locate{"LocateProtocol", "OpenProtocol", "HandleProtocol"};
-    std::vector<std::string> install{"InstallProtocolInterface",
-                                     "InstallMultipleProtocolInterfaces"};
-
-    for (auto protocolInstall : allProtocols) {
-        auto serviceInstall = static_cast<std::string>(protocolInstall["service"]);
-        if (find(install.begin(), install.end(), serviceInstall) == install.end()) {
-            continue;
-        }
-
-        // Get module name by address
-        ea_t address = static_cast<ea_t>(protocolInstall["xref"]);
-        auto moduleInstall = getModuleNameLoader(address);
-
-        // Get `depJsonItem`
-        json depJsonItem;
-        depJsonItem["module_name"] = static_cast<std::string>(moduleInstall.c_str());
-        depJsonItem["protocol_name"] = protocolInstall["prot_name"];
-        depJsonItem["guid"] = protocolInstall["guid"];
-        depJsonItem["service"] = protocolInstall["service"];
-
-        // Find modules that are input nodes
-        std::vector<std::string> used_by;
-        for (auto protocolLocate : allProtocols) {
-            auto serviceLocate = static_cast<std::string>(protocolLocate["service"]);
-            if (find(locate.begin(), locate.end(), serviceLocate) == locate.end()) {
-                continue;
-            }
-            if (depJsonItem["guid"] == protocolLocate["guid"]) {
-                address = static_cast<ea_t>(protocolLocate["xref"]);
-                auto moduleLocate = getModuleNameLoader(address);
-                std::string moduleLocateStr(moduleLocate.c_str());
-                used_by.push_back(moduleLocateStr);
-            }
-        }
-        depJsonItem["used_by"] = used_by;
-        depJson.push_back(depJsonItem);
-    }
-    return depJson;
-}
-
-//--------------------------------------------------------------------------
-// Get name for each node
-std::vector<std::string> getNodes(std::vector<json> depJson) {
-    std::vector<std::string> nodes;
-    for (auto dep : depJson) {
-        std::string name = static_cast<std::string>(dep["module_name"]);
-        if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
-            nodes.push_back(name);
-        }
-        size_t len = dep["used_by"].size();
-        for (auto i = 0; i < len; i++) {
-            std::string name = static_cast<std::string>(dep["used_by"][i]);
-            if (find(nodes.begin(), nodes.end(), name) == nodes.end()) {
-                nodes.push_back(name);
-            }
-        }
-    }
-    return nodes;
-}
-
-//--------------------------------------------------------------------------
-// Get edges
-std::vector<json> getEdges(std::vector<std::string> depNodes, std::vector<json> depJson) {
-    std::vector<json> edges;
-    for (auto dep : depJson) {
-        size_t len = dep["used_by"].size();
-        if (!len)
-            continue;
-        std::string nodeFrom = static_cast<std::string>(dep["module_name"]);
-        for (auto i = 0; i < len; i++) {
-            std::string nodeTo = static_cast<std::string>(dep["used_by"][i]);
-
-            // Get node id for `nodeFrom` and `nodeTo`
-            auto nodeFromId = -1;
-            auto nodeToId = -1;
-            for (auto n = 0; n < depNodes.size(); n++) {
-                if (depNodes[n] == nodeFrom)
-                    nodeFromId = n;
-                if (depNodes[n] == nodeTo)
-                    nodeToId = n;
-                if (nodeFromId >= 0 && nodeToId >= 0)
-                    break;
-            }
-            if (nodeFromId < 0 || nodeToId < 0)
-                continue;
-            json edge;
-            edge["from"] = nodeFromId;
-            edge["to"] = nodeToId;
-            edges.push_back(edge);
-        }
-    }
-    return edges;
 }
 
 //--------------------------------------------------------------------------
@@ -590,6 +489,82 @@ std::string getGuidFromValue(json guid) {
              static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
              static_cast<uint8_t>(guid[10]));
     return static_cast<std::string>(guidStr);
+}
+
+std::vector<uint8_t> unpackGuid(std::string guid) {
+    std::vector<uint8_t> res;
+    std::string delimiter = "-";
+    std::string byte_str;
+    uint8_t byte;
+    size_t pos = 0;
+
+    auto index = 0;
+    while ((pos = guid.find(delimiter)) != std::string::npos) {
+        std::vector<uint8_t> tmp;
+        auto hex = guid.substr(0, pos);
+        if (hex.size() % 2) {
+            break;
+        }
+        for (auto i = 0; i < hex.size(); i += 2) {
+            byte_str = hex.substr(i, 2);
+            byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+            tmp.push_back(byte);
+        }
+        if (index != 3) {
+            res.insert(res.end(), tmp.rbegin(), tmp.rend());
+        } else {
+            res.insert(res.end(), tmp.begin(), tmp.end());
+        }
+        index += 1;
+        guid.erase(0, pos + delimiter.size());
+        tmp.clear();
+    }
+
+    for (auto i = 0; i < guid.size(); i += 2) {
+        byte_str = guid.substr(i, 2);
+        byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+        res.push_back(byte);
+    }
+
+    return res;
+}
+
+std::vector<ea_t> searchProtocol(std::string protocol) {
+    uchar bytes[17] = {0};
+    std::vector<ea_t> res;
+    auto guid_bytes = unpackGuid(protocol);
+    std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
+    ea_t start = 0;
+    while (true) {
+        ea_t addr = bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+        if (addr == BADADDR) {
+            break;
+        }
+        res.push_back(addr);
+        start = addr + 16;
+    }
+    return res;
+}
+
+bool checkInstallProtocol(ea_t ea) {
+    insn_t insn;
+    // search for `call [REG + offset]` insn
+    // offset in [0x80, 0xA8, 0x148]
+    ea_t addr = ea;
+    for (auto i = 0; i < 16; i++) {
+        addr = next_head(addr, BADADDR);
+        decode_insn(&insn, addr);
+        if ((insn.itype == NN_jmpni || insn.itype == NN_callni) &&
+            insn.ops[0].type == o_displ) {
+            auto service = insn.ops[0].addr;
+            // check for InstallProtocolInterface, InstallMultipleProtocolInterfaces,
+            // SmmInstallProtocolInterface
+            if (service == 0x80 || service == 0xa8 || service == 0x148) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 //--------------------------------------------------------------------------
@@ -785,4 +760,17 @@ void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName) {
             opstroffForAddress(ea, typeName);
         }
     }
+}
+
+bool addrInVec(std::vector<ea_t> vec, ea_t addr) {
+    return find(vec.begin(), vec.end(), addr) != vec.end();
+}
+
+bool jsonInVec(std::vector<json> vec, json item) {
+    return find(vec.begin(), vec.end(), item) != vec.end();
+}
+
+bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
+                  std::vector<ea_t> gRtList, ea_t ea) {
+    return (addrInVec(gStList, ea) || addrInVec(gBsList, ea) || addrInVec(gRtList, ea));
 }

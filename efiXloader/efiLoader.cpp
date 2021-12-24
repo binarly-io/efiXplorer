@@ -45,12 +45,12 @@ void idaapi load_binary(const char *fname) {
     }
     // get loaders
     ld = build_loaders_list(li, fname);
-    msg("[efiLoader] using %s to load %s\n", ld->dllname.c_str(), fname);
+    msg("[efiXloader] using %s to load %s\n", ld->dllname.c_str(), fname);
     // load EFI binary into database
     if ((load_nonbinary_file(fname, li, ".", nflags, ld))) {
-        msg("[efiLoader] successfully loaded %s\n", fname);
+        msg("[efiXloader] successfully loaded %s\n", fname);
     } else {
-        loader_failure("[efiLoader] 'load_nonbinary_file' failed");
+        loader_failure("[efiXloader] 'load_nonbinary_file' failed");
     }
     close_linput(li);
     free_loaders_list(ld);
@@ -80,7 +80,7 @@ void efi_til_init(const char *til_name) {
     if (!res) {
         loader_failure("failed to load %s", til_name);
     } else {
-        msg("[efiloader] lib %s is ready\n", til_name);
+        msg("[efiXloader] lib %s is ready\n", til_name);
     }
 }
 
@@ -111,6 +111,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
         uefiParser.show_messages();
     }
     uefiParser.dump();
+    uefiParser.dump_jsons();
     efiloader::PeManager peManager;
     close_linput(li);
     add_til("uefi.til", ADDTIL_DEFAULT);
@@ -120,7 +121,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     if (!idati) {
         loader_failure("failed to load IDA types");
     } else {
-        msg("[efiloader] loaded IDA types: %#x\n", idati);
+        msg("[efiXloader] loaded IDA types: %#x\n", idati);
     }
     tid_t struct_err = import_type(idati, -1, "EFI_GUID");
     if (struct_err == BADNODE) {
@@ -132,6 +133,8 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
             li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
             peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
         }
+    } else {
+        msg("[efiXloader] Can not parse input firmware\n");
     }
 }
 

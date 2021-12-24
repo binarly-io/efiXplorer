@@ -20,6 +20,8 @@
  */
 
 #include "efiUi.h"
+#include "efiDeps.h"
+#include "efiGlobal.h"
 
 static const char plugin_name[] = "efiXplorer";
 
@@ -50,7 +52,7 @@ const char *const guids_chooser_t::header_guids[] = {
 };
 
 // protocols column widths
-const int interfaces_chooser_t::widths_protocols[] = {
+const int protocols_chooser_t::widths_protocols[] = {
     16, // Address
     32, // GUID
     32, // Name
@@ -59,7 +61,7 @@ const int interfaces_chooser_t::widths_protocols[] = {
 };
 
 // protocols column headers
-const char *const interfaces_chooser_t::header_protocols[] = {
+const char *const protocols_chooser_t::header_protocols[] = {
     "Address", // 0
     "GUID",    // 1
     "Name",    // 2
@@ -119,9 +121,9 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
     CASSERT(qnumber(header_guids) == 3);
 }
 
-inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
-                                                  std::vector<json> protocols,
-                                                  std::string name_key_)
+inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
+                                                std::vector<json> protocols,
+                                                std::string name_key_)
     : chooser_t(0, qnumber(widths_protocols), widths_protocols, header_protocols, title_),
       list() {
     CASSERT(qnumber(widths_protocols) == qnumber(header_protocols));
@@ -129,19 +131,15 @@ inline interfaces_chooser_t::interfaces_chooser_t(const char *title_, bool ok,
     build_list(ok, protocols);
 }
 
-void idaapi interfaces_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
-                                          size_t n) const {
+void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+                                         size_t n) const {
     ea_t ea = list[n];
     qstrvec_t &cols = *cols_;
     json item = chooser_protocols[n];
-    auto guid = item["guid"];
     std::string name = static_cast<std::string>(item[name_key]);
     std::string service = static_cast<std::string>(item["service"]);
-    std::string protGuid = getGuidFromValue(guid);
-    qstring moduleName("Current");
-    if (getArch() == UEFI) { // to see dependencies between modules in efiloader instance
-        moduleName = getModuleNameLoader(ea);
-    }
+    std::string protGuid = static_cast<std::string>(item["guid"]);
+    std::string moduleName = static_cast<std::string>(item["module"]);
     cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", protGuid.c_str());
     cols[2].sprnt("%s", name.c_str());
@@ -190,8 +188,8 @@ bool guids_show(std::vector<json> guids, qstring title) {
 bool protocols_show(std::vector<json> protocols, qstring title) {
     bool ok;
     // open the window
-    interfaces_chooser_t *ch =
-        new interfaces_chooser_t(title.c_str(), ok, protocols, "prot_name");
+    protocols_chooser_t *ch =
+        new protocols_chooser_t(title.c_str(), ok, protocols, "prot_name");
     // default cursor position is 0 (first row)
     ch->choose();
     return true;
@@ -200,8 +198,8 @@ bool protocols_show(std::vector<json> protocols, qstring title) {
 bool ppis_show(std::vector<json> ppis, qstring title) {
     bool ok;
     // open the window
-    interfaces_chooser_t *ch =
-        new interfaces_chooser_t(title.c_str(), ok, ppis, "ppi_name");
+    protocols_chooser_t *ch =
+        new protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
     // default cursor position is 0 (first row)
     ch->choose();
     return true;
@@ -217,15 +215,101 @@ bool services_show(std::vector<json> services, qstring title) {
 }
 
 //-------------------------------------------------------------------------
+// Action handler for protocols dependencies
+struct protocols_deps_handler_t : public action_handler_t {
+    virtual int idaapi activate(action_activation_ctx_t *ctx) {
+        auto n = ctx->chooser_selection.at(0);
+        json info = g_deps.protocolsChooser[n];
+
+        if (info.is_null()) {
+            return -1; // protocol not found
+        }
+
+        // get dependencies for protocol
+        std::string guid = info["guid"];
+        json d = g_deps.protocolsByGuids[guid];
+
+        // print dependencies for current
+        // protocol in output window
+        std::string s = d.dump(2);
+        msg("[%s] dependencies for protocol with GUID %s: %s\n", plugin_name,
+            guid.c_str(), s.c_str());
+
+        return 0;
+    }
+
+    virtual action_state_t idaapi update(action_update_ctx_t *ctx) {
+        return AST_ENABLE_ALWAYS;
+    }
+};
+
+static protocols_deps_handler_t protocols_deps_ah;
+action_desc_t protocols_deps = ACTION_DESC_LITERAL(
+    "efiXplorer:protocolsDeps", "Show dependencies", &protocols_deps_ah, NULL, NULL, -1);
+
+void attachActionProtocolsDeps() {
+    // Attach action in protocols chooser
+    TWidget *widget = find_widget("efiXplorer: protocols");
+    if (widget == nullptr) {
+        msg("[%s] can not find efiXplorer: protocols chooser", plugin_name);
+        return;
+    }
+    register_action(protocols_deps);
+    attach_action_to_popup(widget, nullptr, protocols_deps.name);
+}
+
+//-------------------------------------------------------------------------
+// Action handler for showing the sequence of modules execution
+struct modules_seq_handler_t : public action_handler_t {
+    virtual int idaapi activate(action_activation_ctx_t *ctx) {
+        g_deps.buildModulesSequence();
+        std::string s = g_deps.modulesSequence.dump(2);
+        msg("[%s] sequence of modules execution: %s\n", plugin_name, s.c_str());
+
+        return 0;
+    }
+
+    virtual action_state_t idaapi update(action_update_ctx_t *ctx) {
+        return AST_ENABLE_ALWAYS;
+    }
+};
+
+static modules_seq_handler_t modules_seq_ah;
+action_desc_t modules_seq =
+    ACTION_DESC_LITERAL("efiXplorer:modulesSeq", "Show the sequence of modules execution",
+                        &modules_seq_ah, NULL, NULL, -1);
+
+void attachActionModulesSeq() {
+    // Attach action in protocols chooser
+    TWidget *widget = find_widget("efiXplorer: protocols");
+    if (widget == nullptr) {
+        msg("[%s] can not find efiXplorer: protocols chooser", plugin_name);
+        return;
+    }
+    register_action(modules_seq);
+    attach_action_to_popup(widget, nullptr, modules_seq.name);
+}
+
+//-------------------------------------------------------------------------
 // Action handler (load efiXplorer analysis report)
 struct action_handler_loadreport_t : public action_handler_t {
     virtual int idaapi activate(action_activation_ctx_t *ctx) {
         std::filesystem::path reportPath;
-        reportPath /= ask_file(false, "*.json", "Load efiXplorer analysis report");
+        char *file = ask_file(false, "*.json", "Load efiXplorer analysis report");
+        if (file == nullptr) {
+            msg("[%s] report file not specified\n", plugin_name);
+            return -1;
+        }
+        reportPath /= file;
         msg("[%s] loading report from %s file\n", plugin_name, reportPath.c_str());
         json reportData;
         std::ifstream in(reportPath);
         in >> reportData;
+
+        // Initialize vuln types list
+        std::vector<std::string> vulnTypes{
+            "smm_callout", "pei_get_variable_buffer_overflow",
+            "get_variable_buffer_overflow", "smm_get_variable_buffer_overflow"};
 
         // Show all choosers with data from report
         qstring title;
@@ -250,6 +334,36 @@ struct action_handler_loadreport_t : public action_handler_t {
             title = "efiXplorer: GUIDs";
             guids_show(guids, title);
         }
+        auto vulns = reportData["vulns"];
+        if (!vulns.is_null()) { // show vulns
+            std::vector<json> vulnsRes;
+            for (auto vulnType : vulnTypes) {
+                // For each vuln type add list of vulns in `vulnsRes`
+                auto vulnAddrs = vulns[vulnType];
+                if (vulnAddrs.is_null()) {
+                    continue;
+                }
+                for (auto addr : vulnAddrs) {
+                    json item;
+                    item["type"] = vulnType;
+                    item["address"] = addr;
+                    vulnsRes.push_back(item);
+                }
+            }
+            if (vulnsRes.size()) {
+                title = "efiXplorer: vulns";
+                vulns_show(vulnsRes, title);
+            }
+        }
+
+        // Init public EdiDependencies members
+        g_deps.getProtocolsChooser(protocols);
+        g_deps.getProtocolsByGuids(protocols);
+
+        // Save all protocols information to build dependencies
+        attachActionProtocolsDeps();
+        attachActionModulesSeq();
+
         return 0;
     }
 
@@ -262,9 +376,5 @@ static action_handler_loadreport_t load_report_handler;
 //-------------------------------------------------------------------------
 // Action to load efiXplorer analysis report
 action_desc_t action_load_report =
-    ACTION_DESC_LITERAL("efiXplorer:loadReport",         // The action name
-                        "efiXplorer analysis report...", // The action description
-                        &load_report_handler,            // The action handler
-                        "",                              // The action shortcut
-                        "",                              // The action tooltip
-                        -1);                             // The action icon
+    ACTION_DESC_LITERAL("efiXplorer:loadReport", "efiXplorer analysis report...",
+                        &load_report_handler, NULL, NULL, -1);

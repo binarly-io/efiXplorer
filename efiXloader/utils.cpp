@@ -22,7 +22,7 @@
 
 void efiloader::Utils::show_hex(void *buffer, size_t length, const char *prefix) {
     uint8_t *buf = (uint8_t *)buffer;
-    msg("[efiLoader] %s = ", prefix);
+    msg("[efiXloader] %s = ", prefix);
     for (int i = 0; i < length; i++) {
         msg("%02x", buf[i]);
     }
