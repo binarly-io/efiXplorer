@@ -63,7 +63,6 @@ class PE {
         reset();
     };
     ~PE() {
-        close_linput(li);
         delete utils;
     }
     uint32_t number_of_sections;
