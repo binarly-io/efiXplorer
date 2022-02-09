@@ -89,7 +89,7 @@ void setTypeAndName(ea_t ea, std::string name, std::string type) {
 
 //--------------------------------------------------------------------------
 // Get input file type (64-bit, 32-bit image or UEFI firmware)
-uint8_t getArch() {
+uint8_t getInputFileType() {
     char fileType[256] = {};
     get_file_type_name(fileType, 256);
     auto fileTypeStr = static_cast<std::string>(fileType);
@@ -156,7 +156,7 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
 }
 
 uint8_t getFileType(std::vector<json> *allGuids) {
-    uint8_t arch = getArch();
+    uint8_t arch = getInputFileType();
     if (arch == UEFI || g_args.disable_ui) {
         // Skip UI for efiXloader or if disable_ui argument passed
         return FTYPE_DXE_AND_THE_LIKE;

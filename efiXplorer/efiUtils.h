@@ -55,62 +55,57 @@ using namespace nlohmann;
 
 #define BTOA(x) ((x) ? "true" : "false")
 
-// Architectures
-#define X86 32
-#define X64 64
-#define UEFI 96
-
-// (FFS) file type
-#define FTYPE_DXE_AND_THE_LIKE 7
-#define FTYPE_PEI 6
-
 #define VZ 0x5A56
 #define MZ 0x5A4D
 
-// SystemTable->BootServices
-#define BS_OFFSET_64BIT 0x60
-#define BS_OFFSET_32BIT 0x3c
+enum ArchFileType { X86 = 32, X64 = 64, UEFI = 96 };
 
-// SystemTable->RuntimeServices
-#define RT_OFFSET_64BIT 0x58
-#define RT_OFFSET_32BIT 0x38
+enum FfsFileType { FTYPE_PEI = 6, FTYPE_DXE_AND_THE_LIKE = 7 };
 
-// 64-bit registers
-#define REG_RAX 0x00
-#define REG_RCX 0x01
-#define REG_RDX 0x02
-#define REG_RBX 0x03
-#define REG_RSP 0x04
-#define REG_RBP 0x05
-#define REG_RSI 0x06
-#define REG_RDI 0x07
-#define REG_R8 0x08
-#define REG_R9 0x09
-#define REG_R10 0x0a
-#define REG_R11 0x0b
-#define REG_R12 0x0c
-#define REG_R13 0x0d
-#define REG_R14 0x0e
+enum BootServicesOffset { BS_OFFSET_64BIT = 0x60, BS_OFFSET_32BIT = 0x3c };
 
-// 32-bit registers
-#define REG_EAX 0x00
-#define REG_ECX 0x01
-#define REG_EDX 0x02
-#define REG_EBX 0x03
-#define REG_ESP 0x04
-#define REG_EBP 0x05
-#define REG_ESI 0x06
-#define REG_EDI 0x07
-#define REG_AL 0x10
-#define REG_DL 0x12
+enum RuntimeServiesOffset { RT_OFFSET_64BIT = 0x58, RT_OFFSET_32BIT = 0x38 };
 
-#define PUSH_NONE 0xffff
-#define GUID_OFFSET_NONE 0xffff
-#define GUID_OFFSET_DWORD 4
+enum Registers32bit {
+    REG_EAX,
+    REG_ECX,
+    REG_EDX,
+    REG_EBX,
+    REG_ESP,
+    REG_EBP,
+    REG_ESI,
+    REG_EDI,
+    REG_AL = 0x10,
+    REG_DL = 0x12
+};
+
+enum Registers64bit {
+    REG_RAX,
+    REG_RCX,
+    REG_RDX,
+    REG_RBX,
+    REG_RSP,
+    REG_RBP,
+    REG_RSI,
+    REG_RDI,
+    REG_R8,
+    REG_R9,
+    REG_R10,
+    REG_R11,
+    REG_R12,
+    REG_R13,
+    REG_R14,
+};
+
+enum HelperValues {
+    GUID_OFFSET_DWORD = 4,
+    GUID_OFFSET_NONE = 0xffff,
+    PUSH_NONE = 0xffff,
+};
 
 // Get input file type
 // (64-bit, 32-bit image or UEFI firmware)
-uint8_t getArch();
+uint8_t getInputFileType();
 
 // Get image type (PEI or DXE-like)
 uint8_t getFileType(std::vector<json> *allGuids);

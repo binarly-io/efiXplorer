@@ -47,7 +47,7 @@ struct plugin_ctx_t : public plugmod_t {
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-    uint8_t arch = getArch();
+    uint8_t arch = getInputFileType();
     if ((arch != X86 && arch != X64 && arch != UEFI) || !is_idaq()) {
         return nullptr;
     }
@@ -89,7 +89,7 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
         return false;
     }
 
-    uint8_t arch = getArch();
+    uint8_t arch = getInputFileType();
     if (arch == X64) {
         msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX64();
