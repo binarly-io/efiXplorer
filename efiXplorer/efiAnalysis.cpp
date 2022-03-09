@@ -2248,7 +2248,11 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     // mark GUIDs
     analyzer.markDataGuids();
 
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    if (g_args.disable_ui) {
+        analyzer.fileType = FTYPE_PEI;
+    } else {
+        analyzer.fileType = getFileType(&analyzer.allGuids);
+    }
 
     analyzer.setStrings();
 

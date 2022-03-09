@@ -63,6 +63,7 @@ class PE {
         reset();
     };
     ~PE() {
+        close_linput(li);
         delete utils;
     }
     uint32_t number_of_sections;
@@ -164,8 +165,8 @@ class PE {
     qvector<qstring> segm_names;
     qvector<qstring> secs_names;
     ea_t process_section_entry(ea_t ea);
-    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end, const char *section_name,
-                                    uint32_t flags);
+    segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
+                                    const char *section_name, uint32_t flags);
     segment_t *make_head_segment(ea_t start, ea_t end, const char *name);
     void setup_ds_selector();
 };
