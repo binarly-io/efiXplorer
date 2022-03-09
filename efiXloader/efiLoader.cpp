@@ -1,6 +1,6 @@
 /*
  * efiXloader
- * Copyright (C) 2020-2021 Binarly
+ * Copyright (C) 2020-2022 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,6 +131,10 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     if (uefiParser.files.size()) {
         for (int i = 0; i < uefiParser.files.size(); i++) {
             li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
+            if (!li) {
+                msg("Unable to open file %s\n", uefiParser.files[i]->dump_name.c_str());
+                continue;
+            }
             peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
         }
     } else {

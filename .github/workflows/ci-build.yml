@@ -16,13 +16,13 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           curl -O -J -L "%IDA_SDK%"
-          unzip -P "%PASSWORD%" idasdk76.zip
+          unzip -P "%PASSWORD%" idasdk77.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk76
+          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk77
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -42,13 +42,13 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk76.zip
+          unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -68,13 +68,13 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk76.zip
+          unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -94,13 +94,13 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "%IDA_SDK%"
-          unzip -P "%PASSWORD%" idasdk76.zip
+          unzip -P "%PASSWORD%" idasdk77.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -124,13 +124,13 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk76.zip
+          unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -154,13 +154,13 @@ jobs:
         run: |
           cd ..
           curl -O -J -L "$IDA_SDK"
-          unzip -P $PASSWORD idasdk76.zip
+          unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk76" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:

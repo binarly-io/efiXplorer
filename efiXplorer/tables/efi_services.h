@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020  Binarly
+ * Copyright (C) 2020-2022  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,169 +19,174 @@
  *
  */
 
-// Boot services offsets (64-bit)
-#define RaiseTPLOffset64 0x18
-#define RestoreTPLOffset64 0x20
-#define AllocatePagesOffset64 0x28
-#define FreePagesOffset64 0x30
-#define GetMemoryMapOffset64 0x38
-#define AllocatePoolOffset64 0x40
-#define FreePoolOffset64 0x48
-#define CreateEventOffset64 0x50
-#define SetTimerOffset64 0x58
-#define WaitForEventOffset64 0x60
-#define SignalEventOffset64 0x68
-#define CloseEventOffset64 0x70
-#define CheckEventOffset64 0x78
-#define InstallProtocolInterfaceOffset64 0x80
-#define RenstallProtocolInterfaceOffset64 0x88
-#define UninstallProtocolInterfaceOffset64 0x90
-#define HandleProtocolOffset64 0x98
-#define RegisterProtocolNotifyOffset64 0xa8
-#define LocateHandleOffset64 0xb0
-#define LocateDevicePathOffset64 0xb8
-#define InstallConfigurationTableOffset64 0xc0
-#define LoadImageOffset64 0xc8
-#define StartImageOffset64 0xd0
-#define ExitOffset64 0xd8
-#define UnloadImageOffset64 0xe0
-#define ExitBootServicesOffset64 0xe8
-#define GetNextMonotonicCountOffset64 0xf0
-#define StallOffset64 0xf0
-#define SetWatchdogTimerOffset64 0x100
-#define ConnectControllerOffset64 0x108
-#define DisconnectControllerOffset64 0x110
-#define OpenProtocolOffset64 0x118
-#define CloseProtocolOffset64 0x120
-#define OpenProtocolInformationOffset64 0x128
-#define ProtocolsPerHandleOffset64 0x130
-#define LocateHandleBufferOffset64 0x138
-#define LocateProtocolOffset64 0x140
-#define InstallMultipleProtocolInterfacesOffset64 0x148
-#define UninstallMultipleProtocolInterfacesOffset64 0x150
-#define CalculateCrc32Offset64 0x158
-#define CopyMemOffset64 0x160
-#define SetMemOffset64 0x168
-#define CreateEventExOffset64 0x170
+enum BootServicesOffsets64bit {
+    RaiseTPLOffset64 = 0x18,
+    RestoreTPLOffset64 = 0x20,
+    AllocatePagesOffset64 = 0x28,
+    FreePagesOffset64 = 0x30,
+    GetMemoryMapOffset64 = 0x38,
+    AllocatePoolOffset64 = 0x40,
+    FreePoolOffset64 = 0x48,
+    CreateEventOffset64 = 0x50,
+    SetTimerOffset64 = 0x58,
+    WaitForEventOffset64 = 0x60,
+    SignalEventOffset64 = 0x68,
+    CloseEventOffset64 = 0x70,
+    CheckEventOffset64 = 0x78,
+    InstallProtocolInterfaceOffset64 = 0x80,
+    RenstallProtocolInterfaceOffset64 = 0x88,
+    UninstallProtocolInterfaceOffset64 = 0x90,
+    HandleProtocolOffset64 = 0x98,
+    RegisterProtocolNotifyOffset64 = 0xa8,
+    LocateHandleOffset64 = 0xb0,
+    LocateDevicePathOffset64 = 0xb8,
+    InstallConfigurationTableOffset64 = 0xc0,
+    LoadImageOffset64 = 0xc8,
+    StartImageOffset64 = 0xd0,
+    ExitOffset64 = 0xd8,
+    UnloadImageOffset64 = 0xe0,
+    ExitBootServicesOffset64 = 0xe8,
+    GetNextMonotonicCountOffset64 = 0xf0,
+    StallOffset64 = 0xf0,
+    SetWatchdogTimerOffset64 = 0x100,
+    ConnectControllerOffset64 = 0x108,
+    DisconnectControllerOffset64 = 0x110,
+    OpenProtocolOffset64 = 0x118,
+    CloseProtocolOffset64 = 0x120,
+    OpenProtocolInformationOffset64 = 0x128,
+    ProtocolsPerHandleOffset64 = 0x130,
+    LocateHandleBufferOffset64 = 0x138,
+    LocateProtocolOffset64 = 0x140,
+    InstallMultipleProtocolInterfacesOffset64 = 0x148,
+    UninstallMultipleProtocolInterfacesOffset64 = 0x150,
+    CalculateCrc32Offset64 = 0x158,
+    CopyMemOffset64 = 0x160,
+    SetMemOffset64 = 0x168,
+    CreateEventExOffset64 = 0x170,
+};
 
-// Boot services offsets (32-bit) */
-#define RaiseTPLOffset32 0x18
-#define RestoreTPLOffset32 0x1c
-#define AllocatePagesOffset32 0x20
-#define FreePagesOffset32 0x24
-#define GetMemoryMapOffset32 0x28
-#define AllocatePoolOffset32 0x2c
-#define FreePoolOffset32 0x30
-#define CreateEventOffset32 0x34
-#define SetTimerOffset32 0x38
-#define WaitForEventOffset32 0x3c
-#define SignalEventOffset32 0x40
-#define CloseEventOffset32 0x44
-#define CheckEventOffset32 0x48
-#define InstallProtocolInterfaceOffset32 0x4c
-#define RenstallProtocolInterfaceOffset32 0x50
-#define UninstallProtocolInterfaceOffset32 0x54
-#define HandleProtocolOffset32 0x58
-#define RegisterProtocolNotifyOffset32 0x60
-#define LocateHandleOffset32 0x64
-#define LocateDevicePathOffset32 0x68
-#define InstallConfigurationTableOffset32 0x6c
-#define LoadImageOffset32 0x70
-#define StartImageOffset32 0x74
-#define ExitOffset32 0x78
-#define UnloadImageOffset32 0x7c
-#define ExitBootServicesOffset32 0x80
-#define GetNextMonotonicCountOffset32 0x84
-#define StallOffset32 0x88
-#define SetWatchdogTimerOffset32 0x8c
-#define ConnectControllerOffset32 0x90
-#define DisconnectControllerOffset32 0x94
-#define OpenProtocolOffset32 0x98
-#define CloseProtocolOffset32 0x9c
-#define OpenProtocolInformationOffset32 0xa0
-#define ProtocolsPerHandleOffset32 0xa4
-#define LocateHandleBufferOffset32 0xa8
-#define LocateProtocolOffset32 0xac
-#define InstallMultipleProtocolInterfacesOffset32 0xb0
-#define UninstallMultipleProtocolInterfacesOffset32 0xb4
-#define CalculateCrc32Offset32 0xb8
-#define CopyMemOffset32 0xbc
-#define SetMemOffset32 0xc0
-#define CreateEventExOffset32 0xc4
+enum BootServicesOffsets32bit {
+    RaiseTPLOffset32 = 0x18,
+    RestoreTPLOffset32 = 0x1c,
+    AllocatePagesOffset32 = 0x20,
+    FreePagesOffset32 = 0x24,
+    GetMemoryMapOffset32 = 0x28,
+    AllocatePoolOffset32 = 0x2c,
+    FreePoolOffset32 = 0x30,
+    CreateEventOffset32 = 0x34,
+    SetTimerOffset32 = 0x38,
+    WaitForEventOffset32 = 0x3c,
+    SignalEventOffset32 = 0x40,
+    CloseEventOffset32 = 0x44,
+    CheckEventOffset32 = 0x48,
+    InstallProtocolInterfaceOffset32 = 0x4c,
+    RenstallProtocolInterfaceOffset32 = 0x50,
+    UninstallProtocolInterfaceOffset32 = 0x54,
+    HandleProtocolOffset32 = 0x58,
+    RegisterProtocolNotifyOffset32 = 0x60,
+    LocateHandleOffset32 = 0x64,
+    LocateDevicePathOffset32 = 0x68,
+    InstallConfigurationTableOffset32 = 0x6c,
+    LoadImageOffset32 = 0x70,
+    StartImageOffset32 = 0x74,
+    ExitOffset32 = 0x78,
+    UnloadImageOffset32 = 0x7c,
+    ExitBootServicesOffset32 = 0x80,
+    GetNextMonotonicCountOffset32 = 0x84,
+    StallOffset32 = 0x88,
+    SetWatchdogTimerOffset32 = 0x8c,
+    ConnectControllerOffset32 = 0x90,
+    DisconnectControllerOffset32 = 0x94,
+    OpenProtocolOffset32 = 0x98,
+    CloseProtocolOffset32 = 0x9c,
+    OpenProtocolInformationOffset32 = 0xa0,
+    ProtocolsPerHandleOffset32 = 0xa4,
+    LocateHandleBufferOffset32 = 0xa8,
+    LocateProtocolOffset32 = 0xac,
+    InstallMultipleProtocolInterfacesOffset32 = 0xb0,
+    UninstallMultipleProtocolInterfacesOffset32 = 0xb4,
+    CalculateCrc32Offset32 = 0xb8,
+    CopyMemOffset32 = 0xbc,
+    SetMemOffset32 = 0xc0,
+    CreateEventExOffset32 = 0xc4,
+};
 
-// Runtime services offsets (64-bit)
-#define GetTimeOffset64 0x18
-#define SetTimeOffset64 0x20
-#define GetWakeupTimeOffset64 0x28
-#define SetWakeupTimeOffset64 0x30
-#define SetVirtualAddressMapOffset64 0x38
-#define ConvertPointerOffset64 0x40
-#define GetVariableOffset64 0x48
-#define GetNextVariableNameOffset64 0x50
-#define SetVariableOffset64 0x58
-#define GetNextHighMonotonicCountOffset64 0x60
-#define ResetSystemOffset64 0x68
-#define UpdateCapsuleOffset64 0x70
-#define QueryCapsuleCapabilitiesOffset64 0x78
-#define QueryVariableInfoOffset64 0x80
+enum RuntimeServicesOffsets64bit {
+    GetTimeOffset64 = 0x18,
+    SetTimeOffset64 = 0x20,
+    GetWakeupTimeOffset64 = 0x28,
+    SetWakeupTimeOffset64 = 0x30,
+    SetVirtualAddressMapOffset64 = 0x38,
+    ConvertPointerOffset64 = 0x40,
+    GetVariableOffset64 = 0x48,
+    GetNextVariableNameOffset64 = 0x50,
+    SetVariableOffset64 = 0x58,
+    GetNextHighMonotonicCountOffset64 = 0x60,
+    ResetSystemOffset64 = 0x68,
+    UpdateCapsuleOffset64 = 0x70,
+    QueryCapsuleCapabilitiesOffset64 = 0x78,
+    QueryVariableInfoOffset64 = 0x80,
+};
 
-// Runtime services offsets (32-bit)
-#define GetTimeOffset32 0x18
-#define SetTimeOffset32 0x1c
-#define GetWakeupTimeOffset32 0x20
-#define SetWakeupTimeOffset32 0x24
-#define SetVirtualAddressMapOffset32 0x28
-#define ConvertPointerOffset32 0x2c
-#define GetVariableOffset32 0x30
-#define GetNextVariableNameOffset32 0x34
-#define SetVariableOffset32 0x38
-#define GetNextHighMonotonicCountOffset32 0x3c
-#define ResetSystemOffset32 0x40
-#define UpdateCapsuleOffset32 0x44
-#define QueryCapsuleCapabilitiesOffset32 0x48
-#define QueryVariableInfoOffset32 0x4c
+enum RuntimeServicesOffsets32bit {
+    GetTimeOffset32 = 0x18,
+    SetTimeOffset32 = 0x1c,
+    GetWakeupTimeOffset32 = 0x20,
+    SetWakeupTimeOffset32 = 0x24,
+    SetVirtualAddressMapOffset32 = 0x28,
+    ConvertPointerOffset32 = 0x2c,
+    GetVariableOffset32 = 0x30,
+    GetNextVariableNameOffset32 = 0x34,
+    SetVariableOffset32 = 0x38,
+    GetNextHighMonotonicCountOffset32 = 0x3c,
+    ResetSystemOffset32 = 0x40,
+    UpdateCapsuleOffset32 = 0x44,
+    QueryCapsuleCapabilitiesOffset32 = 0x48,
+    QueryVariableInfoOffset32 = 0x4c,
+};
 
-// SMM services offsets (64-bit)
-#define SmmInstallConfigurationTableOffset64 0x28
-#define SmmAllocatePoolOffset64 0x50
-#define SmmFreePoolOffset64 0x58
-#define SmmAllocatePagesOffset64 0x60
-#define SmmFreePagesOffset64 0x68
-#define SmmStartupThisApOffset64 0x70
-#define SmmInstallProtocolInterfaceOffset64 0xa8
-#define SmmUninstallProtocolInterfaceOffset64 0xb0
-#define SmmHandleProtocolOffset64 0xb8
-#define SmmRegisterProtocolNotifyOffset64 0xc0
-#define SmmLocateHandleOffset64 0xc8
-#define SmmLocateProtocolOffset64 0xd0
-#define SmiManageOffset64 0xd8
-#define SmiHandlerRegisterOffset64 0xe0
-#define SmiHandlerUnRegisterOffset64 0xe8
+enum SmmServicesOffsets64bit {
+    SmmInstallConfigurationTableOffset64 = 0x28,
+    SmmAllocatePoolOffset64 = 0x50,
+    SmmFreePoolOffset64 = 0x58,
+    SmmAllocatePagesOffset64 = 0x60,
+    SmmFreePagesOffset64 = 0x68,
+    SmmStartupThisApOffset64 = 0x70,
+    SmmInstallProtocolInterfaceOffset64 = 0xa8,
+    SmmUninstallProtocolInterfaceOffset64 = 0xb0,
+    SmmHandleProtocolOffset64 = 0xb8,
+    SmmRegisterProtocolNotifyOffset64 = 0xc0,
+    SmmLocateHandleOffset64 = 0xc8,
+    SmmLocateProtocolOffset64 = 0xd0,
+    SmiManageOffset64 = 0xd8,
+    SmiHandlerRegisterOffset64 = 0xe0,
+    SmiHandlerUnRegisterOffset64 = 0xe8,
+};
 
-// SMM services offsets (32-bit)
-#define SmmInstallConfigurationTableOffset32 0x20
-#define SmmAllocatePoolOffset32 0x34
-#define SmmFreePoolOffset32 0x38
-#define SmmAllocatePagesOffset32 0x3c
-#define SmmFreePagesOffset32 0x40
-#define SmmStartupThisApOffset32 0x44
-#define SmmInstallProtocolInterfaceOffset32 0x60
-#define SmmUninstallProtocolInterfaceOffset32 0x64
-#define SmmHandleProtocolOffset32 0x68
-#define SmmRegisterProtocolNotifyOffset32 0x6c
-#define SmmLocateHandleOffset32 0x70
-#define SmmLocateProtocolOffset32 0x74
-#define SmiManageOffset32 0x78
-#define SmiHandlerRegisterOffset32 0x7c
-#define SmiHandlerUnRegisterOffset32 0x80
-
-struct pServiceReg {
+enum SmmServicesOffsets32bit {
+    SmmInstallConfigurationTableOffset32 = 0x20,
+    SmmAllocatePoolOffset32 = 0x34,
+    SmmFreePoolOffset32 = 0x38,
+    SmmAllocatePagesOffset32 = 0x3c,
+    SmmFreePagesOffset32 = 0x40,
+    SmmStartupThisApOffset32 = 0x44,
+    SmmInstallProtocolInterfaceOffset32 = 0x60,
+    SmmUninstallProtocolInterfaceOffset32 = 0x64,
+    SmmHandleProtocolOffset32 = 0x68,
+    SmmRegisterProtocolNotifyOffset32 = 0x6c,
+    SmmLocateHandleOffset32 = 0x70,
+    SmmLocateProtocolOffset32 = 0x74,
+    SmiManageOffset32 = 0x78,
+    SmiHandlerRegisterOffset32 = 0x7c,
+    SmiHandlerUnRegisterOffset32 = 0x80,
+};
+struct service_info_64bit {
     char service_name[64];
     uint32_t offset;
     uint32_t reg;
 };
 
-struct pServicePush {
+struct service_info_32bit {
     char service_name[64];
     uint32_t offset;
     uint16_t push_number;
@@ -193,7 +198,7 @@ struct service {
     uint32_t offset32;
 };
 
-struct pServiceReg bootServicesTable64[] = {
+struct service_info_64bit bootServicesTable64[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX},
@@ -208,9 +213,10 @@ struct pServiceReg bootServicesTable64[] = {
      REG_RDX},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
      REG_RDX}};
-size_t bootServicesTable64Length = sizeof(bootServicesTable64) / sizeof(pServiceReg);
+size_t bootServicesTable64Length =
+    sizeof(bootServicesTable64) / sizeof(service_info_64bit);
 
-struct pServicePush bootServicesTable32[] = {
+struct service_info_32bit bootServicesTable32[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset32, 2},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset32, 2},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset32, 2},
@@ -224,7 +230,8 @@ struct pServicePush bootServicesTable32[] = {
     {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset32, 2},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset32,
      2}};
-size_t bootServicesTable32Length = sizeof(bootServicesTable64) / sizeof(pServicePush);
+size_t bootServicesTable32Length =
+    sizeof(bootServicesTable64) / sizeof(service_info_32bit);
 
 struct service bootServicesTableAll[] = {
     // difficult to check false positives
@@ -301,14 +308,14 @@ struct service runtimeServicesTableAll[] = {
     {"QueryVariableInfo", QueryVariableInfoOffset64, QueryVariableInfoOffset32}};
 size_t runtimeServicesTableAllLength = sizeof(runtimeServicesTableAll) / sizeof(service);
 
-struct pServiceReg smmServicesProt64[] = {
+struct service_info_64bit smmServicesProt64[] = {
     {"SmmInstallProtocolInterface", SmmInstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmUninstallProtocolInterface", SmmUninstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmHandleProtocol", SmmHandleProtocolOffset64, REG_RDX},
     {"SmmRegisterProtocolNotify", SmmRegisterProtocolNotifyOffset64, REG_RCX},
     {"SmmLocateHandle", SmmLocateHandleOffset64, REG_RDX},
     {"SmmLocateProtocol", SmmLocateProtocolOffset64, REG_RCX}};
-size_t smmServicesProt64Length = sizeof(smmServicesProt64) / sizeof(pServiceReg);
+size_t smmServicesProt64Length = sizeof(smmServicesProt64) / sizeof(service_info_64bit);
 
 struct service smmServicesTableAll[] = {
     {"SmmInstallConfigurationTable", SmmInstallConfigurationTableOffset64,

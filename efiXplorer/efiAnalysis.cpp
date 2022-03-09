@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2021 Binarly
+ * Copyright (C) 2020-2022 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ std::vector<ea_t> smmGetVariableOverflow;
 
 EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
     // 32-bit, 64-bit or UEFI (in loader instance)
-    arch = getArch();
+    arch = getInputFileType();
 
     // get guids.json path
     guidsJsonPath /= getGuidsJsonFile();
@@ -192,7 +192,7 @@ void EfiAnalysis::EfiAnalyzer::getSegments() {
 }
 
 //--------------------------------------------------------------------------
-// Find `gImageHandle` address for X64 modules
+// Find gImageHandle address for X64 modules
 bool EfiAnalysis::EfiAnalyzer::findImageHandleX64() {
     msg("[%s] gImageHandle finding\n", plugin_name);
     insn_t insn;
@@ -263,14 +263,15 @@ bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
 }
 
 //--------------------------------------------------------------------------
-// Find gBS addresses for X86/X64 modules
+// Find gBS addresses for 32-bit/64-bit modules
 bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
+
     // init architecture-specific constants
     auto BS_OFFSET = BS_OFFSET_64BIT;
-    auto REG_SP = REG_RSP;
+    uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
     if (arch == X86) {
         BS_OFFSET = BS_OFFSET_32BIT;
-        REG_SP = REG_ESP;
+        REG_SP = static_cast<uint16_t>(REG_ESP);
     }
 
     insn_t insn;
@@ -293,7 +294,7 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
                     auto stFound = false;
                     ea_t baseInsnAddr;
 
-                    // found `BS_OFFSET`, need to check 10 instructions below
+                    // found BS_OFFSET, need to check 10 instructions below
                     for (auto i = 0; i < 10; i++) {
                         decode_insn(&insn, ea);
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -310,7 +311,7 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
                                 bsFound = true;
                             }
 
-                            // here you can also find `gST`
+                            // here you can also find gST
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != bsRegister) {
                                 varAddr = insn.ops[0].addr;
@@ -328,7 +329,7 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
                         }
 
                         if (bsFound && !stFound) {
-                            // check 8 instructions above `baseInsnAddr`
+                            // check 8 instructions above baseInsnAddr
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
                                 decode_insn(&insn, addr);
@@ -364,11 +365,11 @@ bool EfiAnalysis::EfiAnalyzer::findBootServicesTables() {
 bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables() {
     // init architecture-specific constants
     auto RT_OFFSET = RT_OFFSET_64BIT;
-    auto REG_SP = REG_RSP;
+    uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
 
     if (arch == X86) {
         RT_OFFSET = RT_OFFSET_32BIT;
-        REG_SP = REG_ESP;
+        REG_SP = static_cast<uint16_t>(REG_ESP);
     }
 
     insn_t insn;
@@ -391,7 +392,7 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables() {
                     auto stFound = false;
                     ea_t baseInsnAddr;
 
-                    // found `RT_OFFSET`, need to check 10 instructions below
+                    // found RT_OFFSET, need to check 10 instructions below
                     for (auto i = 0; i < 10; i++) {
                         decode_insn(&insn, ea);
                         if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
@@ -408,7 +409,7 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables() {
                                 rtFound = true;
                             }
 
-                            // here you can also find `gST`
+                            // here you can also find gST
                             if (insn.ops[1].reg == stRegister && !stFound &&
                                 stRegister != rtRegister) {
                                 varAddr = insn.ops[0].addr;
@@ -427,7 +428,7 @@ bool EfiAnalysis::EfiAnalyzer::findRuntimeServicesTables() {
                         }
 
                         if (rtFound && !stFound) {
-                            // check 8 instructions above `baseInsnAddr`
+                            // check 8 instructions above baseInsnAddr
                             ea_t addr = prev_head(baseInsnAddr, startAddress);
                             for (auto i = 0; i < 8; i++) {
                                 decode_insn(&insn, addr);
@@ -467,9 +468,9 @@ void EfiAnalysis::EfiAnalyzer::getAllBootServices() {
     }
 
     // init architecture-specific constants
-    auto REG_AX = REG_RAX;
+    uint16_t REG_AX = static_cast<uint16_t>(REG_RAX);
     if (arch == X86) {
-        REG_AX = REG_EAX;
+        REG_AX = static_cast<uint16_t>(REG_EAX);
     }
 
     insn_t insn;
@@ -657,7 +658,7 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
                                     if (static_cast<uint32_t>(
                                             smmServicesTableAll[j].offset64) ==
                                         SmiHandlerRegisterOffset64) {
-                                        // set name for `Handler` argument
+                                        // set name for Handler argument
                                         auto smiHandlerAddr = markSmiHandler(addr);
                                         // save SMI handler
                                         func_t *childSmiHandler =
@@ -679,7 +680,7 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
                                         static_cast<char *>(
                                             smmServicesTableAll[j].service_name));
 
-                                    // add address to `smmServices[...]`
+                                    // add address to smmServices[...]
                                     if (find(protSmmNames.begin(), protSmmNames.end(),
                                              smmServicesTableAll[j].service_name) !=
                                         protSmmNames.end()) {
@@ -1008,7 +1009,7 @@ void EfiAnalysis::EfiAnalyzer::getProtBootServicesX64() {
                                          bootServicesTable64[i].service_name)]
                             .push_back(ea);
 
-                        // add item to `allBootServices`
+                        // add item to allBootServices
                         json bsItem;
                         bsItem["address"] = ea;
                         bsItem["service_name"] =
@@ -1054,7 +1055,7 @@ void EfiAnalysis::EfiAnalyzer::getProtBootServicesX86() {
                                      bootServicesTable32[i].service_name)]
                         .push_back(ea);
 
-                    // add item to `allBootServices`
+                    // add item to allBootServices
                     json bsItem;
                     bsItem["address"] = ea;
                     bsItem["service_name"] =
@@ -1114,7 +1115,7 @@ void EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAdd
     protocol["ea"] = callAddress;
 
     qstring moduleName("Current");
-    if (getArch() == UEFI) {
+    if (getInputFileType() == UEFI) {
         moduleName = getModuleNameLoader(callAddress);
     }
     protocol["module"] = static_cast<std::string>(moduleName.c_str());
@@ -1500,7 +1501,7 @@ void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
         while (ea <= s->end_ea) {
             decode_insn(&insn, ea);
 
-            // check if insn like `mov dword ptr [...], gData1`
+            // check if insn like mov dword ptr [...], gData1
             if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
                 insn.ops[1].type == o_imm) {
 
@@ -1513,7 +1514,7 @@ void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
                 ea_t eaNext = next_head(ea, BADADDR);
                 decode_insn(&insnNext, eaNext);
 
-                // check if insn like `mov dword ptr [...], gData2`
+                // check if insn like mov dword ptr [...], gData2
                 if (insnNext.itype == NN_mov && insnNext.ops[0].type == o_displ &&
                     insnNext.ops[1].type == o_imm) {
 
@@ -1572,10 +1573,10 @@ void findCalloutRec(func_t *func) {
             }
         }
 
-        // find callouts with `gBS`
+        // find callouts with gBS
         for (auto bs : gBsList) {
 
-            // check if insn is `mov rax, cs:gBS`
+            // check if insn is mov rax, cs:gBS
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name,
@@ -1584,10 +1585,10 @@ void findCalloutRec(func_t *func) {
             }
         }
 
-        // find callouts with `gRT`
+        // find callouts with gRT
         for (auto rt : gRtList) {
 
-            // check if insn is `mov rax, cs:gRT`
+            // check if insn is mov rax, cs:gRT
             if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name,
@@ -1659,7 +1660,7 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
             plugin_name, static_cast<uint64_t>(prev_addr),
             static_cast<uint64_t>(curr_addr));
 
-        // check code from `GetVariable_1` to `GetVariable_2`
+        // check code from GetVariable_1 to GetVariable_2
         ea_t ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         insn_t insn;
@@ -1821,7 +1822,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         msg("[%s] GetVariable_1: 0x%016llX, GetVariable_2: 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(prev_addr), static_cast<uint64_t>(curr_addr));
 
-        // get `dataSizeStackAddr`
+        // get dataSizeStackAddr
         int dataSizeStackAddr = 0;
         ea = prev_head(static_cast<ea_t>(curr_addr), 0);
         for (auto i = 0; i < 10; ++i) {
@@ -1834,7 +1835,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
             ea = prev_head(ea, 0);
         }
 
-        // check code from `GetVariable_1` to `GetVariable_2`
+        // check code from GetVariable_1 to GetVariable_2
         ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
@@ -1869,7 +1870,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 ea = prev_head(ea, 0);
             }
 
-            // check `DataSize` initialization
+            // check DataSize initialization
             bool init_ok = false;
             decode_insn(&insn, prev_head(curr_addr, 0));
             if (!wrong_detection &&
@@ -1922,7 +1923,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
             plugin_name, static_cast<uint64_t>(prev_addr),
             static_cast<uint64_t>(curr_addr));
 
-        // get `dataSizeStackAddr`
+        // get dataSizeStackAddr
         uint32_t dataSizeStackAddr = 0xffffffff;
         ea = prev_head(static_cast<ea_t>(curr_addr), 0);
         for (auto i = 0; i < 10; ++i) {
@@ -1935,7 +1936,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
             ea = prev_head(ea, 0);
         }
 
-        // check code from `SmmGetVariable_1` to `SmmGetVariable_2`
+        // check code from SmmGetVariable_1 to SmmGetVariable_2
         ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
@@ -1958,7 +1959,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
                 init_ok = true;
             }
 
-            // check that the `DataSize` argument variable is the same for two
+            // check that the DataSize argument variable is the same for two
             // calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
@@ -2161,7 +2162,7 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
 
     analyzer.setStrings();
 
-    // find global vars for `gImageHandle`, `gST`, `gBS`, `gRT`, `gSmst`
+    // find global vars for gImageHandle, gST, gBS, gRT, gSmst
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
         analyzer.findImageHandleX64();
         analyzer.findSystemTableX64();
@@ -2195,10 +2196,10 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
             analyzer.findSwSmiHandlers();
             analyzer.findSmmCallout();
 
-            // find potential OOB RW with `GetVariable` function
+            // find potential OOB RW with GetVariable function
             analyzer.findGetVariableOveflow(analyzer.allServices);
 
-            // find potential OOB RW with `SmmGetVariable` function
+            // find potential OOB RW with SmmGetVariable function
             analyzer.findSmmGetVariableOveflow();
             analyzer.efiSmmCpuProtocolResolver();
         }
@@ -2247,13 +2248,17 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     // mark GUIDs
     analyzer.markDataGuids();
 
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    if (g_args.disable_ui) {
+        analyzer.fileType = FTYPE_PEI;
+    } else {
+        analyzer.fileType = getFileType(&analyzer.allGuids);
+    }
 
     analyzer.setStrings();
 
     if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
 
-        // find global vars for `gST`, `gBS`, `gRT`
+        // find global vars for gST, gBS, gRT
         analyzer.findBootServicesTables();
         analyzer.findRuntimeServicesTables();
 
