@@ -45,10 +45,8 @@ struct EfiGuid {
     }
 };
 
-std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList,
-                                     std::vector<segment_t *> dataSegments);
-std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList,
-                                  std::vector<segment_t *> dataSegments);
+std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList);
+std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList);
 std::vector<func_t *> findSmiHandlers(ea_t address);
 std::vector<func_t *> findSmiHandlersSmmSwDispatch(std::vector<segment_t *> dataSegments,
                                                    std::vector<json> stackGuids);

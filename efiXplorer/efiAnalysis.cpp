@@ -254,11 +254,19 @@ bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
 // Find and mark gSmst global variable address for X64 module
 bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
     msg("[%s] gSmst finding\n", plugin_name);
-    std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
-    std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
+    std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList);
+    std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList);
     gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
                      gSmstListSwDispatch.end());
     gSmstList.insert(gSmstList.end(), gSmstListSmmBase.begin(), gSmstListSmmBase.end());
+
+    // Deduplicate
+    auto last = std::unique(gSmstList.begin(), gSmstList.end());
+    gSmstList.erase(last, gSmstList.end());
+
+    for (auto smst : gSmstList) {
+        msg("[%s] 0x%016llX: gSmst\n", plugin_name, smst);
+    }
     return gSmstList.size();
 }
 

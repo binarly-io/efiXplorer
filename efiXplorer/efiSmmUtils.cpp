@@ -25,81 +25,66 @@ static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
-std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList,
-                                     std::vector<segment_t *> dataSegments) {
-    std::vector<ea_t> resAddrs;
-    EfiGuid efiSmmSwDispatch2ProtocolGuid = {
-        0x18a3c6dc, 0x5eea, 0x48c8, {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}};
-    EfiGuid efiSmmSwDispatchProtocolGuid = {
-        0xe541b773, 0xdd11, 0x420c, {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8, 0xbf}};
-    ea_t efiSmmSwDispatchProtocolGuidAddr = 0;
-
-    for (auto seg_info : dataSegments) {
-        if (seg_info == nullptr) {
-            return resAddrs;
-        }
-        msg("[%s] gSmst finding from 0x%016llX to 0x%016llX (via "
-            "EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID)\n",
-            plugin_name, static_cast<uint64_t>(seg_info->start_ea),
-            static_cast<uint64_t>(seg_info->end_ea));
-        ea_t ea = seg_info->start_ea;
-        while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
-            if (get_wide_dword(ea) == efiSmmSwDispatchProtocolGuid.data1) {
-                efiSmmSwDispatchProtocolGuidAddr = ea;
-                break;
-            }
-            ea += 1;
-        }
-
-        if (!efiSmmSwDispatchProtocolGuidAddr) {
-            continue;
-        }
-
-        std::vector<ea_t> efiSmmSwDispatchProtocolGuidXrefs =
-            getXrefs(efiSmmSwDispatchProtocolGuidAddr);
-
-        for (auto guidXref : efiSmmSwDispatchProtocolGuidXrefs) {
-            ea_t curAddr = prev_head(static_cast<ea_t>(guidXref), 0);
-            ea_t resAddr = 0;
-            insn_t insn;
-
+std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
+    std::vector<ea_t> smst_addrs;
+    EfiGuid guid2 = {0x18a3c6dc,
+                     0x5eea,
+                     0x48c8,
+                     {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89,
+                      0x99}}; // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
+    EfiGuid guid = {0xe541b773,
+                    0xdd11,
+                    0x420c,
+                    {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8,
+                     0xbf}}; // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID
+    std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
+    std::vector<ea_t> data2_addrs = findData(0, BADADDR, guid2.uchar_data().data(), 16);
+    data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
+    for (auto data_addr : data_addrs) {
+        msg("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID: 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(data_addr));
+        std::vector<ea_t> xrefs = getXrefs(data_addr);
+        insn_t insn;
+        for (auto xref : xrefs) {
+            ea_t res_addr = BADADDR;
+            ea_t cur_addr = xref;
             // Check 4 instructions below
             for (auto i = 0; i < 4; i++) {
-                decode_insn(&insn, curAddr);
+                cur_addr = prev_head(cur_addr, 0);
+                decode_insn(&insn, cur_addr);
                 if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
                     msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n",
-                        plugin_name, static_cast<uint64_t>(curAddr),
+                        plugin_name, static_cast<uint64_t>(cur_addr),
                         static_cast<uint64_t>(insn.ops[1].addr));
-                    resAddr = insn.ops[1].addr;
-                    if (find(gBsList.begin(), gBsList.end(), resAddr) != gBsList.end()) {
+                    res_addr = insn.ops[1].addr;
+                    if (find(gBsList.begin(), gBsList.end(), res_addr) != gBsList.end()) {
                         continue;
                     }
-                    set_cmt(curAddr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-                    setPtrTypeAndName(resAddr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
-                    resAddrs.push_back(resAddr);
+                    set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
+                    setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+                    smst_addrs.push_back(res_addr);
                     break;
                 }
-                curAddr = prev_head(curAddr, 0);
             }
         }
     }
-    return resAddrs;
+    return smst_addrs;
 }
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
-std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList,
-                                  std::vector<segment_t *> dataSegments) {
+std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
     std::vector<ea_t> smst_addrs;
-    EfiGuid efiSmmBase2ProtocolGuid = {
-        0xf4ccbfb7, 0xf6e0, 0x47fd, {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}};
-
-    std::vector<ea_t> data_addrs =
-        findData(0, BADADDR, efiSmmBase2ProtocolGuid.uchar_data().data(), 16);
+    EfiGuid guid = {
+        0xf4ccbfb7,
+        0xf6e0,
+        0x47fd,
+        {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
+    std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
     for (auto data_addr : data_addrs) {
-        msg("[%s] EFI_SMM_BASE2_PROTOCOL_GUID: 0x%016llX\n",
-            plugin_name, static_cast<uint64_t>(data_addr));
+        msg("[%s] EFI_SMM_BASE2_PROTOCOL_GUID: 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(data_addr));
         std::vector<ea_t> data_xrefs = getXrefs(data_addr);
         insn_t insn;
         for (auto xref : data_xrefs) {
