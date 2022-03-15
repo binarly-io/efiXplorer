@@ -84,7 +84,6 @@ class EfiAnalyzer {
     ea_t mainAddress{};
     std::filesystem::path guidsJsonPath;
     json bootServices;
-    json bootServicesAll;
     json peiServices;
     json peiServicesAll;
     json ppiCallsAll;
