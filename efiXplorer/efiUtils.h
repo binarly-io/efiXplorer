@@ -103,6 +103,7 @@ enum HelperValues {
     PUSH_NONE = 0xffff,
 };
 
+
 // Get input file type
 // (64-bit, 32-bit image or UEFI firmware)
 uint8_t getInputFileType();

@@ -48,9 +48,9 @@ struct EfiGuid {
 std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList);
 std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList);
 std::vector<func_t *> findSmiHandlers(ea_t address);
-std::vector<func_t *> findSmiHandlersSmmSwDispatch(std::vector<segment_t *> dataSegments,
-                                                   std::vector<json> stackGuids);
-std::vector<func_t *> findSmiHandlersSmmSwDispatchStack(std::vector<json> stackGuids);
+std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix);
+std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGuids,
+                                                      std::string prefix);
 std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                                           std::vector<json> *allServices);
 std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,

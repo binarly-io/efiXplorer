@@ -1693,9 +1693,31 @@ void findCalloutRec(func_t *func) {
 }
 
 //--------------------------------------------------------------------------
-// Find SwSmiHandler function inside SMM drivers
+// Find SmiHandler function inside SMM drivers
 void EfiAnalysis::EfiAnalyzer::findSwSmiHandlers() {
-    smiHandlers = findSmiHandlersSmmSwDispatch(dataSegments, stackGuids);
+    // Prefix: Sw, IoTrap, Sx, Gpi, Usb, StandbyButton, PeriodicTimer, PowerButton
+    std::map<EfiGuid *, std::string> types = {
+        {&sw_guid2, std::string("Sw")},
+        {&sw_guid, std::string("Sw")},
+        {&sx_guid2, std::string("Sx")},
+        {&sx_guid, std::string("Sx")},
+        {&io_trap_guid2, std::string("IoTrap")},
+        {&io_trap_guid, std::string("IoTrap")},
+        {&gpi_guid2, std::string("Gpi")},
+        {&gpi_guid, std::string("Gpi")},
+        {&usb_guid2, std::string("Usb")},
+        {&usb_guid, std::string("Usb")},
+        {&standby_button_guid2, std::string("StandbyButton")},
+        {&standby_button_guid, std::string("StandbyButton")},
+        {&periodic_timer_guid2, std::string("PeriodicTimer")},
+        {&periodic_timer_guid, std::string("PeriodicTimer")},
+        {&power_button_guid2, std::string("PowerButton")},
+        {&power_button_guid, std::string("PowerButton")},
+    };
+    for (auto &[guid, prefix] : types) {
+        auto res = findSmiHandlersSmmDispatch(*guid, prefix);
+        smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
+    }
 }
 
 //--------------------------------------------------------------------------

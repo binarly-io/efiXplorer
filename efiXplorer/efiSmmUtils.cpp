@@ -115,18 +115,20 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
 }
 
 //--------------------------------------------------------------------------
-// Find SmiHandler in RegSwSmi function
-std::vector<func_t *> findSmiHandlers(ea_t address) {
+// Find SmiHandler in RegSmi function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
+// StandbyButton, PeriodicTimer, PowerButton)
+std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
     std::vector<func_t *> smiHandlers;
 
-    // Get RegSwSmi function
+    // Get RegSmi function
     func_t *regSmi = get_func(address);
     ea_t start = 0;
     ea_t ea = 0;
     insn_t insn;
 
     if (regSmi == nullptr) {
-        msg("[%s] can't get RegSwSmi function, will try to create it\n", plugin_name);
+        msg("[%s] can't get Reg%sSmi function, will try to create it\n", plugin_name,
+            prefix.c_str());
 
         // Try to create function
         ea = address;
@@ -147,7 +149,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address) {
         }
     }
 
-    // Find (SwDispath->Register)(SwDispath, SwSmiHandler, &SwSmiNum, Data)
+    // Find (Dispath->Register)(Dispath, SmiHandler, &SmiNum, Data)
     for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea; ea = next_head(ea, BADADDR)) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni) {
@@ -202,8 +204,8 @@ std::vector<func_t *> findSmiHandlers(ea_t address) {
             ea_t smiHandlerAddr = insn.ops[1].addr;
             func_t *smiHandler = get_func(smiHandlerAddr);
             if (smiHandler == nullptr) {
-                msg("[%s] can't get SwSmiHandler function, will try to create it\n",
-                    plugin_name);
+                msg("[%s] can't get %sSmiHandler function, will try to create it\n",
+                    plugin_name, prefix.c_str());
 
                 // Create function
                 add_func(smiHandlerAddr);
@@ -214,11 +216,12 @@ std::vector<func_t *> findSmiHandlers(ea_t address) {
                 continue;
             }
 
-            // Make name for SwSmiHandler function
-            set_name(smiHandler->start_ea, "SwSmiHandler", SN_FORCE);
+            // Make name for {prefix}SmiHandler function
+            auto name = prefix + std::string("SmiHandler");
+            set_name(smiHandler->start_ea, name.c_str(), SN_FORCE);
 
             smiHandlers.push_back(smiHandler);
-            msg("[%s] found SmiHandler: 0x%016llX\n", plugin_name,
+            msg("[%s] found %sSmiHandler: 0x%016llX\n", plugin_name, prefix.c_str(),
                 static_cast<uint64_t>(smiHandler->start_ea));
         }
     }
@@ -226,56 +229,38 @@ std::vector<func_t *> findSmiHandlers(ea_t address) {
 }
 
 //--------------------------------------------------------------------------
-// Find SwSmiHandler function inside SMM drivers
-//  * find EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
-//  * get EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID xref address
-//  * this address will be inside RegSwSmi function
+// Find {Prefix}SmiHandler function inside SMM drivers
+//  * find GUID
+//  * get xrefs to GUID
+//  * xref will be inside RegSwSmi function
 //  * find SmiHandler by pattern (instructions may be out of order)
 //        lea     r9, ...
 //        lea     r8, ...
 //        lea     rdx, <func>
 //        call    qword ptr [...]
-std::vector<func_t *> findSmiHandlersSmmSwDispatch(std::vector<segment_t *> dataSegments,
-                                                   std::vector<json> stackGuids) {
+std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix) {
     std::vector<func_t *> smiHandlers;
-    EfiGuid guid2 = {0x18a3c6dc,
-                     0x5eea,
-                     0x48c8,
-                     {0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89,
-                      0x99}}; // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
-    EfiGuid guid = {0xe541b773,
-                    0xdd11,
-                    0x420c,
-                    {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8,
-                     0xbf}}; // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID
     std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
-    std::vector<ea_t> data2_addrs = findData(0, BADADDR, guid2.uchar_data().data(), 16);
-    data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
-    msg("[%s] SwSmiHandler function finding (using "
-        "EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID)\n",
-        plugin_name);
+    msg("[%s] %sSmiHandler function finding\n", plugin_name, prefix.c_str());
     for (auto data_addr : data_addrs) {
         std::vector<ea_t> xrefs = getXrefs(data_addr);
 
         for (auto xref : xrefs) {
-            std::vector<func_t *> smiHandlersCur = findSmiHandlers(xref);
+            std::vector<func_t *> smiHandlersCur = findSmiHandlers(xref, prefix);
             smiHandlers.insert(smiHandlers.end(), smiHandlersCur.begin(),
                                smiHandlersCur.end());
         }
     }
 
-    // Append stackSmiHandlers to result
-    std::vector<func_t *> stackSmiHandlers =
-        findSmiHandlersSmmSwDispatchStack(stackGuids);
-    smiHandlers.insert(smiHandlers.end(), stackSmiHandlers.begin(),
-                       stackSmiHandlers.end());
     return smiHandlers;
 }
 
 //--------------------------------------------------------------------------
 // Find SwSmiHandler function inside SMM drivers in case where
 // EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID is a local variable
-std::vector<func_t *> findSmiHandlersSmmSwDispatchStack(std::vector<json> stackGuids) {
+std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGuids,
+                                                      std::string prefix) {
+    // TODO: make it generic
     std::vector<func_t *> smiHandlers;
 
     for (auto guid : stackGuids) {
@@ -290,7 +275,7 @@ std::vector<func_t *> findSmiHandlersSmmSwDispatchStack(std::vector<json> stackG
         msg("[%s] found EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID on stack: "
             "0x%016llX\n",
             plugin_name, static_cast<uint64_t>(address));
-        std::vector<func_t *> smiHandlersCur = findSmiHandlers(address);
+        std::vector<func_t *> smiHandlersCur = findSmiHandlers(address, prefix);
         smiHandlers.insert(smiHandlers.end(), smiHandlersCur.begin(),
                            smiHandlersCur.end());
     }
