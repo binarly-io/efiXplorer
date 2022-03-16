@@ -254,11 +254,19 @@ bool EfiAnalysis::EfiAnalyzer::findSystemTableX64() {
 // Find and mark gSmst global variable address for X64 module
 bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
     msg("[%s] gSmst finding\n", plugin_name);
-    std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList, dataSegments);
-    std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList, dataSegments);
+    std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(gBsList);
+    std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(gBsList);
     gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
                      gSmstListSwDispatch.end());
     gSmstList.insert(gSmstList.end(), gSmstListSmmBase.begin(), gSmstListSmmBase.end());
+
+    // Deduplicate
+    auto last = std::unique(gSmstList.begin(), gSmstList.end());
+    gSmstList.erase(last, gSmstList.end());
+
+    for (auto smst : gSmstList) {
+        msg("[%s] 0x%016llX: gSmst\n", plugin_name, smst);
+    }
     return gSmstList.size();
 }
 
@@ -1552,12 +1560,12 @@ void EfiAnalysis::EfiAnalyzer::markDataGuids() {
                 msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name,
                     static_cast<uint64_t>(ea), comment.c_str());
 
-                json guidItem;
-                guidItem["address"] = ea;
-                guidItem["name"] = guidName;
-                guidItem["guid"] = getGuidFromValue(guid);
-                allGuids.push_back(guidItem);
-                dataGuids.push_back(guidItem);
+                json guid_item;
+                guid_item["address"] = ea;
+                guid_item["name"] = guidName;
+                guid_item["guid"] = getGuidFromValue(guid);
+                allGuids.push_back(guid_item);
+                dataGuids.push_back(guid_item);
             }
             ea += 1;
         }
@@ -1571,44 +1579,49 @@ void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
         segment_t *s = seg;
         ea_t ea = s->start_ea;
         insn_t insn;
-        insn_t insnNext;
+        insn_t insn_next;
         msg("[%s] local GUIDs finding from 0x%016llX to 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(s->start_ea), static_cast<uint64_t>(s->end_ea));
         while (ea <= s->end_ea) {
             ea = next_head(ea, BADADDR);
             decode_insn(&insn, ea);
 
-            // check if insn like mov dword ptr [...], gData1
-            if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-                insn.ops[1].type == o_imm) {
+            // check if insn like mov dword ptr [...], data1
+            if (!(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
+                  insn.ops[1].type == o_imm)) {
+                continue;
+            }
 
-                // get guid->data1 value
-                uint32_t gData1 = static_cast<uint32_t>(insn.ops[1].value);
-                if (gData1 == 0x00000000 || gData1 == 0xffffffff) {
-                    ea = next_head(ea, BADADDR);
-                    continue;
-                }
-                ea_t eaNext = next_head(ea, BADADDR);
-                decode_insn(&insnNext, eaNext);
+            // get guid->Data1 value
+            uint32_t data1 = static_cast<uint32_t>(insn.ops[1].value);
+            if (data1 == 0x00000000 || data1 == 0xffffffff) {
+                ea = next_head(ea, BADADDR);
+                continue;
+            }
 
-                // check if insn like mov dword ptr [...], gData2
-                if (insnNext.itype == NN_mov && insnNext.ops[0].type == o_displ &&
-                    insnNext.ops[1].type == o_imm) {
+            // check 4 insns
+            bool exit = false;
+            for (auto i = 0; i < 4; i++) {
+                auto ea_next = next_head(ea, BADADDR);
+                decode_insn(&insn_next, ea_next);
+                // check if insn like mov dword ptr [...], data2
+                if (insn_next.itype == NN_mov && insn_next.ops[0].type == o_displ &&
+                    insn_next.ops[1].type == o_imm) {
 
-                    // get guid->data2 value
-                    uint16_t gData2 = static_cast<uint16_t>(insnNext.ops[1].value);
-                    if (gData2 == 0x0000 || gData2 == 0xffff) {
+                    // get guid->Data2 value
+                    uint16_t data2 = static_cast<uint16_t>(insn_next.ops[1].value);
+                    if (data2 == 0x0000 || data2 == 0xffff) {
                         ea = next_head(ea, BADADDR);
                         continue;
                     }
 
-                    // found guid->data1 and guid->data2 values, try to get
+                    // found guid->Data1 and guid->Data2 values, try to get
                     // guid name
                     for (auto dbItem = dbProtocols.begin(); dbItem != dbProtocols.end();
                          ++dbItem) {
                         auto guid = dbItem.value();
-                        if (gData1 == static_cast<uint32_t>(guid[0]) &&
-                            gData2 == static_cast<uint16_t>(guid[1])) {
+                        if (data1 == static_cast<uint32_t>(guid[0]) &&
+                            data2 == static_cast<uint16_t>(guid[1])) {
 
                             // mark local GUID
                             std::string comment = "EFI_GUID " + dbItem.key();
@@ -1616,15 +1629,19 @@ void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
                                 static_cast<uint64_t>(ea), comment.c_str());
                             set_cmt(ea, comment.c_str(), true);
 
-                            json guidItem;
-                            guidItem["address"] = ea;
-                            guidItem["name"] = dbItem.key();
-                            guidItem["guid"] = getGuidFromValue(guid);
-                            allGuids.push_back(guidItem);
-                            stackGuids.push_back(guidItem);
+                            json guid_item;
+                            guid_item["address"] = ea;
+                            guid_item["name"] = dbItem.key();
+                            guid_item["guid"] = getGuidFromValue(guid);
+                            allGuids.push_back(guid_item);
+                            stackGuids.push_back(guid_item);
+                            exit = true;
                             break;
                         }
                     }
+                }
+                if (exit) {
+                    break;
                 }
             }
         }
@@ -1676,9 +1693,31 @@ void findCalloutRec(func_t *func) {
 }
 
 //--------------------------------------------------------------------------
-// Find SwSmiHandler function inside SMM drivers
+// Find SmiHandler function inside SMM drivers
 void EfiAnalysis::EfiAnalyzer::findSwSmiHandlers() {
-    smiHandlers = findSmiHandlersSmmSwDispatch(dataSegments, stackGuids);
+    // Prefix: Sw, IoTrap, Sx, Gpi, Usb, StandbyButton, PeriodicTimer, PowerButton
+    std::map<EfiGuid *, std::string> types = {
+        {&sw_guid2, std::string("Sw")},
+        {&sw_guid, std::string("Sw")},
+        {&sx_guid2, std::string("Sx")},
+        {&sx_guid, std::string("Sx")},
+        {&io_trap_guid2, std::string("IoTrap")},
+        {&io_trap_guid, std::string("IoTrap")},
+        {&gpi_guid2, std::string("Gpi")},
+        {&gpi_guid, std::string("Gpi")},
+        {&usb_guid2, std::string("Usb")},
+        {&usb_guid, std::string("Usb")},
+        {&standby_button_guid2, std::string("StandbyButton")},
+        {&standby_button_guid, std::string("StandbyButton")},
+        {&periodic_timer_guid2, std::string("PeriodicTimer")},
+        {&periodic_timer_guid, std::string("PeriodicTimer")},
+        {&power_button_guid2, std::string("PowerButton")},
+        {&power_button_guid, std::string("PowerButton")},
+    };
+    for (auto &[guid, prefix] : types) {
+        auto res = findSmiHandlersSmmDispatch(*guid, prefix);
+        smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
+    }
 }
 
 //--------------------------------------------------------------------------

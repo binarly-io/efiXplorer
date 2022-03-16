@@ -774,3 +774,18 @@ bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
                   std::vector<ea_t> gRtList, ea_t ea) {
     return (addrInVec(gStList, ea) || addrInVec(gBsList, ea) || addrInVec(gRtList, ea));
 }
+
+std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {
+    std::vector<ea_t> res;
+    ea_t start = start_ea;
+    int counter = 0;
+    while (true) {
+        auto ea = bin_search2(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
+        if (ea == BADADDR) {
+            break;
+        }
+        res.push_back(ea);
+        start = ea + len;
+    }
+    return res;
+}
