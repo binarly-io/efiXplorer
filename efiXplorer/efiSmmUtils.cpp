@@ -302,51 +302,29 @@ std::vector<func_t *> findSmiHandlersSmmSwDispatchStack(std::vector<json> stackG
 // Find gSmmVar->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
 std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                                           std::vector<json> *allServices) {
-    msg("[%s] gSmmVar->SmmGetVariable calls finding via "
-        "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
+    msg("[%s] gSmmVar->SmmGetVariable calls finding via EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
         plugin_name);
-    EfiGuid efiSmmVariableProtocolGuid = {
-        0xed32d533, 0xc5a6, 0x40a2, {0xbd, 0xe2, 0x52, 0x55, 0x8d, 0x33, 0xcc, 0xa1}};
     std::vector<ea_t> smmGetVariableCalls;
+    EfiGuid guid = {0xed32d533,
+                    0x99e6,
+                    0x4209,
+                    {0x9c, 0xc0, 0x2d, 0x72, 0xcd, 0xd9, 0x98,
+                     0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
 
     // Find all EFI_GUID EFI_SMM_VARIABLE_PROTOCOL_GUID addresses
-    std::vector<ea_t> efiSmmVariableProtocolGuidAddrs;
+    std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
+    std::vector<ea_t> gSmmVarAddrs; // Find all gSmmVar variables
+    for (auto data_addr : data_addrs) {
+        msg("Here\n");
+        std::vector<ea_t> xrefs = getXrefs(data_addr);
 
-    for (auto seg_info : dataSegments) {
-        msg("[%s] gSmmVar->SmmGetVariable function finding from 0x%016llX "
-            "to 0x%016llX\n",
-            plugin_name, static_cast<uint64_t>(seg_info->start_ea),
-            static_cast<uint64_t>(seg_info->end_ea));
-        ea_t ea = seg_info->start_ea;
-
-        while (ea != BADADDR && ea <= seg_info->end_ea - 15) {
-            if (get_wide_dword(ea) == efiSmmVariableProtocolGuid.data1) {
-                efiSmmVariableProtocolGuidAddrs.push_back(ea);
-                msg("[%s] EFI_SMM_VARIABLE_PROTOCOL_GUID address: 0x%016llX\n",
-                    plugin_name, static_cast<uint64_t>(ea));
-            }
-            ea += 1;
-        }
-
-        if (!efiSmmVariableProtocolGuidAddrs.size()) {
-            msg("[%s] can't find a EFI_SMM_VARIABLE_PROTOCOL_GUID guid\n", plugin_name);
-            return smmGetVariableCalls;
-        }
-    }
-
-    // Find all gSmmVar variables
-    std::vector<ea_t> gSmmVarAddrs;
-    for (std::vector<ea_t>::iterator guid_addr = efiSmmVariableProtocolGuidAddrs.begin();
-         guid_addr != efiSmmVariableProtocolGuidAddrs.end(); ++guid_addr) {
-        std::vector<ea_t> efiSmmVariableProtocolGuidXrefs = getXrefs(*guid_addr);
-
-        for (auto guidXref : efiSmmVariableProtocolGuidXrefs) {
-            segment_t *seg = getseg(static_cast<ea_t>(guidXref));
+        for (auto xref : xrefs) {
+            segment_t *seg = getseg(static_cast<ea_t>(xref));
             qstring seg_name;
             get_segm_name(&seg_name, seg);
             msg("[%s] EFI_SMM_VARIABLE_PROTOCOL_GUID xref address: 0x%016llX, "
                 "segment: %s\n",
-                plugin_name, static_cast<uint64_t>(guidXref), seg_name.c_str());
+                plugin_name, static_cast<uint64_t>(xref), seg_name.c_str());
 
             size_t index = seg_name.find(".text");
             if (index == std::string::npos) {
@@ -354,10 +332,10 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
             }
 
             insn_t insn;
-            ea_t ea = prev_head(static_cast<ea_t>(guidXref), 0);
-
+            ea_t ea = xref;
             for (auto i = 0; i < 8; i++) {
                 // Find `lea r8, <gSmmVar_addr>` instruction
+                ea = prev_head(ea, 0);
                 decode_insn(&insn, ea);
                 if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
@@ -369,7 +347,6 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                     gSmmVarAddrs.push_back(insn.ops[1].addr);
                     break;
                 }
-                ea = prev_head(ea, 0);
             }
         }
     }
@@ -424,16 +401,16 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                         msg("[%s] 0x%016llX : %s\n", plugin_name,
                             static_cast<uint64_t>(ea), "SmmGetVariable");
                         std::string smm_call = "gSmmVar->SmmGetVariable";
-                        json smmItem;
-                        smmItem["address"] = ea;
-                        smmItem["service_name"] = smm_call;
-                        smmItem["table_name"] =
+                        json smm_item;
+                        smm_item["address"] = ea;
+                        smm_item["service_name"] = smm_call;
+                        smm_item["table_name"] =
                             static_cast<std::string>("EFI_SMM_VARIABLE_PROTOCOL");
-                        smmItem["offset"] = 0;
+                        smm_item["offset"] = 0;
 
-                        if (find(allServices->begin(), allServices->end(), smmItem) ==
+                        if (find(allServices->begin(), allServices->end(), smm_item) ==
                             allServices->end()) {
-                            allServices->push_back(smmItem);
+                            allServices->push_back(smm_item);
                         }
 
                         break;
@@ -457,9 +434,8 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
         if (name != "EFI_SMM_CPU_PROTOCOL_GUID")
             continue;
         ea_t address = static_cast<ea_t>(guid["address"]);
-        msg("[%s] found EFI_SMM_CPU_PROTOCOL on stack: "
-            "0x%016llX\n",
-            plugin_name, static_cast<uint64_t>(address));
+        msg("[%s] found EFI_SMM_CPU_PROTOCOL on stack: 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(address));
         codeAddrs.push_back(address);
     }
 
@@ -549,16 +525,16 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
                         msg("[%s] 0x%016llX : %s\n", plugin_name,
                             static_cast<uint64_t>(ea), "gSmmCpu->ReadSaveState");
                         std::string smm_call = "gSmmCpu->ReadSaveState";
-                        json smmItem;
-                        smmItem["address"] = ea;
-                        smmItem["service_name"] = smm_call;
-                        smmItem["table_name"] =
+                        json smm_item;
+                        smm_item["address"] = ea;
+                        smm_item["service_name"] = smm_call;
+                        smm_item["table_name"] =
                             static_cast<std::string>("EFI_SMM_CPU_PROTOCOL");
-                        smmItem["offset"] = 0;
+                        smm_item["offset"] = 0;
 
-                        if (find(allServices->begin(), allServices->end(), smmItem) ==
+                        if (find(allServices->begin(), allServices->end(), smm_item) ==
                             allServices->end()) {
-                            allServices->push_back(smmItem);
+                            allServices->push_back(smm_item);
                         }
 
                         break;
