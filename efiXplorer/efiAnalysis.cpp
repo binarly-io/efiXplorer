@@ -2126,6 +2126,9 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
         bool name_found = false;
         bool guid_found = false;
         func_t *f = get_func(ea);
+        if (f == nullptr) {
+            continue;
+        }
         for (auto i = 0; i < 16; i++) {
             addr = prev_head(addr, 0);
             decode_insn(&insn, addr);
