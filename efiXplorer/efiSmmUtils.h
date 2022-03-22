@@ -23,28 +23,6 @@
 
 #include "efiUtils.h"
 
-struct EfiGuid {
-    uint32_t data1;
-    uint16_t data2;
-    uint16_t data3;
-    uint8_t data4[8];
-    std::vector<uchar> uchar_data() {
-        std::vector<uchar> res;
-        res.push_back(data1 & 0xff);
-        res.push_back(data1 >> 8 & 0xff);
-        res.push_back(data1 >> 16 & 0xff);
-        res.push_back(data1 >> 24 & 0xff);
-        res.push_back(data2 & 0xff);
-        res.push_back(data2 >> 8 & 0xff);
-        res.push_back(data3 & 0xff);
-        res.push_back(data3 >> 8 & 0xff);
-        for (auto i = 0; i < 8; i++) {
-            res.push_back(data4[i]);
-        }
-        return res;
-    }
-};
-
 std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList);
 std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList);
 std::vector<func_t *> findSmiHandlers(ea_t address);

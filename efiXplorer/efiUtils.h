@@ -103,6 +103,34 @@ enum HelperValues {
     PUSH_NONE = 0xffff,
 };
 
+struct EfiGuid {
+    uint32_t data1;
+    uint16_t data2;
+    uint16_t data3;
+    uint8_t data4[8];
+    std::vector<uchar> uchar_data() {
+        std::vector<uchar> res;
+        res.push_back(data1 & 0xff);
+        res.push_back(data1 >> 8 & 0xff);
+        res.push_back(data1 >> 16 & 0xff);
+        res.push_back(data1 >> 24 & 0xff);
+        res.push_back(data2 & 0xff);
+        res.push_back(data2 >> 8 & 0xff);
+        res.push_back(data3 & 0xff);
+        res.push_back(data3 >> 8 & 0xff);
+        for (auto i = 0; i < 8; i++) {
+            res.push_back(data4[i]);
+        }
+        return res;
+    }
+    std::string to_string() {
+        char res[37] = {0};
+        snprintf(res, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1,
+                 data2, data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5],
+                 data4[6], data4[7], data4[8]);
+        return static_cast<std::string>(res);
+    }
+};
 
 // Get input file type
 // (64-bit, 32-bit image or UEFI firmware)
@@ -221,3 +249,4 @@ std::vector<ea_t> searchProtocol(std::string protocol);
 
 bool checkInstallProtocol(ea_t ea);
 std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+EfiGuid getStackGuid(func_t *f, uint64_t offset);

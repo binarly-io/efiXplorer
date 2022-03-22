@@ -70,6 +70,7 @@ class EfiAnalyzer {
     bool findPPIGetVariableStackOveflow();
     bool findSmmGetVariableOveflow();
     bool findSmmCallout();
+    bool analyzeNvramVariables();
     void dumpInfo();
 
     EfiAnalyzer();
@@ -91,6 +92,7 @@ class EfiAnalyzer {
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
+    std::vector<json> nvramVariables; // [{"VariableName": ..., "VendorGuid"}, ...]
     std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
     std::vector<ea_t> markedInterfaces;
 

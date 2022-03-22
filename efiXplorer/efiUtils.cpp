@@ -789,3 +789,52 @@ std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) 
     }
     return res;
 }
+
+EfiGuid getStackGuid(func_t *f, uint64_t offset) {
+    EfiGuid guid;
+    insn_t insn;
+    auto ea = f->start_ea;
+    int counter = 0;
+    while (ea <= f->end_ea) {
+        if (counter == 16) {
+            msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+            break;
+        }
+        ea = next_head(ea, BADADDR);
+        decode_insn(&insn, ea);
+        if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
+            (insn.ops[0].reg == REG_RSP || insn.ops[0].reg == REG_RBP) &&
+            insn.ops[1].type == o_imm) {
+            if (insn.ops[0].addr == offset) {
+                guid.data1 = insn.ops[1].value;
+                counter += 4;
+                continue;
+            }
+            if (insn.ops[0].addr == offset + 4) {
+                guid.data2 = insn.ops[1].value & 0xffff;
+                guid.data3 = (insn.ops[1].value >> 16) & 0xffff;
+                counter += 4;
+                continue;
+            }
+            if (insn.ops[0].addr == offset + 8) {
+                auto dword = insn.ops[1].value;
+                guid.data4[0] = dword & 0xff;
+                guid.data4[1] = (dword >> 8) & 0xff;
+                guid.data4[2] = (dword >> 16) & 0xff;
+                guid.data4[3] = (dword >> 24) & 0xff;
+                counter += 4;
+                continue;
+            }
+            if (insn.ops[0].addr == offset + 12) {
+                auto dword = insn.ops[1].value;
+                guid.data4[4] = dword & 0xff;
+                guid.data4[5] = (dword >> 8) & 0xff;
+                guid.data4[6] = (dword >> 16) & 0xff;
+                guid.data4[7] = (dword >> 24) & 0xff;
+                counter += 4;
+                continue;
+            }
+        }
+    }
+    return guid;
+}

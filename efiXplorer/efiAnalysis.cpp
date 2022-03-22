@@ -2101,6 +2101,75 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
     return (smmGetVariableOverflow.size() > 0);
 }
 
+bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
+    msg("[%s] Get NVRAM variables information\n", plugin_name);
+    std::vector<ea_t> var_services;
+    std::string getVariableStr("GetVariable");
+    std::string setVariableStr("GetVariable");
+    for (auto j_service : allServices) {
+        json service = j_service;
+        std::string service_name = static_cast<std::string>(service["service_name"]);
+        ea_t addr = static_cast<ea_t>(service["address"]);
+        if (!service_name.compare(getVariableStr) ||
+            !service_name.compare(setVariableStr)) {
+            var_services.push_back(addr);
+        }
+    }
+    sort(var_services.begin(), var_services.end());
+    for (auto ea : var_services) {
+        msg("[%s] GetVariable/SetVariable call: 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(ea));
+        auto addr = ea;
+        insn_t insn;
+        bool name_found = false;
+        bool guid_found = false;
+        func_t *f = get_func(ea);
+        for (auto i = 0; i < 16; i++) {
+            addr = prev_head(addr, 0);
+            decode_insn(&insn, addr);
+            if (!name_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+                msg("[%s]   VariableName address: 0x%016llX\n", plugin_name,
+                    static_cast<uint64_t>(insn.ops[1].addr));
+                name_found = true;
+            }
+            // If GUID is global variable
+            if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+                msg("[%s]   VendorGuid address (global): 0x%016llX\n", plugin_name,
+                    static_cast<uint64_t>(insn.ops[1].addr));
+                guid_found = true;
+            }
+            // If GUID is local variable
+            if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
+                switch (insn.ops[1].reg) {
+                case REG_RBP: {
+                    msg("[%s]   VendorGuid address (regarding to RBP): 0x%016llX\n",
+                        plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                    EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    guid_found = true;
+                    continue;
+                }
+                case REG_RSP: {
+                    msg("[%s]   VendorGuid address (regarding to RSP): 0x%016llX\n",
+                        plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                    EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    guid_found = true;
+                    continue;
+                }
+                default:
+                    continue;
+                }
+            }
+            if (name_found && guid_found) {
+                break;
+            }
+        }
+    }
+    return true;
+}
+
 //--------------------------------------------------------------------------
 // Resolve EFI_SMM_CPU_PROTOCOL
 bool EfiAnalysis::EfiAnalyzer::efiSmmCpuProtocolResolver() {
@@ -2302,6 +2371,8 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
             analyzer.findSmmGetVariableOveflow();
             analyzer.efiSmmCpuProtocolResolver();
         }
+
+        analyzer.analyzeNvramVariables();
 
     } else {
         msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
