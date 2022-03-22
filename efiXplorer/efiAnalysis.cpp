@@ -2129,15 +2129,19 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
             decode_insn(&insn, addr);
             if (!name_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                 insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
-                msg("[%s]   VariableName address: 0x%016llX\n", plugin_name,
+                msg("[%s]  VariableName address: 0x%016llX\n", plugin_name,
                     static_cast<uint64_t>(insn.ops[1].addr));
+                std::string var_name = getWideString(insn.ops[1].addr);
+                msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
                 name_found = true;
             }
             // If GUID is global variable
             if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                 insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
-                msg("[%s]   VendorGuid address (global): 0x%016llX\n", plugin_name,
+                msg("[%s]  VendorGuid address (global): 0x%016llX\n", plugin_name,
                     static_cast<uint64_t>(insn.ops[1].addr));
+                EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
+                msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
                 guid_found = true;
             }
             // If GUID is local variable
@@ -2145,16 +2149,18 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                 insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
                 switch (insn.ops[1].reg) {
                 case REG_RBP: {
-                    msg("[%s]   VendorGuid address (regarding to RBP): 0x%016llX\n",
+                    msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
                         plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
                     EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
                     guid_found = true;
                     continue;
                 }
                 case REG_RSP: {
-                    msg("[%s]   VendorGuid address (regarding to RSP): 0x%016llX\n",
+                    msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
                         plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
                     EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
                     guid_found = true;
                     continue;
                 }

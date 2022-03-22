@@ -249,4 +249,6 @@ std::vector<ea_t> searchProtocol(std::string protocol);
 
 bool checkInstallProtocol(ea_t ea);
 std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+std::string getWideString(ea_t addr);
+EfiGuid getGlobalGuid(ea_t addr);
 EfiGuid getStackGuid(func_t *f, uint64_t offset);

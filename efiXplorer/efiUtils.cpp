@@ -790,6 +790,33 @@ std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) 
     return res;
 }
 
+//--------------------------------------------------------------------------
+// Get wide string by address
+std::string getWideString(ea_t addr) {
+    std::string res;
+    int index = 0;
+    while (get_wide_word(addr + index)) {
+        res.push_back(get_wide_byte(addr + index));
+        index += 2;
+    }
+    return res;
+}
+
+//--------------------------------------------------------------------------
+// Get EfiGuid by address
+EfiGuid getGlobalGuid(ea_t addr) {
+    EfiGuid guid;
+    guid.data1 = get_wide_dword(addr);
+    guid.data2 = get_wide_word(addr + 4);
+    guid.data3 = get_wide_word(addr + 6);
+    for (auto i = 0; i < 8; i++) {
+        guid.data4[i] = static_cast<uint8_t>(get_wide_byte(addr + 8 + i));
+    }
+    return guid;
+}
+
+//--------------------------------------------------------------------------
+// Get EfiGuid by stack offset
 EfiGuid getStackGuid(func_t *f, uint64_t offset) {
     EfiGuid guid;
     insn_t insn;
@@ -797,7 +824,6 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
     int counter = 0;
     while (ea <= f->end_ea) {
         if (counter == 16) {
-            msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
             break;
         }
         ea = next_head(ea, BADADDR);
