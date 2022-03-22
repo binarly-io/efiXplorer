@@ -2105,7 +2105,7 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
     msg("[%s] Get NVRAM variables information\n", plugin_name);
     std::vector<ea_t> var_services;
     std::string getVariableStr("GetVariable");
-    std::string setVariableStr("GetVariable");
+    std::string setVariableStr("SetVariable");
     for (auto j_service : allServices) {
         json service = j_service;
         std::string service_name = static_cast<std::string>(service["service_name"]);
