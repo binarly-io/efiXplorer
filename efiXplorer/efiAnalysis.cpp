@@ -740,7 +740,7 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
                             if (static_cast<uint32_t>(smmServicesTableAll[j].offset64) ==
                                 SmiHandlerRegisterOffset64) {
                                 // set name for Handler argument
-                                auto smiHandlerAddr = markSmiHandler(addr);
+                                auto smiHandlerAddr = markChildSwSmiHandler(addr);
                                 // save SMI handler
                                 func_t *childSmiHandler = get_func(smiHandlerAddr);
                                 if (childSmiHandler != nullptr) {
@@ -2101,6 +2101,90 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
     return (smmGetVariableOverflow.size() > 0);
 }
 
+bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
+    msg("[%s] Get NVRAM variables information\n", plugin_name);
+    std::vector<ea_t> var_services;
+    std::string getVariableStr("GetVariable");
+    std::string setVariableStr("GetVariable");
+    for (auto j_service : allServices) {
+        json service = j_service;
+        std::string service_name = static_cast<std::string>(service["service_name"]);
+        ea_t addr = static_cast<ea_t>(service["address"]);
+        if (!service_name.compare(getVariableStr) ||
+            !service_name.compare(setVariableStr)) {
+            var_services.push_back(addr);
+        }
+    }
+    sort(var_services.begin(), var_services.end());
+    for (auto ea : var_services) {
+        msg("[%s] GetVariable/SetVariable call: 0x%016llX\n", plugin_name,
+            static_cast<uint64_t>(ea));
+        json item;
+        item["addr"] = ea;
+        insn_t insn;
+        auto addr = ea;
+        bool name_found = false;
+        bool guid_found = false;
+        func_t *f = get_func(ea);
+        for (auto i = 0; i < 16; i++) {
+            addr = prev_head(addr, 0);
+            decode_insn(&insn, addr);
+            if (!name_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+                msg("[%s]  VariableName address: 0x%016llX\n", plugin_name,
+                    static_cast<uint64_t>(insn.ops[1].addr));
+                std::string var_name = getWideString(insn.ops[1].addr);
+                msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
+                item["VariableName"] = var_name;
+                name_found = true;
+            }
+            // If GUID is global variable
+            if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+                msg("[%s]  VendorGuid address (global): 0x%016llX\n", plugin_name,
+                    static_cast<uint64_t>(insn.ops[1].addr));
+                EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
+                msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                item["VendorGuid"] = guid.to_string();
+                guid_found = true;
+            }
+            // If GUID is local variable
+            if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
+                switch (insn.ops[1].reg) {
+                case REG_RBP: {
+                    msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
+                        plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                    EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                    item["VendorGuid"] = guid.to_string();
+                    guid_found = true;
+                    continue;
+                }
+                case REG_RSP: {
+                    msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
+                        plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                    EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                    msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                    item["VendorGuid"] = guid.to_string();
+                    guid_found = true;
+                    continue;
+                }
+                default:
+                    continue;
+                }
+            }
+            if (name_found && guid_found) {
+                break;
+            }
+        }
+        if (name_found || guid_found) {
+            nvramVariables.push_back(item);
+        }
+    }
+    return true;
+}
+
 //--------------------------------------------------------------------------
 // Resolve EFI_SMM_CPU_PROTOCOL
 bool EfiAnalysis::EfiAnalyzer::efiSmmCpuProtocolResolver() {
@@ -2138,6 +2222,9 @@ void EfiAnalysis::EfiAnalyzer::dumpInfo() {
     }
     if (allGuids.size()) {
         info["allGuids"] = allGuids;
+    }
+    if (nvramVariables.size()) {
+        info["nvramVariables"] = nvramVariables;
     }
     if (readSaveStateCalls.size()) {
         info["readSaveStateCalls"] = readSaveStateCalls;
@@ -2209,34 +2296,18 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
     if (calloutAddrs.size() + peiGetVariableOverflow.size() + getVariableOverflow.size() +
         smmGetVariableOverflow.size()) {
         std::vector<json> vulns;
-
-        // TODO: use map to avoid duplicate code
-        for (auto addr : calloutAddrs) {
-            json item;
-            item["type"] = "smm_callout";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : peiGetVariableOverflow) {
-            json item;
-            item["type"] = "pei_get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : getVariableOverflow) {
-            json item;
-            item["type"] = "get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : smmGetVariableOverflow) {
-            json item;
-            item["type"] = "smm_get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
+        std::map<std::string, std::vector<ea_t>> vulns_map = {
+            {std::string("smm_callout"), calloutAddrs},
+            {std::string("pei_get_variable_buffer_overflow"), peiGetVariableOverflow},
+            {std::string("get_variable_buffer_overflow"), getVariableOverflow},
+            {std::string("smm_get_variable_buffer_overflow"), smmGetVariableOverflow}};
+        for (const auto &[type, addrs] : vulns_map) {
+            for (auto addr : addrs) {
+                json item;
+                item["type"] = type;
+                item["address"] = addr;
+                vulns.push_back(item);
+            }
         }
         qstring title = "efiXplorer: vulns";
         vulns_show(vulns, title);
@@ -2318,6 +2389,8 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
             analyzer.findSmmGetVariableOveflow();
             analyzer.efiSmmCpuProtocolResolver();
         }
+
+        analyzer.analyzeNvramVariables();
 
     } else {
         msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);

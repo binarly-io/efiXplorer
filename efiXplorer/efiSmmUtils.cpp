@@ -531,7 +531,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
     return readSaveStateCalls;
 }
 
-ea_t markSmiHandler(ea_t ea) {
+ea_t markChildSwSmiHandler(ea_t ea) {
     insn_t insn;
     auto addr = prev_head(ea, 0);
     decode_insn(&insn, addr);
@@ -546,7 +546,7 @@ ea_t markSmiHandler(ea_t ea) {
             if (insn.ops[1].type != o_mem) {
                 continue;
             }
-            set_name(insn.ops[1].addr, "SmiHandler", SN_FORCE);
+            set_name(insn.ops[1].addr, "ChildSwSmiHandler", SN_FORCE);
             return insn.ops[1].addr;
         }
     }
