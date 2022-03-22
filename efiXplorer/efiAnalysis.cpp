@@ -2119,8 +2119,10 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
     for (auto ea : var_services) {
         msg("[%s] GetVariable/SetVariable call: 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(ea));
-        auto addr = ea;
+        json item;
+        item["addr"] = ea;
         insn_t insn;
+        auto addr = ea;
         bool name_found = false;
         bool guid_found = false;
         func_t *f = get_func(ea);
@@ -2133,6 +2135,7 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                     static_cast<uint64_t>(insn.ops[1].addr));
                 std::string var_name = getWideString(insn.ops[1].addr);
                 msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
+                item["VariableName"] = var_name;
                 name_found = true;
             }
             // If GUID is global variable
@@ -2142,6 +2145,7 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                     static_cast<uint64_t>(insn.ops[1].addr));
                 EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
                 msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                item["VendorGuid"] = guid.to_string();
                 guid_found = true;
             }
             // If GUID is local variable
@@ -2153,6 +2157,7 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                         plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
                     EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
                     msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                    item["VendorGuid"] = guid.to_string();
                     guid_found = true;
                     continue;
                 }
@@ -2161,6 +2166,7 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                         plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
                     EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
                     msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                    item["VendorGuid"] = guid.to_string();
                     guid_found = true;
                     continue;
                 }
@@ -2171,6 +2177,9 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
             if (name_found && guid_found) {
                 break;
             }
+        }
+        if (name_found || guid_found) {
+            nvramVariables.push_back(item);
         }
     }
     return true;
@@ -2213,6 +2222,9 @@ void EfiAnalysis::EfiAnalyzer::dumpInfo() {
     }
     if (allGuids.size()) {
         info["allGuids"] = allGuids;
+    }
+    if (nvramVariables.size()) {
+        info["nvramVariables"] = nvramVariables;
     }
     if (readSaveStateCalls.size()) {
         info["readSaveStateCalls"] = readSaveStateCalls;

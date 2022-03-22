@@ -92,7 +92,8 @@ class EfiAnalyzer {
     json smmServices;
     json smmServicesAll;
     json dbProtocols;
-    std::vector<json> nvramVariables; // [{"VariableName": ..., "VendorGuid"}, ...]
+    std::vector<json>
+        nvramVariables; // [{"addr": ..., "VariableName": ..., "VendorGuid"}, ...]
     std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
     std::vector<ea_t> markedInterfaces;
 
