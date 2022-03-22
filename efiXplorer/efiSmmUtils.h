@@ -56,4 +56,4 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
 std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
                                            std::vector<json> dataGuids,
                                            std::vector<json> *allServices);
-ea_t markSmiHandler(ea_t ea);
+ea_t markChildSwSmiHandler(ea_t ea);

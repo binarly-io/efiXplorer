@@ -740,7 +740,7 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
                             if (static_cast<uint32_t>(smmServicesTableAll[j].offset64) ==
                                 SmiHandlerRegisterOffset64) {
                                 // set name for Handler argument
-                                auto smiHandlerAddr = markSmiHandler(addr);
+                                auto smiHandlerAddr = markChildSwSmiHandler(addr);
                                 // save SMI handler
                                 func_t *childSmiHandler = get_func(smiHandlerAddr);
                                 if (childSmiHandler != nullptr) {
@@ -2209,34 +2209,18 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
     if (calloutAddrs.size() + peiGetVariableOverflow.size() + getVariableOverflow.size() +
         smmGetVariableOverflow.size()) {
         std::vector<json> vulns;
-
-        // TODO: use map to avoid duplicate code
-        for (auto addr : calloutAddrs) {
-            json item;
-            item["type"] = "smm_callout";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : peiGetVariableOverflow) {
-            json item;
-            item["type"] = "pei_get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : getVariableOverflow) {
-            json item;
-            item["type"] = "get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
-        }
-
-        for (auto addr : smmGetVariableOverflow) {
-            json item;
-            item["type"] = "smm_get_variable_buffer_overflow";
-            item["address"] = addr;
-            vulns.push_back(item);
+        std::map<std::string, std::vector<ea_t>> vulns_map = {
+            {std::string("smm_callout"), calloutAddrs},
+            {std::string("pei_get_variable_buffer_overflow"), peiGetVariableOverflow},
+            {std::string("get_variable_buffer_overflow"), getVariableOverflow},
+            {std::string("smm_get_variable_buffer_overflow"), smmGetVariableOverflow}};
+        for (const auto &[type, addrs] : vulns_map) {
+            for (auto addr : addrs) {
+                json item;
+                item["type"] = type;
+                item["address"] = addr;
+                vulns.push_back(item);
+            }
         }
         qstring title = "efiXplorer: vulns";
         vulns_show(vulns, title);
