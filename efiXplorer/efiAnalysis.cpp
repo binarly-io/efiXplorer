@@ -83,6 +83,12 @@ EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
         endAddress = end_func->end_ea;
     }
 
+    // save all funcs
+    for (auto i = 0; i < get_func_qty(); i++) {
+        auto func = getn_func(i);
+        funcs.push_back(func->start_ea);
+    }
+
     std::vector<ea_t> addrs;
     for (auto service : protBsNames) {
         bootServices[service] = addrs;
@@ -114,6 +120,8 @@ EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
 }
 
 EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
+    funcs.clear();
+
     gStList.clear();
     gPeiSvcList.clear();
     gBsList.clear();
@@ -1176,8 +1184,14 @@ void EfiAnalysis::EfiAnalyzer::findOtherBsTablesX64() {
     }
 }
 
-void EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
+bool EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
                                            ea_t xrefAddress, ea_t callAddress) {
+
+    if (guidAddress >= startAddress && guidAddress <= endAddress) {
+        msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name, callAddress);
+        return false; // filter FP
+    }
+
     json protocol;
     auto guid = getGuidByAddr(guidAddress);
     protocol["address"] = guidAddress;
@@ -1203,6 +1217,7 @@ void EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAdd
     if (!jsonInVec(allProtocols, protocol)) {
         allProtocols.push_back(protocol);
     }
+    return true;
 }
 
 //--------------------------------------------------------------------------

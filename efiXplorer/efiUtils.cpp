@@ -796,7 +796,11 @@ std::string getWideString(ea_t addr) {
     std::string res;
     int index = 0;
     while (get_wide_word(addr + index)) {
-        res.push_back(get_wide_byte(addr + index));
+        auto byte = get_wide_byte(addr + index);
+        if (byte < 0x20 || byte > 0x7e) {
+            return std::string("INVALID_STRING");
+        }
+        res.push_back(byte);
         index += 2;
     }
     return res;
