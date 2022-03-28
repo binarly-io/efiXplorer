@@ -82,7 +82,8 @@ class EfiAnalyzer {
     ea_t base;
     ea_t startAddress = 0;
     ea_t endAddress = 0;
-    ea_t mainAddress{};
+    std::vector<ea_t> funcs;
+
     std::filesystem::path guidsJsonPath;
     json bootServices;
     json peiServices;
@@ -93,7 +94,7 @@ class EfiAnalyzer {
     json smmServicesAll;
     json dbProtocols;
     std::vector<json>
-        nvramVariables; // [{"addr": ..., "VariableName": ..., "VendorGuid"}, ...]
+        nvramVariables; // [{"addr": ..., "VariableName": ..., "VendorGuid": ...}, ...]
     std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
     std::vector<ea_t> markedInterfaces;
 
@@ -129,7 +130,7 @@ class EfiAnalyzer {
     char *if_pl;
     char *if_key;
     std::vector<json> *if_tbl;
-    void AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
+    bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
                      ea_t callAddress);
     bool InstallMultipleProtocolInterfacesHandler();
 
