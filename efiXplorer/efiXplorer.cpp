@@ -43,7 +43,7 @@ struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
     uint8_t arch = getInputFileType();
-    if ((arch != X86 && arch != X64 && arch != UEFI) || !is_idaq()) {
+    if (arch != X86 && arch != X64 && arch != UEFI) {
         return PLUGIN_SKIP;
     }
 
@@ -59,6 +59,7 @@ static plugmod_t *idaapi init(void) {
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
+
     if (arg >> 0 & 1) { // arg = 0 (00): default
                         // arg = 1 (01): disable_ui
                         // arg = 2 (10): disable_vuln_hunt
@@ -112,7 +113,7 @@ bool idaapi run(size_t arg) {
 // PLUGIN DESCRIPTION BLOCK
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
-    PLUGIN_MOD | PLUGIN_PROC | PLUGIN_FIX,
+    0,              // plugin flags
     init,           // initialize plugin
     nullptr,        // terminate plugin
     run,            // invoke plugin
