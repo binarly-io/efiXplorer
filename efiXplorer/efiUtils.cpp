@@ -607,29 +607,38 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
     int reg = -1;
     ea_t ea = codeAddr;
     ea_t varCopy = BADADDR;
+    decode_insn(&insn, ea);
+
+    // get `reg` value
+    if (insn.itype == NN_mov && insn.ops[0].type == o_reg && insn.ops[1].type == o_mem &&
+        insn.ops[1].addr == varAddr) {
+        reg = insn.ops[0].reg;
+    }
+
+    if (reg == -1) {
+        return false;
+    }
+
     for (auto i = 0; i < 16; ++i) {
+        ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
 
-        // get `reg` value
-        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-            insn.ops[1].type == o_mem && insn.ops[1].addr == varAddr) {
-            reg = insn.ops[0].value;
+        if (is_basic_block_end(insn, false)) {
+            break;
+        }
+
+        if (insn.ops[0].type == o_reg && insn.ops[0].reg == reg) {
+            break;
         }
 
         // get `varCopy`
-        if (reg > -1 && insn.itype == NN_mov && insn.ops[0].type == o_mem &&
-            insn.ops[1].type == o_reg && insn.ops[1].value == reg) {
+        if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
+            insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
             varCopy = insn.ops[0].addr;
+            msg("[efiXplorer] Found copy for global variable: 0x%016llx\n",
+                static_cast<uint64_t>(ea));
             break;
         }
-
-        // minimize FP (register value override)
-        if (reg > -1 && insn.ops[0].type == o_reg && insn.ops[0].value == reg &&
-            insn.ops[1].addr != varAddr) {
-            break;
-        }
-
-        ea = next_head(ea, BADADDR);
     }
 
     if (varCopy == BADADDR) {
