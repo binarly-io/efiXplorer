@@ -619,7 +619,7 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         return false;
     }
 
-    for (auto i = 0; i < 16; ++i) {
+    for (auto i = 0; i < 8; ++i) {
         ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
 
@@ -627,7 +627,8 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
             break;
         }
 
-        if (insn.ops[0].type == o_reg && insn.ops[0].reg == reg) {
+        if ((insn.itype == NN_callni || insn.itype == NN_call) ||
+            (insn.ops[0].type == o_reg && insn.ops[0].reg == reg)) {
             break;
         }
 
