@@ -149,9 +149,17 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
             msg("[%s] %sSmiHandler: found = true\n", plugin_name, prefix.c_str());
             break;
         }
+        // Interface in stack
         if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_displ &&
             (insn.ops[1].reg == REG_RBP || insn.ops[1].reg == REG_RSP)) {
+            if (dispatch_interface == BADADDR) {
+                dispatch_interface = insn.ops[1].addr;
+            }
+        }
+        // Interface in data
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
             if (dispatch_interface == BADADDR) {
                 dispatch_interface = insn.ops[1].addr;
             }
@@ -167,9 +175,16 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
         while (!is_basic_block_end(insn, false)) {
             ea = prev_head(ea, 0);
             decode_insn(&insn, ea);
+            // Interface in stack
             if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                 insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_displ &&
                 (insn.ops[1].reg == REG_RBP || insn.ops[1].reg == REG_RSP)) {
+                dispatch_interface = insn.ops[1].addr;
+                break;
+            }
+            // Interface in data
+            if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
                 dispatch_interface = insn.ops[1].addr;
                 break;
             }
@@ -192,7 +207,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
         decode_insn(&insn, ea);
         // get Interface base register
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-            insn.ops[1].type == o_displ) {
+            (insn.ops[1].type == o_displ || insn.ops[1].type == o_mem)) {
             if (insn.ops[1].addr == dispatch_interface) {
                 reg = insn.ops[0].reg;
             } else {
@@ -311,7 +326,8 @@ std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGui
 // Find gSmmVar->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
 std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                                           std::vector<json> *allServices) {
-    msg("[%s] gSmmVar->SmmGetVariable calls finding via EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
+    msg("[%s] gSmmVar->SmmGetVariable calls finding via "
+        "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
         plugin_name);
     std::vector<ea_t> smmGetVariableCalls;
     EfiGuid guid = {0xed32d533,
