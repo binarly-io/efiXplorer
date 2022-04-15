@@ -198,6 +198,9 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
     msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llx\n", plugin_name,
         prefix.c_str(), dispatch_interface);
 
+    // TODO: handle xrefs for globals
+    // (fw71.bin.out/SmmHddSecurity-316b1230-0500-4592-8c09-eaba0fb6b07f.smm)
+
     // Track interface stack variable
     ea = address;
     uint16_t reg = BAD_REG;
