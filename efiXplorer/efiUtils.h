@@ -101,6 +101,7 @@ enum HelperValues {
     GUID_OFFSET_DWORD = 4,
     GUID_OFFSET_NONE = 0xffff,
     PUSH_NONE = 0xffff,
+    BAD_REG = 0xffff,
 };
 
 struct EfiGuid {

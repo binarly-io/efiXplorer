@@ -1022,6 +1022,7 @@ void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
                 ppiItem["xref"] = guidCodeAddress;
                 ppiItem["service"] = pei_services_table[i].name;
                 ppiItem["guid"] = getGuidFromValue(guid);
+                ppiItem["module"] = std::string("Current");
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);

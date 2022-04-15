@@ -41,15 +41,10 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
 struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
 
 //--------------------------------------------------------------------------
-struct plugin_ctx_t : public plugmod_t {
-    virtual bool idaapi run(size_t arg) override;
-};
-
-//--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
     uint8_t arch = getInputFileType();
-    if ((arch != X86 && arch != X64 && arch != UEFI) || !is_idaq()) {
-        return nullptr;
+    if (arch != X86 && arch != X64 && arch != UEFI) {
+        return PLUGIN_SKIP;
     }
 
     msg(welcome_msg);
@@ -59,11 +54,12 @@ static plugmod_t *idaapi init(void) {
     register_action(action_load_report);
     attach_action_to_menu("File/Load file/", action_load_report.name, SETMENU_APP);
 
-    return new plugin_ctx_t;
+    return PLUGIN_KEEP;
 }
 
 //--------------------------------------------------------------------------
-bool idaapi plugin_ctx_t::run(size_t arg) {
+bool idaapi run(size_t arg) {
+
     if (arg >> 0 & 1) { // arg = 0 (00): default
                         // arg = 1 (01): disable_ui
                         // arg = 2 (10): disable_vuln_hunt
@@ -117,10 +113,10 @@ bool idaapi plugin_ctx_t::run(size_t arg) {
 // PLUGIN DESCRIPTION BLOCK
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
-    PLUGIN_MULTI,   // the plugin can work with multiple idbs in parallel
+    0,              // plugin flags
     init,           // initialize plugin
     nullptr,        // terminate plugin
-    nullptr,        // invoke plugin
+    run,            // invoke plugin
     plugin_comment, // long comment about the plugin
     plugin_help,    // multiline help about the plugin
     plugin_name,    // the preferred short name of the plugin

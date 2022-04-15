@@ -115,116 +115,159 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
 }
 
 //--------------------------------------------------------------------------
-// Find SmiHandler in RegSmi function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
+// Find SmiHandler in reg_smi_func function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
 // StandbyButton, PeriodicTimer, PowerButton)
 std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
-    std::vector<func_t *> smiHandlers;
+    msg("[%s] Analyze xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llx\n", plugin_name,
+        prefix.c_str(), address);
 
-    // Get RegSmi function
-    func_t *regSmi = get_func(address);
-    ea_t start = 0;
-    ea_t ea = 0;
+    std::vector<func_t *> smiHandlers;
     insn_t insn;
 
-    if (regSmi == nullptr) {
-        msg("[%s] can't get Reg%sSmi function, will try to create it\n", plugin_name,
-            prefix.c_str());
+    // Find Dispatch interface address (via gSmst->SmmLocateProtocol call)
 
-        // Try to create function
+    // Check instruction
+    decode_insn(&insn, address);
+    if (!(insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RCX)) {
+        msg("[%s] %sSmiHandler: wrong xref to dispatch(2) protocol\n", plugin_name,
+            prefix.c_str());
+        return smiHandlers;
+    }
+
+    // Analyze current basic block
+    auto ea = address;
+
+    // Search for SmmLocateProtocol
+    bool found = false;
+    uint64_t dispatch_interface = BADADDR;
+    while (!is_basic_block_end(insn, false)) {
+        ea = next_head(ea, BADADDR);
+        decode_insn(&insn, ea);
+        if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
+            insn.ops[0].addr == 0xd0) {
+            found = true;
+            msg("[%s] %sSmiHandler: found = true\n", plugin_name, prefix.c_str());
+            break;
+        }
+        // Interface in stack
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_displ &&
+            (insn.ops[1].reg == REG_RBP || insn.ops[1].reg == REG_RSP)) {
+            if (dispatch_interface == BADADDR) {
+                dispatch_interface = insn.ops[1].addr;
+            }
+        }
+        // Interface in data
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
+            if (dispatch_interface == BADADDR) {
+                dispatch_interface = insn.ops[1].addr;
+            }
+        }
+    }
+
+    if (!found) {
+        return smiHandlers;
+    }
+
+    if (dispatch_interface == BADADDR) {
         ea = address;
-        for (int i = 0; i < 100; i++) {
+        while (!is_basic_block_end(insn, false)) {
             ea = prev_head(ea, 0);
             decode_insn(&insn, ea);
-            if (insn.itype == NN_retn) {
-                start = next_head(ea, BADADDR);
+            // Interface in stack
+            if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_displ &&
+                (insn.ops[1].reg == REG_RBP || insn.ops[1].reg == REG_RSP)) {
+                dispatch_interface = insn.ops[1].addr;
+                break;
+            }
+            // Interface in data
+            if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
+                dispatch_interface = insn.ops[1].addr;
                 break;
             }
         }
-
-        // Create function
-        add_func(start);
-        regSmi = get_func(address);
-        if (regSmi == nullptr) {
-            return smiHandlers;
-        }
     }
 
-    // Find (Dispath->Register)(Dispath, SmiHandler, &SmiNum, Data)
-    for (ea_t ea = regSmi->start_ea; ea <= regSmi->end_ea; ea = next_head(ea, BADADDR)) {
+    if (dispatch_interface == BADADDR) {
+        return smiHandlers;
+    }
+
+    msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llx\n", plugin_name,
+        prefix.c_str(), dispatch_interface);
+
+    // TODO: handle xrefs for globals
+    // (fw71.bin.out/SmmHddSecurity-316b1230-0500-4592-8c09-eaba0fb6b07f.smm)
+
+    // Track interface stack variable
+    ea = address;
+    uint16_t reg = BAD_REG;
+    uint64_t dispatch_func = BADADDR;
+    for (auto i = 0; i < 100; i++) {
+        ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
-        if (insn.itype == NN_callni) {
-            // Find `lea r9`
-            bool success = false;
-            ea_t addr = prev_head(ea, 0);
-            for (int i = 0; i < 12; i++) {
-                decode_insn(&insn, addr);
-                if (insn.itype == NN_lea && insn.ops[0].reg == REG_R9 &&
-                    insn.ops[1].type == o_displ) {
-                    success = true;
-                    break;
-                }
-                addr = prev_head(addr, 0);
+        // get Interface base register
+        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            (insn.ops[1].type == o_displ || insn.ops[1].type == o_mem)) {
+            if (insn.ops[1].addr == dispatch_interface) {
+                reg = insn.ops[0].reg;
+            } else {
+                reg = BAD_REG; // resetting
             }
+            continue;
+        }
 
-            if (!success)
-                continue;
+        // resetting (register overwrite or call)
+        if (reg != BAD_REG && insn.ops[0].type == o_reg && insn.ops[0].reg == reg) {
+            reg = BAD_REG;
+            continue;
+        }
 
-            // Find `lea r8`
-            success = false;
-            addr = prev_head(ea, 0);
-            for (int i = 0; i < 12; i++) {
-                decode_insn(&insn, addr);
-                if (insn.itype == NN_lea && insn.ops[0].reg == REG_R8 &&
-                    insn.ops[1].type == o_displ) {
-                    success = true;
-                    break;
-                }
-                addr = prev_head(addr, 0);
+        // resetting (call)
+        if (insn.itype == NN_call) {
+            reg = BAD_REG;
+            continue;
+        }
+
+        // get DispatchFunction address
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+            dispatch_func = insn.ops[1].addr;
+            continue;
+        }
+        if (insn.itype == NN_callni && insn.ops[0].type == o_phrase &&
+            insn.ops[0].reg == reg) {
+            msg("[%s] Found EfiSmm%sDispatch2Protocol->Register call (0x%016llx)\n",
+                plugin_name, prefix.c_str(), static_cast<uint64_t>(ea));
+            msg("[%s]  %sSmiHandler: 0x%016llx\n", plugin_name, prefix.c_str(),
+                dispatch_func);
+            auto handler_func = get_func(dispatch_func);
+            if (handler_func == nullptr) {
+                add_func(dispatch_func);                // create function
+                handler_func = get_func(dispatch_func); // retry
             }
-
-            if (!success)
-                continue;
-
-            // Find `lea rdx`
-            success = false;
-            addr = prev_head(ea, 0);
-            for (int i = 0; i < 12; i++) {
-                decode_insn(&insn, addr);
-                if (insn.itype == NN_lea && insn.ops[0].reg == REG_RDX &&
-                    insn.ops[1].type == o_mem) {
-                    success = true;
-                    break;
-                }
-                addr = prev_head(addr, 0);
+            if (handler_func != nullptr) {
+                smiHandlers.push_back(handler_func); // add in result
             }
+            reg = BAD_REG; // resetting
 
-            if (!success)
-                continue;
+            // op_stroff + set_name
+            std::string name = prefix + std::string("SmiHandler");
+            set_name(dispatch_func, name.c_str(), SN_FORCE);
+            std::string prefix_upper;
+            std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(), ::toupper);
+            std::string type = std::string("EFI_SMM_") + prefix_upper +
+                               std::string("_DISPATCH2_PROTOCOL");
+            opStroff(ea, type);
+        }
 
-            ea_t smiHandlerAddr = insn.ops[1].addr;
-            func_t *smiHandler = get_func(smiHandlerAddr);
-            if (smiHandler == nullptr) {
-                msg("[%s] can't get %sSmiHandler function, will try to create it\n",
-                    plugin_name, prefix.c_str());
-
-                // Create function
-                add_func(smiHandlerAddr);
-                smiHandler = get_func(smiHandlerAddr);
-            }
-
-            if (smiHandler == nullptr) {
-                continue;
-            }
-
-            // Make name for {prefix}SmiHandler function
-            auto name = prefix + std::string("SmiHandler");
-            set_name(smiHandler->start_ea, name.c_str(), SN_FORCE);
-
-            smiHandlers.push_back(smiHandler);
-            msg("[%s] found %sSmiHandler: 0x%016llX\n", plugin_name, prefix.c_str(),
-                static_cast<uint64_t>(smiHandler->start_ea));
+        if (insn.itype == NN_retn || insn.itype == NN_int3) {
+            break;
         }
     }
+
     return smiHandlers;
 }
 
@@ -246,9 +289,9 @@ std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefi
         std::vector<ea_t> xrefs = getXrefs(data_addr);
 
         for (auto xref : xrefs) {
-            std::vector<func_t *> smiHandlersCur = findSmiHandlers(xref, prefix);
-            smiHandlers.insert(smiHandlers.end(), smiHandlersCur.begin(),
-                               smiHandlersCur.end());
+            msg("[%s] findSmiHandlers: 0x%016llx\n", plugin_name, xref);
+            auto res = findSmiHandlers(xref, prefix);
+            smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
         }
     }
 
@@ -275,9 +318,8 @@ std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGui
         msg("[%s] found EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID on stack: "
             "0x%016llX\n",
             plugin_name, static_cast<uint64_t>(address));
-        std::vector<func_t *> smiHandlersCur = findSmiHandlers(address, prefix);
-        smiHandlers.insert(smiHandlers.end(), smiHandlersCur.begin(),
-                           smiHandlersCur.end());
+        auto res = findSmiHandlers(address, prefix);
+        smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
     }
 
     return smiHandlers;
@@ -287,7 +329,8 @@ std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGui
 // Find gSmmVar->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
 std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
                                           std::vector<json> *allServices) {
-    msg("[%s] gSmmVar->SmmGetVariable calls finding via EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
+    msg("[%s] gSmmVar->SmmGetVariable calls finding via "
+        "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
         plugin_name);
     std::vector<ea_t> smmGetVariableCalls;
     EfiGuid guid = {0xed32d533,
@@ -300,7 +343,6 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
     std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
     std::vector<ea_t> gSmmVarAddrs; // Find all gSmmVar variables
     for (auto data_addr : data_addrs) {
-        msg("Here\n");
         std::vector<ea_t> xrefs = getXrefs(data_addr);
 
         for (auto xref : xrefs) {
