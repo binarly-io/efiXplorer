@@ -158,7 +158,6 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
 uint8_t getFileType(std::vector<json> *allGuids) {
     uint8_t arch = getInputFileType();
     if (arch == UEFI || arch == X64) {
-        // Skip UI for efiXloader or if disable_ui argument passed
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);

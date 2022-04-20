@@ -114,7 +114,7 @@ bool idaapi run(size_t arg) {
     }
 
     // Reset arguments
-    g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
+    g_args = {DXE_SMM, 0, 0};
 
     return true;
 }
