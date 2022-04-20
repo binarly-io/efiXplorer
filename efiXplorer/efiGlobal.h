@@ -21,7 +21,10 @@
 
 #include "efiDeps.h"
 
+enum module_types { DXE_SMM = 0, PEI = 1 };
+
 struct args {
+    int module_type;
     int disable_ui;
     int disable_vuln_hunt;
 };

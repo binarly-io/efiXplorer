@@ -2363,7 +2363,13 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     analyzer.markDataGuids();
     analyzer.markLocalGuidsX64();
 
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    if (g_args.disable_ui) {
+        analyzer.fileType = g_args.module_type == PEI
+                                ? analyzer.fileType = FTYPE_PEI
+                                : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
+    } else {
+        analyzer.fileType = getFileType(&analyzer.allGuids);
+    }
 
     analyzer.setStrings();
 
@@ -2456,7 +2462,9 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     analyzer.markDataGuids();
 
     if (g_args.disable_ui) {
-        analyzer.fileType = FTYPE_PEI;
+        analyzer.fileType = g_args.module_type == PEI
+                                ? analyzer.fileType = FTYPE_PEI
+                                : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
     } else {
         analyzer.fileType = getFileType(&analyzer.allGuids);
     }
