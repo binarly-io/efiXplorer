@@ -990,7 +990,7 @@ void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
                     insn.ops[0].type == o_imm && insn.ops[0].value >= start &&
                     insn.ops[0].value != BADADDR) { // found "push gGuid" insn
                     guidCodeAddress = address;
-                    guidDataAddress = insn.ops[0].value;
+                    guidDataAddress = insn.ops[0].value & 0xffffffff;
                     found = true;
                     break;
                 }
