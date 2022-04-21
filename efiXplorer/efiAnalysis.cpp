@@ -971,40 +971,38 @@ void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
             ea_t guidCodeAddress = 0;
             ea_t guidDataAddress = 0;
             auto found = false;
-            uint16_t pushNumber = pei_services_table[i].ppi_guid_push_number;
 
-            // 10 instructions above
             uint16_t pushCounter = 0;
-            msg("[%s] looking for PPIs in the 0x%016llX area\n", plugin_name,
-                static_cast<uint64_t>(address));
-            for (auto j = 0; j < 10; j++) {
+            msg("[%s] looking for PPIs in the 0x%016llX area (push number: %d)\n",
+                plugin_name, static_cast<uint64_t>(address),
+                pei_services_table[i].ppi_guid_push_number);
+
+            // Check current basic block
+            while (true) {
                 address = prev_head(address, startAddress);
                 decode_insn(&insn, address);
+
                 if (insn.itype == NN_push) {
                     pushCounter += 1;
-                    if (pushCounter > pushNumber) {
-                        break;
-                    }
-                    if (pushCounter == pushNumber) {
-                        uint32_t g_offset = pei_services_table[i].guid_offset;
-                        if (g_offset == GUID_OFFSET_NONE) {
-                            guidCodeAddress = address;
-                            guidDataAddress =
-                                truncImmToDtype(insn.ops[0].value, insn.ops[0].dtype);
-                        } else {
-                            guidCodeAddress = address;
-                            ea_t guidDataAddressXref =
-                                truncImmToDtype(insn.ops[0].value, insn.ops[0].dtype);
-                            guidDataAddress =
-                                get_wide_dword(guidDataAddressXref + g_offset);
-                        }
-                        if (guidDataAddress >= start && guidDataAddress != BADADDR) {
-                            found = true;
-                            break;
-                        }
-                    }
+                }
+
+                if (pushCounter == pei_services_table[i].ppi_guid_push_number &&
+                    insn.ops[0].type == o_imm && insn.ops[0].value >= start &&
+                    insn.ops[0].value != BADADDR) { // found "push gGuid" insn
+                    guidCodeAddress = address;
+                    guidDataAddress = insn.ops[0].value;
+                    found = true;
+                    break;
+                }
+
+                // Exit loop if end of previous basic block found
+                if (is_basic_block_end(insn, false)) {
+                    break;
                 }
             }
+
+            msg("[%s] GUID address: 0x%016llX\n", plugin_name,
+                static_cast<uint64_t>(guidDataAddress));
 
             if (found) {
                 msg("[%s] found PPI GUID parameter at 0x%016llX\n", plugin_name,
