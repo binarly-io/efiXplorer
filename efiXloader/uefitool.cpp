@@ -186,13 +186,17 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     qstring guid("");
 
     switch (model.subtype(index)) {
+    case EFI_SECTION_TE:
+        file->is_te = true;
+        file->ubytes = model.body(index);
+        break;
     case EFI_SECTION_PE32:
         file->is_pe = true;
         file->ubytes = model.body(index);
         break;
     case EFI_SECTION_USER_INTERFACE:
         file->has_ui = true;
-        if (file->is_pe) {
+        if (file->is_pe || file->is_te) {
             file->uname = model.body(index);
             utf16_utf8(&module_name,
                        reinterpret_cast<const wchar16_t *>(file->uname.data()));
@@ -227,7 +231,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         break;
     default:
         // if there is no UI section, then the image name is GUID
-        if (file->is_pe && !file->has_ui) {
+        if ((file->is_pe || file->is_te) && !file->has_ui) {
             get_image_guid(module_name, index);
             file->qname.swap(module_name);
             file->write();

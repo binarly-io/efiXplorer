@@ -86,7 +86,7 @@ struct pei_services_entry pei_services_table[] = {
      2,
      "EFI_STATUS(EFIAPI * EFI_PEI_NOTIFY_PPI) (IN CONST EFI_PEI_SERVICES "
      "**PeiServices, IN CONST EFI_PEI_NOTIFY_DESCRIPTOR *NotifyList)",
-     0, 2, GUID_OFFSET_DWORD},
+     0, PUSH_NONE, GUID_OFFSET_NONE},
     {"GetBootMode", 0x28, "This function returns the present value of the boot mode.", 2,
      "EFI_STATUS(EFIAPI * EFI_PEI_GET_BOOT_MODE) (IN CONST EFI_PEI_SERVICES "
      "**PeiServices, OUT EFI_BOOT_MODE *BootMode)",

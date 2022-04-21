@@ -38,7 +38,8 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "            /_/\n";
 
 // Default arguments
-struct args g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
+struct args g_args = {/* module_type */ DXE_SMM, /* disable_ui */ 0,
+                      /* disable_vuln_hunt */ 0};
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
@@ -60,13 +61,22 @@ static plugmod_t *idaapi init(void) {
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
 
-    if (arg >> 0 & 1) { // arg = 0 (00): default
-                        // arg = 1 (01): disable_ui
-                        // arg = 2 (10): disable_vuln_hunt
-                        // arg = 3 (11): disable_ui & disable_vuln_hunt
+    if (arg >> 0 & 1) { // Parse arg value:
+        //  * arg = 0 (000): default (DXE)
+        //  * arg = 1 (001): default (PEI, 32-bit binaries only)
+        //  * arg = 2 (010): disable_ui (DXE)
+        //  * arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
+        //  * arg = 4 (100): disable_vuln_hunt (DXE)
+        //  * arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
+        //  * arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
+        //  * arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
+        g_args.module_type = PEI;
+    }
+
+    if (arg >> 1 & 1) {
         g_args.disable_ui = 1;
     }
-    if (arg >> 1 & 1) {
+    if (arg >> 2 & 1) {
         g_args.disable_vuln_hunt = 1;
     }
 
@@ -104,7 +114,7 @@ bool idaapi run(size_t arg) {
     }
 
     // Reset arguments
-    g_args = {/* disable_ui */ 0, /* disable_vuln_hunt */ 0};
+    g_args = {DXE_SMM, 0, 0};
 
     return true;
 }
