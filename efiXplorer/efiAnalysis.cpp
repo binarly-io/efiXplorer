@@ -987,7 +987,8 @@ void EfiAnalysis::EfiAnalyzer::getPpiNamesX86() {
                 }
 
                 if (pushCounter == pei_services_table[i].ppi_guid_push_number &&
-                    insn.ops[0].type == o_imm && insn.ops[0].value >= start &&
+                    insn.ops[0].type == o_imm &&
+                    (insn.ops[0].value & 0xffffffff) >= start &&
                     insn.ops[0].value != BADADDR) { // found "push gGuid" insn
                     guidCodeAddress = address;
                     guidDataAddress = insn.ops[0].value & 0xffffffff;
