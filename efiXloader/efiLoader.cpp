@@ -130,6 +130,9 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     msg("processing UEFI binaries:\n");
     if (uefiParser.files.size()) {
         for (int i = 0; i < uefiParser.files.size(); i++) {
+            if (uefiParser.files[i]->is_te) {
+                continue;
+            }
             li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
             if (!li) {
                 msg("Unable to open file %s\n", uefiParser.files[i]->dump_name.c_str());

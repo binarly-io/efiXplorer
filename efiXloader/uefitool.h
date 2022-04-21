@@ -95,6 +95,7 @@ class File {
     qstring qname;
     qstring dump_name;
     bool is_pe = false;
+    bool is_te = false;
     bool has_ui = false;
 };
 
