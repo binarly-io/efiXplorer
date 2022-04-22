@@ -23,7 +23,8 @@
 
 #include "efiUtils.h"
 
-void applyAllTypesForInterfaces(std::vector<json> guids);
+void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
+void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
 bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool isPODArray(tinfo_t tif, unsigned int ptrDepth);

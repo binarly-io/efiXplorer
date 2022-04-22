@@ -34,6 +34,7 @@ struct pei_services_entry {
     uint16_t guid_offset;
 };
 
+std::vector<ea_t> g_get_smst_location_calls; // can be used after Hex-Rays based analysis
 extern struct pei_services_entry pei_services_table[];
 extern size_t pei_services_table_size;
 
@@ -725,6 +726,7 @@ xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName) {
 
 void opstroffForAddress(ea_t ea, qstring typeName) {
     insn_t insn;
+
     for (auto i = 0; i < 16; i++) {
         ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
@@ -736,6 +738,13 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
             opStroff(ea, static_cast<std::string>(typeName.c_str()));
             msg("[%s] Mark arguments at address 0x%016llX (interface type: %s)\n",
                 plugin_name, static_cast<uint64_t>(ea), typeName.c_str());
+
+            // check for EfiSmmBase2Protocol->GetSmstLocation
+            if (typeName == qstring("EFI_SMM_BASE2_PROTOCOL") &&
+                insn.ops[0].type == o_displ && insn.ops[0].addr == 8) {
+                g_get_smst_location_calls.push_back(ea);
+            }
+
             break;
         }
         // If the RAX value is overridden
