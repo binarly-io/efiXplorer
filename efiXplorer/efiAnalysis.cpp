@@ -339,6 +339,63 @@ bool EfiAnalysis::EfiAnalyzer::findSmstPostProcX64() {
             auto reg = smst_stack["reg"] == REG_RSP ? "RSP" : "RBP";
             msg("[%s]   Smst: 0x%016llx, reg = %s\n", plugin_name,
                 static_cast<uint64_t>(smst_addr), reg);
+
+            // try to extract ChildSwSmiHandler
+            auto counter = 0;
+            ea_t ea = static_cast<ea_t>(smst_stack["start"]);
+            uint16_t smst_reg = BAD_REG;
+            uint64_t rcx_last = BADADDR;
+            while (ea < static_cast<ea_t>(smst_stack["end"])) {
+
+                counter += 1;
+                if (counter > 500) {
+                    break; // just in case
+                }
+
+                ea = next_head(ea, BADADDR);
+                decode_insn(&insn, ea);
+
+                if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+                    insn.ops[1].type == o_displ &&
+                    smst_stack["addr"] == insn.ops[1].addr) {
+                    switch (insn.ops[1].reg) {
+                    case REG_RSP:
+                        if (smst_stack["reg"] == REG_RSP) {
+                            smst_reg = insn.ops[0].reg;
+                        }
+                        break;
+                    case REG_RBP:
+                        if (smst_stack["reg"] == REG_RBP) {
+                            smst_reg = insn.ops[0].reg;
+                        }
+                    default:
+                        break;
+                    }
+                }
+
+                // Save potencial ChildSwSmiHandler address
+                if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                    insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+                    rcx_last = insn.ops[1].addr;
+                }
+
+                if (rcx_last == BADADDR || smst_reg == BAD_REG) {
+                    continue;
+                }
+
+                if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
+                    insn.ops[0].reg == smst_reg &&
+                    insn.ops[0].addr == SmiHandlerRegisterOffset64) {
+                    opStroff(ea, std::string("_EFI_SMM_SYSTEM_TABLE2"));
+                    // save child SW SMI handler
+                    func_t *handler_func = get_func(rcx_last);
+                    if (handler_func != nullptr) {
+                        childSmiHandlers.push_back(handler_func);
+                        set_name(rcx_last, "ChildSwSmiHandler", SN_FORCE);
+                        break;
+                    }
+                }
+            }
         }
     }
 
