@@ -59,7 +59,7 @@ jobs:
         PASSWORD: ${{ secrets.ZIP_PASSWORD }}
       run: |
         cd ..
-        curl -O -J -L "$IDA_SDK"
+        curl -J -L "$IDA_SDK" -o idasdk77.zip
         unzip -P $PASSWORD idasdk77.zip
         cd efiXplorer/efiXplorer
         mkdir build
