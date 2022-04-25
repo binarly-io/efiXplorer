@@ -15,7 +15,7 @@ jobs:
           IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          curl -O -J -L "%IDA_SDK%"
+          curl -J -L "%IDA_SDK%" -o idasdk77.zip
           unzip -P "%PASSWORD%" idasdk77.zip
       - name: Build efiXloader
         run: |
@@ -41,7 +41,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK"
+          curl -J -L "$IDA_SDK" -o idasdk77.zip
           unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXloader
         run: |
@@ -67,7 +67,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK"
+          curl -J -L "$IDA_SDK" -o idasdk77.zip
           unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXloader
         run: |
@@ -93,7 +93,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "%IDA_SDK%"
+          curl -J -L "%IDA_SDK%" -o idasdk77.zip
           unzip -P "%PASSWORD%" idasdk77.zip
       - name: Build efiXplorer
         run: |
@@ -123,7 +123,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK"
+          curl -J -L "$IDA_SDK" -o idasdk77.zip
           unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXplorer
         run: |
@@ -153,7 +153,7 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -O -J -L "$IDA_SDK"
+          curl -J -L "$IDA_SDK" -o idasdk77.zip
           unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXplorer
         run: |

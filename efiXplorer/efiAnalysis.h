@@ -43,6 +43,7 @@ class EfiAnalyzer {
     bool findBootServicesTables();
     bool findRuntimeServicesTables();
     bool findSmstX64();
+    bool findSmstPostProcX64();
     void findOtherBsTablesX64();
 
     void getProtBootServicesX64();

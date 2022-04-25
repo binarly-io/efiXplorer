@@ -69,6 +69,7 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
             }
         }
     }
+
     return smst_addrs;
 }
 
@@ -100,7 +101,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
                         plugin_name, static_cast<uint64_t>(cur_addr),
                         static_cast<uint64_t>(insn.ops[1].addr));
                     res_addr = insn.ops[1].addr;
-                    if (find(gBsList.begin(), gBsList.end(), res_addr) != gBsList.end()) {
+                    if (addrInVec(gBsList, res_addr)) {
                         continue;
                     }
                     set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
@@ -111,6 +112,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
             }
         }
     }
+
     return smst_addrs;
 }
 

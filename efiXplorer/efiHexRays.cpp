@@ -144,34 +144,22 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
     return out->c_str();
 }
 
-void applyAllTypesForInterfaces(std::vector<json> protocols) {
+void applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
     // Descriptors for EFI_BOOT_SERVICES functions
     struct TargetFunctionPointer BootServicesFunctions[3]{
         {"HandleProtocol", 0x98, 3, 1, 2},
         {"LocateProtocol", 0x140, 3, 0, 2},
         {"OpenProtocol", 0x118, 6, 1, 2}};
 
-    // Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
-    struct TargetFunctionPointer SmmServicesFunctions[2]{
-        {"SmmHandleProtocol", 0xb8, 3, 1, 2},
-        {"SmmLocateProtocol", 0xd0, 3, 0, 2},
-    };
-
     // Initialize
     ServiceDescriptor sdBs;
-    ServiceDescriptor sdSmm;
     sdBs.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
-    sdSmm.Initialize("_EFI_SMM_SYSTEM_TABLE2", SmmServicesFunctions, 2);
 
     ServiceDescriptorMap mBs;
-    ServiceDescriptorMap mSmm;
     mBs.Register(sdBs);
-    mSmm.Register(sdSmm);
 
     GUIDRetyper retyperBs(mBs);
-    GUIDRetyper retyperSmm(mSmm);
     retyperBs.SetProtocols(protocols);
-    retyperSmm.SetProtocols(protocols);
 
     // Handle all protocols
     for (auto protocol : protocols) {
@@ -184,9 +172,7 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
         }
 
         retyperBs.SetCodeEa(code_addr);
-        retyperSmm.SetCodeEa(code_addr);
         retyperBs.SetFuncEa(f->start_ea);
-        retyperSmm.SetFuncEa(f->start_ea);
 
         hexrays_failure_t hf;
         cfuncptr_t cfunc = decompile(f, &hf);
@@ -197,6 +183,47 @@ void applyAllTypesForInterfaces(std::vector<json> protocols) {
         }
 
         retyperBs.apply_to(&cfunc->body, nullptr);
+    }
+}
+
+void applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
+    // Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
+    struct TargetFunctionPointer SmmServicesFunctions[2]{
+        {"SmmHandleProtocol", 0xb8, 3, 1, 2},
+        {"SmmLocateProtocol", 0xd0, 3, 0, 2},
+    };
+
+    // Initialize
+    ServiceDescriptor sdSmm;
+    sdSmm.Initialize("_EFI_SMM_SYSTEM_TABLE2", SmmServicesFunctions, 2);
+
+    ServiceDescriptorMap mSmm;
+    mSmm.Register(sdSmm);
+
+    GUIDRetyper retyperSmm(mSmm);
+    retyperSmm.SetProtocols(protocols);
+
+    // Handle all protocols
+    for (auto protocol : protocols) {
+        auto code_addr = protocol["ea"];
+        auto service = protocol["service"];
+
+        func_t *f = get_func(code_addr);
+        if (f == nullptr) {
+            continue;
+        }
+
+        retyperSmm.SetCodeEa(code_addr);
+        retyperSmm.SetFuncEa(f->start_ea);
+
+        hexrays_failure_t hf;
+        cfuncptr_t cfunc = decompile(f, &hf);
+
+        // Сheck that the function is decompiled
+        if (cfunc == nullptr) {
+            continue;
+        }
+
         retyperSmm.apply_to(&cfunc->body, nullptr);
     }
 }

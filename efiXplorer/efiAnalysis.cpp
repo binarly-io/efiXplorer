@@ -32,6 +32,7 @@
 using namespace EfiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
+extern std::vector<ea_t> g_get_smst_location_calls;
 
 std::vector<ea_t> gStList;
 std::vector<ea_t> gPeiSvcList;
@@ -276,6 +277,129 @@ bool EfiAnalysis::EfiAnalyzer::findSmstX64() {
         msg("[%s] 0x%016llX: gSmst\n", plugin_name, smst);
     }
     return gSmstList.size();
+}
+
+//--------------------------------------------------------------------------
+// Find and mark gSmst global and local variable address for X64 module
+// after Hex-Rays based analysis
+bool EfiAnalysis::EfiAnalyzer::findSmstPostProcX64() {
+    for (auto ea : g_get_smst_location_calls) {
+        msg("[%s] EfiSmmBase2Protocol->GetSmstLocation call: 0x%016llx\n", plugin_name,
+            static_cast<uint64_t>(ea));
+        insn_t insn;
+        auto addr = ea;
+        ea_t smst_addr = BADADDR;
+        json smst_stack;
+        while (true) {
+            addr = prev_head(addr, 0);
+            decode_insn(&insn, addr);
+
+            if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == REG_RDX) {
+                switch (insn.ops[1].type) {
+                case o_displ:
+                    if (insn.ops[1].reg == REG_RSP || insn.ops[1].reg == REG_RBP) {
+                        smst_addr = insn.ops[1].addr;
+                        smst_stack["addr"] = smst_addr;
+                        smst_stack["reg"] = insn.ops[1].reg;
+                        smst_stack["start"] = next_head(ea, BADADDR);
+                        // get bounds
+                        func_t *f = get_func(addr);
+                        if (f == nullptr) {
+                            smst_stack["end"] = BADADDR;
+                        } else {
+                            smst_stack["end"] = f->end_ea;
+                        }
+                        set_cmt(addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
+                    }
+                    break;
+                case o_mem:
+                    smst_addr = insn.ops[1].addr;
+                    set_cmt(addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
+                    break;
+                }
+            }
+
+            // Exit loop if end of previous basic block found
+            if (is_basic_block_end(insn, false)) {
+                break;
+            }
+        }
+
+        if (smst_stack.is_null() && smst_addr != BADADDR) {
+            msg("[%s]   gSmst: 0x%016llx\n", plugin_name,
+                static_cast<uint64_t>(smst_addr));
+            if (!addrInVec(gSmstList, smst_addr)) {
+                setPtrTypeAndName(smst_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+                gSmstList.push_back(smst_addr);
+            }
+        }
+
+        if (!smst_stack.is_null()) {
+            auto reg = smst_stack["reg"] == REG_RSP ? "RSP" : "RBP";
+            msg("[%s]   Smst: 0x%016llx, reg = %s\n", plugin_name,
+                static_cast<uint64_t>(smst_addr), reg);
+
+            // try to extract ChildSwSmiHandler
+            auto counter = 0;
+            ea_t ea = static_cast<ea_t>(smst_stack["start"]);
+            uint16_t smst_reg = BAD_REG;
+            uint64_t rcx_last = BADADDR;
+            while (ea < static_cast<ea_t>(smst_stack["end"])) {
+
+                counter += 1;
+                if (counter > 500) {
+                    break; // just in case
+                }
+
+                ea = next_head(ea, BADADDR);
+                decode_insn(&insn, ea);
+
+                if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+                    insn.ops[1].type == o_displ &&
+                    smst_stack["addr"] == insn.ops[1].addr) {
+                    switch (insn.ops[1].reg) {
+                    case REG_RSP:
+                        if (smst_stack["reg"] == REG_RSP) {
+                            smst_reg = insn.ops[0].reg;
+                        }
+                        break;
+                    case REG_RBP:
+                        if (smst_stack["reg"] == REG_RBP) {
+                            smst_reg = insn.ops[0].reg;
+                        }
+                    default:
+                        break;
+                    }
+                }
+
+                // Save potencial ChildSwSmiHandler address
+                if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+                    insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+                    rcx_last = insn.ops[1].addr;
+                }
+
+                if (rcx_last == BADADDR || smst_reg == BAD_REG) {
+                    continue;
+                }
+
+                if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
+                    insn.ops[0].reg == smst_reg &&
+                    insn.ops[0].addr == SmiHandlerRegisterOffset64) {
+                    opStroff(ea, std::string("_EFI_SMM_SYSTEM_TABLE2"));
+                    // save child SW SMI handler
+                    func_t *handler_func = get_func(rcx_last);
+                    if (handler_func != nullptr) {
+                        childSmiHandlers.push_back(handler_func);
+                        set_name(rcx_last, "ChildSwSmiHandler", SN_FORCE);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 //--------------------------------------------------------------------------
@@ -2378,6 +2502,7 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
         analyzer.findSystemTableX64();
         analyzer.findBootServicesTables();
         analyzer.findRuntimeServicesTables();
+
         analyzer.findSmstX64();
 
         // find Boot services and Runtime services
@@ -2386,12 +2511,18 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
         analyzer.getAllBootServices();
         analyzer.getAllRuntimeServices();
 
+        analyzer.getBsProtNamesX64();
+
+#ifdef HEX_RAYS
+        applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
+        analyzer.findSmstPostProcX64();
+#endif
+
         // find SMM services
         analyzer.getAllSmmServicesX64();
-
-        // print and mark protocols
-        analyzer.getBsProtNamesX64();
         analyzer.getSmmProtNamesX64();
+
+        // mark protocols
         analyzer.markInterfaces();
 
         // search for copies of global variables
@@ -2427,10 +2558,6 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
-
-#ifdef HEX_RAYS
-    applyAllTypesForInterfaces(analyzer.allProtocols);
-#endif
 
     if (analyzer.arch == UEFI) {
         // Init public EdiDependencies members
@@ -2485,6 +2612,10 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
         analyzer.getBsProtNamesX86();
         analyzer.markInterfaces();
 
+#ifdef HEX_RAYS
+        applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
+#endif
+
     } else if (analyzer.fileType == FTYPE_PEI) {
         setEntryArgToPeiSvc();
         analyzer.getAllPeiServicesX86();
@@ -2505,10 +2636,6 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
-
-#ifdef HEX_RAYS
-    applyAllTypesForInterfaces(analyzer.allProtocols);
-#endif
 
     return true;
 }
