@@ -76,12 +76,50 @@ const int s_chooser_t::widths_s[] = {
     32, // Table name
 };
 
-// services column widths
+// services column headers
 const char *const s_chooser_t::header_s[] = {
     "Address",      // 0
     "Service name", // 1
     "Table name"    // 2
 };
+
+// services column widths
+const int nvram_chooser_t::widths_nvram[] = {
+    16, // Address
+    32, // Variable name
+    32, // Variable GUID
+    32, // Service
+};
+
+// NVRAMs column headers
+const char *const nvram_chooser_t::header_nvram[] = {
+    "Address",       // 0
+    "Variable name", // 1
+    "Variable GUID", // 2
+    "Service"        // 3
+};
+
+inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok,
+                                        std::vector<json> nvram)
+    : chooser_t(0, qnumber(widths_nvram), widths_nvram, header_nvram, title_), list() {
+    CASSERT(qnumber(widths_nvram) == qnumber(header_nvram));
+    build_list(ok, nvram);
+}
+
+void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+                                     size_t n) const {
+    ea_t ea = list[n];
+    qstrvec_t &cols = *cols_;
+    json item = chooser_nvram[n];
+    std::string name = static_cast<std::string>(item["VariableName"]);
+    std::string guid = static_cast<std::string>(item["VendorGuid"]);
+    std::string service = static_cast<std::string>(item["service"]);
+    cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
+    cols[1].sprnt("%s", name.c_str());
+    cols[2].sprnt("%s", guid.c_str());
+    cols[3].sprnt("%s", service.c_str());
+    CASSERT(qnumber(header_nvram) == 4);
+}
 
 inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok,
                                         std::vector<json> vulns)
@@ -165,6 +203,15 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
     cols[1].sprnt("%s", service_name.c_str());
     cols[2].sprnt("%s", table_name.c_str());
     CASSERT(qnumber(header_s) == 3);
+}
+
+bool nvram_show(std::vector<json> nvram, qstring title) {
+    bool ok;
+    // open the window
+    nvram_chooser_t *ch = new nvram_chooser_t(title.c_str(), ok, nvram);
+    // default cursor position is 0 (first row)
+    ch->choose();
+    return true;
 }
 
 bool vulns_show(std::vector<json> vulns, qstring title) {
@@ -333,6 +380,11 @@ struct action_handler_loadreport_t : public action_handler_t {
         if (!guids.is_null()) { // show GUIDs
             title = "efiXplorer: GUIDs";
             guids_show(guids, title);
+        }
+        auto nvram = reportData["nvramVariables"];
+        if (!nvram.is_null()) { // show NVRAM
+            title = "efiXplorer: NVRAM";
+            nvram_show(nvram, title);
         }
         auto vulns = reportData["vulns"];
         if (!vulns.is_null()) { // show vulns
