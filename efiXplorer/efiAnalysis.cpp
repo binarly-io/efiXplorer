@@ -978,7 +978,7 @@ void EfiAnalysis::EfiAnalyzer::getAllPeiServicesX86() {
                         std::string cmt = getPeiSvcComment(
                             static_cast<uint32_t>(pei_services_table[j].offset));
                         set_cmt(ea, cmt.c_str(), true);
-                        opStroff(ea, "EFI_PEI_SERVICES");
+                        // opStroff(ea, "EFI_PEI_SERVICES");
                         msg("[%s] 0x%016llX : %s\n", plugin_name,
                             static_cast<uint64_t>(ea),
                             static_cast<char *>(pei_services_table[j].name));
@@ -1311,7 +1311,7 @@ void EfiAnalysis::EfiAnalyzer::findOtherBsTablesX64() {
 bool EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
                                            ea_t xrefAddress, ea_t callAddress) {
 
-    if (guidAddress >= startAddress && guidAddress <= endAddress) {
+    if (arch != UEFI && guidAddress >= startAddress && guidAddress <= endAddress) {
         msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name, callAddress);
         return false; // filter FP
     }
@@ -1494,8 +1494,9 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX64() {
             }
 
             if (found) {
-                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
-                    static_cast<uint64_t>(guidCodeAddress));
+                msg("[%s] getBsProtNamesX64: found protocol GUID parameter at "
+                    "0x%016llX\n",
+                    plugin_name, static_cast<uint64_t>(guidCodeAddress));
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
                     msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
@@ -1566,8 +1567,9 @@ void EfiAnalysis::EfiAnalyzer::getBsProtNamesX86() {
             }
 
             if (found) {
-                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
-                    static_cast<uint64_t>(guidCodeAddress));
+                msg("[%s] getBsProtNamesX86: found protocol GUID parameter at "
+                    "0x%016llX\n",
+                    plugin_name, static_cast<uint64_t>(guidCodeAddress));
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
                     msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
@@ -1627,8 +1629,9 @@ void EfiAnalysis::EfiAnalyzer::getSmmProtNamesX64() {
             }
 
             if (found) {
-                msg("[%s] found protocol GUID parameter at 0x%016llX\n", plugin_name,
-                    static_cast<uint64_t>(guidCodeAddress));
+                msg("[%s] getSmmProtNamesX64: found protocol GUID parameter at "
+                    "0x%016llX\n",
+                    plugin_name, static_cast<uint64_t>(guidCodeAddress));
                 auto guid = getGuidByAddr(guidDataAddress);
                 if (!checkGuid(guid)) {
                     msg("[%s] Incorrect GUID at 0x%016llX\n", plugin_name,
@@ -2617,6 +2620,7 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
 #endif
 
     } else if (analyzer.fileType == FTYPE_PEI) {
+        addStrucForShiftedPtr();
         setEntryArgToPeiSvc();
         analyzer.getAllPeiServicesX86();
         analyzer.getPpiNamesX86();
