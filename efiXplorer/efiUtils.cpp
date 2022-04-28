@@ -432,6 +432,41 @@ void setEntryArgToPeiSvc() {
 }
 
 //--------------------------------------------------------------------------
+// Add EFI_PEI_SERVICES_4 structure
+bool addStrucForShiftedPtr() {
+    auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
+    if (sid == BADADDR) {
+        return false;
+    }
+
+    auto new_struct = get_struc(sid);
+    if (new_struct == nullptr) {
+        return false;
+    }
+
+    add_struc_member(new_struct, nullptr, 0, dword_flag(), nullptr, 4);
+    add_struc_member(new_struct, nullptr, 4, dword_flag(), nullptr, 4);
+    set_member_name(new_struct, 0, "PeiServices");
+    set_member_name(new_struct, 4, "PeiServices4");
+
+    tinfo_t tinfo;
+    if (!tinfo.get_named_type(get_idati(), "EFI_PEI_SERVICES")) {
+        return false;
+    }
+
+    // set type "EFI_PEI_SERVICES **PeiServices"
+    tinfo_t ptrTinfo;
+    tinfo_t ptr2Tinfo;
+    ptrTinfo.create_ptr(tinfo);
+    ptr2Tinfo.create_ptr(ptrTinfo);
+
+    auto member = get_member_by_name(new_struct, "PeiServices");
+    set_member_tinfo(new_struct, member, 0, ptr2Tinfo, 0);
+
+    return true;
+}
+
+//--------------------------------------------------------------------------
 // Change the value of a number to match the data type
 uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
     switch (dtype) {
