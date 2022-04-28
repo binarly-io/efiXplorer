@@ -227,7 +227,6 @@ class nvram_chooser_t : public chooser_t {
   public:
     eavec_t list;
     json chooser_nvram;
-    std::string name_key;
 
     // this object must be allocated using `new`
     nvram_chooser_t(const char *title, bool ok, std::vector<json> nvrams);

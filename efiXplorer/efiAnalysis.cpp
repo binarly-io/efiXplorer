@@ -2323,7 +2323,8 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
                 break;
             }
         }
-        if (name_found || guid_found) {
+        if (name_found && guid_found) { // if only name or only GUID found, it will now
+                                        // saved (check the logs)
             nvramVariables.push_back(item);
         }
     }

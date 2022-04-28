@@ -377,6 +377,11 @@ struct action_handler_loadreport_t : public action_handler_t {
             title = "efiXplorer: GUIDs";
             guids_show(guids, title);
         }
+        auto nvram = reportData["nvramVariables"];
+        if (!nvram.is_null()) { // show NVRAM
+            title = "efiXplorer: NVRAM";
+            nvram_show(nvram, title);
+        }
         auto vulns = reportData["vulns"];
         if (!vulns.is_null()) { // show vulns
             std::vector<json> vulnsRes;
