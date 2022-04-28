@@ -2437,6 +2437,12 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
         guids_show(analyzer.allGuids, title);
     }
 
+    // open window with NVRAM variables
+    if (analyzer.allGuids.size()) {
+        qstring title = "efiXplorer: NVRAM";
+        nvram_show(analyzer.nvramVariables, title);
+    }
+
     // open window with vulnerabilities
     if (calloutAddrs.size() + peiGetVariableOverflow.size() + getVariableOverflow.size() +
         smmGetVariableOverflow.size()) {

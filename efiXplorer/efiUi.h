@@ -217,8 +217,58 @@ class s_chooser_t : public chooser_t {
     };
 };
 
+//-------------------------------------------------------------------------
+// NVRAM chooser
+class nvram_chooser_t : public chooser_t {
+  protected:
+    static const int widths_nvram[];
+    static const char *const header_nvram[];
+
+  public:
+    eavec_t list;
+    json chooser_nvram;
+    std::string name_key;
+
+    // this object must be allocated using `new`
+    nvram_chooser_t(const char *title, bool ok, std::vector<json> nvrams);
+
+    // function that is used to decide whether a new chooser should be opened or
+    // we can use the existing one. The contents of the window are completely
+    // determined by its title
+    virtual const void *get_obj_id(size_t *len) const {
+        *len = strlen(title);
+        return title;
+    }
+
+    // function that returns number of lines in the list
+    virtual size_t idaapi get_count() const { return list.size(); }
+
+    // function that generates the list line
+    virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
+                                size_t n) const;
+
+    // function that is called when the user hits `Enter`
+    virtual cbret_t idaapi enter(size_t n) {
+        if (n < list.size())
+            jumpto(list[n]);
+        return cbret_t();
+    }
+
+  protected:
+    void build_list(bool ok, std::vector<json> nvrams) {
+        size_t n = 0;
+        for (auto nvram : nvrams) {
+            list.push_back(nvram["addr"]);
+            chooser_nvram[n] = nvram;
+            n++;
+        }
+        ok = true;
+    };
+};
+
 extern action_desc_t action_load_report;
 
+bool nvram_show(std::vector<json> nvram, qstring title);
 bool vulns_show(std::vector<json> vulns, qstring title);
 bool guids_show(std::vector<json> guid, qstring title);
 bool protocols_show(std::vector<json> protocols, qstring title);
