@@ -2440,7 +2440,7 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
     }
 
     // open window with NVRAM variables
-    if (analyzer.allGuids.size()) {
+    if (analyzer.nvramVariables.size()) {
         qstring title = "efiXplorer: NVRAM";
         nvram_show(analyzer.nvramVariables, title);
     }
