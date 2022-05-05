@@ -343,6 +343,16 @@ bool guidsJsonExists() { return !getGuidsJsonFile().empty(); }
 // Get guids.json file name
 std::filesystem::path getGuidsJsonFile() {
     std::filesystem::path guidsJsonPath;
+
+    // check {idadir}/plugins/guids.json
+    guidsJsonPath /= idadir("plugins");
+    guidsJsonPath /= "guids.json";
+    if (std::filesystem::exists(guidsJsonPath)) {
+        return guidsJsonPath;
+    }
+
+    // check {idadir}/plugins/guids/guids.json
+    guidsJsonPath.clear();
     guidsJsonPath /= idadir("plugins");
     guidsJsonPath /= "guids";
     guidsJsonPath /= "guids.json";
@@ -351,6 +361,14 @@ std::filesystem::path getGuidsJsonFile() {
     }
 
     // Try to load it from the per-user directory.
+    guidsJsonPath.clear();
+    guidsJsonPath /= get_user_idadir();
+    guidsJsonPath /= "plugins";
+    guidsJsonPath /= "guids.json";
+    if (std::filesystem::exists(guidsJsonPath)) {
+        return guidsJsonPath;
+    }
+
     guidsJsonPath.clear();
     guidsJsonPath /= get_user_idadir();
     guidsJsonPath /= "plugins";
