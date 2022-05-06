@@ -716,6 +716,7 @@ void EfiAnalysis::EfiAnalyzer::getAllBootServices() {
                                 getBsComment(static_cast<uint32_t>(offset), arch);
                             set_cmt(addr, cmt.c_str(), true);
                             opStroff(addr, "EFI_BOOT_SERVICES");
+
                             msg("[%s] 0x%016llX : %s\n", plugin_name,
                                 static_cast<uint64_t>(addr),
                                 static_cast<char *>(
@@ -732,10 +733,17 @@ void EfiAnalysis::EfiAnalyzer::getAllBootServices() {
                             bsItem["table_name"] =
                                 static_cast<std::string>("EFI_BOOT_SERVICES");
                             bsItem["offset"] = offset;
+
+                            // add code addresses for arguments
+                            eavec_t args;
+                            get_arg_addrs(&args, addr);
+                            bsItem["args"] = args;
+
                             if (find(allServices.begin(), allServices.end(), bsItem) ==
                                 allServices.end()) {
                                 allServices.push_back(bsItem);
                             }
+
                             found = true;
                             break;
                         }
@@ -822,6 +830,12 @@ void EfiAnalysis::EfiAnalyzer::getAllRuntimeServices() {
                             rtItem["table_name"] =
                                 static_cast<std::string>("EFI_RUNTIME_SERVICES");
                             rtItem["offset"] = offset;
+
+                            // add code addresses for arguments
+                            eavec_t args;
+                            get_arg_addrs(&args, addr);
+                            rtItem["args"] = args;
+
                             if (find(allServices.begin(), allServices.end(), rtItem) ==
                                 allServices.end()) {
                                 allServices.push_back(rtItem);
@@ -908,6 +922,12 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
                             smmsItem["table_name"] =
                                 static_cast<std::string>("_EFI_SMM_SYSTEM_TABLE2");
                             smmsItem["offset"] = smmServicesTableAll[j].offset64;
+
+                            // add code addresses for arguments
+                            eavec_t args;
+                            get_arg_addrs(&args, addr);
+                            smmsItem["args"] = args;
+
                             if (find(allServices.begin(), allServices.end(), smmsItem) ==
                                 allServices.end()) {
                                 allServices.push_back(smmsItem);
@@ -992,6 +1012,12 @@ void EfiAnalysis::EfiAnalyzer::getAllPeiServicesX86() {
                         psItem["table_name"] =
                             static_cast<std::string>("EFI_PEI_SERVICES");
                         psItem["offset"] = pei_services_table[j].offset;
+
+                        // add code addresses for arguments
+                        eavec_t args;
+                        get_arg_addrs(&args, ea);
+                        psItem["args"] = args;
+
                         if (find(allServices.begin(), allServices.end(), psItem) ==
                             allServices.end()) {
                             allServices.push_back(psItem);
@@ -1058,6 +1084,12 @@ void EfiAnalysis::EfiAnalyzer::getAllVariablePPICallsX86() {
                         ppiItem["table_name"] =
                             static_cast<std::string>("EFI_PEI_READ_ONLY_VARIABLE2_PPI");
                         ppiItem["offset"] = variable_ppi_table[j].offset;
+
+                        // add code addresses for arguments
+                        eavec_t args;
+                        get_arg_addrs(&args, ea);
+                        ppiItem["args"] = args;
+
                         if (find(allServices.begin(), allServices.end(), ppiItem) ==
                             allServices.end()) {
                             allServices.push_back(ppiItem);
@@ -1222,6 +1254,12 @@ void EfiAnalysis::EfiAnalyzer::getProtBootServicesX64() {
                         bsItem["table_name"] =
                             static_cast<std::string>("EFI_BOOT_SERVICES");
                         bsItem["offset"] = bootServicesTable64[i].offset;
+
+                        // add code addresses for arguments
+                        eavec_t args;
+                        get_arg_addrs(&args, ea);
+                        bsItem["args"] = args;
+
                         if (find(allServices.begin(), allServices.end(), bsItem) ==
                             allServices.end()) {
                             allServices.push_back(bsItem);
@@ -1267,6 +1305,12 @@ void EfiAnalysis::EfiAnalyzer::getProtBootServicesX86() {
                         static_cast<std::string>(bootServicesTable32[i].service_name);
                     bsItem["table_name"] = static_cast<std::string>("EFI_BOOT_SERVICES");
                     bsItem["offset"] = bootServicesTable32[i].offset;
+
+                    // add code addresses for arguments
+                    eavec_t args;
+                    get_arg_addrs(&args, ea);
+                    bsItem["args"] = args;
+
                     if (find(allServices.begin(), allServices.end(), bsItem) ==
                         allServices.end()) {
                         allServices.push_back(bsItem);
@@ -2395,8 +2439,8 @@ void EfiAnalysis::EfiAnalyzer::dumpInfo() {
             func_t *func = f;
             smiHandlersAddrs.push_back(func->start_ea);
         }
+        info["smiHandlersAddrs"] = smiHandlersAddrs;
     }
-    info["smiHandlersAddrs"] = smiHandlersAddrs;
 
     std::string idbPath;
     idbPath = get_path(PATH_TYPE_IDB);
