@@ -24,7 +24,6 @@
 #include "efiGlobal.h"
 #include "efiUi.h"
 
-static bool inited = false;
 static const char plugin_name[] = "efiXplorer";
 static const char plugin_hotkey[] = "Ctrl+Alt+E";
 static const char plugin_comment[] =
@@ -40,6 +39,10 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
 // Default arguments
 struct args g_args = {/* module_type */ DXE_SMM, /* disable_ui */ 0,
                       /* disable_vuln_hunt */ 0};
+
+#if IDA_SDK_VERSION < 760
+hexdsp_t *hexdsp = nullptr;
+#endif
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
