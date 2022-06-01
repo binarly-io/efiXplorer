@@ -868,17 +868,23 @@ void EfiAnalysis::EfiAnalyzer::getAllSmmServicesX64() {
 
         for (auto ea : xrefs) {
             decode_insn(&insn, ea);
-            if (!(insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
-                  insn.ops[1].type == o_mem && insn.ops[1].addr == smms)) {
+
+            if (!(insn.itype == NN_mov && insn.ops[1].type == o_mem &&
+                  insn.ops[1].addr == smms)) {
                 continue;
             }
+
+            auto smst_reg = insn.ops[0].reg;
 
             // 10 instructions below
             auto addr = ea;
             for (auto i = 0; i < 10; i++) {
                 addr = next_head(addr, BADADDR);
                 decode_insn(&insn, addr);
-                if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
+                // Add NN_jmpni insn type to handle such cases
+                // jmp qword ptr [r9+0D0h]
+                if ((insn.itype == NN_callni || insn.itype == NN_jmpni) &&
+                    insn.ops[0].reg == smst_reg) {
                     for (int j = 0; j < smmServicesTableAllLength; j++) {
                         if (insn.ops[0].addr ==
                             static_cast<uint32_t>(smmServicesTableAll[j].offset64)) {
@@ -2606,6 +2612,10 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
         msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
     }
 
+#ifdef HEX_RAYS
+    applyAllTypesForInterfacesSmmServices(analyzer.allProtocols);
+#endif
+
     // dump info to JSON file
     analyzer.dumpInfo();
 
@@ -2669,6 +2679,7 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
 
 #ifdef HEX_RAYS
         applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
+        applyAllTypesForInterfacesSmmServices(analyzer.allProtocols);
 #endif
 
     } else if (analyzer.fileType == FTYPE_PEI) {
