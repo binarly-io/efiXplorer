@@ -113,7 +113,6 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     uefiParser.dump();
     uefiParser.dump_jsons();
     efiloader::PeManager peManager;
-    close_linput(li);
     add_til("uefi.til", ADDTIL_DEFAULT);
     add_til("uefi64.til", ADDTIL_DEFAULT);
     qstring err;
@@ -133,12 +132,12 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
             if (uefiParser.files[i]->is_te) {
                 continue;
             }
-            li = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
-            if (!li) {
+            auto inf = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
+            if (!inf) {
                 msg("Unable to open file %s\n", uefiParser.files[i]->dump_name.c_str());
                 continue;
             }
-            peManager.process(li, uefiParser.files[i]->dump_name.c_str(), i);
+            peManager.process(inf, uefiParser.files[i]->dump_name.c_str(), i);
         }
     } else {
         msg("[efiXloader] Can not parse input firmware\n");
