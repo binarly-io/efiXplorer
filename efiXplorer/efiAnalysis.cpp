@@ -1862,11 +1862,31 @@ void findCalloutRec(func_t *func) {
         for (auto bs : gBsList) {
 
             // check if insn is mov rax, cs:gBS
-            if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
+            if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name,
                     static_cast<uint64_t>(ea));
-                calloutAddrs.push_back(ea);
+                // filter FP
+                auto reg = insn.ops[0].reg;
+                auto addr = ea;
+                insn_t next_insn;
+                auto fp = false;
+                while (true) {
+                    addr = next_head(addr, BADADDR);
+                    decode_insn(&next_insn, addr);
+                    if ((next_insn.itype == NN_jmpni || next_insn.itype == NN_callni) &&
+                        next_insn.ops[0].type == o_displ && next_insn.ops[0].reg == reg &&
+                        next_insn.ops[0].addr == FreePoolOffset64) {
+                        fp = true;
+                        break;
+                    }
+                    if (is_basic_block_end(next_insn, false)) {
+                        break;
+                    }
+                }
+                if (!fp) {
+                    calloutAddrs.push_back(ea);
+                }
             }
         }
 
@@ -1874,7 +1894,7 @@ void findCalloutRec(func_t *func) {
         for (auto rt : gRtList) {
 
             // check if insn is mov rax, cs:gRT
-            if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX &&
+            if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                 insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name,
                     static_cast<uint64_t>(ea));
