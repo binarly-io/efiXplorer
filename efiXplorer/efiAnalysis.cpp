@@ -2333,6 +2333,9 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
     }
     eavec_t args;
     get_arg_addrs(&args, ea);
+    if (args.size() != 5) {
+        return false;
+    }
 
     auto addr = args[0]; // Get VariableName
     decode_insn(&insn, addr);
@@ -2380,6 +2383,15 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         }
         }
     }
+
+    addr = args[2]; // Get Attributes
+    decode_insn(&insn, addr);
+    if (insn.itype == NN_xor && insn.ops[0].type == o_reg && insn.ops[1].type == o_reg &&
+        insn.ops[0].reg == insn.ops[1].reg && insn.ops[0].reg == REG_R8) {
+        item["Attributes"] = 0;
+        msg("[%s]  Attributes: %d\n", plugin_name, 0);
+    }
+
     if (name_found && guid_found) { // if only name or only GUID found, it will
                                     // now saved (check the logs)
         item["service"] = service_str;
