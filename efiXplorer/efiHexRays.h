@@ -23,6 +23,7 @@
 
 #include "efiUtils.h"
 
+uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
@@ -567,4 +568,54 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             }
         }
     }
+};
+
+class VariablesInfoExtractor : public ctree_visitor_t {
+  public:
+    VariablesInfoExtractor(ea_t code_addr) : ctree_visitor_t(CV_FAST) {
+        mCodeAddr = code_addr;
+    };
+
+    uint8_t mAttributes = 0xff;
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        if (mCodeAddr == BADADDR) {
+            return false;
+        }
+
+        if (e->ea != mCodeAddr) {
+            return false;
+        }
+
+        if (e->op != cot_call)
+            return false;
+
+        carglist_t *args = e->a;
+        if (args == nullptr) {
+            return false;
+        }
+
+        size_t args_size = args->size();
+        if (args_size < 3) {
+            return false;
+        }
+
+        cexpr_t *attributes_arg = &args->at(2);
+        if (attributes_arg->op == cot_num) {
+            if (mDebug) {
+                msg("Service call: %016llx, Attributes: %d\n",
+                    static_cast<uint64_t>(mCodeAddr), attributes_arg->numval());
+            }
+            attributes_arg->numval();
+            mAttributes = static_cast<uint8_t>(attributes_arg->numval());
+        }
+
+        return false;
+    }
+
+  protected:
+    ea_t mCodeAddr = BADADDR;
+    bool mDebug = false;
 };

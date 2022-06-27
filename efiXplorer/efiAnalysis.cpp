@@ -2333,7 +2333,7 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
     }
     eavec_t args;
     get_arg_addrs(&args, ea);
-    if (args.size() != 5) {
+    if (args.size() < 3) {
         return false;
     }
 
@@ -2384,12 +2384,40 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         }
     }
 
+    std::map<uint8_t, std::string> attributes_defs = {
+        {0x00000001, std::string("NON_VOLATILE")},
+        {0x00000002, std::string("BOOTSERVICE_ACCESS")},
+        {0x00000004, std::string("RUNTIME_ACCESS")},
+        {0x00000008, std::string("HARDWARE_ERROR_RECORD")},
+        {0x00000010, std::string("AUTHENTICATED_WRITE_ACCESS")}};
+
     addr = args[2]; // Get Attributes
     decode_insn(&insn, addr);
     if (insn.itype == NN_xor && insn.ops[0].type == o_reg && insn.ops[1].type == o_reg &&
         insn.ops[0].reg == insn.ops[1].reg && insn.ops[0].reg == REG_R8) {
         item["Attributes"] = 0;
-        msg("[%s]  Attributes: %d\n", plugin_name, 0);
+        std::string attributes_hr = std::string("No attributes");
+        item["AttributesHumanReadable"] = attributes_hr;
+        msg("[%s]  Attributes: %d (%s)\n", plugin_name, 0, attributes_hr.c_str());
+    } else {
+        // Extract attributes with Hex-Rays SDK
+        auto res = VariablesInfoExtractAll(f, ea);
+        item["Attributes"] = res;
+        std::string attributes_hr = std::string();
+        if (res == 0xff) {
+            attributes_hr = std::string("Unknown attributes");
+        } else {
+            for (auto &[attr, attr_def] : attributes_defs) {
+                if (res & attr & 0x0f) {
+                    attributes_hr += attr_def + std::string(" | ");
+                }
+            }
+            if (attributes_hr.size() >= 3) { // remove the last operation OR
+                attributes_hr = attributes_hr.substr(0, attributes_hr.size() - 3);
+            }
+        }
+        item["AttributesHumanReadable"] = attributes_hr;
+        msg("[%s]  Attributes: %d (%s)\n", plugin_name, res, attributes_hr.c_str());
     }
 
     if (name_found && guid_found) { // if only name or only GUID found, it will
@@ -2397,6 +2425,7 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         item["service"] = service_str;
         nvramVariables.push_back(item);
     }
+
     return true;
 }
 

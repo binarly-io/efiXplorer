@@ -89,6 +89,7 @@ const int nvram_chooser_t::widths_nvram[] = {
     32, // Variable name
     32, // Variable GUID
     32, // Service
+    64, // Attributes
 };
 
 // NVRAMs column headers
@@ -96,7 +97,8 @@ const char *const nvram_chooser_t::header_nvram[] = {
     "Address",       // 0
     "Variable name", // 1
     "Variable GUID", // 2
-    "Service"        // 3
+    "Service",       // 3
+    "Attributes"     // 4
 };
 
 inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok,
@@ -114,11 +116,13 @@ void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
     std::string name = static_cast<std::string>(item["VariableName"]);
     std::string guid = static_cast<std::string>(item["VendorGuid"]);
     std::string service = static_cast<std::string>(item["service"]);
+    std::string attributes = static_cast<std::string>(item["AttributesHumanReadable"]);
     cols[0].sprnt("%016llX", static_cast<uint64_t>(ea));
     cols[1].sprnt("%s", name.c_str());
     cols[2].sprnt("%s", guid.c_str());
     cols[3].sprnt("%s", service.c_str());
-    CASSERT(qnumber(header_nvram) == 4);
+    cols[4].sprnt("%s", attributes.c_str());
+    CASSERT(qnumber(header_nvram) == 5);
 }
 
 inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok,
