@@ -799,17 +799,23 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
             // check for EfiSmmBase2Protocol->GetSmstLocation
             if (typeName == qstring("EFI_SMM_BASE2_PROTOCOL") &&
                 insn.ops[0].type == o_displ && insn.ops[0].addr == 8) {
-                g_get_smst_location_calls.push_back(ea);
+                if (!addrInVec(g_get_smst_location_calls, ea)) {
+                    g_get_smst_location_calls.push_back(ea);
+                }
             }
 
             if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
                 insn.ops[0].type == o_phrase) {
-                g_smm_get_variable_calls.push_back(ea);
+                if (!addrInVec(g_smm_get_variable_calls, ea)) {
+                    g_smm_get_variable_calls.push_back(ea);
+                }
             }
 
             if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
                 insn.ops[0].type == o_displ && insn.ops[0].addr == 0x10) {
-                g_smm_set_variable_calls.push_back(ea);
+                if (!addrInVec(g_smm_set_variable_calls, ea)) {
+                    g_smm_set_variable_calls.push_back(ea);
+                }
             }
 
             break;
