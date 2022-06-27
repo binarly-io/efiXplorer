@@ -33,6 +33,8 @@ using namespace EfiAnalysis;
 
 static const char plugin_name[] = "efiXplorer";
 extern std::vector<ea_t> g_get_smst_location_calls;
+extern std::vector<ea_t> g_smm_get_variable_calls;
+extern std::vector<ea_t> g_smm_set_variable_calls;
 
 std::vector<ea_t> gStList;
 std::vector<ea_t> gPeiSvcList;
@@ -143,6 +145,10 @@ EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
     peiGetVariableOverflow.clear();
     getVariableOverflow.clear();
     smmGetVariableOverflow.clear();
+
+    g_get_smst_location_calls.clear();
+    g_smm_get_variable_calls.clear();
+    g_smm_set_variable_calls.clear();
 }
 
 void EfiAnalysis::EfiAnalyzer::setStrings() {
@@ -2313,6 +2319,79 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
     return (smmGetVariableOverflow.size() > 0);
 }
 
+bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string service_str) {
+    msg("[%s] GetVariable/SetVariable call: 0x%016llX\n", plugin_name,
+        static_cast<uint64_t>(ea));
+    json item;
+    item["addr"] = ea;
+    insn_t insn;
+    auto addr = ea;
+    bool name_found = false;
+    bool guid_found = false;
+    func_t *f = get_func(ea);
+    if (f == nullptr) {
+        return false;
+    }
+    for (auto i = 0; i < 16; i++) {
+        addr = prev_head(addr, 0);
+        decode_insn(&insn, addr);
+        if (!name_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+            msg("[%s]  VariableName address: 0x%016llX\n", plugin_name,
+                static_cast<uint64_t>(insn.ops[1].addr));
+            std::string var_name = getWideString(insn.ops[1].addr);
+            msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
+            item["VariableName"] = var_name;
+            name_found = true;
+        }
+        // If GUID is global variable
+        if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+            msg("[%s]  VendorGuid address (global): 0x%016llX\n", plugin_name,
+                static_cast<uint64_t>(insn.ops[1].addr));
+            EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
+            msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+            item["VendorGuid"] = guid.to_string();
+            guid_found = true;
+        }
+        // If GUID is local variable
+        if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
+            switch (insn.ops[1].reg) {
+            case REG_RBP: {
+                msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
+                    plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                item["VendorGuid"] = guid.to_string();
+                guid_found = true;
+                continue;
+            }
+            case REG_RSP: {
+                msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
+                    plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
+                EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
+                msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
+                item["VendorGuid"] = guid.to_string();
+                guid_found = true;
+                continue;
+            }
+            default:
+                continue;
+            }
+        }
+        if (name_found && guid_found) {
+            break;
+        }
+    }
+    if (name_found && guid_found) { // if only name or only GUID found, it will
+                                    // now saved (check the logs)
+        item["service"] = service_str;
+        nvramVariables.push_back(item);
+    }
+    return true;
+}
+
 bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
     msg("[%s] Get NVRAM variables information\n", plugin_name);
     std::vector<std::string> nvram_services = {"GetVariable", "SetVariable"};
@@ -2328,75 +2407,15 @@ bool EfiAnalysis::EfiAnalyzer::analyzeNvramVariables() {
         }
         sort(var_services.begin(), var_services.end());
         for (auto ea : var_services) {
-            msg("[%s] GetVariable/SetVariable call: 0x%016llX\n", plugin_name,
-                static_cast<uint64_t>(ea));
-            json item;
-            item["addr"] = ea;
-            insn_t insn;
-            auto addr = ea;
-            bool name_found = false;
-            bool guid_found = false;
-            func_t *f = get_func(ea);
-            if (f == nullptr) {
-                continue;
-            }
-            for (auto i = 0; i < 16; i++) {
-                addr = prev_head(addr, 0);
-                decode_insn(&insn, addr);
-                if (!name_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-                    insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
-                    msg("[%s]  VariableName address: 0x%016llX\n", plugin_name,
-                        static_cast<uint64_t>(insn.ops[1].addr));
-                    std::string var_name = getWideString(insn.ops[1].addr);
-                    msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
-                    item["VariableName"] = var_name;
-                    name_found = true;
-                }
-                // If GUID is global variable
-                if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-                    insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
-                    msg("[%s]  VendorGuid address (global): 0x%016llX\n", plugin_name,
-                        static_cast<uint64_t>(insn.ops[1].addr));
-                    EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
-                    msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
-                    item["VendorGuid"] = guid.to_string();
-                    guid_found = true;
-                }
-                // If GUID is local variable
-                if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-                    insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
-                    switch (insn.ops[1].reg) {
-                    case REG_RBP: {
-                        msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
-                            plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
-                        EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
-                        msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
-                        item["VendorGuid"] = guid.to_string();
-                        guid_found = true;
-                        continue;
-                    }
-                    case REG_RSP: {
-                        msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
-                            plugin_name, static_cast<uint64_t>(insn.ops[1].addr));
-                        EfiGuid guid = getStackGuid(f, insn.ops[1].addr);
-                        msg("[%s]  GUID: %s\n", plugin_name, guid.to_string().c_str());
-                        item["VendorGuid"] = guid.to_string();
-                        guid_found = true;
-                        continue;
-                    }
-                    default:
-                        continue;
-                    }
-                }
-                if (name_found && guid_found) {
-                    break;
-                }
-            }
-            if (name_found && guid_found) { // if only name or only GUID found, it will
-                                            // now saved (check the logs)
-                item["service"] = service_str;
-                nvramVariables.push_back(item);
-            }
+            AnalyzeVariableService(ea, service_str);
+        }
+
+        for (auto ea : g_smm_get_variable_calls) {
+            AnalyzeVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmGetVariable");
+        }
+
+        for (auto ea : g_smm_set_variable_calls) {
+            AnalyzeVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmSetVariable");
         }
     }
     return true;
@@ -2626,15 +2645,15 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
             analyzer.efiSmmCpuProtocolResolver();
         }
 
+#ifdef HEX_RAYS
+        applyAllTypesForInterfacesSmmServices(analyzer.allProtocols);
+#endif
+
         analyzer.analyzeNvramVariables();
 
     } else {
         msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", plugin_name);
     }
-
-#ifdef HEX_RAYS
-    applyAllTypesForInterfacesSmmServices(analyzer.allProtocols);
-#endif
 
     // dump info to JSON file
     analyzer.dumpInfo();

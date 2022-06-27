@@ -133,6 +133,7 @@ class EfiAnalyzer {
     bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
                      ea_t callAddress);
     bool InstallMultipleProtocolInterfacesHandler();
+    bool AnalyzeVariableService(ea_t ea, std::string service_str);
 
     // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
     EfiGuid sw_guid2 = {

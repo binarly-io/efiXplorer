@@ -34,7 +34,11 @@ struct pei_services_entry {
     uint16_t guid_offset;
 };
 
-std::vector<ea_t> g_get_smst_location_calls; // can be used after Hex-Rays based analysis
+// can be used after Hex-Rays based analysis
+std::vector<ea_t> g_get_smst_location_calls;
+std::vector<ea_t> g_smm_get_variable_calls;
+std::vector<ea_t> g_smm_set_variable_calls;
+
 extern struct pei_services_entry pei_services_table[];
 extern size_t pei_services_table_size;
 
@@ -796,6 +800,16 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
             if (typeName == qstring("EFI_SMM_BASE2_PROTOCOL") &&
                 insn.ops[0].type == o_displ && insn.ops[0].addr == 8) {
                 g_get_smst_location_calls.push_back(ea);
+            }
+
+            if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
+                insn.ops[0].type == o_phrase) {
+                g_smm_get_variable_calls.push_back(ea);
+            }
+
+            if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
+                insn.ops[0].type == o_displ && insn.ops[0].addr == 0x10) {
+                g_smm_set_variable_calls.push_back(ea);
             }
 
             break;
