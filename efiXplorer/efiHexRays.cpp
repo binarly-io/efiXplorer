@@ -227,3 +227,20 @@ void applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
         retyperSmm.apply_to(&cfunc->body, nullptr);
     }
 }
+
+uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
+    // check func
+    if (f == nullptr) {
+        return 0xff;
+    }
+    VariablesInfoExtractor extractor(code_addr);
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(f, &hf);
+    // Сheck that the function is decompiled
+    if (cfunc == nullptr) {
+        return 0xff;
+    }
+    extractor.apply_to(&cfunc->body, nullptr);
+    auto res = extractor.mAttributes;
+    return res;
+}
