@@ -179,6 +179,10 @@ void EfiAnalysis::EfiAnalyzer::getSegments() {
         for (auto name : codeSegNames) {
             auto index = seg_name.find(name.c_str());
             if (index != std::string::npos) {
+                // fix permissions and class for code segment
+                // in order for decompilation to work properly
+                s->perm = (SEGPERM_READ | SEGPERM_WRITE | SEGPERM_EXEC);
+                set_segm_class(s, "DATA");
                 textSegments.push_back(s);
                 continue;
             }
@@ -1733,11 +1737,15 @@ void EfiAnalysis::EfiAnalyzer::markInterfaces() {
 }
 
 //--------------------------------------------------------------------------
-// Mark GUIDs found in the .data segment
+// Mark GUIDs found in the .text and .data segment
 void EfiAnalysis::EfiAnalyzer::markDataGuids() {
-    for (auto seg : dataSegments) {
-        segment_t *s = seg;
-        msg("[%s] marking .data GUIDs from 0x%016llX to 0x%016llX\n", plugin_name,
+    auto guids_segments = textSegments;
+    // find GUIDs in .text and .data segments
+    // TODO: scan only the areas between the beginning of the .text segment and the first
+    // function address (?)
+    guids_segments.insert(guids_segments.end(), dataSegments.begin(), dataSegments.end());
+    for (auto s : guids_segments) {
+        msg("[%s] marking GUIDs from 0x%016llX to 0x%016llX\n", plugin_name,
             static_cast<uint64_t>(s->start_ea), static_cast<uint64_t>(s->end_ea));
         ea_t ea = s->start_ea;
         while (ea != BADADDR && ea <= s->end_ea - 15) {
