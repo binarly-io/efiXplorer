@@ -179,6 +179,10 @@ void EfiAnalysis::EfiAnalyzer::getSegments() {
         for (auto name : codeSegNames) {
             auto index = seg_name.find(name.c_str());
             if (index != std::string::npos) {
+                // fix permissions and class for code segment
+                // in order for decompilation to work properly
+                s->perm = (SEGPERM_READ | SEGPERM_WRITE | SEGPERM_EXEC);
+                set_segm_class(s, "DATA");
                 textSegments.push_back(s);
                 continue;
             }
