@@ -2176,12 +2176,14 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         size_t dataSizeUseCounter = 0;
         while (ea < curr_addr) {
             decode_insn(&insn, ea);
-            if (((dataSizeStackAddr == insn.ops[0].addr) && (dataSizeOpReg == insn.ops[0].phrase)) ||
-                ((dataSizeStackAddr == insn.ops[1].addr) && (dataSizeOpReg == insn.ops[1].phrase))){
+            if (((dataSizeStackAddr == insn.ops[0].addr) &&
+                 (dataSizeOpReg == insn.ops[0].phrase)) ||
+                ((dataSizeStackAddr == insn.ops[1].addr) &&
+                 (dataSizeOpReg == insn.ops[1].phrase))) {
                 dataSizeUseCounter++;
             }
-            if ((insn.itype == NN_callni && insn.ops[0].addr == 0x48) || insn.itype == NN_retn ||
-                dataSizeUseCounter > 1) {
+            if ((insn.itype == NN_callni && insn.ops[0].addr == 0x48) ||
+                insn.itype == NN_retn || dataSizeUseCounter > 1) {
                 ok = false;
                 break;
             }
@@ -2210,7 +2212,8 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
             decode_insn(&insn, prev_head(curr_addr, 0));
             if (!wrong_detection &&
                 !(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-                  (insn.ops[0].phrase == REG_RSP || insn.ops[0].phrase == REG_RBP) && (insn.ops[0].addr == dataSizeStackAddr))) {
+                  (insn.ops[0].phrase == REG_RSP || insn.ops[0].phrase == REG_RBP) &&
+                  (insn.ops[0].addr == dataSizeStackAddr))) {
                 init_ok = true;
             }
 
@@ -2218,29 +2221,31 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
             // calls
             if (init_ok) {
                 ea = prev_head(static_cast<ea_t>(prev_addr), 0);
-                //for (auto i = 0; i < 10; ++i) {
+                // for (auto i = 0; i < 10; ++i) {
                 func_t *func_start = get_func(ea);
-                if (func_start == nullptr){
+                if (func_start == nullptr) {
                     return (getVariableOverflow.size() > 0);
                 }
                 uint16 stack_base_reg = 0xFF;
                 decode_insn(&insn, func_start->start_ea);
-                if (insn.itype == NN_mov && insn.ops[1].is_reg(REG_RSP) && insn.ops[0].type == o_reg){
+                if (insn.itype == NN_mov && insn.ops[1].is_reg(REG_RSP) &&
+                    insn.ops[0].type == o_reg) {
                     stack_base_reg = insn.ops[0].reg;
                 }
-                
-                while (ea >= func_start->start_ea){
+
+                while (ea >= func_start->start_ea) {
                     decode_insn(&insn, ea);
                     if (insn.itype == NN_call)
                         break;
                     if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                         insn.ops[0].reg == REG_R9) {
-                        
-                        ea_t stack_addr = insn.ops[1].addr;
-                        sval_t sval = get_spd(func_start, ea)*-1;
 
-                        if ((insn.ops[1].phrase == stack_base_reg && (sval + stack_addr) == dataSizeStackAddr) ||
-                           (dataSizeStackAddr == insn.ops[1].addr)) {
+                        ea_t stack_addr = insn.ops[1].addr;
+                        sval_t sval = get_spd(func_start, ea) * -1;
+
+                        if ((insn.ops[1].phrase == stack_base_reg &&
+                             (sval + stack_addr) == dataSizeStackAddr) ||
+                            (dataSizeStackAddr == insn.ops[1].addr)) {
                             getVariableOverflow.push_back(curr_addr);
                             msg("[%s] \toverflow can occur here: 0x%016llX\n",
                                 plugin_name, static_cast<uint64_t>(curr_addr));
@@ -2420,6 +2425,7 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         item["AttributesHumanReadable"] = attributes_hr;
         msg("[%s]  Attributes: %d (%s)\n", plugin_name, 0, attributes_hr.c_str());
     } else {
+#ifdef HEX_RAYS
         // Extract attributes with Hex-Rays SDK
         auto res = VariablesInfoExtractAll(f, ea);
         item["Attributes"] = res;
@@ -2438,6 +2444,11 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         }
         item["AttributesHumanReadable"] = attributes_hr;
         msg("[%s]  Attributes: %d (%s)\n", plugin_name, res, attributes_hr.c_str());
+#else
+        // If Hex-Rays analysis is not used, this feature does not work
+        item["Attributes"] = 0xff;
+        item["AttributesHumanReadable"] = std::string("Unknown attributes");
+#endif
     }
 
     if (name_found && guid_found) { // if only name or only GUID found, it will
