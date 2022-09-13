@@ -1,0 +1,3 @@
+[submodule "efiXloader/3rd/uefitool"]
+	path = efiXloader/3rd/uefitool
+	url = git@github.com:LongSoft/UEFITool.git
