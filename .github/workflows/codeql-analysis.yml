@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  analyze efiXplorer:
+  analyze-efiXplorer:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
@@ -43,7 +43,7 @@ jobs:
         cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
         cmake --build . --config Release
 
-  analyze efiXloader:
+  analyze-efiXloader:
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
