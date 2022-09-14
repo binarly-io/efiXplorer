@@ -45,7 +45,7 @@ jobs:
           unzip -P $PASSWORD idasdk77.zip
       - name: Build efiXloader
         run: |
-          git submodule update --init --recursive 
+          git submodule update --init --recursive
           cd efiXloader
           mkdir build
           cd build
