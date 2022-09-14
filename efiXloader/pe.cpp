@@ -399,7 +399,8 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
 void efiloader::PE::setup_ds_selector() {
     for (; !secs_names.empty(); secs_names.pop_back()) {
-        msg("[efiXloader]\tsetting DS ( %#x ) for %s segment\n", data_segment_sel,
+        msg("[efiXloader]\tsetting DS ( 0x%016llX ) for %s segment\n",
+            static_cast<uint64_t>(data_segment_sel),
             secs_names[secs_names.size() - 1].c_str());
         segment_t *seg = get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
         set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
@@ -490,7 +491,8 @@ void efiloader::PE::preprocess() {
     ea = ea + 0x3c;
     create_dword(ea, 4);
     if (is_loaded(ea) && get_dword(ea)) {
-        msg("[efiXloader] making relative offset: %#x\n", ea);
+        msg("[efiXloader] making relative offset: 0x%016llX\n",
+            static_cast<uint64_t>(ea));
         op_plain_offset(ea, 0, *pe_base);
     }
     set_cmt(ea, "File address of new exe header", 0);

@@ -120,7 +120,7 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     if (!idati) {
         loader_failure("failed to load IDA types");
     } else {
-        msg("[efiXloader] loaded IDA types: %#x\n", idati);
+        msg("[efiXloader] loaded IDA types: 0x%016llX\n", static_cast<uint64_t>(idati));
     }
     tid_t struct_err = import_type(idati, -1, "EFI_GUID");
     if (struct_err == BADNODE) {
