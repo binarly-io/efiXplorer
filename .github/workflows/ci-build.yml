@@ -15,14 +15,14 @@ jobs:
           IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          curl -J -L "%IDA_SDK%" -o idasdk77.zip
-          unzip -P "%PASSWORD%" idasdk77.zip
+          curl -J -L "%IDA_SDK%" -o idasdk80.zip
+          unzip -P "%PASSWORD%" idasdk80.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk77
+          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk80
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -41,15 +41,15 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk77.zip
-          unzip -P $PASSWORD idasdk77.zip
+          curl -J -L "$IDA_SDK" -o idasdk80.zip
+          unzip -P $PASSWORD idasdk80.zip
       - name: Build efiXloader
         run: |
           git submodule update --init --recursive
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -68,14 +68,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk77.zip
-          unzip -P $PASSWORD idasdk77.zip
+          curl -J -L "$IDA_SDK" -o idasdk80.zip
+          unzip -P $PASSWORD idasdk80.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -94,14 +94,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "%IDA_SDK%" -o idasdk77.zip
-          unzip -P "%PASSWORD%" idasdk77.zip
+          curl -J -L "%IDA_SDK%" -o idasdk80.zip
+          unzip -P "%PASSWORD%" idasdk80.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -124,14 +124,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk77.zip
-          unzip -P $PASSWORD idasdk77.zip
+          curl -J -L "$IDA_SDK" -o idasdk80.zip
+          unzip -P $PASSWORD idasdk80.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -154,14 +154,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk77.zip
-          unzip -P $PASSWORD idasdk77.zip
+          curl -J -L "$IDA_SDK" -o idasdk80.zip
+          unzip -P $PASSWORD idasdk80.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk77" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk80" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
