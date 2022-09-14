@@ -8,7 +8,7 @@ on:
 
 jobs:
   analyze-efiXplorer:
-    name: Analyze
+    name: Analyze efiXplorer
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -44,7 +44,7 @@ jobs:
         cmake --build . --config Release
 
   analyze-efiXloader:
-    name: Analyze
+    name: Analyze efiXloader
     runs-on: ubuntu-latest
     permissions:
       actions: read
