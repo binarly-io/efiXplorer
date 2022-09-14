@@ -1,0 +1,4 @@
+[submodule "efiXloader/3rd/uefitool"]
+	path = efiXloader/3rd/uefitool
+	url = https://github.com/LongSoft/UEFITool.git
+	branch = new_engine
