@@ -2,3 +2,7 @@
 	path = efiXloader/3rd/uefitool
 	url = https://github.com/LongSoft/UEFITool.git
 	branch = new_engine
+[submodule "guids"]
+	path = guids
+	url = https://github.com/binarly-io/guiddb.git
+	branch = main
