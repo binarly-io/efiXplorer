@@ -113,7 +113,12 @@ uint8_t getInputFileType() {
         // UEFI firmware
         return UEFI;
     }
-    return 0;
+    index = fileTypeStr.find("ARM64");
+    if (index != std::string::npos) {
+        // Portable executable for ARM64 (PE)
+        return ARM64;
+    }
+    return UNSUPPORTED_TYPE;
 }
 
 //--------------------------------------------------------------------------

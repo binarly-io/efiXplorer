@@ -58,7 +58,7 @@ using namespace nlohmann;
 #define VZ 0x5A56
 #define MZ 0x5A4D
 
-enum ArchFileType { X86 = 32, X64 = 64, UEFI = 96 };
+enum ArchFileType { UNSUPPORTED_TYPE, X86, X64, UEFI, ARM64 };
 
 enum FfsFileType { FTYPE_PEI = 6, FTYPE_DXE_AND_THE_LIKE = 7 };
 

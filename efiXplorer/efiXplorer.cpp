@@ -20,7 +20,7 @@
  */
 
 #include "efiXplorer.h"
-#include "efiAnalysis.h"
+#include "efiAnalyzer.h"
 #include "efiGlobal.h"
 #include "efiUi.h"
 
@@ -46,8 +46,8 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-    uint8_t arch = getInputFileType();
-    if (arch != X86 && arch != X64 && arch != UEFI) {
+    uint8_t file_type = getInputFileType();
+    if (file_type == UNSUPPORTED_TYPE) {
         return PLUGIN_SKIP;
     }
 
@@ -102,18 +102,16 @@ bool idaapi run(size_t arg) {
     if (arch == X64) {
         msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX64();
-    }
-
-    if (arch == X86) {
+    } else if (arch == X86) {
         msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX86();
-    }
-
-    if (arch == UEFI) {
+    } else if (arch == UEFI) {
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
         msg("[%s] input file is UEFI firmware\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX64();
+    } else if (arch == ARM64) {
+        msg("[%s] input file is portable executable for ARM64 (PE)\n", plugin_name);
     }
 
     // Reset arguments

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiAnalysis.h
+ * efiAnalyzer.h
  *
  */
 
@@ -32,34 +32,11 @@ class EfiAnalyzer {
     std::vector<json> allProtocols;
     std::vector<json> allPPIs;
     std::vector<json> allServices;
-    std::vector<json> nvramVariables;
     std::vector<func_t *> smiHandlers;
     uint8_t arch;
 
     void getSegments();
     void setStrings();
-
-    bool findImageHandleX64();
-    bool findSystemTableX64();
-    bool findBootServicesTables();
-    bool findRuntimeServicesTables();
-    bool findSmstX64();
-    bool findSmstPostProcX64();
-    void findOtherBsTablesX64();
-
-    void getProtBootServicesX64();
-    void getProtBootServicesX86();
-    void getAllBootServices();
-    void getAllRuntimeServices();
-    void getAllSmmServicesX64();
-
-    void getBsProtNamesX64();
-    void getBsProtNamesX86();
-    void getSmmProtNamesX64();
-
-    void getAllPeiServicesX86();
-    void getPpiNamesX86();
-    void getAllVariablePPICallsX86();
 
     void printInterfaces();
     void markInterfaces();
@@ -73,20 +50,20 @@ class EfiAnalyzer {
     bool findSmmGetVariableOveflow();
     bool findSmmCallout();
     bool analyzeNvramVariables();
+    bool AnalyzeVariableService(ea_t ea, std::string service_str);
     void dumpInfo();
 
     EfiAnalyzer();
     ~EfiAnalyzer();
 
     uint8_t fileType = 0;
-
-  private:
+    json dbProtocols;
     ea_t base;
     ea_t startAddress = 0;
     ea_t endAddress = 0;
     std::vector<ea_t> funcs;
-
     std::filesystem::path guidsJsonPath;
+    std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
     json bootServices;
     json peiServices;
     json peiServicesAll;
@@ -94,46 +71,14 @@ class EfiAnalyzer {
     json runtimeServicesAll;
     json smmServices;
     json smmServicesAll;
-    json dbProtocols;
-    std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
+    std::vector<json> nvramVariables;
     std::vector<ea_t> markedInterfaces;
-
-    // Set boot services that work with protocols
-    std::vector<std::string> protBsNames = {"InstallProtocolInterface",
-                                            "ReinstallProtocolInterface",
-                                            "UninstallProtocolInterface",
-                                            "HandleProtocol",
-                                            "RegisterProtocolNotify",
-                                            "OpenProtocol",
-                                            "CloseProtocol",
-                                            "OpenProtocolInformation",
-                                            "ProtocolsPerHandle",
-                                            "LocateHandleBuffer",
-                                            "LocateProtocol",
-                                            "InstallMultipleProtocolInterfaces",
-                                            "UninstallMultipleProtocolInterfaces"};
-
-    // Set smm services that work with protocols
-    std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
-                                             "SmmUninstallProtocolInterface",
-                                             "SmmHandleProtocol",
-                                             "SmmRegisterProtocolNotify",
-                                             "SmmLocateHandle",
-                                             "SmmLocateProtocol"};
-
-    // Set of PEI services that work with PPI
-    std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
-                                            "NotifyPpi"};
 
     // Format-dependent interface-related settings (protocols for DXE, PPIs for PEI)
     char *if_name;
     char *if_pl;
     char *if_key;
     std::vector<json> *if_tbl;
-    bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
-                     ea_t callAddress);
-    bool InstallMultipleProtocolInterfacesHandler();
-    bool AnalyzeVariableService(ea_t ea, std::string service_str);
 
     // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
     EfiGuid sw_guid2 = {
@@ -183,6 +128,63 @@ class EfiAnalyzer {
     // EFI_SMM_POWER_BUTTON_DISPATCH_PROTOCOL_GUID
     EfiGuid power_button_guid = {
         0xB709EFA0, 0x47A6, 0x4B41, {0xB9, 0x31, 0x12, 0xEC, 0xE7, 0xA8, 0xEE, 0x56}};
+
+    // Set boot services that work with protocols
+    std::vector<std::string> protBsNames = {"InstallProtocolInterface",
+                                            "ReinstallProtocolInterface",
+                                            "UninstallProtocolInterface",
+                                            "HandleProtocol",
+                                            "RegisterProtocolNotify",
+                                            "OpenProtocol",
+                                            "CloseProtocol",
+                                            "OpenProtocolInformation",
+                                            "ProtocolsPerHandle",
+                                            "LocateHandleBuffer",
+                                            "LocateProtocol",
+                                            "InstallMultipleProtocolInterfaces",
+                                            "UninstallMultipleProtocolInterfaces"};
+
+    // Set smm services that work with protocols
+    std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
+                                             "SmmUninstallProtocolInterface",
+                                             "SmmHandleProtocol",
+                                             "SmmRegisterProtocolNotify",
+                                             "SmmLocateHandle",
+                                             "SmmLocateProtocol"};
+
+    // Set of PEI services that work with PPI
+    std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
+                                            "NotifyPpi"};
+};
+
+class EfiAnalyzerX86 : public EfiAnalyzer {
+  public:
+    bool findImageHandleX64();
+    bool findSystemTableX64();
+    bool findBootServicesTables();
+    bool findRuntimeServicesTables();
+    bool findSmstX64();
+    bool findSmstPostProcX64();
+    void findOtherBsTablesX64();
+
+    void getProtBootServicesX64();
+    void getProtBootServicesX86();
+    void getAllBootServices();
+    void getAllRuntimeServices();
+    void getAllSmmServicesX64();
+
+    void getBsProtNamesX64();
+    void getBsProtNamesX86();
+    void getSmmProtNamesX64();
+
+    void getAllPeiServicesX86();
+    void getPpiNamesX86();
+    void getAllVariablePPICallsX86();
+
+  private:
+    bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
+                     ea_t callAddress);
+    bool InstallMultipleProtocolInterfacesHandler();
 };
 
 bool efiAnalyzerMainX64();
