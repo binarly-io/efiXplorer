@@ -112,6 +112,7 @@ bool idaapi run(size_t arg) {
         EfiAnalysis::efiAnalyzerMainX64();
     } else if (arch == ARM64) {
         msg("[%s] input file is portable executable for ARM64 (PE)\n", plugin_name);
+        EfiAnalysis::efiAnalyzerMainArm();
     }
 
     // Reset arguments

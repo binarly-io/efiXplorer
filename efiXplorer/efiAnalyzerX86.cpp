@@ -15,7 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiAnalysis.cpp
+ * efiAnalyzerX86.cpp
+ * contains X86 specific analysis routines
  *
  */
 
@@ -62,7 +63,7 @@ std::vector<ea_t> getVariableOverflow;
 std::vector<ea_t> smmGetVariableOverflow;
 
 EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
-    // 32-bit, 64-bit or UEFI (in loader instance)
+    // 32-bit, 64-bit, ARM or UEFI (in loader instance)
     arch = getInputFileType();
 
     // get guids.json path
@@ -109,17 +110,6 @@ EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
     for (auto g = dbProtocols.begin(); g != dbProtocols.end(); ++g) {
         dbProtocolsMap[static_cast<json>(g.value())] = static_cast<std::string>(g.key());
     }
-
-    // import necessary types
-    const til_t *idati = get_idati();
-    import_type(idati, -1, "EFI_GUID");
-    import_type(idati, -1, "EFI_SYSTEM_TABLE");
-    import_type(idati, -1, "EFI_BOOT_SERVICES");
-    import_type(idati, -1, "EFI_RUNTIME_SERVICES");
-    import_type(idati, -1, "_EFI_SMM_SYSTEM_TABLE2");
-    import_type(idati, -1, "EFI_PEI_SERVICES");
-    import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
-    import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
 }
 
 EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
@@ -1369,7 +1359,7 @@ void EfiAnalysis::EfiAnalyzerX86::findOtherBsTablesX64() {
 }
 
 bool EfiAnalysis::EfiAnalyzerX86::AddProtocol(std::string serviceName, ea_t guidAddress,
-                                           ea_t xrefAddress, ea_t callAddress) {
+                                              ea_t xrefAddress, ea_t callAddress) {
 
     if (arch != UEFI && guidAddress >= startAddress && guidAddress <= endAddress) {
         msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name, callAddress);
@@ -1780,7 +1770,7 @@ void EfiAnalysis::EfiAnalyzer::markDataGuids() {
 
 //--------------------------------------------------------------------------
 // Mark GUIDs found in local variables for X64 modules
-void EfiAnalysis::EfiAnalyzer::markLocalGuidsX64() {
+void EfiAnalysis::EfiAnalyzerX86::markLocalGuidsX64() {
     for (auto seg : textSegments) {
         segment_t *s = seg;
         ea_t ea = s->start_ea;

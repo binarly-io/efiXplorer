@@ -28,6 +28,9 @@ namespace EfiAnalysis {
 
 class EfiAnalyzer {
   public:
+    EfiAnalyzer();
+    ~EfiAnalyzer();
+
     std::vector<json> allGuids;
     std::vector<json> allProtocols;
     std::vector<json> allPPIs;
@@ -41,7 +44,6 @@ class EfiAnalyzer {
     void printInterfaces();
     void markInterfaces();
     void markDataGuids();
-    void markLocalGuidsX64();
 
     bool efiSmmCpuProtocolResolver();
     void findSwSmiHandlers();
@@ -52,9 +54,6 @@ class EfiAnalyzer {
     bool analyzeNvramVariables();
     bool AnalyzeVariableService(ea_t ea, std::string service_str);
     void dumpInfo();
-
-    EfiAnalyzer();
-    ~EfiAnalyzer();
 
     uint8_t fileType = 0;
     json dbProtocols;
@@ -159,6 +158,19 @@ class EfiAnalyzer {
 
 class EfiAnalyzerX86 : public EfiAnalyzer {
   public:
+    EfiAnalyzerX86() : EfiAnalyzer() {
+        // import necessary types
+        const til_t *idati = get_idati();
+        import_type(idati, -1, "EFI_GUID");
+        import_type(idati, -1, "EFI_HANDLE");
+        import_type(idati, -1, "EFI_SYSTEM_TABLE");
+        import_type(idati, -1, "EFI_BOOT_SERVICES");
+        import_type(idati, -1, "EFI_RUNTIME_SERVICES");
+        import_type(idati, -1, "_EFI_SMM_SYSTEM_TABLE2");
+        import_type(idati, -1, "EFI_PEI_SERVICES");
+        import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
+        import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
+    }
     bool findImageHandleX64();
     bool findSystemTableX64();
     bool findBootServicesTables();
@@ -181,14 +193,32 @@ class EfiAnalyzerX86 : public EfiAnalyzer {
     void getPpiNamesX86();
     void getAllVariablePPICallsX86();
 
+    void markLocalGuidsX64();
+
   private:
     bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
                      ea_t callAddress);
     bool InstallMultipleProtocolInterfacesHandler();
 };
 
+class EfiAnalyzerArm : public EfiAnalyzer {
+  public:
+    EfiAnalyzerArm() : EfiAnalyzer() {
+        // in order to make it work, it is necessary to copy
+        // uefi.til, uefi64.til files in {idadir}/til/arm/
+        const til_t *idati = get_idati();
+        import_type(idati, -1, "EFI_GUID");
+        import_type(idati, -1, "EFI_HANDLE");
+        import_type(idati, -1, "EFI_SYSTEM_TABLE");
+        import_type(idati, -1, "EFI_BOOT_SERVICES");
+        import_type(idati, -1, "EFI_RUNTIME_SERVICES");
+    }
+    void renameEntryPoints();
+};
+
 bool efiAnalyzerMainX64();
 bool efiAnalyzerMainX86();
+bool efiAnalyzerMainArm();
 }; // namespace EfiAnalysis
 
 void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer);
