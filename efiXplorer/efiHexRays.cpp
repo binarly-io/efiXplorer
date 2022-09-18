@@ -244,3 +244,18 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
     auto res = extractor.mAttributes;
     return res;
 }
+
+bool TrackEntryParams(func_t *entry_point) {
+    // check func
+    if (entry_point == nullptr) {
+        return false;
+    }
+    PrototypesFixer prototypes_fixer;
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(entry_point, &hf);
+    if (cfunc == nullptr) {
+        return false;
+    }
+    prototypes_fixer.apply_to(&cfunc->body, nullptr);
+    return true;
+}

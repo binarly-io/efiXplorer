@@ -24,6 +24,10 @@
 #include "efiSmmUtils.h"
 #include "efiUtils.h"
 
+#ifdef HEX_RAYS
+#include "efiHexRays.h"
+#endif
+
 namespace EfiAnalysis {
 
 class EfiAnalyzer {
@@ -170,6 +174,14 @@ class EfiAnalyzerX86 : public EfiAnalyzer {
         import_type(idati, -1, "EFI_PEI_SERVICES");
         import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
         import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
+
+#ifdef HEX_RAYS
+        for (auto idx = 0; idx < get_entry_qty(); idx++) {
+            uval_t ord = get_entry_ordinal(idx);
+            ea_t ep = get_entry(ord);
+            TrackEntryParams(get_func(ep));
+        }
+#endif
     }
     bool findImageHandleX64();
     bool findSystemTableX64();
@@ -206,6 +218,8 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     EfiAnalyzerArm() : EfiAnalyzer() {
         // in order to make it work, it is necessary to copy
         // uefi.til, uefi64.til files in {idadir}/til/arm/
+        add_til("uefi64.til", ADDTIL_DEFAULT);
+
         const til_t *idati = get_idati();
         import_type(idati, -1, "EFI_GUID");
         import_type(idati, -1, "EFI_HANDLE");
@@ -214,6 +228,7 @@ class EfiAnalyzerArm : public EfiAnalyzer {
         import_type(idati, -1, "EFI_RUNTIME_SERVICES");
     }
     void renameEntryPoints();
+    void findBootServicesTables();
 };
 
 bool efiAnalyzerMainX64();

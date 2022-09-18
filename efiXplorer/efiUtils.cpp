@@ -451,7 +451,7 @@ void setEntryArgToPeiSvc() {
                 continue;
             }
             if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-                msg("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
+                msg("[%s] apply_tinfo failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
         }

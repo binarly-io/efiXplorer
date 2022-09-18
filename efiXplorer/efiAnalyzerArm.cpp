@@ -22,10 +22,6 @@
 
 #include "efiAnalyzer.h"
 
-#ifdef HEX_RAYS
-#include "efiHexRays.h"
-#endif
-
 using namespace EfiAnalysis;
 
 void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
@@ -33,8 +29,13 @@ void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ep = get_entry(ord);
         set_name(ep, "_ModuleEntryPoint", SN_FORCE);
+        // does not works on tested ARM binaries
+        // func_data.size() always returns 0
+        // TrackEntryParams(get_func(ep));
     }
 }
+
+void EfiAnalysis::EfiAnalyzerArm::findBootServicesTables() {}
 
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
@@ -45,14 +46,14 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
         auto_wait();
     };
 
-    // set the correct name for the entry point and automatically fix the prototype
-    analyzer.renameEntryPoints();
-
     // find .text and .data segments
     analyzer.getSegments();
 
     // mark GUIDs
     analyzer.markDataGuids();
+
+    // set the correct name for the entry point and automatically fix the prototype
+    analyzer.renameEntryPoints();
 
     return true;
 }

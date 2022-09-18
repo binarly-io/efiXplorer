@@ -24,6 +24,7 @@
 #include "efiUtils.h"
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
+bool TrackEntryParams(func_t *entry_point);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
@@ -605,7 +606,7 @@ class VariablesInfoExtractor : public ctree_visitor_t {
         cexpr_t *attributes_arg = &args->at(2);
         if (attributes_arg->op == cot_num) {
             if (mDebug) {
-                msg("Service call: %016llx, Attributes: %d\n",
+                msg("[I] Service call: %016llx, Attributes: %d\n",
                     static_cast<uint64_t>(mCodeAddr), attributes_arg->numval());
             }
             attributes_arg->numval();
@@ -618,4 +619,81 @@ class VariablesInfoExtractor : public ctree_visitor_t {
   protected:
     ea_t mCodeAddr = BADADDR;
     bool mDebug = false;
+};
+
+class PrototypesFixer : public ctree_visitor_t {
+  public:
+    PrototypesFixer() : ctree_visitor_t(CV_FAST){};
+    std::vector<ea_t> child_functions;
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        if (e->op != cot_call)
+            return false;
+
+        // get child function address
+        if (e->x->op != cot_obj) {
+            return false;
+        }
+        if (mDebug) {
+            msg("[I] Child function address: %016llx\n",
+                static_cast<uint64_t>(e->x->obj_ea));
+        }
+
+        carglist_t *args = e->a;
+        if (args == nullptr) {
+            return false;
+        }
+
+        // get child function prototype
+        ea_t func_addr = e->x->obj_ea;
+        hexrays_failure_t hf;
+        tinfo_t tif_func;
+        func_type_data_t func_data;
+        if (guess_tinfo(&tif_func, func_addr) == GUESS_FUNC_FAILED) {
+            return false;
+        }
+        if (!tif_func.get_func_details(&func_data)) {
+            return false;
+        }
+
+        for (auto i = 0; i < args->size(); i++) {
+            cexpr_t *arg = &args->at(i);
+            if (arg->op == cot_cast || arg->op == cot_var) {
+                if (!addrInVec(child_functions, e->ea)) {
+                    child_functions.push_back(func_addr);
+                }
+                // extract argument type
+                tinfo_t arg_type;
+                if (arg->op == cot_var) {
+                    arg_type = arg->type;
+                }
+                if (arg->op == cot_cast) {
+                    arg_type = arg->x->type;
+                }
+                // set this type to child function
+                if (func_data.size() > i) {
+                    func_data[i].type = arg_type;
+                    tinfo_t tif_func_upd;
+                    if (!tif_func_upd.create_func(func_data)) {
+                        continue;
+                    }
+                    if (!apply_tinfo(func_addr, tif_func_upd, TINFO_DEFINITE)) {
+                        continue;
+                    }
+                    if (mDebug) {
+                        msg("[efiXplorer] change argument #%d type for function "
+                            "0x%016llX\n",
+                            i, func_addr);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+  protected:
+    bool mDebug = true;
 };
