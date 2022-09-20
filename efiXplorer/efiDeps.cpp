@@ -54,9 +54,9 @@ json EfiDependencies::getDeps(std::string guid) {
         if (p["guid"] != guid) {
             continue;
         }
-        p["ea"] = getHex(static_cast<uint64_t>(p["ea"]));
-        p["xref"] = getHex(static_cast<uint64_t>(p["xref"]));
-        p["address"] = getHex(static_cast<uint64_t>(p["address"]));
+        p["ea"] = getHex(u64_addr(p["ea"]));
+        p["xref"] = getHex(u64_addr(p["xref"]));
+        p["address"] = getHex(u64_addr(p["address"]));
         if (find(installers.begin(), installers.end(), p["service"]) !=
             installers.end()) {
             res["installed"].push_back(p);

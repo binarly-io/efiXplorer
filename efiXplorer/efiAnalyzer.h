@@ -229,6 +229,7 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     }
     void renameEntryPoints();
     void findBootServicesTables();
+    void initialGlobalVarsDetection();
 };
 
 bool efiAnalyzerMainX64();

@@ -254,3 +254,4 @@ std::string getWideString(ea_t addr);
 EfiGuid getGlobalGuid(ea_t addr);
 EfiGuid getStackGuid(func_t *f, uint64_t offset);
 bool addStrucForShiftedPtr();
+uint64_t u64_addr(ea_t addr);

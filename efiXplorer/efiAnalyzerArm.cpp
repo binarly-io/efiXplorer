@@ -35,7 +35,13 @@ void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
     }
 }
 
-void EfiAnalysis::EfiAnalyzerArm::findBootServicesTables() {}
+void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
+    for (auto idx = 0; idx < get_entry_qty(); idx++) {
+        uval_t ord = get_entry_ordinal(idx);
+        ea_t ep = get_entry(ord);
+        DetectGlobalVars(get_func(ep));
+    }
+}
 
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
@@ -54,6 +60,8 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
 
     // set the correct name for the entry point and automatically fix the prototype
     analyzer.renameEntryPoints();
+
+    analyzer.initialGlobalVarsDetection();
 
     return true;
 }

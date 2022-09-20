@@ -259,3 +259,19 @@ bool TrackEntryParams(func_t *entry_point) {
     prototypes_fixer.apply_to(&cfunc->body, nullptr);
     return true;
 }
+
+bool DetectGlobalVars(func_t *f) {
+    // check func
+    if (f == nullptr) {
+        return false;
+    }
+    VariablesDetector vars_detector;
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(f, &hf);
+    if (cfunc == nullptr) {
+        return false;
+    }
+    vars_detector.SetFuncEa(f->start_ea);
+    vars_detector.apply_to(&cfunc->body, nullptr);
+    return true;
+}

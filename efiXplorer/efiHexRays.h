@@ -24,6 +24,7 @@
 #include "efiUtils.h"
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
+bool DetectGlobalVars(func_t *f);
 bool TrackEntryParams(func_t *entry_point);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
@@ -606,8 +607,8 @@ class VariablesInfoExtractor : public ctree_visitor_t {
         cexpr_t *attributes_arg = &args->at(2);
         if (attributes_arg->op == cot_num) {
             if (mDebug) {
-                msg("[I] Service call: %016llx, Attributes: %d\n",
-                    static_cast<uint64_t>(mCodeAddr), attributes_arg->numval());
+                msg("[I] Service call: %016llx, Attributes: %d\n", u64_addr(mCodeAddr),
+                    attributes_arg->numval());
             }
             attributes_arg->numval();
             mAttributes = static_cast<uint8_t>(attributes_arg->numval());
@@ -637,8 +638,7 @@ class PrototypesFixer : public ctree_visitor_t {
             return false;
         }
         if (mDebug) {
-            msg("[I] Child function address: %016llx\n",
-                static_cast<uint64_t>(e->x->obj_ea));
+            msg("[I] Child function address: %016llx\n", u64_addr(e->x->obj_ea));
         }
 
         carglist_t *args = e->a;
@@ -683,7 +683,7 @@ class PrototypesFixer : public ctree_visitor_t {
                         continue;
                     }
                     if (mDebug) {
-                        msg("[efiXplorer] change argument #%d type for function "
+                        msg("[I] change argument #%d type for function "
                             "0x%016llX\n",
                             i, func_addr);
                     }
@@ -696,4 +696,113 @@ class PrototypesFixer : public ctree_visitor_t {
 
   protected:
     bool mDebug = true;
+};
+
+class VariablesDetector : public ctree_visitor_t {
+  public:
+    VariablesDetector() : ctree_visitor_t(CV_FAST){};
+
+    std::vector<ea_t> child_functions;
+    void SetFuncEa(ea_t ea) { mFuncEa = ea; };
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        if (e->op == cot_asg) {
+            // saving a child function for recursive analysis
+            if (!addrInVec(child_functions, e->ea)) {
+                child_functions.push_back(e->x->obj_ea);
+            }
+        }
+
+        bool global_var = false;
+        bool local_var = false;
+        if (e->op != cot_asg) {
+            return false;
+        }
+
+        switch (e->x->op) {
+        case cot_obj:
+            // asg operation for global variable
+            global_var = true;
+            break;
+        case cot_var:
+            // asg operation for local variable
+            local_var = true;
+            break;
+        default:
+            return false;
+        }
+
+        if (e->y->op != cot_cast && e->y->op != cot_var) {
+            return false;
+        }
+
+        // extract variable type
+        tinfo_t var_type;
+        tinfo_t var_type_no_ptr;
+        if (e->y->op == cot_var) {
+            var_type = e->y->type;
+        }
+        if (e->y->op == cot_cast) {
+            var_type = e->y->x->type;
+        }
+
+        if (var_type.is_ptr()) {
+            var_type_no_ptr = remove_pointer(var_type);
+        }
+
+        qstring type_name;
+        bool is_ptr = false;
+        if (!var_type.get_type_name(&type_name)) {
+            if (!var_type_no_ptr.get_type_name(&type_name)) {
+                msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
+                return false;
+            }
+            is_ptr = true;
+        }
+
+        if (mDebug) {
+            msg("[I] code address: 0x%016llX, type name: %s\n", u64_addr(e->ea),
+                type_name.c_str());
+        }
+
+        if (global_var) {
+            // extract variable data
+            ea_t g_addr = e->x->obj_ea;
+            std::string type_name_str = static_cast<std::string>(type_name.c_str());
+            if (type_name == qstring("EFI_HANDLE")) {
+                setTypeAndName(g_addr, "gImageHandle", type_name_str);
+            }
+            if (type_name == qstring("EFI_SYSTEM_TABLE")) {
+                setPtrTypeAndName(g_addr, "gST", type_name_str);
+            }
+            if (type_name == qstring("EFI_BOOT_SERVICES")) {
+                setPtrTypeAndName(g_addr, "gBS", type_name_str);
+            }
+            if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
+                setPtrTypeAndName(g_addr, "gRT", type_name_str);
+            }
+        }
+
+        if (local_var) {
+            var_ref_t var_ref;
+            if (e->y->op == cot_var) {
+                var_ref = e->y->v;
+            }
+            if (e->y->op == cot_cast) {
+                var_ref = e->y->x->v;
+            }
+            lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
+            // Set the Hex-Rays variable type
+            auto name = typeToName(static_cast<std::string>(type_name.c_str()));
+            setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
+        }
+
+        return false;
+    }
+
+  protected:
+    bool mDebug = true;
+    ea_t mFuncEa;
 };
