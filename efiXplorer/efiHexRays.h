@@ -24,11 +24,14 @@
 #include "efiUtils.h"
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
-bool DetectGlobalVars(func_t *f);
-bool TrackEntryParams(func_t *entry_point);
+bool DetectVars(func_t *f);
+bool TrackEntryParams(func_t *f, uint8_t depth);
+std::vector<json> DetectServices(func_t *f);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
+bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t tif,
+                                               std::string name);
 bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool isPODArray(tinfo_t tif, unsigned int ptrDepth);
 const char *Expr2String(cexpr_t *e, qstring *out);
@@ -565,7 +568,8 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             lvar_t &destVar = varRef.mba->vars[varRef.idx];
             // Set the Hex-Rays variable type
             auto name = typeToName(static_cast<std::string>(tStr.c_str()));
-            if (setHexRaysVariableInfo(mFuncEa, destVar, ptrTif, name)) {
+            if (setHexRaysVariableInfoAndHandleInterfaces(mFuncEa, destVar, ptrTif,
+                                                          name)) {
                 ++mNumApplied;
             }
         }
@@ -649,29 +653,61 @@ class PrototypesFixer : public ctree_visitor_t {
         // get child function prototype
         ea_t func_addr = e->x->obj_ea;
         hexrays_failure_t hf;
+        func_t *f = get_func(func_addr);
+        if (f != nullptr) {
+            decompile(f, &hf);
+        }
+
         tinfo_t tif_func;
         func_type_data_t func_data;
         if (guess_tinfo(&tif_func, func_addr) == GUESS_FUNC_FAILED) {
+            msg("[E] guess_tinfo() failed\n");
             return false;
         }
         if (!tif_func.get_func_details(&func_data)) {
+            msg("[E] get_func_details() failed\n");
             return false;
         }
 
+        msg("[I] Call address: 0x%016llX\n", e->ea);
         for (auto i = 0; i < args->size(); i++) {
             cexpr_t *arg = &args->at(i);
             if (arg->op == cot_cast || arg->op == cot_var) {
-                if (!addrInVec(child_functions, e->ea)) {
-                    child_functions.push_back(func_addr);
-                }
                 // extract argument type
                 tinfo_t arg_type;
+                tinfo_t arg_type_no_ptr;
                 if (arg->op == cot_var) {
                     arg_type = arg->type;
                 }
                 if (arg->op == cot_cast) {
                     arg_type = arg->x->type;
                 }
+
+                // print type
+                if (arg_type.is_ptr()) {
+                    arg_type_no_ptr = remove_pointer(arg_type);
+                }
+
+                qstring type_name;
+                bool is_ptr = false;
+                if (!arg_type.get_type_name(&type_name)) {
+                    if (!arg_type_no_ptr.get_type_name(&type_name)) {
+                        // msg("[E] Can not get type name: 0x%016llX\n", u64_addr(e->ea));
+                        continue;
+                    }
+                    is_ptr = true;
+                }
+
+                if (is_ptr) {
+                    msg("[I]  Arg #%d, type =  %s *\n", i, type_name.c_str());
+                } else {
+                    msg("[I]  Arg #%d, type =  %s\n", i, type_name.c_str());
+                }
+                if (type_name == qstring("SYSTEM_TABLE") &&
+                    !addrInVec(child_functions, func_addr)) {
+                    child_functions.push_back(func_addr);
+                }
+
                 // set this type to child function
                 if (func_data.size() > i) {
                     func_data[i].type = arg_type;
@@ -796,7 +832,7 @@ class VariablesDetector : public ctree_visitor_t {
             lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
             // Set the Hex-Rays variable type
             auto name = typeToName(static_cast<std::string>(type_name.c_str()));
-            setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
+            // setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
         }
 
         return false;
@@ -805,4 +841,72 @@ class VariablesDetector : public ctree_visitor_t {
   protected:
     bool mDebug = true;
     ea_t mFuncEa;
+};
+
+class ServicesDetector : public ctree_visitor_t {
+    // detect all services (Boot services, Runtime services, etc)
+  public:
+    ServicesDetector() : ctree_visitor_t(CV_FAST){};
+
+    std::vector<json> services;
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        if (e->op != cot_call) {
+            return false;
+        }
+
+        if (e->x->op != cot_cast) {
+            return false;
+        }
+
+        // extract function type
+        auto e_func = e->x->x;
+        tinfo_t func_type;
+        tinfo_t func_type_no_ptr;
+        func_type = e_func->type;
+
+        if (func_type.is_ptr()) {
+            func_type_no_ptr = remove_pointer(func_type);
+        }
+
+        qstring type_name;
+        bool is_ptr = false;
+        if (!func_type.get_type_name(&type_name)) {
+            if (!func_type_no_ptr.get_type_name(&type_name)) {
+                // msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
+                return false;
+            }
+            is_ptr = true;
+        }
+
+        auto service_name = typeToName(static_cast<std::string>(type_name.c_str()));
+        if (service_name.rfind("Efi", 0) == 0) {
+            service_name = service_name.substr(3);
+        }
+        msg("[efiXplorer] address: 0x%016llX, service type: %s, service name: %s\n",
+            u64_addr(e->ea), type_name.c_str(), service_name.c_str());
+
+        // append service
+        // add item to allBootServices
+        json s;
+        s["address"] = e->ea;
+        s["service_name"] = service_name;
+        s["table_name"] = getTable(service_name);
+
+        // add code addresses for arguments
+        eavec_t args;
+        get_arg_addrs(&args, e->ea);
+        s["args"] = args;
+
+        if (!jsonInVec(services, s)) {
+            services.push_back(s);
+        }
+
+        return false;
+    }
+
+  protected:
+    bool mDebug = true;
 };

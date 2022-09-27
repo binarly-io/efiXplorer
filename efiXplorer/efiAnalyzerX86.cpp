@@ -2544,7 +2544,7 @@ void EfiAnalysis::EfiAnalyzer::dumpInfo() {
 
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
-void showAllChoosers(EfiAnalysis::EfiAnalyzer analyzer) {
+void showAllChoosers(EfiAnalysis::EfiAnalyzerX86 analyzer) {
     qstring title;
 
     // open window with all services

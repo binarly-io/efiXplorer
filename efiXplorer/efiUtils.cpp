@@ -964,4 +964,18 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
     return guid;
 }
 
+std::string getTable(std::string service_name) {
+    for (auto i = 0; i < BTABLE_LEN; i++) {
+        if (static_cast<std::string>(boot_services_table[i].name) == service_name) {
+            return std::string("EFI_BOOT_SERVICES");
+        }
+    }
+    for (auto i = 0; i < RTABLE_LEN; i++) {
+        if (static_cast<std::string>(runtime_services_table[i].name) == service_name) {
+            return std::string("EFI_RUNTIME_SERVICES");
+        }
+    }
+    return std::string("OTHER");
+}
+
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }

@@ -97,6 +97,43 @@ enum Registers64bit {
     REG_R14,
 };
 
+enum RegistersAarch64 {
+    REG_X0 = 129,
+    REG_X1,
+    REG_X2,
+    REG_X3,
+    REG_X4,
+    REG_X5,
+    REG_X6,
+    REG_X7,
+    REG_X8,
+    REG_X9,
+    REG_X10,
+    REG_X11,
+    REG_X12,
+    REG_X13,
+    REG_X14,
+    REG_X15,
+    REG_X16,
+    REG_X17,
+    REG_X18,
+    REG_X19,
+    REG_X20,
+    REG_X21,
+    REG_X22,
+    REG_X23,
+    REG_X24,
+    REG_X25,
+    REG_X26,
+    REG_X27,
+    REG_X28,
+    REG_X29,
+    REG_X30,
+    REG_XZR,
+    REG_XSP,
+    REG_XPC,
+};
+
 enum HelperValues {
     GUID_OFFSET_DWORD = 4,
     GUID_OFFSET_NONE = 0xffff,
@@ -254,4 +291,5 @@ std::string getWideString(ea_t addr);
 EfiGuid getGlobalGuid(ea_t addr);
 EfiGuid getStackGuid(func_t *f, uint64_t offset);
 bool addStrucForShiftedPtr();
+std::string getTable(std::string service_name);
 uint64_t u64_addr(ea_t addr);

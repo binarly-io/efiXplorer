@@ -179,7 +179,7 @@ class EfiAnalyzerX86 : public EfiAnalyzer {
         for (auto idx = 0; idx < get_entry_qty(); idx++) {
             uval_t ord = get_entry_ordinal(idx);
             ea_t ep = get_entry(ord);
-            TrackEntryParams(get_func(ep));
+            TrackEntryParams(get_func(ep), 0);
         }
 #endif
     }
@@ -230,6 +230,7 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     void renameEntryPoints();
     void findBootServicesTables();
     void initialGlobalVarsDetection();
+    void servicesDetection();
 };
 
 bool efiAnalyzerMainX64();

@@ -47,8 +47,9 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     return true;
 }
 
-// Utility function to set a Hex-Rays variable type and name
-bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
+// Utility function to set a Hex-Rays variable type and set types for the interfaces
+bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t tif,
+                                               std::string name) {
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
@@ -72,6 +73,26 @@ bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string na
     pi.obj_type.get_type_name(&typeName);
     // Handling all interface functions (to rename function arguments)
     opstroffForInterface(xrefs, typeName);
+
+    return true;
+}
+
+// Utility function to set a Hex-Rays variable type and name
+bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
+    lvar_saved_info_t lsi;
+    lsi.ll = ll;
+    lsi.type = tif;
+    modify_user_lvar_info(funcEa, MLI_TYPE, lsi);
+
+    // Set lvar name
+    if (ll.is_stk_var()) { // Rename local variable on stack
+        sval_t stkoff = ll.get_stkoff();
+        struc_t *frame = get_frame(funcEa);
+        set_member_name(frame, stkoff, name.c_str());
+    } else { // Modufy user lvar info
+        lsi.name = static_cast<qstring>(name.c_str());
+        modify_user_lvar_info(funcEa, MLI_NAME, lsi);
+    }
 
     return true;
 }
@@ -245,22 +266,29 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
     return res;
 }
 
-bool TrackEntryParams(func_t *entry_point) {
+bool TrackEntryParams(func_t *f, uint8_t depth) {
+    if (depth == 2) {
+        return true;
+    }
     // check func
-    if (entry_point == nullptr) {
+    if (f == nullptr) {
         return false;
     }
-    PrototypesFixer prototypes_fixer;
     hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(entry_point, &hf);
+    cfuncptr_t cfunc = decompile(f, &hf);
     if (cfunc == nullptr) {
         return false;
     }
-    prototypes_fixer.apply_to(&cfunc->body, nullptr);
+    PrototypesFixer *pf = new PrototypesFixer();
+    pf->apply_to(&cfunc->body, nullptr);
+    for (auto addr : pf->child_functions) {
+        TrackEntryParams(get_func(addr), ++depth);
+    }
+    delete pf;
     return true;
 }
 
-bool DetectGlobalVars(func_t *f) {
+bool DetectVars(func_t *f) {
     // check func
     if (f == nullptr) {
         return false;
@@ -274,4 +302,20 @@ bool DetectGlobalVars(func_t *f) {
     vars_detector.SetFuncEa(f->start_ea);
     vars_detector.apply_to(&cfunc->body, nullptr);
     return true;
+}
+
+std::vector<json> DetectServices(func_t *f) {
+    // check func
+    std::vector<json> res;
+    if (f == nullptr) {
+        return res;
+    }
+    ServicesDetector services_detector;
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(f, &hf);
+    if (cfunc == nullptr) {
+        return res;
+    }
+    services_detector.apply_to(&cfunc->body, nullptr);
+    return services_detector.services;
 }
