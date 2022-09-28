@@ -255,6 +255,7 @@ bool EfiAnalysis::EfiAnalyzerArm::getProtocol(ea_t address, uint32_t p_reg,
     if (guid_addr == BADADDR || code_addr == BADADDR) {
         return false;
     }
+    msg("[efiXplorer] address: 0x%016llX, found new protocol\n", u64_addr(code_addr));
     return AddProtocol(service_name, guid_addr, code_addr, address);
 }
 

@@ -167,14 +167,16 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
 
 void applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
     // Descriptors for EFI_BOOT_SERVICES functions
-    struct TargetFunctionPointer BootServicesFunctions[3]{
+    struct TargetFunctionPointer BootServicesFunctions[5]{
+        {"InstallProtocolInterface", 0x80, 4, 1, 3},
         {"HandleProtocol", 0x98, 3, 1, 2},
+        {"OpenProtocol", 0x118, 6, 1, 2},
         {"LocateProtocol", 0x140, 3, 0, 2},
-        {"OpenProtocol", 0x118, 6, 1, 2}};
+        {"InstallMultipleProtocolInterfaces", 0x148, 4, 1, 2}};
 
     // Initialize
     ServiceDescriptor sdBs;
-    sdBs.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 3);
+    sdBs.Initialize("EFI_BOOT_SERVICES", BootServicesFunctions, 5);
 
     ServiceDescriptorMap mBs;
     mBs.Register(sdBs);
