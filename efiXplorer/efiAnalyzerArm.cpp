@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiAnalyzer.cpp
+ * efiAnalyzerArm.cpp
  * contains ARM specific analysis routines
  *
  */
@@ -30,13 +30,36 @@ std::vector<ea_t> gStListArm;
 std::vector<ea_t> gBsListArm;
 std::vector<ea_t> gRtListArm;
 
-void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
+void EfiAnalysis::EfiAnalyzerArm::fixOffsets() {
+    insn_t insn;
+    for (auto func_addr : funcs) {
+        func_t *f = get_func(func_addr);
+        if (f == nullptr) {
+            continue;
+        }
+        ea_t ea = f->start_ea;
+        while (ea < f->end_ea) {
+            ea = next_head(ea, BADADDR);
+            decode_insn(&insn, ea);
+            if (insn.itype == ARM_str) {
+                continue;
+            }
+            if (insn.ops[0].type == o_displ) {
+                op_num(ea, 0);
+            }
+            if (insn.ops[1].type == o_displ) {
+                op_num(ea, 1);
+            }
+        }
+    }
+}
+
+void EfiAnalysis::EfiAnalyzerArm::initialAnalysis() {
+    fixOffsets();
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ep = get_entry(ord);
         set_name(ep, "_ModuleEntryPoint", SN_FORCE);
-        // does not works on tested ARM binaries
-        // func_data.size() always returns 0
         // TrackEntryParams(get_func(ep), 0);
     }
 }
@@ -314,7 +337,7 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     analyzer.markDataGuids();
 
     // set the correct name for the entry point and automatically fix the prototype
-    analyzer.renameEntryPoints();
+    analyzer.initialAnalysis();
     analyzer.initialGlobalVarsDetection();
 
     // detect services
