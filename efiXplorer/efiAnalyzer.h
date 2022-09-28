@@ -239,7 +239,7 @@ class EfiAnalyzerArm : public EfiAnalyzer {
         char service_name[64];
         uint32_t offset;
         uint32_t reg;
-        uint16_t arg_number;
+        uint16_t arg_index;
     };
 
     struct service_info_64bit bs_table_aarch64[13] = {

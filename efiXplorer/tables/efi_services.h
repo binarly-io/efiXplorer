@@ -187,7 +187,7 @@ struct service_info_64bit {
     char service_name[64];
     uint32_t offset;
     uint32_t reg;
-    uint16_t arg_number;
+    uint16_t arg_index;
 };
 
 struct service_info_32bit {
@@ -203,21 +203,21 @@ struct service {
 };
 
 struct service_info_64bit bootServicesTable64[] = {
-    {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 2},
-    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 2},
-    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 2},
-    {"HandleProtocol", HandleProtocolOffset64, REG_RDX, 2},
-    {"RegisterProtocolNotify", RegisterProtocolNotifyOffset64, REG_RCX, 1},
-    {"OpenProtocol", OpenProtocolOffset64, REG_RDX, 2},
-    {"CloseProtocol", CloseProtocolOffset64, REG_RDX, 2},
-    {"ProtocolsPerHandle", ProtocolsPerHandleOffset64, REG_RDX, 2},
-    {"OpenProtocolInformation", OpenProtocolInformationOffset64, REG_RDX, 2},
-    {"LocateHandleBuffer", LocateHandleBufferOffset64, REG_RDX, 2},
-    {"LocateProtocol", LocateProtocolOffset64, REG_RCX, 1},
+    {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"HandleProtocol", HandleProtocolOffset64, REG_RDX, 1},
+    {"RegisterProtocolNotify", RegisterProtocolNotifyOffset64, REG_RCX, 0},
+    {"OpenProtocol", OpenProtocolOffset64, REG_RDX, 1},
+    {"CloseProtocol", CloseProtocolOffset64, REG_RDX, 1},
+    {"ProtocolsPerHandle", ProtocolsPerHandleOffset64, REG_RDX, 1},
+    {"OpenProtocolInformation", OpenProtocolInformationOffset64, REG_RDX, 1},
+    {"LocateHandleBuffer", LocateHandleBufferOffset64, REG_RDX, 1},
+    {"LocateProtocol", LocateProtocolOffset64, REG_RCX, 0},
     {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset64,
-     REG_RDX, 2},
+     REG_RDX, 1},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
-     REG_RDX, 2}};
+     REG_RDX, 1}};
 size_t bootServicesTable64Length =
     sizeof(bootServicesTable64) / sizeof(service_info_64bit);
 
