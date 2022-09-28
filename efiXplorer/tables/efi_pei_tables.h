@@ -35,6 +35,8 @@
  *
  */
 
+#pragma once
+
 #include "stdint.h"
 
 struct pei_services_entry {

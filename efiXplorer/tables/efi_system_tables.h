@@ -35,6 +35,8 @@
  *
  */
 
+#pragma once
+
 #define BTABLE_LEN 43
 #define RTABLE_LEN 14
 

@@ -1343,8 +1343,8 @@ void EfiAnalysis::EfiAnalyzerX86::findOtherBsTablesX64() {
     }
 }
 
-bool EfiAnalysis::EfiAnalyzerX86::AddProtocol(std::string serviceName, ea_t guidAddress,
-                                              ea_t xrefAddress, ea_t callAddress) {
+bool EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
+                                           ea_t xrefAddress, ea_t callAddress) {
 
     if (arch != UEFI && guidAddress >= startAddress && guidAddress <= endAddress) {
         msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name, callAddress);
@@ -1371,7 +1371,8 @@ bool EfiAnalysis::EfiAnalyzerX86::AddProtocol(std::string serviceName, ea_t guid
         std::string name = it->second;
         protocol["prot_name"] = name;
     } else {
-        protocol["prot_name"] = "ProprietaryProtocol";
+        protocol["prot_name"] = "UNKNOWN_PROTOCOL";
+        setTypeAndName(guidAddress, "UNKNOWN_PROTOCOL", "EFI_GUID");
     }
     if (!jsonInVec(allProtocols, protocol)) {
         allProtocols.push_back(protocol);

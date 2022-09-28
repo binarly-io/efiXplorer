@@ -913,11 +913,6 @@ class ServicesDetector : public ctree_visitor_t {
         s["service_name"] = service_name;
         s["table_name"] = getTable(service_name);
 
-        // add code addresses for arguments
-        eavec_t args;
-        get_arg_addrs(&args, e->ea);
-        s["args"] = args;
-
         if (!jsonInVec(services, s)) {
             services.push_back(s);
         }

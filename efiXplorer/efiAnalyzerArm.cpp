@@ -107,7 +107,6 @@ json getService(ea_t addr, uint8_t table_id) {
             } else {
                 s["table_name"] = std::string("OTHER");
             }
-
             return s;
         }
         if (is_basic_block_end(insn, false)) {
@@ -222,6 +221,58 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
     }
 }
 
+bool EfiAnalysis::EfiAnalyzerArm::getProtocol(ea_t address, uint32_t p_reg,
+                                              std::string service_name) {
+    ea_t ea = address;
+    insn_t insn;
+    ea_t offset = BADADDR;
+    ea_t guid_addr = BADADDR;
+    ea_t code_addr = BADADDR;
+    while (true) {
+        ea = prev_head(ea, 0);
+        decode_insn(&insn, ea);
+        if (insn.itype == ARM_adrl && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == p_reg && insn.ops[1].type == o_imm) {
+            guid_addr = insn.ops[1].value;
+            code_addr = ea;
+            break;
+        }
+        if (insn.itype == ARM_add && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == p_reg && insn.ops[1].type == o_reg &&
+            insn.ops[1].reg == p_reg && insn.ops[2].type == o_imm) {
+            offset = insn.ops[2].value;
+        }
+        if (insn.itype == ARM_adrp && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == p_reg && insn.ops[1].type == o_imm) {
+            guid_addr = insn.ops[1].value + offset;
+            code_addr = ea;
+            break;
+        }
+        if (is_basic_block_end(insn, false)) {
+            break;
+        }
+    }
+    if (guid_addr == BADADDR || code_addr == BADADDR) {
+        return false;
+    }
+    return AddProtocol(service_name, guid_addr, code_addr, address);
+}
+
+void EfiAnalysis::EfiAnalyzerArm::protocolsDetection() {
+    for (auto s : allServices) {
+        std::string service_name = s["service_name"];
+        for (auto i = 0; i < 13; i++) {
+            std::string current_name =
+                static_cast<std::string>(bs_table_aarch64[i].service_name);
+            if (current_name != service_name) {
+                continue;
+            }
+            getProtocol(s["address"], bs_table_aarch64[i].reg, service_name);
+            break;
+        }
+    }
+}
+
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
 void showAllChoosers(EfiAnalysis::EfiAnalyzerArm analyzer) {
@@ -263,12 +314,15 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
 
     // set the correct name for the entry point and automatically fix the prototype
     analyzer.renameEntryPoints();
-
     analyzer.initialGlobalVarsDetection();
 
-    // detect services and protocols
+    // detect services
     analyzer.servicesDetection();
 
+    // detect protocols
+    analyzer.protocolsDetection();
+
+    applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
     showAllChoosers(analyzer);
 
     return true;

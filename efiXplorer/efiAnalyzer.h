@@ -57,6 +57,8 @@ class EfiAnalyzer {
     bool findSmmCallout();
     bool analyzeNvramVariables();
     bool AnalyzeVariableService(ea_t ea, std::string service_str);
+    bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
+                     ea_t callAddress);
     void dumpInfo();
 
     uint8_t fileType = 0;
@@ -208,8 +210,6 @@ class EfiAnalyzerX86 : public EfiAnalyzer {
     void markLocalGuidsX64();
 
   private:
-    bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
-                     ea_t callAddress);
     bool InstallMultipleProtocolInterfacesHandler();
 };
 
@@ -231,6 +231,31 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     void findBootServicesTables();
     void initialGlobalVarsDetection();
     void servicesDetection();
+    void protocolsDetection();
+
+  private:
+    bool getProtocol(ea_t address, uint32_t p_reg, std::string service_name);
+    struct service_info_64bit {
+        char service_name[64];
+        uint32_t offset;
+        uint32_t reg;
+        uint16_t arg_number;
+    };
+
+    struct service_info_64bit bs_table_aarch64[13] = {
+        {"InstallProtocolInterface", 0x80, REG_X1, 2},
+        {"ReinstallProtocolInterface", 0x88, REG_X1, 2},
+        {"UninstallProtocolInterface", 0x90, REG_X1, 2},
+        {"HandleProtocol", 0x98, REG_X1, 2},
+        {"RegisterProtocolNotify", 0xA8, REG_X0, 1},
+        {"OpenProtocol", 0x118, REG_X1, 2},
+        {"CloseProtocol", 0x120, REG_X1, 2},
+        {"ProtocolsPerHandle", 0x128, REG_X1, 2},
+        {"OpenProtocolInformation", 0x130, REG_X1, 2},
+        {"LocateHandleBuffer", 0x138, REG_X1, 2},
+        {"LocateProtocol", 0x140, REG_X0, 1},
+        {"InstallMultipleProtocolInterfaces", 0x148, REG_X1, 1},
+        {"UninstallMultipleProtocolInterfaces", 0x150, REG_X1, 1}};
 };
 
 bool efiAnalyzerMainX64();
