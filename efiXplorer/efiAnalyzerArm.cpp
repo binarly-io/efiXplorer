@@ -65,18 +65,50 @@ void EfiAnalysis::EfiAnalyzerArm::initialAnalysis() {
 }
 
 ea_t getTable(ea_t code_addr, uint64_t offset) {
-    ea_t bs = BADADDR;
+    ea_t table = BADADDR;
     insn_t insn;
     decode_insn(&insn, code_addr);
     if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg ||
         insn.ops[1].type != o_displ || insn.ops[1].addr != offset ||
         insn.ops[1].reg == REG_XSP) {
-        return bs;
+        return table;
     }
-    uint8_t bs_reg = insn.ops[0].reg;
+    uint8_t table_reg = insn.ops[0].reg;
     uint8_t st_reg = insn.ops[1].reg;
 
+    // handle following code patterns
+    // ADR    REG1, gBS
+    // LDR    REG2, [REG3,#0x60] <- we are here
+    // STR    REG2, [REG4]
     ea_t ea = code_addr;
+    uint8_t adr_reg = 0xff;
+    while (true) {
+        ea = next_head(ea, BADADDR);
+        decode_insn(&insn, ea);
+        if (insn.itype == ARM_str && insn.ops[0].type == o_reg &&
+            insn.ops[1].type == o_displ && insn.ops[1].addr == 0x0) {
+            adr_reg = insn.ops[1].reg;
+        }
+        if (is_basic_block_end(insn, false)) {
+            break;
+        }
+    }
+    if (adr_reg != 0xff) {
+        ea = code_addr;
+        while (true) {
+            ea = prev_head(ea, 0);
+            decode_insn(&insn, ea);
+            if (insn.itype == ARM_adr && insn.ops[0].type == o_reg &&
+                insn.ops[0].reg == adr_reg && insn.ops[1].type == o_imm) {
+                return insn.ops[1].value; // gBS/gRT
+            }
+            if (is_basic_block_end(insn, false)) {
+                break;
+            }
+        }
+    }
+
+    ea = code_addr;
     while (true) {
         ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
@@ -86,7 +118,7 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
             uint8_t reg = insn.ops[0].reg;
             decode_insn(&insn, next_head(ea, BADADDR));
             if (insn.itype == ARM_str && insn.ops[0].type == o_reg &&
-                insn.ops[0].reg == bs_reg && insn.ops[1].type == o_displ &&
+                insn.ops[0].reg == table_reg && insn.ops[1].type == o_displ &&
                 insn.ops[1].reg == reg) {
                 return static_cast<ea_t>(base + insn.ops[1].addr);
             }
@@ -95,47 +127,82 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
             break;
         }
     }
-    return bs;
+    return table;
 }
 
 json getService(ea_t addr, uint8_t table_id) {
     json s;
     insn_t insn;
     decode_insn(&insn, addr);
-    if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg ||
-        insn.ops[1].type != o_displ) {
-        return s;
-    }
-    ea_t ea = addr;
-    uint8_t blr_reg = 0xff;
-    uint8_t table_reg = insn.ops[0].reg;
-    uint64_t service_offset = BADADDR;
-    while (true) {
-        ea = next_head(ea, BADADDR);
-        decode_insn(&insn, ea);
-        if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
-            insn.ops[1].type == o_displ && insn.ops[1].reg == table_reg) {
-            service_offset = insn.ops[1].addr;
-            blr_reg = insn.ops[0].reg;
-        }
-        if (blr_reg != 0xff && service_offset != BADADDR && insn.itype == ARM_blr &&
-            insn.ops[0].type == o_reg && insn.ops[0].reg == blr_reg) {
-            s["address"] = ea;
-            if (table_id == 1) {
-                s["service_name"] = lookupBootServiceName(service_offset);
-                s["table_name"] = std::string("EFI_BOOT_SERVICES");
-            } else if (table_id == 2) {
-                s["service_name"] = lookupRuntimeServiceName(service_offset);
-                s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
-            } else {
-                s["table_name"] = std::string("OTHER");
+    if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+        insn.ops[1].type == o_displ) {
+        ea_t ea = addr;
+        uint8_t blr_reg = 0xff;
+        uint8_t table_reg = insn.ops[0].reg;
+        uint64_t service_offset = BADADDR;
+        while (true) {
+            ea = next_head(ea, BADADDR);
+            decode_insn(&insn, ea);
+            if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+                insn.ops[1].type == o_displ && insn.ops[1].reg == table_reg) {
+                service_offset = insn.ops[1].addr;
+                blr_reg = insn.ops[0].reg;
             }
-            return s;
-        }
-        if (is_basic_block_end(insn, false)) {
-            break;
+            if (blr_reg != 0xff && service_offset != BADADDR && insn.itype == ARM_blr &&
+                insn.ops[0].type == o_reg && insn.ops[0].reg == blr_reg) {
+                s["address"] = ea;
+                if (table_id == 1) {
+                    s["service_name"] = lookupBootServiceName(service_offset);
+                    s["table_name"] = std::string("EFI_BOOT_SERVICES");
+                } else if (table_id == 2) {
+                    s["service_name"] = lookupRuntimeServiceName(service_offset);
+                    s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
+                } else {
+                    s["table_name"] = std::string("OTHER");
+                }
+                return s;
+            }
+            if (is_basic_block_end(insn, false)) {
+                break;
+            }
         }
     }
+
+    // handle following code patterns
+    // ADR    REG1, gBS
+    // ...
+    // LDR    REG2, [REG1]
+    // ...
+    // LDR    REG3, [REG2,#0x28]
+    if (insn.itype == ARM_adr && insn.ops[0].type == o_reg && insn.ops[1].type == o_imm) {
+        uint8_t reg1 = insn.ops[0].reg;
+        uint8_t reg2 = 0xff;
+        ea_t ea = addr;
+        while (true) {
+            ea = next_head(ea, BADADDR);
+            decode_insn(&insn, ea);
+            if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+                insn.ops[1].type == o_displ && insn.ops[1].reg == reg1 &&
+                insn.ops[1].addr == 0) {
+                reg2 = insn.ops[0].reg;
+            }
+            if (reg2 != 0xff && insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+                insn.ops[1].type == o_displ && insn.ops[1].reg == reg2) {
+                s["address"] = ea;
+                if (table_id == 1) {
+                    s["service_name"] = lookupBootServiceName(insn.ops[1].addr);
+                    s["table_name"] = std::string("EFI_BOOT_SERVICES");
+                } else if (table_id == 2) {
+                    s["service_name"] = lookupRuntimeServiceName(insn.ops[1].addr);
+                    s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
+                } else {
+                    s["table_name"] = std::string("OTHER");
+                }
+                return s;
+            }
+        }
+    }
+
     return s;
 }
 
@@ -223,6 +290,10 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
             if (!s.contains("address")) {
                 continue;
             }
+            std::string name = s["service_name"];
+            if (name == std::string("Unknown")) {
+                continue;
+            }
             if (!jsonInVec(allServices, s)) {
                 msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n", ea);
                 allServices.push_back(s);
@@ -234,6 +305,10 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
         for (auto ea : xrefs) {
             auto s = getService(ea, 2);
             if (!s.contains("address")) {
+                continue;
+            }
+            std::string name = s["service_name"];
+            if (name == std::string("Unknown")) {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
