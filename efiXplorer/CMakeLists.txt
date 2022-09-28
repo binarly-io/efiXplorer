@@ -28,8 +28,9 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 
 # efiXplorer sources
 set(efiXplorer_src
-    "efiAnalysis.cpp"
-    "efiAnalysis.h"
+    "efiAnalyzerArm.cpp"
+    "efiAnalyzerX86.cpp"
+    "efiAnalyzer.h"
     "efiDeps.cpp"
     "efiDeps.h"
     "efiGlobal.h"

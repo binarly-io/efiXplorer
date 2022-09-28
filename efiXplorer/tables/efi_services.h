@@ -19,6 +19,8 @@
  *
  */
 
+#pragma once
+
 enum BootServicesOffsets64bit {
     RaiseTPLOffset64 = 0x18,
     RestoreTPLOffset64 = 0x20,
@@ -180,10 +182,12 @@ enum SmmServicesOffsets32bit {
     SmiHandlerRegisterOffset32 = 0x7c,
     SmiHandlerUnRegisterOffset32 = 0x80,
 };
+
 struct service_info_64bit {
     char service_name[64];
     uint32_t offset;
     uint32_t reg;
+    uint16_t arg_index;
 };
 
 struct service_info_32bit {
@@ -199,20 +203,21 @@ struct service {
 };
 
 struct service_info_64bit bootServicesTable64[] = {
-    {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX},
-    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX},
-    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX},
-    {"HandleProtocol", HandleProtocolOffset64, REG_RDX},
-    {"RegisterProtocolNotify", RegisterProtocolNotifyOffset64, REG_RCX},
-    {"OpenProtocol", OpenProtocolOffset64, REG_RDX},
-    {"CloseProtocol", CloseProtocolOffset64, REG_RDX},
-    {"OpenProtocolInformation", OpenProtocolInformationOffset64, REG_RDX},
-    {"LocateHandleBuffer", LocateHandleBufferOffset64, REG_RDX},
-    {"LocateProtocol", LocateProtocolOffset64, REG_RCX},
+    {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"HandleProtocol", HandleProtocolOffset64, REG_RDX, 1},
+    {"RegisterProtocolNotify", RegisterProtocolNotifyOffset64, REG_RCX, 0},
+    {"OpenProtocol", OpenProtocolOffset64, REG_RDX, 1},
+    {"CloseProtocol", CloseProtocolOffset64, REG_RDX, 1},
+    {"ProtocolsPerHandle", ProtocolsPerHandleOffset64, REG_RDX, 1},
+    {"OpenProtocolInformation", OpenProtocolInformationOffset64, REG_RDX, 1},
+    {"LocateHandleBuffer", LocateHandleBufferOffset64, REG_RDX, 1},
+    {"LocateProtocol", LocateProtocolOffset64, REG_RCX, 0},
     {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset64,
-     REG_RDX},
+     REG_RDX, 1},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
-     REG_RDX}};
+     REG_RDX, 1}};
 size_t bootServicesTable64Length =
     sizeof(bootServicesTable64) / sizeof(service_info_64bit);
 
@@ -224,6 +229,7 @@ struct service_info_32bit bootServicesTable32[] = {
     {"RegisterProtocolNotify", RegisterProtocolNotifyOffset32, 1},
     {"OpenProtocol", OpenProtocolOffset32, 2},
     {"CloseProtocol", CloseProtocolOffset32, 2},
+    {"ProtocolsPerHandle", ProtocolsPerHandleOffset32, 2},
     {"OpenProtocolInformation", OpenProtocolInformationOffset32, 2},
     {"LocateHandleBuffer", LocateHandleBufferOffset32, 2},
     {"LocateProtocol", LocateProtocolOffset32, 1},

@@ -113,7 +113,12 @@ uint8_t getInputFileType() {
         // UEFI firmware
         return UEFI;
     }
-    return 0;
+    index = fileTypeStr.find("ARM64");
+    if (index != std::string::npos) {
+        // Portable executable for ARM64 (PE)
+        return ARM64;
+    }
+    return UNSUPPORTED_TYPE;
 }
 
 //--------------------------------------------------------------------------
@@ -271,7 +276,7 @@ ea_t findUnknownBsVarX64(ea_t ea) {
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
             msg("[%s] found gBS at 0x%016llX, address = 0x%016llX\n", plugin_name,
-                static_cast<uint64_t>(ea), static_cast<uint64_t>(insn.ops[1].addr));
+                u64_addr(ea), u64_addr(insn.ops[1].addr));
             resAddr = insn.ops[1].addr;
             set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
             break;
@@ -419,7 +424,7 @@ void setEntryArgToPeiSvc() {
         tinfo_t tif_ea;
         if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
             msg("[%s] guess_tinfo failed, start_ea = 0x%016llX, idx=%d\n", plugin_name,
-                static_cast<uint64_t>(start_ea), idx);
+                u64_addr(start_ea), idx);
             continue;
         }
         func_type_data_t funcdata;
@@ -446,7 +451,7 @@ void setEntryArgToPeiSvc() {
                 continue;
             }
             if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-                msg("[%s] get_named_type failed, idx=%d\n", plugin_name, idx);
+                msg("[%s] apply_tinfo failed, idx=%d\n", plugin_name, idx);
                 continue;
             }
         }
@@ -693,8 +698,7 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
             insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
             varCopy = insn.ops[0].addr;
-            msg("[efiXplorer] Found copy for global variable: 0x%016llx\n",
-                static_cast<uint64_t>(ea));
+            msg("[efiXplorer] Found copy for global variable: 0x%016llx\n", u64_addr(ea));
             break;
         }
     }
@@ -794,7 +798,7 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
             insn.ops[0].reg == REG_RAX) {
             opStroff(ea, static_cast<std::string>(typeName.c_str()));
             msg("[%s] Mark arguments at address 0x%016llX (interface type: %s)\n",
-                plugin_name, static_cast<uint64_t>(ea), typeName.c_str());
+                plugin_name, u64_addr(ea), typeName.c_str());
 
             // check for EfiSmmBase2Protocol->GetSmstLocation
             if (typeName == qstring("EFI_SMM_BASE2_PROTOCOL") &&
@@ -959,3 +963,41 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
     }
     return guid;
 }
+
+std::string getTable(std::string service_name) {
+    if (service_name == std::string("RaiseTpl") ||
+        service_name == std::string("RestoreTpl")) {
+        return std::string("EFI_BOOT_SERVICES");
+    }
+    for (auto i = 0; i < BTABLE_LEN; i++) {
+        if (static_cast<std::string>(boot_services_table[i].name) == service_name) {
+            return std::string("EFI_BOOT_SERVICES");
+        }
+    }
+    for (auto i = 0; i < RTABLE_LEN; i++) {
+        if (static_cast<std::string>(runtime_services_table[i].name) == service_name) {
+            return std::string("EFI_RUNTIME_SERVICES");
+        }
+    }
+    return std::string("OTHER");
+}
+
+std::string lookupBootServiceName(uint64_t offset) {
+    for (auto i = 0; i < BTABLE_LEN; i++) {
+        if (boot_services_table[i].offset64 == offset) {
+            return static_cast<std::string>(boot_services_table[i].name);
+        }
+    }
+    return std::string("Unknown");
+}
+
+std::string lookupRuntimeServiceName(uint64_t offset) {
+    for (auto i = 0; i < RTABLE_LEN; i++) {
+        if (runtime_services_table[i].offset64 == offset) {
+            return static_cast<std::string>(runtime_services_table[i].name);
+        }
+    }
+    return std::string("Unknown");
+}
+
+uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }
