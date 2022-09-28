@@ -978,4 +978,22 @@ std::string getTable(std::string service_name) {
     return std::string("OTHER");
 }
 
+std::string lookupBootServiceName(uint64_t offset) {
+    for (auto i = 0; i < BTABLE_LEN; i++) {
+        if (boot_services_table[i].offset64 == offset) {
+            return static_cast<std::string>(boot_services_table[i].name);
+        }
+    }
+    return std::string("Unknown");
+}
+
+std::string lookupRuntimeServiceName(uint64_t offset) {
+    for (auto i = 0; i < RTABLE_LEN; i++) {
+        if (runtime_services_table[i].offset64 == offset) {
+            return static_cast<std::string>(runtime_services_table[i].name);
+        }
+    }
+    return std::string("Unknown");
+}
+
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }

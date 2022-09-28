@@ -292,4 +292,6 @@ EfiGuid getGlobalGuid(ea_t addr);
 EfiGuid getStackGuid(func_t *f, uint64_t offset);
 bool addStrucForShiftedPtr();
 std::string getTable(std::string service_name);
+std::string lookupBootServiceName(uint64_t offset);
+std::string lookupRuntimeServiceName(uint64_t offset);
 uint64_t u64_addr(ea_t addr);

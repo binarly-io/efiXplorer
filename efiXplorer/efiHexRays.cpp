@@ -288,20 +288,28 @@ bool TrackEntryParams(func_t *f, uint8_t depth) {
     return true;
 }
 
-bool DetectVars(func_t *f) {
+json DetectVars(func_t *f) {
+    json res;
     // check func
     if (f == nullptr) {
-        return false;
+        return res;
     }
     VariablesDetector vars_detector;
     hexrays_failure_t hf;
     cfuncptr_t cfunc = decompile(f, &hf);
     if (cfunc == nullptr) {
-        return false;
+        return res;
     }
+
     vars_detector.SetFuncEa(f->start_ea);
     vars_detector.apply_to(&cfunc->body, nullptr);
-    return true;
+
+    res["gImageHandleList"] = vars_detector.gImageHandleList;
+    res["gStList"] = vars_detector.gStList;
+    res["gBsList"] = vars_detector.gBsList;
+    res["gRtList"] = vars_detector.gRtList;
+
+    return res;
 }
 
 std::vector<json> DetectServices(func_t *f) {

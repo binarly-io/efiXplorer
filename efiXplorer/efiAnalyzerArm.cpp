@@ -25,6 +25,11 @@
 
 using namespace EfiAnalysis;
 
+std::vector<ea_t> gImageHandleListArm;
+std::vector<ea_t> gStListArm;
+std::vector<ea_t> gBsListArm;
+std::vector<ea_t> gRtListArm;
+
 void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
         uval_t ord = get_entry_ordinal(idx);
@@ -32,7 +37,7 @@ void EfiAnalysis::EfiAnalyzerArm::renameEntryPoints() {
         set_name(ep, "_ModuleEntryPoint", SN_FORCE);
         // does not works on tested ARM binaries
         // func_data.size() always returns 0
-        TrackEntryParams(get_func(ep), 0);
+        // TrackEntryParams(get_func(ep), 0);
     }
 }
 
@@ -48,8 +53,6 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
     uint8_t bs_reg = insn.ops[0].reg;
     uint8_t st_reg = insn.ops[1].reg;
 
-    // msg("[efiXplorer] address: 0x%016llX, reg = %d\n", u64_addr(code_addr), bs_reg);
-
     ea_t ea = code_addr;
     while (true) {
         ea = next_head(ea, BADADDR);
@@ -62,11 +65,9 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
             if (insn.itype == ARM_str && insn.ops[0].type == o_reg &&
                 insn.ops[0].reg == bs_reg && insn.ops[1].type == o_displ &&
                 insn.ops[1].reg == reg) {
-                bs = static_cast<ea_t>(base + insn.ops[1].addr);
-                return bs;
+                return static_cast<ea_t>(base + insn.ops[1].addr);
             }
         }
-        // Exit loop if end of previous basic block found
         if (is_basic_block_end(insn, false)) {
             break;
         }
@@ -74,12 +75,82 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
     return bs;
 }
 
+json getService(ea_t addr, uint8_t table_id) {
+    json s;
+    insn_t insn;
+    decode_insn(&insn, addr);
+    if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg ||
+        insn.ops[1].type != o_displ) {
+        return s;
+    }
+    ea_t ea = addr;
+    uint8_t blr_reg = 0xff;
+    uint8_t table_reg = insn.ops[0].reg;
+    uint64_t service_offset = BADADDR;
+    while (true) {
+        ea = next_head(ea, BADADDR);
+        decode_insn(&insn, ea);
+        if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+            insn.ops[1].type == o_displ && insn.ops[1].reg == table_reg) {
+            service_offset = insn.ops[1].addr;
+            blr_reg = insn.ops[0].reg;
+        }
+        if (blr_reg != 0xff && service_offset != BADADDR && insn.itype == ARM_blr &&
+            insn.ops[0].type == o_reg && insn.ops[0].reg == blr_reg) {
+            s["address"] = ea;
+            if (table_id == 1) {
+                s["service_name"] = lookupBootServiceName(service_offset);
+                s["table_name"] = std::string("EFI_BOOT_SERVICES");
+            } else if (table_id == 2) {
+                s["service_name"] = lookupRuntimeServiceName(service_offset);
+                s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
+            } else {
+                s["table_name"] = std::string("OTHER");
+            }
+
+            return s;
+        }
+        if (is_basic_block_end(insn, false)) {
+            break;
+        }
+    }
+    return s;
+}
+
 void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
     // analyze entry point with Hex-Rays
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ep = get_entry(ord);
-        DetectVars(get_func(ep));
+        json res = DetectVars(get_func(ep));
+        if (res.contains("gImageHandleList")) {
+            for (auto addr : res["gImageHandleList"]) {
+                if (!addrInVec(gImageHandleListArm, addr)) {
+                    gImageHandleListArm.push_back(addr);
+                }
+            }
+        }
+        if (res.contains("gStList")) {
+            for (auto addr : res["gStList"]) {
+                if (!addrInVec(gStListArm, addr)) {
+                    gStListArm.push_back(addr);
+                }
+            }
+        }
+        if (res.contains("gBsList")) {
+            for (auto addr : res["gBsList"]) {
+                if (!addrInVec(gBsListArm, addr)) {
+                    gBsListArm.push_back(addr);
+                }
+            }
+        }
+        if (res.contains("gRtList")) {
+            for (auto addr : res["gRtList"]) {
+                if (!addrInVec(gRtListArm, addr)) {
+                    gRtListArm.push_back(addr);
+                }
+            }
+        }
     }
 
     // analysis of all functions and search for additional table initializations
@@ -95,12 +166,18 @@ void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
             if (bs != BADADDR) {
                 msg("[efiXplorer] gBS = 0x%016llX\n", u64_addr(ea));
                 setPtrTypeAndName(bs, "gBS", "EFI_BOOT_SERVICES");
+                if (!addrInVec(gBsListArm, bs)) {
+                    gBsListArm.push_back(bs);
+                }
                 continue;
             }
             ea_t rt = getTable(ea, 0x58);
             if (rt != BADADDR) {
                 msg("[efiXplorer] gRT = 0x%016llX\n", u64_addr(ea));
-                setPtrTypeAndName(bs, "gRT", "EFI_RUNTIME_SERVICES");
+                setPtrTypeAndName(rt, "gRT", "EFI_RUNTIME_SERVICES");
+                if (!addrInVec(gRtListArm, rt)) {
+                    gRtListArm.push_back(rt);
+                }
                 continue;
             }
         }
@@ -108,10 +185,39 @@ void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
 }
 
 void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
+
     for (auto func_addr : funcs) {
         std::vector<json> services = DetectServices(get_func(func_addr));
         for (auto service : services) {
             allServices.push_back(service);
+        }
+    }
+
+    // analyze xrefs to gBS, gRT
+    for (auto bs : gBsListArm) {
+        auto xrefs = getXrefs(bs);
+        for (auto ea : xrefs) {
+            auto s = getService(ea, 1);
+            if (!s.contains("address")) {
+                continue;
+            }
+            if (!jsonInVec(allServices, s)) {
+                msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n", ea);
+                allServices.push_back(s);
+            }
+        }
+    }
+    for (auto rt : gRtListArm) {
+        auto xrefs = getXrefs(rt);
+        for (auto ea : xrefs) {
+            auto s = getService(ea, 2);
+            if (!s.contains("address")) {
+                continue;
+            }
+            if (!jsonInVec(allServices, s)) {
+                msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n", ea);
+                allServices.push_back(s);
+            }
         }
     }
 }
@@ -159,6 +265,8 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     analyzer.renameEntryPoints();
 
     analyzer.initialGlobalVarsDetection();
+
+    // detect services and protocols
     analyzer.servicesDetection();
 
     showAllChoosers(analyzer);

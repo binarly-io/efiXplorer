@@ -24,8 +24,8 @@
 #include "efiUtils.h"
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
-bool DetectVars(func_t *f);
 bool TrackEntryParams(func_t *f, uint8_t depth);
+json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
@@ -739,6 +739,12 @@ class VariablesDetector : public ctree_visitor_t {
     VariablesDetector() : ctree_visitor_t(CV_FAST){};
 
     std::vector<ea_t> child_functions;
+
+    std::vector<ea_t> gImageHandleList;
+    std::vector<ea_t> gStList;
+    std::vector<ea_t> gBsList;
+    std::vector<ea_t> gRtList;
+
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
 
     // This is the callback function that Hex-Rays invokes for every expression
@@ -809,15 +815,27 @@ class VariablesDetector : public ctree_visitor_t {
             std::string type_name_str = static_cast<std::string>(type_name.c_str());
             if (type_name == qstring("EFI_HANDLE")) {
                 setTypeAndName(g_addr, "gImageHandle", type_name_str);
+                if (!addrInVec(gImageHandleList, g_addr)) {
+                    gImageHandleList.push_back(g_addr);
+                }
             }
             if (type_name == qstring("EFI_SYSTEM_TABLE")) {
                 setPtrTypeAndName(g_addr, "gST", type_name_str);
+                if (!addrInVec(gStList, g_addr)) {
+                    gStList.push_back(g_addr);
+                }
             }
             if (type_name == qstring("EFI_BOOT_SERVICES")) {
                 setPtrTypeAndName(g_addr, "gBS", type_name_str);
+                if (!addrInVec(gBsList, g_addr)) {
+                    gBsList.push_back(g_addr);
+                }
             }
             if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
                 setPtrTypeAndName(g_addr, "gRT", type_name_str);
+                if (!addrInVec(gRtList, g_addr)) {
+                    gRtList.push_back(g_addr);
+                }
             }
         }
 
