@@ -243,16 +243,16 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     };
 
     struct service_info_64bit bs_table_aarch64[13] = {
-        {"InstallProtocolInterface", 0x80, REG_X1, 2},
-        {"ReinstallProtocolInterface", 0x88, REG_X1, 2},
-        {"UninstallProtocolInterface", 0x90, REG_X1, 2},
-        {"HandleProtocol", 0x98, REG_X1, 2},
-        {"RegisterProtocolNotify", 0xA8, REG_X0, 1},
-        {"OpenProtocol", 0x118, REG_X1, 2},
-        {"CloseProtocol", 0x120, REG_X1, 2},
-        {"ProtocolsPerHandle", 0x128, REG_X1, 2},
-        {"OpenProtocolInformation", 0x130, REG_X1, 2},
-        {"LocateHandleBuffer", 0x138, REG_X1, 2},
+        {"InstallProtocolInterface", 0x80, REG_X1, 1},
+        {"ReinstallProtocolInterface", 0x88, REG_X1, 1},
+        {"UninstallProtocolInterface", 0x90, REG_X1, 1},
+        {"HandleProtocol", 0x98, REG_X1, 1},
+        {"RegisterProtocolNotify", 0xA8, REG_X0, 0},
+        {"OpenProtocol", 0x118, REG_X1, 1},
+        {"CloseProtocol", 0x120, REG_X1, 1},
+        {"ProtocolsPerHandle", 0x128, REG_X1, 1},
+        {"OpenProtocolInformation", 0x130, REG_X1, 1},
+        {"LocateHandleBuffer", 0x138, REG_X1, 1},
         {"LocateProtocol", 0x140, REG_X0, 1},
         {"InstallMultipleProtocolInterfaces", 0x148, REG_X1, 1},
         {"UninstallMultipleProtocolInterfaces", 0x150, REG_X1, 1}};
