@@ -77,6 +77,20 @@ bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t 
     return true;
 }
 
+// Utility function to set a Hex-Rays variable name
+bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr) {
+    lvar_saved_info_t lsi;
+    lvar_uservec_t lvuv;
+
+    lsi.ll = lvar;
+    lsi.name = name;
+    if (!lvuv.lvvec.add_unique(lsi)) {
+        return false;
+    }
+    save_user_lvar_settings(func_addr, lvuv);
+    return true;
+}
+
 // Utility function to set a Hex-Rays variable type and name
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
     lvar_saved_info_t lsi;
