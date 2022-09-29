@@ -60,7 +60,7 @@ void EfiAnalysis::EfiAnalyzerArm::initialAnalysis() {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ep = get_entry(ord);
         set_name(ep, "_ModuleEntryPoint", SN_FORCE);
-        // TrackEntryParams(get_func(ep), 0);
+        TrackEntryParams(get_func(ep), 0);
     }
 }
 

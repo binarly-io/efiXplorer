@@ -27,6 +27,7 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
 bool TrackEntryParams(func_t *f, uint8_t depth);
 json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
+bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
 void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
@@ -654,18 +655,12 @@ class PrototypesFixer : public ctree_visitor_t {
         ea_t func_addr = e->x->obj_ea;
         hexrays_failure_t hf;
         func_t *f = get_func(func_addr);
-        if (f != nullptr) {
-            decompile(f, &hf);
-        }
-
-        tinfo_t tif_func;
-        func_type_data_t func_data;
-        if (guess_tinfo(&tif_func, func_addr) == GUESS_FUNC_FAILED) {
-            msg("[E] guess_tinfo() failed\n");
+        if (f == nullptr) {
             return false;
         }
-        if (!tif_func.get_func_details(&func_data)) {
-            msg("[E] get_func_details() failed\n");
+
+        cfuncptr_t cf = decompile(f, &hf);
+        if (cf == nullptr) {
             return false;
         }
 
@@ -703,25 +698,25 @@ class PrototypesFixer : public ctree_visitor_t {
                 } else {
                     msg("[I]  Arg #%d, type =  %s\n", i, type_name.c_str());
                 }
-                if (type_name == qstring("SYSTEM_TABLE") &&
-                    !addrInVec(child_functions, func_addr)) {
-                    child_functions.push_back(func_addr);
-                }
 
-                // set this type to child function
-                if (func_data.size() > i) {
-                    func_data[i].type = arg_type;
-                    tinfo_t tif_func_upd;
-                    if (!tif_func_upd.create_func(func_data)) {
-                        continue;
+                if (type_name == qstring("EFI_HANDLE") ||
+                    type_name == qstring("EFI_SYSTEM_TABLE")) {
+                    if (!addrInVec(child_functions, func_addr)) {
+                        child_functions.push_back(func_addr);
                     }
-                    if (!apply_tinfo(func_addr, tif_func_upd, TINFO_DEFINITE)) {
-                        continue;
+                    // set argument type and name
+                    if (cf->argidx.size() <= i) {
+                        return false;
                     }
-                    if (mDebug) {
-                        msg("[I] change argument #%d type for function "
-                            "0x%016llX\n",
-                            i, func_addr);
+                    auto argid = cf->argidx[i];
+                    lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
+                    if (type_name == qstring("EFI_HANDLE")) {
+                        setHexRaysVariableInfo(func_addr, arg_var, arg_type,
+                                               "ImageHandle");
+                    }
+                    if (type_name == qstring("EFI_SYSTEM_TABLE")) {
+                        setHexRaysVariableInfo(func_addr, arg_var, arg_type,
+                                               "SystemTable");
                     }
                 }
             }
@@ -858,7 +853,7 @@ class VariablesDetector : public ctree_visitor_t {
 
   protected:
     bool mDebug = true;
-    ea_t mFuncEa;
+    ea_t mFuncEa = BADADDR;
 };
 
 class ServicesDetector : public ctree_visitor_t {
