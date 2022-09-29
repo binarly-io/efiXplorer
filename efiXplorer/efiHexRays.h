@@ -902,6 +902,12 @@ class ServicesDetector : public ctree_visitor_t {
         auto service_name = typeToName(static_cast<std::string>(type_name.c_str()));
         if (service_name.rfind("Efi", 0) == 0) {
             service_name = service_name.substr(3);
+            if (service_name == std::string("RaiseTpl")) {
+                service_name = std::string("RaiseTPL");
+            }
+            if (service_name == std::string("RestoreTpl")) {
+                service_name = std::string("RestoreTPL");
+            }
         }
         msg("[efiXplorer] address: 0x%016llX, service type: %s, service name: %s\n",
             u64_addr(e->ea), type_name.c_str(), service_name.c_str());

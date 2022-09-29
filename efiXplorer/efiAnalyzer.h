@@ -227,7 +227,8 @@ class EfiAnalyzerArm : public EfiAnalyzer {
         import_type(idati, -1, "EFI_BOOT_SERVICES");
         import_type(idati, -1, "EFI_RUNTIME_SERVICES");
     }
-    void renameEntryPoints();
+    void fixOffsets();
+    void initialAnalysis();
     void findBootServicesTables();
     void initialGlobalVarsDetection();
     void servicesDetection();

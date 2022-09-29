@@ -965,10 +965,6 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
 }
 
 std::string getTable(std::string service_name) {
-    if (service_name == std::string("RaiseTpl") ||
-        service_name == std::string("RestoreTpl")) {
-        return std::string("EFI_BOOT_SERVICES");
-    }
     for (auto i = 0; i < BTABLE_LEN; i++) {
         if (static_cast<std::string>(boot_services_table[i].name) == service_name) {
             return std::string("EFI_BOOT_SERVICES");
