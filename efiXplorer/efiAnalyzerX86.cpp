@@ -1371,8 +1371,8 @@ bool EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAdd
         std::string name = it->second;
         protocol["prot_name"] = name;
     } else {
-        protocol["prot_name"] = "UNKNOWN_PROTOCOL";
-        setTypeAndName(guidAddress, "UNKNOWN_PROTOCOL", "EFI_GUID");
+        protocol["prot_name"] = "UNKNOWN_PROTOCOL_GUID";
+        setTypeAndName(guidAddress, "UNKNOWN_PROTOCOL_GUID", "EFI_GUID");
     }
     if (!jsonInVec(allProtocols, protocol)) {
         allProtocols.push_back(protocol);
