@@ -511,6 +511,11 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         tinfo_t tif;
         import_type(get_idati(), -1, interfaceTypeName.c_str());
         if (!tif.get_named_type(get_idati(), interfaceTypeName.c_str())) {
+            // Get the referent for the interface argument.
+            cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);
+            if (outArgReferent == nullptr)
+                return 0;
+            ApplyName(outArgReferent, interfaceTypeName);
             return 0;
         }
 
@@ -569,10 +574,31 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
             lvar_t &destVar = varRef.mba->vars[varRef.idx];
             // Set the Hex-Rays variable type
             auto name = typeToName(static_cast<std::string>(tStr.c_str()));
+            setLvarName(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
             if (setHexRaysVariableInfoAndHandleInterfaces(mFuncEa, destVar, ptrTif,
                                                           name)) {
                 ++mNumApplied;
             }
+        }
+    }
+
+    void ApplyName(cexpr_t *outArg, std::string type_name) {
+        ea_t dest_ea = outArg->obj_ea;
+
+        // For global variables
+        if (outArg->op == cot_obj) {
+            // Rename global variable
+            auto name = "g" + typeToName(type_name);
+            set_name(dest_ea, name.c_str(), SN_FORCE);
+        }
+
+        // For local variables
+        else if (outArg->op == cot_var) {
+            var_ref_t varRef = outArg->v;
+            lvar_t &destVar = varRef.mba->vars[varRef.idx];
+            // Set the Hex-Rays variable type
+            auto name = typeToName(type_name);
+            setLvarName(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
         }
     }
 };
