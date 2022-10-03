@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(APPLE)
   # to build Mach-O universal binaries with 2 architectures
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC -arch x86_64 -arch arm64")
+  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fPIC -arch x86_64 -arch arm64")
 else()
   set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC")
 endif()
