@@ -208,10 +208,8 @@ json getService(ea_t addr, uint8_t table_id) {
 
 void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
     // analyze entry point with Hex-Rays
-    for (auto idx = 0; idx < get_entry_qty(); idx++) {
-        uval_t ord = get_entry_ordinal(idx);
-        ea_t ep = get_entry(ord);
-        json res = DetectVars(get_func(ep));
+    for (auto func_addr : funcs) {
+        json res = DetectVars(get_func(func_addr));
         if (res.contains("gImageHandleList")) {
             for (auto addr : res["gImageHandleList"]) {
                 if (!addrInVec(gImageHandleListArm, addr)) {
