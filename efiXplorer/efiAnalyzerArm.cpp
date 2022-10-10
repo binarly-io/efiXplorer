@@ -112,15 +112,30 @@ ea_t getTable(ea_t code_addr, uint64_t offset) {
     while (true) {
         ea = next_head(ea, BADADDR);
         decode_insn(&insn, ea);
+        ea_t base = BADADDR;
+        uint8_t reg = 0xff;
         if (insn.itype == ARM_adrp && insn.ops[0].type == o_reg &&
             insn.ops[1].type == o_imm) {
-            uint64_t base = insn.ops[1].value;
-            uint8_t reg = insn.ops[0].reg;
-            decode_insn(&insn, next_head(ea, BADADDR));
-            if (insn.itype == ARM_str && insn.ops[0].type == o_reg &&
-                insn.ops[0].reg == table_reg && insn.ops[1].type == o_displ &&
-                insn.ops[1].reg == reg) {
-                return static_cast<ea_t>(base + insn.ops[1].addr);
+            // Example:
+            // LDR   X8, [X1,#0x58]
+            // ADRP  X9, #gRT@PAGE <- we are here
+            // ...
+            // STR   X8, [X9,#gRT@PAGEOFF]
+
+            base = insn.ops[1].value;
+            reg = insn.ops[0].reg;
+            ea_t current_addr = ea;
+            while (true) {
+                current_addr = next_head(current_addr, BADADDR);
+                decode_insn(&insn, current_addr);
+                if (insn.itype == ARM_str && insn.ops[0].type == o_reg &&
+                    insn.ops[0].reg == table_reg && insn.ops[1].type == o_displ &&
+                    insn.ops[1].reg == reg) {
+                    return base + insn.ops[1].addr;
+                }
+                if (is_basic_block_end(insn, false)) {
+                    break;
+                }
             }
         }
         if (is_basic_block_end(insn, false)) {
