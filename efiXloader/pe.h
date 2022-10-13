@@ -57,7 +57,11 @@ class PE {
         _sel = 0;
         _ord = ord;
         inf_set_64bit();
-        set_processor_type("metapc", SETPROC_LOADER);
+        if (is_aarch64()) {
+            set_processor_type("arm", SETPROC_LOADER);
+        } else {
+            set_processor_type("metapc", SETPROC_LOADER);
+        }
         if (default_compiler() == COMP_UNK)
             set_compiler_id(COMP_MS);
         reset();
@@ -83,6 +87,7 @@ class PE {
     bool is_p32();
     bool is_p32_plus();
     bool is_pe();
+    bool is_aarch64();
     bool good();
     bool process();
     uint16_t arch();
@@ -172,6 +177,6 @@ class PE {
 };
 } // namespace efiloader
 
-enum machine_type { AMD64 = 0x8664, I386 = 0x014C };
+enum machine_type { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
 
 #endif // EFILOADER_PE_H

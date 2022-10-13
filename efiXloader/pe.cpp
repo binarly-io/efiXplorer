@@ -96,7 +96,15 @@ bool efiloader::PE::is_p32_plus() {
     qlseek(li, _pe_header_off + sizeof(uint32_t));
     qlread(li, &magic, sizeof(uint16_t));
     reset();
-    return magic == AMD64;
+    return (magic == AMD64 || magic == AARCH64);
+}
+
+bool efiloader::PE::is_aarch64() {
+    uint16_t magic = 0;
+    qlseek(li, _pe_header_off + sizeof(uint32_t));
+    qlread(li, &magic, sizeof(uint16_t));
+    reset();
+    return magic == AARCH64;
 }
 
 bool efiloader::PE::is_pe() {
@@ -717,7 +725,6 @@ void efiloader::PE::preprocess() {
             add_extra_cmt(next_ea, true, DIRECTORIES[i]);
             create_dword(next_ea, 4);
             create_dword(next_ea + 4, 4);
-            ;
             op_hex(next_ea, 0);
             op_hex(next_ea + 4, 0);
             set_cmt(next_ea, "Virtual address", 0);

@@ -30,7 +30,11 @@ class PeManager {
     PeManager() {
         inf_set_64bit();
         set_imagebase(0x0);
-        set_processor_type("metapc", SETPROC_LOADER);
+        if (pe->is_aarch64()) {
+            set_processor_type("arm", SETPROC_LOADER);
+        } else {
+            set_processor_type("metapc", SETPROC_LOADER);
+        }
         pe_base = 0;
         pe_sel_base = 0;
     };
