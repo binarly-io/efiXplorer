@@ -57,11 +57,7 @@ class PE {
         _sel = 0;
         _ord = ord;
         inf_set_64bit();
-        if (is_aarch64()) {
-            set_processor_type("arm", SETPROC_LOADER);
-        } else {
-            set_processor_type("metapc", SETPROC_LOADER);
-        }
+        set_processor_type("metapc", SETPROC_LOADER);
         if (default_compiler() == COMP_UNK)
             set_compiler_id(COMP_MS);
         reset();
