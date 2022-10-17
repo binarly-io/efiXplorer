@@ -99,14 +99,6 @@ bool efiloader::PE::is_p32_plus() {
     return (magic == AMD64 || magic == AARCH64);
 }
 
-bool efiloader::PE::is_aarch64() {
-    uint16_t magic = 0;
-    qlseek(li, _pe_header_off + sizeof(uint32_t));
-    qlread(li, &magic, sizeof(uint16_t));
-    reset();
-    return magic == AARCH64;
-}
-
 bool efiloader::PE::is_pe() {
     uint16_t pe_sign = 0;
     qlseek(li, _pe_header_off);

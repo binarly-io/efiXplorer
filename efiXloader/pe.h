@@ -58,8 +58,11 @@ class PE {
         _ord = ord;
         inf_set_64bit();
         set_processor_type("metapc", SETPROC_LOADER);
-        if (default_compiler() == COMP_UNK)
+        cm_t cm = inf_get_cc_cm() & ~CM_MASK;
+        inf_set_cc_cm(cm | CM_N64);
+        if (default_compiler() == COMP_UNK) {
             set_compiler_id(COMP_MS);
+        }
         reset();
     };
     ~PE() {
@@ -83,7 +86,6 @@ class PE {
     bool is_p32();
     bool is_p32_plus();
     bool is_pe();
-    bool is_aarch64();
     bool good();
     bool process();
     uint16_t arch();
