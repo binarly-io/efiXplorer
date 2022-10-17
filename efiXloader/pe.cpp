@@ -308,12 +308,16 @@ int efiloader::PE::preprocess_sections() {
     int section_headers_offset = pe.first_section_pos(_pe_header_off);
     headers_size = pe.allhdrsize;
 
-    if (pe.machine == PECPU_AMD64) { // x64
+    if (pe.machine == PECPU_AMD64 || pe.machine == PECPU_ARM64) { // AMD64/AARCH64
         qlseek(li, _pe_header_off);
         qlread(li, &pe64, sizeof(peheader64_t));
         number_of_sections = pe64.nobjs;
         section_headers_offset = pe64.first_section_pos(_pe_header_off);
         headers_size = pe64.allhdrsize;
+    }
+
+    if (!headers_size) {
+        return -1;
     }
 
     _sec_headers.resize(number_of_sections);
@@ -427,7 +431,12 @@ void efiloader::PE::preprocess() {
     qsnprintf(image_base_name, sizeof(image_base_name), "%s_IMAGE_BASE",
               _image_name.c_str());
 
-    preprocess_sections();
+    if (preprocess_sections() == -1) {
+        msg("[efiXloader]\tcannot load %s\n", _image_name.c_str());
+        image_base = 0;
+        image_size = 0;
+        return;
+    }
     push_to_idb(start, end);
     segments.push_back(
         make_head_segment(image_base, image_base + headers_size, seg_header_name));
