@@ -112,7 +112,8 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     }
     uefiParser.dump();
     uefiParser.dump_jsons();
-    efiloader::PeManager peManager;
+    msg("[efiXloader] machine type: %04x\n", uefiParser.machine_type);
+    efiloader::PeManager peManager(uefiParser.machine_type);
     add_til("uefi.til", ADDTIL_DEFAULT);
     add_til("uefi64.til", ADDTIL_DEFAULT);
     qstring err;

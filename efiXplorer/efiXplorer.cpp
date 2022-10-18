@@ -109,7 +109,13 @@ bool idaapi run(size_t arg) {
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
         msg("[%s] input file is UEFI firmware\n", plugin_name);
-        EfiAnalysis::efiAnalyzerMainX64();
+        if (get_machine_type() == AARCH64) {
+            msg("[%s] analyze AARCH64 modules\n", plugin_name);
+            EfiAnalysis::efiAnalyzerMainArm();
+        } else {
+            msg("[%s] analyze AMD64 modules\n", plugin_name);
+            EfiAnalysis::efiAnalyzerMainX64();
+        }
     } else if (arch == ARM64) {
         msg("[%s] input file is portable executable for ARM64 (PE)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainArm();

@@ -58,6 +58,8 @@ using namespace nlohmann;
 #define VZ 0x5A56
 #define MZ 0x5A4D
 
+enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
+
 enum ArchFileType { UNSUPPORTED_TYPE, X86, X64, UEFI, ARM64 };
 
 enum FfsFileType { FTYPE_PEI = 6, FTYPE_DXE_AND_THE_LIKE = 7 };
@@ -295,3 +297,4 @@ std::string getTable(std::string service_name);
 std::string lookupBootServiceName(uint64_t offset);
 std::string lookupRuntimeServiceName(uint64_t offset);
 uint64_t u64_addr(ea_t addr);
+uint16_t get_machine_type();

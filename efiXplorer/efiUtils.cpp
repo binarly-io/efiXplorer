@@ -997,3 +997,8 @@ std::string lookupRuntimeServiceName(uint64_t offset) {
 }
 
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }
+
+uint16_t get_machine_type() {
+    ea_t pe_offset = get_dword(0x3c);
+    return get_word(pe_offset + 4);
+}

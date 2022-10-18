@@ -180,6 +180,21 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &pa
     return res;
 }
 
+void efiloader::Uefitool::set_machine_type(UByteArray pe_body) {
+    const char *data = pe_body.constData();
+    if (pe_body.size() < 64) {
+        return;
+    }
+    uint32_t _pe_header_off = *(uint32_t *)(data + 0x3c);
+    if (pe_body.size() < _pe_header_off + 6) {
+        return;
+    }
+    if (*(uint32_t *)(data + _pe_header_off) == 0x4550) {
+        machine_type = *(uint16_t *)(data + _pe_header_off + 4);
+        machine_type_detected = true;
+    }
+}
+
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
     qstring module_name("");
@@ -193,6 +208,9 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     case EFI_SECTION_PE32:
         file->is_pe = true;
         file->ubytes = model.body(index);
+        if (!machine_type_detected) {
+            set_machine_type(model.body(index));
+        }
         break;
     case EFI_SECTION_USER_INTERFACE:
         file->has_ui = true;

@@ -136,6 +136,9 @@ class Uefitool {
     std::set<qstring> unique_names;
     std::vector<efiloader::File *> files;
     USTATUS err;
+    void set_machine_type(UByteArray pe_body);
+    uint16_t machine_type = 0xffff;
+    bool machine_type_detected = false;
 };
 } // namespace efiloader
 

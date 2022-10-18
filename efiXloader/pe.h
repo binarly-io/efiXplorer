@@ -45,7 +45,7 @@ namespace efiloader {
 class PE {
   public:
     PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base, ushort *sel_base,
-       int ord) {
+       int ord, uint16_t mt) {
         _image_name = fname.substr(fname.find_last_of("/\\") + 1);
         msg("[efiXloader] image name is %s\n", _image_name.c_str());
         pe_base = base;
@@ -57,9 +57,16 @@ class PE {
         _sel = 0;
         _ord = ord;
         inf_set_64bit();
-        set_processor_type("metapc", SETPROC_LOADER);
-        if (default_compiler() == COMP_UNK)
+        if (mt == PECPU_ARM64) {
+            set_processor_type("arm", SETPROC_LOADER);
+        } else {
+            set_processor_type("metapc", SETPROC_LOADER);
+        }
+        cm_t cm = inf_get_cc_cm() & ~CM_MASK;
+        inf_set_cc_cm(cm | CM_N64);
+        if (default_compiler() == COMP_UNK) {
             set_compiler_id(COMP_MS);
+        }
         reset();
     };
     ~PE() {
@@ -172,6 +179,6 @@ class PE {
 };
 } // namespace efiloader
 
-enum machine_type { AMD64 = 0x8664, I386 = 0x014C };
+enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
 
 #endif // EFILOADER_PE_H

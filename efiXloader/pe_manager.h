@@ -27,14 +27,20 @@
 namespace efiloader {
 class PeManager {
   public:
-    PeManager() {
+    PeManager(uint16_t mt) {
         inf_set_64bit();
         set_imagebase(0x0);
-        set_processor_type("metapc", SETPROC_LOADER);
+        if (mt == PECPU_ARM64) {
+            set_processor_type("arm", SETPROC_LOADER);
+        } else {
+            set_processor_type("metapc", SETPROC_LOADER);
+        }
         pe_base = 0;
         pe_sel_base = 0;
+        machine_type = mt;
     };
     void process(linput_t *li, std::basic_string<char> fname, int ord);
+    uint16_t machine_type;
 
   private:
     void to_base(linput_t *);
