@@ -247,6 +247,9 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     case EFI_SECTION_PEI_DEPEX:
         get_deps(index, "EFI_SECTION_PEI_DEPEX");
         break;
+    case EFI_SECTION_RAW:
+    case EFI_SECTION_VERSION:
+        break;
     default:
         // if there is no UI section, then the image name is GUID
         if ((file->is_pe || file->is_te) && !file->has_ui) {
