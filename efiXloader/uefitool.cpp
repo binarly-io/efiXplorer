@@ -233,6 +233,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         }
         break;
     case EFI_SECTION_COMPRESSION:
+    case EFI_SECTION_GUID_DEFINED:
         for (int i = 0; i < model.rowCount(index); i++) {
             dump(index.child(i, 0), i, file);
         }
