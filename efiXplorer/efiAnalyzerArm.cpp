@@ -437,5 +437,7 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
     showAllChoosers(analyzer);
 
+    analyzer.dumpInfo();
+
     return true;
 }
