@@ -54,6 +54,7 @@ void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index)
     UModelIndex guid_index;
     switch (model.subtype(model.parent(index))) {
     case EFI_SECTION_COMPRESSION:
+    case EFI_SECTION_GUID_DEFINED:
         guid_index = model.parent(model.parent(index));
         break;
     default:
