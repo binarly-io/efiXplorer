@@ -60,7 +60,9 @@ void EfiAnalysis::EfiAnalyzerArm::initialAnalysis() {
         uval_t ord = get_entry_ordinal(idx);
         ea_t ep = get_entry(ord);
         set_name(ep, "_ModuleEntryPoint", SN_FORCE);
+#ifdef HEX_RAYS
         TrackEntryParams(get_func(ep), 0);
+#endif /* HEX_RAYS */
     }
 }
 
@@ -222,6 +224,7 @@ json getService(ea_t addr, uint8_t table_id) {
 }
 
 void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
+#ifdef HEX_RAYS
     // analyze entry point with Hex-Rays
     for (auto func_addr : funcs) {
         json res = DetectVars(get_func(func_addr));
@@ -254,6 +257,7 @@ void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
             }
         }
     }
+#endif /* HEX_RAYS */
 
     // analysis of all functions and search for additional table initializations
     for (auto func_addr : funcs) {
@@ -288,12 +292,14 @@ void EfiAnalysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
 
 void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
 
+#ifdef HEX_RAYS
     for (auto func_addr : funcs) {
         std::vector<json> services = DetectServices(get_func(func_addr));
         for (auto service : services) {
             allServices.push_back(service);
         }
     }
+#endif /* HEX_RAYS */
 
     // analyze xrefs to gBS, gRT
     for (auto bs : gBsListArm) {
@@ -434,7 +440,9 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     // detect protocols
     analyzer.protocolsDetection();
 
+#ifdef HEX_RAYS
     applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
+#endif /* HEX_RAYS */
     showAllChoosers(analyzer);
 
     analyzer.dumpInfo();
