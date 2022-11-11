@@ -314,7 +314,7 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
-                msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n", ea);
+                msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n", u64_addr(ea));
                 allServices.push_back(s);
             }
         }
@@ -331,7 +331,7 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
-                msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n", ea);
+                msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n", u64_addr(ea));
                 allServices.push_back(s);
             }
         }
