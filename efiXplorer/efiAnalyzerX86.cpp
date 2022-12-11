@@ -1229,7 +1229,7 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX64() {
                 // check that address does not belong to the protocol interface
                 // (gBS != gInterface)
                 auto bs_addr = findUnknownBsVarX64(ea);
-                if (!bootServiceProtCheckXrefs(bs_addr)) {
+                if (addrInVec(gRtList, bs_addr) || !bootServiceProtCheckXrefs(bs_addr)) {
                     break;
                 }
 
