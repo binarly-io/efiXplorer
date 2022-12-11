@@ -696,20 +696,18 @@ void EfiAnalysis::EfiAnalyzerX86::getAllBootServices() {
                             offset = bootServicesTableAll[j].offset32;
                         }
 
-                        if (service_offset == static_cast<uint32_t>(offset)) {
+                        if (service_offset == u32_addr(offset)) {
 
                             // additional check for gBS->RegisterProtocolNotify
                             // (can be confused with
                             // gSmst->SmmInstallProtocolInterface)
-                            if (static_cast<uint32_t>(offset) ==
-                                RegisterProtocolNotifyOffset64) {
+                            if (u32_addr(offset) == RegisterProtocolNotifyOffset64) {
                                 if (!bootServiceProtCheck(addr)) {
                                     break;
                                 }
                             }
 
-                            std::string cmt =
-                                getBsComment(static_cast<uint32_t>(offset), arch);
+                            std::string cmt = getBsComment(u32_addr(offset), arch);
                             set_cmt(addr, cmt.c_str(), true);
                             opStroff(addr, "EFI_BOOT_SERVICES");
 
@@ -803,9 +801,8 @@ void EfiAnalysis::EfiAnalyzerX86::getAllRuntimeServices() {
                         if (arch == X86) {
                             offset = runtimeServicesTableAll[j].offset32;
                         }
-                        if (service_offset == static_cast<uint32_t>(offset)) {
-                            std::string cmt =
-                                getRtComment(static_cast<uint32_t>(offset), arch);
+                        if (service_offset == u32_addr(offset)) {
+                            std::string cmt = getRtComment(u32_addr(offset), arch);
                             set_cmt(addr, cmt.c_str(), true);
                             opStroff(addr, "EFI_RUNTIME_SERVICES");
                             msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(addr),
@@ -881,9 +878,9 @@ void EfiAnalysis::EfiAnalyzerX86::getAllSmmServicesX64() {
                     insn.ops[0].reg == smst_reg) {
                     for (int j = 0; j < smmServicesTableAllLength; j++) {
                         if (insn.ops[0].addr ==
-                            static_cast<uint32_t>(smmServicesTableAll[j].offset64)) {
+                            u32_addr(smmServicesTableAll[j].offset64)) {
 
-                            if (static_cast<uint32_t>(smmServicesTableAll[j].offset64) ==
+                            if (u32_addr(smmServicesTableAll[j].offset64) ==
                                 SmiHandlerRegisterOffset64) {
                                 // set name for Handler argument
                                 auto smiHandlerAddr = markChildSwSmiHandler(addr);
@@ -958,8 +955,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllPeiServicesX86() {
             (insn.ops[0].reg == REG_EAX || insn.ops[0].reg == REG_ECX ||
              insn.ops[0].reg == REG_EDX)) {
             for (int j = 0; j < pei_services_table_size; j++) {
-                if (insn.ops[0].addr ==
-                    static_cast<uint32_t>(pei_services_table[j].offset)) {
+                if (insn.ops[0].addr == u32_addr(pei_services_table[j].offset)) {
                     bool found_src_reg = false;
                     ea_t address = ea;
                     insn_t aboveInst;
@@ -994,8 +990,8 @@ void EfiAnalysis::EfiAnalyzerX86::getAllPeiServicesX86() {
                     }
 
                     if (found_src_reg && found_push) {
-                        std::string cmt = getPeiSvcComment(
-                            static_cast<uint32_t>(pei_services_table[j].offset));
+                        std::string cmt =
+                            getPeiSvcComment(u32_addr(pei_services_table[j].offset));
                         set_cmt(ea, cmt.c_str(), true);
                         // opStroff(ea, "EFI_PEI_SERVICES");
                         msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(ea),
@@ -1041,8 +1037,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllVariablePPICallsX86() {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni && insn.ops[0].type == o_phrase) {
             for (int j = 0; j < variable_ppi_table_size; j++) {
-                if (insn.ops[0].addr ==
-                    static_cast<uint32_t>(variable_ppi_table[j].offset)) {
+                if (insn.ops[0].addr == u32_addr(variable_ppi_table[j].offset)) {
                     uint16_t ppi_reg = insn.ops[0].reg;
                     insn_t aboveInst;
                     ea_t address = ea;
@@ -1062,7 +1057,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllVariablePPICallsX86() {
 
                     if (found_push) {
                         std::string cmt = getPPICallComment(
-                            static_cast<uint32_t>(variable_ppi_table[j].offset),
+                            u32_addr(variable_ppi_table[j].offset),
                             static_cast<std::string>(variable_ppi_name));
                         set_cmt(ea, cmt.c_str(), true);
                         opStroff(ea, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
@@ -1206,8 +1201,7 @@ void EfiAnalysis::EfiAnalyzerX86::getPpiNamesX86() {
 // Get boot services by protocols for X64 modules
 void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX64() {
     insn_t insn;
-    for (auto seg : textSegments) {
-        segment_t *s = seg;
+    for (auto s : textSegments) {
         msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
             plugin_name, u64_addr(s->start_ea), u64_addr(s->end_ea));
         ea_t ea = s->start_ea;
@@ -1215,51 +1209,58 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX64() {
         while (ea <= s->end_ea) {
             ea = next_head(ea, endAddress);
             decode_insn(&insn, ea);
-            if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
-                for (auto i = 0; i < bootServicesTable64Length; i++) {
-                    if (insn.ops[0].addr ==
-                        static_cast<uint32_t>(bootServicesTable64[i].offset)) {
+            if (insn.itype != NN_callni || insn.ops[0].reg != REG_RAX) {
+                continue;
+            }
+            for (auto i = 0; i < bootServicesTable64Length; i++) {
+                if (insn.ops[0].addr != u32_addr(bootServicesTable64[i].offset)) {
+                    continue;
+                }
 
-                        // additional check for gBS->RegisterProtocolNotify
-                        // (can be confused with gSmst->SmmInstallProtocolInterface)
-                        if (static_cast<uint32_t>(bootServicesTable64[i].offset) ==
-                            RegisterProtocolNotifyOffset64) {
-                            if (!bootServiceProtCheck(ea)) {
-                                break;
-                            }
-                        }
-
-                        std::string cmt = getBsComment(
-                            static_cast<uint32_t>(bootServicesTable64[i].offset), X64);
-                        set_cmt(ea, cmt.c_str(), true);
-                        opStroff(ea, "EFI_BOOT_SERVICES");
-                        msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(ea),
-                            static_cast<char *>(bootServicesTable64[i].service_name));
-                        bootServices[static_cast<std::string>(
-                                         bootServicesTable64[i].service_name)]
-                            .push_back(ea);
-
-                        // add item to allBootServices
-                        json bsItem;
-                        bsItem["address"] = ea;
-                        bsItem["service_name"] =
-                            static_cast<std::string>(bootServicesTable64[i].service_name);
-                        bsItem["table_name"] =
-                            static_cast<std::string>("EFI_BOOT_SERVICES");
-                        bsItem["offset"] = bootServicesTable64[i].offset;
-
-                        // add code addresses for arguments
-                        eavec_t args;
-                        get_arg_addrs(&args, ea);
-                        bsItem["args"] = args;
-
-                        if (find(allServices.begin(), allServices.end(), bsItem) ==
-                            allServices.end()) {
-                            allServices.push_back(bsItem);
-                        }
+                // additional check for gBS->RegisterProtocolNotify
+                // (can be confused with gSmst->SmmInstallProtocolInterface)
+                if (u32_addr(bootServicesTable64[i].offset) ==
+                    RegisterProtocolNotifyOffset64) {
+                    if (!bootServiceProtCheck(ea)) {
                         break;
                     }
                 }
+
+                // check that address does not belong to the protocol interface
+                // (gBS != gInterface)
+                auto bs_addr = findUnknownBsVarX64(ea);
+                if (!bootServiceProtCheckXrefs(bs_addr)) {
+                    break;
+                }
+
+                std::string cmt =
+                    getBsComment(u32_addr(bootServicesTable64[i].offset), X64);
+                set_cmt(ea, cmt.c_str(), true);
+                opStroff(ea, "EFI_BOOT_SERVICES");
+                msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(ea),
+                    static_cast<char *>(bootServicesTable64[i].service_name));
+                bootServices[static_cast<std::string>(
+                                 bootServicesTable64[i].service_name)]
+                    .push_back(ea);
+
+                // add item to allBootServices
+                json bsItem;
+                bsItem["address"] = ea;
+                bsItem["service_name"] =
+                    static_cast<std::string>(bootServicesTable64[i].service_name);
+                bsItem["table_name"] = static_cast<std::string>("EFI_BOOT_SERVICES");
+                bsItem["offset"] = bootServicesTable64[i].offset;
+
+                // add code addresses for arguments
+                eavec_t args;
+                get_arg_addrs(&args, ea);
+                bsItem["args"] = args;
+
+                if (find(allServices.begin(), allServices.end(), bsItem) ==
+                    allServices.end()) {
+                    allServices.push_back(bsItem);
+                }
+                break;
             }
         }
     }
@@ -1278,10 +1279,9 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX86() {
         decode_insn(&insn, ea);
         if (insn.itype == NN_callni && insn.ops[0].reg == REG_EAX) {
             for (auto i = 0; i < bootServicesTable32Length; i++) {
-                if (insn.ops[0].addr ==
-                    static_cast<uint32_t>(bootServicesTable32[i].offset)) {
-                    std::string cmt = getBsComment(
-                        static_cast<uint32_t>(bootServicesTable32[i].offset), X86);
+                if (insn.ops[0].addr == u32_addr(bootServicesTable32[i].offset)) {
+                    std::string cmt =
+                        getBsComment(u32_addr(bootServicesTable32[i].offset), X86);
                     set_cmt(ea, cmt.c_str(), true);
                     opStroff(ea, "EFI_BOOT_SERVICES");
                     msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(ea),
@@ -1319,16 +1319,15 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX86() {
 void EfiAnalysis::EfiAnalyzerX86::findOtherBsTablesX64() {
     msg("[%s] Finding of other addresses of global gBS variables\n", plugin_name);
     for (auto s : allServices) {
-        json jService = s;
-        std::string table_name = jService["table_name"];
+        std::string table_name = s["table_name"];
         if (table_name.compare(static_cast<std::string>("EFI_BOOT_SERVICES"))) {
             continue;
         }
-        auto offset = static_cast<uint32_t>(jService["offset"]);
+        auto offset = u32_addr(s["offset"]);
         if (offset < 0xf0) {
             continue;
         }
-        ea_t addr = static_cast<ea_t>(jService["address"]);
+        ea_t addr = static_cast<ea_t>(s["address"]);
         msg("[%s] current service: 0x%016llX\n", plugin_name, u64_addr(addr));
         ea_t addrBs = findUnknownBsVarX64(addr);
         if (!addrBs || !(find(gBsList.begin(), gBsList.end(), addrBs) == gBsList.end())) {
@@ -1775,7 +1774,7 @@ void EfiAnalysis::EfiAnalyzerX86::markLocalGuidsX64() {
             }
 
             // get guid->Data1 value
-            uint32_t data1 = static_cast<uint32_t>(insn.ops[1].value);
+            uint32_t data1 = u32_addr(insn.ops[1].value);
             if (data1 == 0x00000000 || data1 == 0xffffffff) {
                 ea = next_head(ea, BADADDR);
                 continue;
