@@ -118,7 +118,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
 // Find SmiHandler in reg_smi_func function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
 // StandbyButton, PeriodicTimer, PowerButton)
 std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
-    msg("[%s] Analyze xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llx\n", plugin_name,
+    msg("[%s] Analyze xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", plugin_name,
         prefix.c_str(), address);
 
     std::vector<func_t *> smiHandlers;
@@ -195,7 +195,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
         return smiHandlers;
     }
 
-    msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llx\n", plugin_name,
+    msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llX\n", plugin_name,
         prefix.c_str(), dispatch_interface);
 
     // TODO: handle xrefs for globals
@@ -239,9 +239,9 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
         }
         if (insn.itype == NN_callni && insn.ops[0].type == o_phrase &&
             insn.ops[0].reg == reg) {
-            msg("[%s] Found EfiSmm%sDispatch2Protocol->Register call (0x%016llx)\n",
+            msg("[%s] Found EfiSmm%sDispatch2Protocol->Register call (0x%016llX)\n",
                 plugin_name, prefix.c_str(), u64_addr(ea));
-            msg("[%s]  %sSmiHandler: 0x%016llx\n", plugin_name, prefix.c_str(),
+            msg("[%s]  %sSmiHandler: 0x%016llX\n", plugin_name, prefix.c_str(),
                 dispatch_func);
             auto handler_func = get_func(dispatch_func);
             if (handler_func == nullptr) {
@@ -289,7 +289,7 @@ std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefi
         std::vector<ea_t> xrefs = getXrefs(data_addr);
 
         for (auto xref : xrefs) {
-            msg("[%s] findSmiHandlers: 0x%016llx\n", plugin_name, xref);
+            msg("[%s] findSmiHandlers: 0x%016llX\n", plugin_name, xref);
             auto res = findSmiHandlers(xref, prefix);
             smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
         }

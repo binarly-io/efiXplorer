@@ -713,7 +713,7 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
             insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
             varCopy = insn.ops[0].addr;
-            msg("[efiXplorer] Found copy for global variable: 0x%016llx\n", u64_addr(ea));
+            msg("[efiXplorer] Found copy for global variable: 0x%016llX\n", u64_addr(ea));
             break;
         }
     }

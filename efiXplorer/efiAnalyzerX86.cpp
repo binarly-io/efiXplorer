@@ -281,7 +281,7 @@ bool EfiAnalysis::EfiAnalyzerX86::findSmstX64() {
 // after Hex-Rays based analysis
 bool EfiAnalysis::EfiAnalyzerX86::findSmstPostProcX64() {
     for (auto ea : g_get_smst_location_calls) {
-        msg("[%s] EfiSmmBase2Protocol->GetSmstLocation call: 0x%016llx\n", plugin_name,
+        msg("[%s] EfiSmmBase2Protocol->GetSmstLocation call: 0x%016llX\n", plugin_name,
             u64_addr(ea));
         insn_t insn;
         auto addr = ea;
@@ -324,7 +324,7 @@ bool EfiAnalysis::EfiAnalyzerX86::findSmstPostProcX64() {
         }
 
         if (smst_stack.is_null() && smst_addr != BADADDR) {
-            msg("[%s]   gSmst: 0x%016llx\n", plugin_name, u64_addr(smst_addr));
+            msg("[%s]   gSmst: 0x%016llX\n", plugin_name, u64_addr(smst_addr));
             if (!addrInVec(gSmstList, smst_addr)) {
                 setPtrTypeAndName(smst_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
                 gSmstList.push_back(smst_addr);
@@ -333,7 +333,7 @@ bool EfiAnalysis::EfiAnalyzerX86::findSmstPostProcX64() {
 
         if (!smst_stack.is_null()) {
             auto reg = smst_stack["reg"] == REG_RSP ? "RSP" : "RBP";
-            msg("[%s]   Smst: 0x%016llx, reg = %s\n", plugin_name, u64_addr(smst_addr),
+            msg("[%s]   Smst: 0x%016llX, reg = %s\n", plugin_name, u64_addr(smst_addr),
                 reg);
 
             // try to extract ChildSwSmiHandler
@@ -732,8 +732,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllBootServices() {
                             get_arg_addrs(&args, addr);
                             bsItem["args"] = args;
 
-                            if (find(allServices.begin(), allServices.end(), bsItem) ==
-                                allServices.end()) {
+                            if (!jsonInVec(allServices, bsItem)) {
                                 allServices.push_back(bsItem);
                             }
 
@@ -827,8 +826,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllRuntimeServices() {
                             get_arg_addrs(&args, addr);
                             rtItem["args"] = args;
 
-                            if (find(allServices.begin(), allServices.end(), rtItem) ==
-                                allServices.end()) {
+                            if (!jsonInVec(allServices, rtItem)) {
                                 allServices.push_back(rtItem);
                             }
                             gRtServicesList.push_back(addr);
@@ -924,8 +922,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllSmmServicesX64() {
                             get_arg_addrs(&args, addr);
                             smmsItem["args"] = args;
 
-                            if (find(allServices.begin(), allServices.end(), smmsItem) ==
-                                allServices.end()) {
+                            if (!jsonInVec(allServices, smmsItem)) {
                                 allServices.push_back(smmsItem);
                             }
                             break;
@@ -1012,8 +1009,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllPeiServicesX86() {
                         get_arg_addrs(&args, ea);
                         psItem["args"] = args;
 
-                        if (find(allServices.begin(), allServices.end(), psItem) ==
-                            allServices.end()) {
+                        if (!jsonInVec(allServices, psItem)) {
                             allServices.push_back(psItem);
                         }
                     }
@@ -1081,8 +1077,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllVariablePPICallsX86() {
                         get_arg_addrs(&args, ea);
                         ppiItem["args"] = args;
 
-                        if (find(allServices.begin(), allServices.end(), ppiItem) ==
-                            allServices.end()) {
+                        if (!jsonInVec(allServices, ppiItem)) {
                             allServices.push_back(ppiItem);
                         }
                     }
@@ -1176,7 +1171,7 @@ void EfiAnalysis::EfiAnalyzerX86::getPpiNamesX86() {
                     ppiItem["ppi_name"] = name;
 
                     // check if item already exists
-                    if (find(allPPIs.begin(), allPPIs.end(), ppiItem) == allPPIs.end()) {
+                    if (!jsonInVec(allPPIs, ppiItem)) {
                         allPPIs.push_back(ppiItem);
                     }
                     continue;
@@ -1187,7 +1182,7 @@ void EfiAnalysis::EfiAnalyzerX86::getPpiNamesX86() {
                     ppiItem["ppi_name"] = "ProprietaryPpi";
 
                     // check if item already exists
-                    if (find(allPPIs.begin(), allPPIs.end(), ppiItem) == allPPIs.end()) {
+                    if (!jsonInVec(allPPIs, ppiItem)) {
                         allPPIs.push_back(ppiItem);
                     }
                     continue;
@@ -1256,8 +1251,7 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX64() {
                 get_arg_addrs(&args, ea);
                 bsItem["args"] = args;
 
-                if (find(allServices.begin(), allServices.end(), bsItem) ==
-                    allServices.end()) {
+                if (!jsonInVec(allServices, bsItem)) {
                     allServices.push_back(bsItem);
                 }
                 break;
@@ -1303,8 +1297,7 @@ void EfiAnalysis::EfiAnalyzerX86::getProtBootServicesX86() {
                     get_arg_addrs(&args, ea);
                     bsItem["args"] = args;
 
-                    if (find(allServices.begin(), allServices.end(), bsItem) ==
-                        allServices.end()) {
+                    if (!jsonInVec(allServices, bsItem)) {
                         allServices.push_back(bsItem);
                     }
                     break;
@@ -1329,16 +1322,14 @@ void EfiAnalysis::EfiAnalyzerX86::findOtherBsTablesX64() {
         }
         ea_t addr = static_cast<ea_t>(s["address"]);
         msg("[%s] current service: 0x%016llX\n", plugin_name, u64_addr(addr));
-        ea_t addrBs = findUnknownBsVarX64(addr);
-        if (!addrBs || !(find(gBsList.begin(), gBsList.end(), addrBs) == gBsList.end())) {
+        ea_t addr_bs = findUnknownBsVarX64(addr);
+        if (!addr_bs || addrInVec(gBsList, addr_bs) || addrInVec(gRtList, addr_bs)) {
             continue;
         }
         msg("[%s] found BootServices table at 0x%016llX, address = 0x%016llX\n",
-            plugin_name, u64_addr(addr), u64_addr(addrBs));
-        setPtrTypeAndName(addrBs, "gBS", "EFI_BOOT_SERVICES");
-        if (find(gRtList.begin(), gRtList.end(), addrBs) == gRtList.end()) {
-            gBsList.push_back(addrBs);
-        }
+            plugin_name, u64_addr(addr), u64_addr(addr_bs));
+        setPtrTypeAndName(addr_bs, "gBS", "EFI_BOOT_SERVICES");
+        gBsList.push_back(addr_bs);
     }
 }
 
@@ -2030,7 +2021,7 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
                 }
             }
 
-            msg("[%s] curr_datasize_addr = 0x%016llx, datasize_addr_found = "
+            msg("[%s] curr_datasize_addr = 0x%016llX, datasize_addr_found = "
                 "%d\n",
                 plugin_name, u64_addr(curr_datasize_addr), datasize_addr_found);
 
@@ -2178,7 +2169,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                     insn.ops[1].type == o_mem) {
                     ea_t mem_addr = static_cast<ea_t>(insn.ops[1].addr);
-                    if (find(gBsList.begin(), gBsList.end(), mem_addr) != gBsList.end()) {
+                    if (addrInVec(gBsList, mem_addr)) {
                         wrong_detection = true;
                         break;
                     }
