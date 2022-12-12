@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "stdint.h"
+
 enum BootServicesOffsets64bit {
     RaiseTPLOffset64 = 0x18,
     RestoreTPLOffset64 = 0x20,

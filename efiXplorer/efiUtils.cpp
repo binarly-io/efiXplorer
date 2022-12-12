@@ -664,6 +664,21 @@ bool bootServiceProtCheck(ea_t callAddr) {
     return valid;
 }
 
+//--------------------------------------------------------------------------
+// Make sure that the address does not belong to the protocol interface
+bool bootServiceProtCheckXrefs(ea_t callAddr) {
+    insn_t insn;
+    for (auto xref : getXrefs(callAddr)) {
+        decode_insn(&insn, xref);
+        if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+            insn.ops[0].reg == REG_R8) {
+            // load interface instruction
+            return false;
+        }
+    }
+    return true;
+}
+
 bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
     insn_t insn;
     int reg = -1;
@@ -698,7 +713,7 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
         if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
             insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
             varCopy = insn.ops[0].addr;
-            msg("[efiXplorer] Found copy for global variable: 0x%016llx\n", u64_addr(ea));
+            msg("[efiXplorer] Found copy for global variable: 0x%016llX\n", u64_addr(ea));
             break;
         }
     }
@@ -997,6 +1012,8 @@ std::string lookupRuntimeServiceName(uint64_t offset) {
 }
 
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }
+
+uint32_t u32_addr(ea_t addr) { return static_cast<uint32_t>(addr); }
 
 uint16_t get_machine_type() {
     ea_t pe_offset = get_dword(0x3c);

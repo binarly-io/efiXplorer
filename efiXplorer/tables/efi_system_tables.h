@@ -37,6 +37,8 @@
 
 #pragma once
 
+#include "stdint.h"
+
 #define BTABLE_LEN 43
 #define RTABLE_LEN 14
 

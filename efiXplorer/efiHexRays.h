@@ -638,7 +638,7 @@ class VariablesInfoExtractor : public ctree_visitor_t {
         cexpr_t *attributes_arg = &args->at(2);
         if (attributes_arg->op == cot_num) {
             if (mDebug) {
-                msg("[I] Service call: %016llx, Attributes: %d\n", u64_addr(mCodeAddr),
+                msg("[I] Service call: %016llX, Attributes: %d\n", u64_addr(mCodeAddr),
                     attributes_arg->numval());
             }
             attributes_arg->numval();
@@ -669,7 +669,7 @@ class PrototypesFixer : public ctree_visitor_t {
             return false;
         }
         if (mDebug) {
-            msg("[I] Child function address: %016llx\n", u64_addr(e->x->obj_ea));
+            msg("[I] Child function address: %016llX\n", u64_addr(e->x->obj_ea));
         }
 
         carglist_t *args = e->a;

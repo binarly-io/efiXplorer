@@ -254,6 +254,9 @@ bool checkGuid(json guid);
 // Make sure the first argument looks like protocol
 bool bootServiceProtCheck(ea_t callAddr);
 
+// Make sure that the address does not belong to the protocol interface
+bool bootServiceProtCheckXrefs(ea_t callAddr);
+
 // Convert GUID value to string
 std::string getGuidFromValue(json guid);
 
@@ -297,4 +300,5 @@ std::string getTable(std::string service_name);
 std::string lookupBootServiceName(uint64_t offset);
 std::string lookupRuntimeServiceName(uint64_t offset);
 uint64_t u64_addr(ea_t addr);
+uint32_t u32_addr(ea_t addr);
 uint16_t get_machine_type();
