@@ -44,7 +44,6 @@ std::vector<ea_t> gRtList;
 std::vector<ea_t> gSmstList;
 std::vector<ea_t> gImageHandleList;
 std::vector<ea_t> gRtServicesList;
-std::vector<ea_t> gInterfaceList; // for callouts detection
 
 std::vector<json> stackGuids;
 std::vector<json> dataGuids;
