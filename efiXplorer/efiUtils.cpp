@@ -93,30 +93,36 @@ void setTypeAndName(ea_t ea, std::string name, std::string type) {
 }
 
 //--------------------------------------------------------------------------
+// Get file format name (fileformatname)
+std::string getFileFormatName() {
+    char file_format[256] = {0};
+    get_file_type_name(file_format, 256);
+    return static_cast<std::string>(file_format);
+}
+
+//--------------------------------------------------------------------------
 // Get input file type (64-bit, 32-bit image or UEFI firmware)
 uint8_t getInputFileType() {
-    char fileType[256] = {};
-    get_file_type_name(fileType, 256);
-    auto fileTypeStr = static_cast<std::string>(fileType);
-    size_t index = fileTypeStr.find("AMD64");
-    if (index != std::string::npos) {
-        // Portable executable for AMD64 (PE)
-        return X64;
-    }
-    index = fileTypeStr.find("80386");
-    if (index != std::string::npos) {
-        // Portable executable for 80386 (PE)
-        return X86;
-    }
-    index = fileTypeStr.find("UEFI");
-    if (index != std::string::npos) {
-        // UEFI firmware
+    processor_t &ph = PH;
+    auto filetype = (filetype_t)inf.filetype;
+    auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
+
+    // check if input file is UEFI firmware image
+    if (getFileFormatName().find("UEFI") != std::string::npos) {
         return UEFI;
     }
-    index = fileTypeStr.find("ARM64");
-    if (index != std::string::npos) {
-        // Portable executable for ARM64 (PE)
-        return ARM64;
+
+    if (filetype == f_PE || filetype == f_ELF) {
+        if (ph.id == PLFM_386) {
+            if (bits == 64) // x86 64-bit executable
+                return X64;
+            if (bits == 32) // x86 32-bit executable
+                return X86;
+        }
+        if (ph.id == PLFM_ARM) {
+            if (bits == 64) // ARM 64-bit executable
+                return AARCH64;
+        }
     }
     return UNSUPPORTED_TYPE;
 }
