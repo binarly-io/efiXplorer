@@ -100,15 +100,15 @@ bool idaapi run(size_t arg) {
 
     uint8_t arch = getInputFileType();
     if (arch == X64) {
-        msg("[%s] input file is portable executable for AMD64 (PE)\n", plugin_name);
+        msg("[%s] input file is 64-bit module (x86)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX64();
     } else if (arch == X86) {
-        msg("[%s] input file is portable executable for 80386 (PE)\n", plugin_name);
+        msg("[%s] input file is 32-bit module (x86)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainX86();
     } else if (arch == UEFI) {
+        msg("[%s] input file is UEFI firmware\n", plugin_name);
         warning("%s: analysis may take some time, please wait for it to complete\n",
                 plugin_name);
-        msg("[%s] input file is UEFI firmware\n", plugin_name);
         if (get_machine_type() == AARCH64) {
             msg("[%s] analyze AARCH64 modules\n", plugin_name);
             EfiAnalysis::efiAnalyzerMainArm();
@@ -117,7 +117,7 @@ bool idaapi run(size_t arg) {
             EfiAnalysis::efiAnalyzerMainX64();
         }
     } else if (arch == ARM64) {
-        msg("[%s] input file is portable executable for ARM64 (PE)\n", plugin_name);
+        msg("[%s] input file is 64-bit module (ARM)\n", plugin_name);
         EfiAnalysis::efiAnalyzerMainArm();
     }
 
