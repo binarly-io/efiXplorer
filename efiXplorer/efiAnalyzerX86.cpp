@@ -1893,14 +1893,18 @@ void findCalloutRec(func_t *func) {
                 while (true) {
                     current_addr = next_head(current_addr, BADADDR);
                     decode_insn(&next_insn, current_addr);
-                    if (next_insn.ops[0].type == o_displ &&
-                        next_insn.ops[0].reg == REG_RAX &&
-                        next_insn.ops[0].addr == LocateProtocolOffset64) {
-                        // found callout
-                        calloutAddrs.push_back(ea);
-                        interface_callout_found = true;
+
+                    if (next_insn.itype == NN_callni &&
+                        next_insn.ops[0].type == o_displ &&
+                        next_insn.ops[0].reg == REG_RAX) {
+                        if (next_insn.ops[0].addr == LocateProtocolOffset64) {
+                            // found callout
+                            calloutAddrs.push_back(ea);
+                            interface_callout_found = true;
+                        } // else: FP
                         break;
                     }
+
                     if (is_basic_block_end(next_insn, false)) {
                         break;
                     }
