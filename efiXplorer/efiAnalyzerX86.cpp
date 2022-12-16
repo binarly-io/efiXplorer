@@ -44,6 +44,7 @@ std::vector<ea_t> gRtList;
 std::vector<ea_t> gSmstList;
 std::vector<ea_t> gImageHandleList;
 std::vector<ea_t> gRtServicesList;
+
 std::vector<json> stackGuids;
 std::vector<json> dataGuids;
 
@@ -1838,12 +1839,10 @@ void findCalloutRec(func_t *func) {
             }
         }
 
-        // find callouts with gBS
-        for (auto bs : gBsList) {
-
-            // check if insn is mov rax, cs:gBS
-            if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-                insn.ops[1].type == o_mem && insn.ops[1].addr == bs) {
+        if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
+            insn.ops[1].type == o_mem) {
+            // search for callouts with gBS
+            if (addrInVec(gBsList, insn.ops[1].addr)) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name, u64_addr(ea));
                 // filter FP
                 auto reg = insn.ops[0].reg;
@@ -1865,18 +1864,54 @@ void findCalloutRec(func_t *func) {
                 }
                 if (!fp) {
                     calloutAddrs.push_back(ea);
+                    continue;
                 }
             }
-        }
 
-        // find callouts with gRT
-        for (auto rt : gRtList) {
-
-            // check if insn is mov rax, cs:gRT
-            if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-                insn.ops[1].type == o_mem && insn.ops[1].addr == rt) {
+            // search for callouts with gRT
+            if (addrInVec(gRtList, insn.ops[1].addr)) {
                 msg("[%s] SMM callout found: 0x%016llX\n", plugin_name, u64_addr(ea));
                 calloutAddrs.push_back(ea);
+                continue;
+            }
+
+            // search for usage of interfaces installed with gBS->LocateProtocol()
+            auto g_addr = insn.ops[1].addr;
+            insn_t insn_xref;
+            bool interface_callout_found = false;
+            // check all xrefs for found global variable
+            for (auto xref : getXrefs(g_addr)) {
+                // chcek if it looks like interface
+                decode_insn(&insn_xref, xref);
+                if (insn_xref.ops[0].type != o_reg || insn_xref.ops[0].reg != REG_R8) {
+                    continue;
+                }
+
+                // check rest of basic block to find gBS->LocateProtocol()
+                insn_t next_insn;
+                auto current_addr = xref;
+                while (true) {
+                    current_addr = next_head(current_addr, BADADDR);
+                    decode_insn(&next_insn, current_addr);
+
+                    if (next_insn.itype == NN_callni &&
+                        next_insn.ops[0].type == o_displ &&
+                        next_insn.ops[0].reg == REG_RAX) {
+                        if (next_insn.ops[0].addr == LocateProtocolOffset64) {
+                            // found callout
+                            calloutAddrs.push_back(ea);
+                            interface_callout_found = true;
+                        } // else: FP
+                        break;
+                    }
+
+                    if (is_basic_block_end(next_insn, false)) {
+                        break;
+                    }
+                }
+                if (interface_callout_found) {
+                    break;
+                }
             }
         }
     }
