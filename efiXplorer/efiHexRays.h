@@ -28,8 +28,8 @@ bool TrackEntryParams(func_t *f, uint8_t depth);
 json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
 bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
-void applyAllTypesForInterfacesBootServices(std::vector<json> guids);
-void applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
+bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
+bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
 bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
 bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t tif,
                                                std::string name);

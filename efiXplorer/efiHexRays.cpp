@@ -179,7 +179,11 @@ const char *Expr2String(cexpr_t *e, qstring *out) {
     return out->c_str();
 }
 
-void applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
+bool applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
+    if (!init_hexrays_plugin()) {
+        return false;
+    }
+
     // Descriptors for EFI_BOOT_SERVICES functions
     struct TargetFunctionPointer BootServicesFunctions[5]{
         {"InstallProtocolInterface", 0x80, 4, 1, 3},
@@ -221,9 +225,15 @@ void applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
 
         retyperBs.apply_to(&cfunc->body, nullptr);
     }
+
+    return true;
 }
 
-void applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
+bool applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
+    if (!init_hexrays_plugin()) {
+        return false;
+    }
+
     // Descriptors for _EFI_SMM_SYSTEM_TABLE2 functions
     struct TargetFunctionPointer SmmServicesFunctions[2]{
         {"SmmHandleProtocol", 0xb8, 3, 1, 2},
@@ -263,9 +273,15 @@ void applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
 
         retyperSmm.apply_to(&cfunc->body, nullptr);
     }
+
+    return true;
 }
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
+    if (!init_hexrays_plugin()) {
+        return 0xff;
+    }
+
     // check func
     if (f == nullptr) {
         return 0xff;
@@ -283,6 +299,10 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
 }
 
 bool TrackEntryParams(func_t *f, uint8_t depth) {
+    if (!init_hexrays_plugin()) {
+        return false;
+    }
+
     if (depth == 2) {
         return true;
     }
@@ -301,11 +321,17 @@ bool TrackEntryParams(func_t *f, uint8_t depth) {
         TrackEntryParams(get_func(addr), ++depth);
     }
     delete pf;
+
     return true;
 }
 
 json DetectVars(func_t *f) {
     json res;
+
+    if (!init_hexrays_plugin()) {
+        return res;
+    }
+
     // check func
     if (f == nullptr) {
         return res;
@@ -331,6 +357,11 @@ json DetectVars(func_t *f) {
 std::vector<json> DetectServices(func_t *f) {
     // check func
     std::vector<json> res;
+
+    if (!init_hexrays_plugin()) {
+        return res;
+    }
+
     if (f == nullptr) {
         return res;
     }
