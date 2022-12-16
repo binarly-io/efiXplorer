@@ -281,10 +281,7 @@ ea_t findUnknownBsVarX64(ea_t ea) {
         decode_insn(&insn, ea);
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
-            msg("[%s] found gBS at 0x%016llX, address = 0x%016llX\n", plugin_name,
-                u64_addr(ea), u64_addr(insn.ops[1].addr));
             resAddr = insn.ops[1].addr;
-            set_cmt(ea, "EFI_BOOT_SERVICES *gBS", true);
             break;
         }
         ea = prev_head(ea, 0);
