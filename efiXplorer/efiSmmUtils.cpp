@@ -46,23 +46,45 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
         std::vector<ea_t> xrefs = getXrefs(data_addr);
         insn_t insn;
         for (auto xref : xrefs) {
-            ea_t res_addr = BADADDR;
+            uint16_t smst_reg = 0xffff; // Smst register
             ea_t cur_addr = xref;
-            // Check 4 instructions below
-            for (auto i = 0; i < 4; i++) {
+            while (true) {
+                cur_addr = next_head(cur_addr, BADADDR);
+                decode_insn(&insn, cur_addr);
+                // check for SmmLocateProtocol function call
+                if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
+                    insn.ops[0].addr == 0xd0) {
+                    smst_reg = insn.ops[0].reg;
+                    break;
+                }
+                if (is_basic_block_end(insn, false)) {
+                    break;
+                }
+            }
+
+            if (smst_reg == smst_reg) {
+                continue;
+            }
+
+            ea_t res_addr = BADADDR;
+            cur_addr = xref;
+            while (true) {
                 cur_addr = prev_head(cur_addr, 0);
                 decode_insn(&insn, cur_addr);
                 if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-                    insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
+                    insn.ops[0].reg == smst_reg && insn.ops[1].type == o_mem) {
                     msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n",
                         plugin_name, u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
                     res_addr = insn.ops[1].addr;
-                    if (find(gBsList.begin(), gBsList.end(), res_addr) != gBsList.end()) {
+                    if (addrInVec(gBsList, res_addr)) {
                         continue;
                     }
                     set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
                     setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
                     smst_addrs.push_back(res_addr);
+                    break;
+                }
+                if (is_basic_block_end(insn, false)) {
                     break;
                 }
             }

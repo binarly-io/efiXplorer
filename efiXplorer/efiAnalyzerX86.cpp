@@ -1863,6 +1863,8 @@ void findCalloutRec(func_t *func) {
                     }
                 }
                 if (!fp) {
+                    msg("[%s] SMM callout found (gBS): 0x%016llX\n", plugin_name,
+                        u64_addr(ea));
                     calloutAddrs.push_back(ea);
                     continue;
                 }
@@ -1870,7 +1872,8 @@ void findCalloutRec(func_t *func) {
 
             // search for callouts with gRT
             if (addrInVec(gRtList, insn.ops[1].addr)) {
-                msg("[%s] SMM callout found: 0x%016llX\n", plugin_name, u64_addr(ea));
+                msg("[%s] SMM callout found (gRT): 0x%016llX\n", plugin_name,
+                    u64_addr(ea));
                 calloutAddrs.push_back(ea);
                 continue;
             }
@@ -1883,7 +1886,8 @@ void findCalloutRec(func_t *func) {
             for (auto xref : getXrefs(g_addr)) {
                 // chcek if it looks like interface
                 decode_insn(&insn_xref, xref);
-                if (insn_xref.ops[0].type != o_reg || insn_xref.ops[0].reg != REG_R8) {
+                if (insn_xref.itype != NN_lea || insn_xref.ops[0].type != o_reg ||
+                    insn_xref.ops[0].reg != REG_R8) {
                     continue;
                 }
 
@@ -1897,8 +1901,12 @@ void findCalloutRec(func_t *func) {
                     if (next_insn.itype == NN_callni &&
                         next_insn.ops[0].type == o_displ &&
                         next_insn.ops[0].reg == REG_RAX) {
-                        if (next_insn.ops[0].addr == LocateProtocolOffset64) {
+                        if (next_insn.ops[0].addr == LocateProtocolOffset64 ||
+                            next_insn.ops[0].addr == AllocatePoolOffset64) {
                             // found callout
+                            msg("[%s] SMM callout found (usage of memory controlled by "
+                                "the attacker inside SMI handler): 0x%016llX\n",
+                                plugin_name, u64_addr(ea));
                             calloutAddrs.push_back(ea);
                             interface_callout_found = true;
                         } // else: FP
@@ -2000,7 +2008,7 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
             plugin_name, u64_addr(prev_addr), u64_addr(curr_addr));
 
         // check code from GetVariable_1 to GetVariable_2
-        ea_t ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
+        ea_t ea = next_head(prev_addr, BADADDR);
         bool ok = true;
         insn_t insn;
         while (ea < curr_addr) {
@@ -2163,7 +2171,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         // get dataSizeStackAddr
         int dataSizeStackAddr = 0;
         uint16 dataSizeOpReg = 0xFF;
-        ea = prev_head(static_cast<ea_t>(curr_addr), 0);
+        ea = prev_head(curr_addr, 0);
         for (auto i = 0; i < 10; ++i) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
@@ -2176,7 +2184,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
         }
 
         // check code from GetVariable_1 to GetVariable_2
-        ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
+        ea = next_head(prev_addr, BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
         while (ea < curr_addr) {
@@ -2198,12 +2206,12 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
 
             // check for wrong GetVariable detection
             bool wrong_detection = false;
-            ea = prev_head(static_cast<ea_t>(curr_addr), 0);
+            ea = prev_head(curr_addr, 0);
             for (auto i = 0; i < 8; ++i) {
                 decode_insn(&insn, ea);
                 if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
                     insn.ops[1].type == o_mem) {
-                    ea_t mem_addr = static_cast<ea_t>(insn.ops[1].addr);
+                    ea_t mem_addr = insn.ops[1].addr;
                     if (addrInVec(gBsList, mem_addr)) {
                         wrong_detection = true;
                         break;
@@ -2225,7 +2233,7 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
             // check that the DataSize argument variable is the same for two
             // calls
             if (init_ok) {
-                ea = prev_head(static_cast<ea_t>(prev_addr), 0);
+                ea = prev_head(prev_addr, 0);
                 // for (auto i = 0; i < 10; ++i) {
                 func_t *func_start = get_func(ea);
                 if (func_start == nullptr) {
@@ -2287,7 +2295,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
 
         // get dataSizeStackAddr
         uint32_t dataSizeStackAddr = 0xffffffff;
-        ea = prev_head(static_cast<ea_t>(curr_addr), 0);
+        ea = prev_head(curr_addr, 0);
         for (auto i = 0; i < 10; ++i) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
@@ -2299,7 +2307,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
         }
 
         // check code from SmmGetVariable_1 to SmmGetVariable_2
-        ea = next_head(static_cast<ea_t>(prev_addr), BADADDR);
+        ea = next_head(prev_addr, BADADDR);
         bool ok = true;
         size_t dataSizeUseCounter = 0;
         while (ea < curr_addr) {
@@ -2324,7 +2332,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
             // check that the DataSize argument variable is the same for two
             // calls
             if (init_ok) {
-                ea = prev_head(static_cast<ea_t>(prev_addr), 0);
+                ea = prev_head(prev_addr, 0);
                 for (auto i = 0; i < 10; ++i) {
                     decode_insn(&insn, ea);
                     if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
