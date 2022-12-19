@@ -35,8 +35,8 @@ jobs:
         PASSWORD: ${{ secrets.ZIP_PASSWORD }}
       run: |
         cd ..
-        curl -J -L "$IDA_SDK" -o idasdk81.zip
-        unzip -P $PASSWORD idasdk81.zip
+        curl -J -L "$IDA_SDK" -o idasdk82.zip
+        unzip -P $PASSWORD idasdk82.zip
         cd efiXplorer/efiXplorer
         mkdir build
         cd build
@@ -72,8 +72,8 @@ jobs:
       run: |
         git submodule update --init --recursive
         cd ..
-        curl -J -L "$IDA_SDK" -o idasdk81.zip
-        unzip -P $PASSWORD idasdk81.zip
+        curl -J -L "$IDA_SDK" -o idasdk82.zip
+        unzip -P $PASSWORD idasdk82.zip
         cd efiXplorer/efiXloader
         mkdir build
         cd build

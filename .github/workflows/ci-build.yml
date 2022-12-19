@@ -15,8 +15,8 @@ jobs:
           IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
-          curl -J -L "%IDA_SDK%" -o idasdk81.zip
-          unzip -P "%PASSWORD%" idasdk81.zip
+          curl -J -L "%IDA_SDK%" -o idasdk82.zip
+          unzip -P "%PASSWORD%" idasdk82.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
@@ -41,8 +41,8 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk81.zip
-          unzip -P $PASSWORD idasdk81.zip
+          curl -J -L "$IDA_SDK" -o idasdk82.zip
+          unzip -P $PASSWORD idasdk82.zip
       - name: Build efiXloader
         run: |
           git submodule update --init --recursive
@@ -68,8 +68,8 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk81.zip
-          unzip -P $PASSWORD idasdk81.zip
+          curl -J -L "$IDA_SDK" -o idasdk82.zip
+          unzip -P $PASSWORD idasdk82.zip
       - name: Build efiXloader
         run: |
           cd efiXloader
@@ -94,8 +94,8 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "%IDA_SDK%" -o idasdk81.zip
-          unzip -P "%PASSWORD%" idasdk81.zip
+          curl -J -L "%IDA_SDK%" -o idasdk82.zip
+          unzip -P "%PASSWORD%" idasdk82.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
@@ -124,8 +124,8 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk81.zip
-          unzip -P $PASSWORD idasdk81.zip
+          curl -J -L "$IDA_SDK" -o idasdk82.zip
+          unzip -P $PASSWORD idasdk82.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
@@ -154,8 +154,8 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk81.zip
-          unzip -P $PASSWORD idasdk81.zip
+          curl -J -L "$IDA_SDK" -o idasdk82.zip
+          unzip -P $PASSWORD idasdk82.zip
       - name: Build efiXplorer
         run: |
           cd efiXplorer
