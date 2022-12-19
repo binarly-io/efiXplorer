@@ -22,7 +22,7 @@ jobs:
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk81
+          cmake .. -DIdaSdk_ROOT_DIR=D:/a/efiXplorer/efiXplorer/idasdk82
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -49,7 +49,7 @@ jobs:
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk81"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -75,7 +75,7 @@ jobs:
           cd efiXloader
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk81"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -101,7 +101,7 @@ jobs:
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk81" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -131,7 +131,7 @@ jobs:
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk81" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
@@ -161,7 +161,7 @@ jobs:
           cd efiXplorer
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk81" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
           cmake --build . --config Release
       - uses: actions/upload-artifact@master
         with:
