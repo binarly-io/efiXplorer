@@ -121,7 +121,7 @@ uint8_t getInputFileType() {
         }
         if (ph.id == PLFM_ARM) {
             if (bits == 64) // ARM 64-bit executable
-                return AARCH64;
+                return ARM64;
         }
     }
     return UNSUPPORTED_TYPE;
