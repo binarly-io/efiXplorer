@@ -41,7 +41,7 @@ const char *Expr2String(cexpr_t *e, qstring *out);
 // plugin is looking for calls to specific UEFI functions. This structure
 // describes basic information about those functions:
 struct TargetFunctionPointer {
-    char *name;            // Name of function pointer in structure
+    const char *name;      // Name of function pointer in structure
     int offset;            // Offset of function pointer (filled in later)
     unsigned int nArgs;    // Number of expected arguments
     unsigned int nGUIDArg; // Which argument has the EFI_GUID *
@@ -638,8 +638,8 @@ class VariablesInfoExtractor : public ctree_visitor_t {
         cexpr_t *attributes_arg = &args->at(2);
         if (attributes_arg->op == cot_num) {
             if (mDebug) {
-                msg("[I] Service call: %016llX, Attributes: %d\n", u64_addr(mCodeAddr),
-                    attributes_arg->numval());
+                msg("[I] Service call: %016llX, Attributes: %02X\n", u64_addr(mCodeAddr),
+                    static_cast<uint8_t>(attributes_arg->numval()));
             }
             attributes_arg->numval();
             mAttributes = static_cast<uint8_t>(attributes_arg->numval());
@@ -690,7 +690,7 @@ class PrototypesFixer : public ctree_visitor_t {
             return false;
         }
 
-        msg("[I] Call address: 0x%016llX\n", e->ea);
+        msg("[I] Call address: 0x%016llX\n", u64_addr(e->ea));
         for (auto i = 0; i < args->size(); i++) {
             cexpr_t *arg = &args->at(i);
             if (arg->op == cot_cast || arg->op == cot_var) {

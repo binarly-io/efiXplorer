@@ -62,8 +62,8 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
                 }
             }
 
-            if (smst_reg == smst_reg) {
-                continue;
+            if (smst_reg == 0xffff) {
+                continue; // smst_reg not found
             }
 
             ea_t res_addr = BADADDR;
@@ -141,7 +141,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
 // StandbyButton, PeriodicTimer, PowerButton)
 std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
     msg("[%s] Analyze xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", plugin_name,
-        prefix.c_str(), address);
+        prefix.c_str(), u64_addr(address));
 
     std::vector<func_t *> smiHandlers;
     insn_t insn;
@@ -311,7 +311,7 @@ std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefi
         std::vector<ea_t> xrefs = getXrefs(data_addr);
 
         for (auto xref : xrefs) {
-            msg("[%s] findSmiHandlers: 0x%016llX\n", plugin_name, xref);
+            msg("[%s] findSmiHandlers: 0x%016llX\n", plugin_name, u64_addr(xref));
             auto res = findSmiHandlers(xref, prefix);
             smiHandlers.insert(smiHandlers.end(), res.begin(), res.end());
         }

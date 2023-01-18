@@ -161,11 +161,11 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
     }
 
     if (arch == X86 && (signature == VZ || hasPeiGuids)) {
-        msg("[%s] Parsing binary file as PEI, signature = %lx, hasPeiGuids = %d\n",
+        msg("[%s] Parsing binary file as PEI, signature = %llx, hasPeiGuids = %d\n",
             plugin_name, signature, hasPeiGuids);
         return FTYPE_PEI;
     } else {
-        msg("[%s] Parsing binary file as DXE/SMM, signature = %lx, hasPeiGuids = %d\n",
+        msg("[%s] Parsing binary file as DXE/SMM, signature = %llx, hasPeiGuids = %d\n",
             plugin_name, signature, hasPeiGuids);
         return FTYPE_DXE_AND_THE_LIKE;
     }
@@ -177,9 +177,9 @@ uint8_t getFileType(std::vector<json> *allGuids) {
         return FTYPE_DXE_AND_THE_LIKE;
     }
     auto ftype = guessFileType(arch, allGuids);
-    auto btnId =
-        ask_buttons("DXE/SMM", "PEI", "", ftype == FTYPE_DXE_AND_THE_LIKE,
-                    "Parse file as", ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI");
+    auto deflt = ftype == FTYPE_DXE_AND_THE_LIKE;
+    auto fmt_param = ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI";
+    auto btnId = ask_buttons("DXE/SMM", "PEI", "", deflt, "Parse file as %s", fmt_param);
     if (btnId == ASKBTN_YES) {
         return FTYPE_DXE_AND_THE_LIKE;
     } else {
@@ -501,11 +501,11 @@ bool addStrucForShiftedPtr() {
 uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
     switch (dtype) {
     case dt_byte:
-        return value & ((1 << 8) - 1);
+        return value & 0xff;
     case dt_word:
-        return value & ((1 << 16) - 1);
+        return value & 0xffff;
     case dt_dword:
-        return value & (((uval_t)1 << 32) - 1);
+        return value & 0xffffffff;
     default:
         return value;
     }

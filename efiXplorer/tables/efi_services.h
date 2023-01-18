@@ -239,7 +239,7 @@ struct service_info_32bit bootServicesTable32[] = {
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset32,
      2}};
 size_t bootServicesTable32Length =
-    sizeof(bootServicesTable64) / sizeof(service_info_32bit);
+    sizeof(bootServicesTable32) / sizeof(service_info_32bit);
 
 struct service bootServicesTableAll[] = {
     // difficult to check false positives

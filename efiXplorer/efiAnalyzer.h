@@ -80,9 +80,9 @@ class EfiAnalyzer {
     std::vector<ea_t> markedInterfaces;
 
     // Format-dependent interface-related settings (protocols for DXE, PPIs for PEI)
-    char *if_name;
-    char *if_pl;
-    char *if_key;
+    std::string if_name;
+    std::string if_pl;
+    std::string if_key;
     std::vector<json> *if_tbl;
 
     // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID

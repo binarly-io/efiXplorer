@@ -272,7 +272,7 @@ bool EfiAnalysis::EfiAnalyzerX86::findSmstX64() {
     gSmstList.erase(last, gSmstList.end());
 
     for (auto smst : gSmstList) {
-        msg("[%s] 0x%016llX: gSmst\n", plugin_name, smst);
+        msg("[%s] 0x%016llX: gSmst\n", plugin_name, u64_addr(smst));
     }
     return gSmstList.size();
 }
@@ -1338,7 +1338,8 @@ bool EfiAnalysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAdd
                                            ea_t xrefAddress, ea_t callAddress) {
 
     if (arch != UEFI && guidAddress >= startAddress && guidAddress <= endAddress) {
-        msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name, callAddress);
+        msg("[%s] wrong service call detection: 0x%016llX\n", plugin_name,
+            u64_addr(callAddress));
         return false; // filter FP
     }
 
@@ -1676,7 +1677,7 @@ void EfiAnalysis::EfiAnalyzerX86::getSmmProtNamesX64() {
 //--------------------------------------------------------------------------
 // Mark protocols
 void EfiAnalysis::EfiAnalyzer::markInterfaces() {
-    msg("[%s] %s marking\n", plugin_name, if_pl);
+    msg("[%s] %s marking\n", plugin_name, if_pl.c_str());
     for (auto ifItemIt = if_tbl->begin(); ifItemIt != if_tbl->end(); ++ifItemIt) {
         json ifItem = *ifItemIt;
         ea_t address = static_cast<ea_t>(ifItem["address"]);
