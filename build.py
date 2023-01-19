@@ -45,7 +45,7 @@ def build_plugin(idasdk: str, hexrays_sdk: str, batch: bool):
         command.append(f"-DHexRaysSdk_ROOT_DIR={hexrays_sdk}")
     print(command)
     subprocess.call(command)
-    subprocess.call(["cmake", "--build", ".", "--config", "Release"])
+    subprocess.call(["cmake", "--build", ".", "--config", "Release", "--parallel"])
 
 
 @click.command()
@@ -62,7 +62,7 @@ def build_loader(idasdk: str):
 
     command = ["cmake", "..", f"-DIdaSdk_ROOT_DIR={idasdk}"]
     subprocess.call(command)
-    subprocess.call(["cmake", "--build", ".", "--config", "Release"])
+    subprocess.call(["cmake", "--build", ".", "--config", "Release", "--parallel"])
 
 
 cli.add_command(build_plugin)

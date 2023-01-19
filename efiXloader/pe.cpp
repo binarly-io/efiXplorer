@@ -215,7 +215,7 @@ void efiloader::PE::make_entry(ea_t ea) {
 inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name, const char *extra,
                                              size_t count) {
     if (extra) {
-        add_extra_cmt(ea, true, extra);
+        add_extra_cmt(ea, true, "%s", extra);
     }
     create_word(ea, 2 * count);
     set_cmt(ea, name, 0);
@@ -226,7 +226,7 @@ inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name, const ch
 inline size_t efiloader::PE::make_named_dword(ea_t ea, const char *name,
                                               const char *extra, size_t count) {
     if (extra) {
-        add_extra_cmt(ea, true, extra);
+        add_extra_cmt(ea, true, "%s", extra);
     }
     create_word(ea, 4 * count);
     set_cmt(ea, name, 0);
@@ -237,7 +237,7 @@ inline size_t efiloader::PE::make_named_dword(ea_t ea, const char *name,
 inline size_t efiloader::PE::make_named_qword(ea_t ea, const char *name,
                                               const char *extra, size_t count) {
     if (extra) {
-        add_extra_cmt(ea, true, extra);
+        add_extra_cmt(ea, true, "%s", extra);
     }
     create_word(ea, 8 * count);
     set_cmt(ea, name, 0);
@@ -723,7 +723,7 @@ void efiloader::PE::preprocess() {
             }
         }
         if (is_reloc_dir(i) || is_debug_dir(i)) {
-            add_extra_cmt(next_ea, true, DIRECTORIES[i]);
+            add_extra_cmt(next_ea, true, "%s", DIRECTORIES[i]);
             create_dword(next_ea, 4);
             create_dword(next_ea + 4, 4);
             op_hex(next_ea, 0);

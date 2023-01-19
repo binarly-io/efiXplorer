@@ -78,9 +78,10 @@ class driver_chooser_t : public chooser_t {
 
     /* function that is called when the user hits Enter */
     virtual cbret_t idaapi enter(size_t n) {
-        if (n < drivers_names.size())
+        if (n < drivers_names.size()) {
             // jumpto(list[n]);
-            return cbret_t();
+        }
+        return cbret_t();
     }
 
   protected:
