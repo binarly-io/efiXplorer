@@ -2639,6 +2639,8 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzerX86 analyzer) {
 //--------------------------------------------------------------------------
 // Main function for X64 modules
 bool EfiAnalysis::efiAnalyzerMainX64() {
+    show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+
     EfiAnalysis::EfiAnalyzerX86 analyzer;
 
     while (!auto_is_ok()) {
@@ -2753,12 +2755,17 @@ bool EfiAnalysis::efiAnalyzerMainX64() {
         attachActionModulesSeq();
     }
 
+    hide_wait_box();
+
     return true;
 }
 
 //--------------------------------------------------------------------------
 // Main function for X86 modules
 bool EfiAnalysis::efiAnalyzerMainX86() {
+
+    show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+
     EfiAnalysis::EfiAnalyzerX86 analyzer;
 
     while (!auto_is_ok()) {
@@ -2822,6 +2829,8 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     if (!g_args.disable_ui) {
         showAllChoosers(analyzer);
     }
+
+    hide_wait_box();
 
     return true;
 }

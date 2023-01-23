@@ -314,7 +314,8 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
-                msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n", u64_addr(ea));
+                msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n",
+                    u64_addr(ea));
                 allServices.push_back(s);
             }
         }
@@ -331,7 +332,8 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
-                msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n", u64_addr(ea));
+                msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n",
+                    u64_addr(ea));
                 allServices.push_back(s);
             }
         }
@@ -418,6 +420,9 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzerArm analyzer) {
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
 bool EfiAnalysis::efiAnalyzerMainArm() {
+
+    show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+
     EfiAnalysis::EfiAnalyzerArm analyzer;
 
     while (!auto_is_ok()) {
@@ -446,6 +451,8 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     showAllChoosers(analyzer);
 
     analyzer.dumpInfo();
+
+    hide_wait_box();
 
     return true;
 }
