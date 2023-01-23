@@ -132,6 +132,8 @@ EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
     calloutAddrs.clear();
     excFunctions.clear();
     readSaveStateCalls.clear();
+    smiHandlers.clear();
+    childSmiHandlers.clear();
 
     peiGetVariableOverflow.clear();
     getVariableOverflow.clear();
