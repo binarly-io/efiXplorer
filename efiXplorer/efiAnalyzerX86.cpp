@@ -103,9 +103,16 @@ EfiAnalysis::EfiAnalyzer::EfiAnalyzer() {
         smmServices[service] = addrs;
     }
 
-    // load protocols from guids/guids.json file
-    std::ifstream in(guidsJsonPath);
-    in >> dbProtocols;
+    try {
+        // load protocols from guids.json file
+        std::ifstream in(guidsJsonPath);
+        in >> dbProtocols;
+    } catch (std::exception &e) {
+        dbProtocols.clear();
+        std::string msg_text = "guids.json file is invalid, check its contents";
+        msg("[%s] %s\n", plugin_name, msg_text.c_str());
+        warning("%s: %s\n", plugin_name, msg_text.c_str());
+    }
 
     // get reverse dictionary
     for (auto g = dbProtocols.begin(); g != dbProtocols.end(); ++g) {

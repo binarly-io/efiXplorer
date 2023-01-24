@@ -217,9 +217,6 @@ bool setPtrType(ea_t addr, std::string type);
 // Set name and apply pointer to named type
 void setPtrTypeAndName(ea_t ea, std::string name, std::string type);
 
-// Check for guids.json file exist
-bool guidsJsonExists();
-
 // Get guids.json file name
 std::filesystem::path getGuidsJsonFile();
 

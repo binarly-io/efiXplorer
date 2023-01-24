@@ -353,9 +353,15 @@ struct action_handler_loadreport_t : public action_handler_t {
         }
         reportPath /= file;
         msg("[%s] loading report from %s file\n", plugin_name, reportPath.c_str());
+
         json reportData;
-        std::ifstream in(reportPath);
-        in >> reportData;
+        try {
+            std::ifstream in(reportPath);
+            in >> reportData;
+        } catch (std::exception &e) {
+            msg("[%s] report file is invalid, check its contents\n", plugin_name);
+            return -1;
+        }
 
         // Initialize vuln types list
         std::vector<std::string> vulnTypes{
@@ -365,60 +371,65 @@ struct action_handler_loadreport_t : public action_handler_t {
         // Show all choosers with data from report
         qstring title;
 
-        auto protocols = reportData["allProtocols"];
-        if (!protocols.is_null()) { // show protocols
-            title = "efiXplorer: protocols";
-            protocols_show(protocols, title);
-        }
-        auto ppis = reportData["allPPIs"];
-        if (!ppis.is_null()) { // show PPIs
-            title = "efiXplorer: PPIs";
-            protocols_show(ppis, title);
-        }
-        auto services = reportData["allServices"];
-        if (!services.is_null()) { // show services
-            title = "efiXplorer: services";
-            services_show(services, title);
-        }
-        auto guids = reportData["allGuids"];
-        if (!guids.is_null()) { // show GUIDs
-            title = "efiXplorer: GUIDs";
-            guids_show(guids, title);
-        }
-        auto nvram = reportData["nvramVariables"];
-        if (!nvram.is_null()) { // show NVRAM
-            title = "efiXplorer: NVRAM";
-            nvram_show(nvram, title);
-        }
-        auto vulns = reportData["vulns"];
-        if (!vulns.is_null()) { // show vulns
-            std::vector<json> vulnsRes;
-            for (auto vulnType : vulnTypes) {
-                // For each vuln type add list of vulns in `vulnsRes`
-                auto vulnAddrs = vulns[vulnType];
-                if (vulnAddrs.is_null()) {
-                    continue;
+        try {
+            auto protocols = reportData["allProtocols"];
+            if (!protocols.is_null()) { // show protocols
+                title = "efiXplorer: protocols";
+                protocols_show(protocols, title);
+            }
+            auto ppis = reportData["allPPIs"];
+            if (!ppis.is_null()) { // show PPIs
+                title = "efiXplorer: PPIs";
+                protocols_show(ppis, title);
+            }
+            auto services = reportData["allServices"];
+            if (!services.is_null()) { // show services
+                title = "efiXplorer: services";
+                services_show(services, title);
+            }
+            auto guids = reportData["allGuids"];
+            if (!guids.is_null()) { // show GUIDs
+                title = "efiXplorer: GUIDs";
+                guids_show(guids, title);
+            }
+            auto nvram = reportData["nvramVariables"];
+            if (!nvram.is_null()) { // show NVRAM
+                title = "efiXplorer: NVRAM";
+                nvram_show(nvram, title);
+            }
+            auto vulns = reportData["vulns"];
+            if (!vulns.is_null()) { // show vulns
+                std::vector<json> vulnsRes;
+                for (auto vulnType : vulnTypes) {
+                    // For each vuln type add list of vulns in `vulnsRes`
+                    auto vulnAddrs = vulns[vulnType];
+                    if (vulnAddrs.is_null()) {
+                        continue;
+                    }
+                    for (auto addr : vulnAddrs) {
+                        json item;
+                        item["type"] = vulnType;
+                        item["address"] = addr;
+                        vulnsRes.push_back(item);
+                    }
                 }
-                for (auto addr : vulnAddrs) {
-                    json item;
-                    item["type"] = vulnType;
-                    item["address"] = addr;
-                    vulnsRes.push_back(item);
+                if (vulnsRes.size()) {
+                    title = "efiXplorer: vulns";
+                    vulns_show(vulnsRes, title);
                 }
             }
-            if (vulnsRes.size()) {
-                title = "efiXplorer: vulns";
-                vulns_show(vulnsRes, title);
-            }
+
+            // Init public EdiDependencies members
+            g_deps.getProtocolsChooser(protocols);
+            g_deps.getProtocolsByGuids(protocols);
+
+            // Save all protocols information to build dependencies
+            attachActionProtocolsDeps();
+            attachActionModulesSeq();
+        } catch (std::exception &e) {
+            msg("[%s] report file is invalid, check its contents\n", plugin_name);
+            return -1;
         }
-
-        // Init public EdiDependencies members
-        g_deps.getProtocolsChooser(protocols);
-        g_deps.getProtocolsByGuids(protocols);
-
-        // Save all protocols information to build dependencies
-        attachActionProtocolsDeps();
-        attachActionModulesSeq();
 
         return 0;
     }

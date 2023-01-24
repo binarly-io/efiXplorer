@@ -348,10 +348,6 @@ void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
 }
 
 //--------------------------------------------------------------------------
-// Check for guids.json file exist
-bool guidsJsonExists() { return !getGuidsJsonFile().empty(); }
-
-//--------------------------------------------------------------------------
 // Get guids.json file name
 std::filesystem::path getGuidsJsonFile() {
     std::filesystem::path guidsJsonPath;

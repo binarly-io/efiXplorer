@@ -87,10 +87,10 @@ bool idaapi run(size_t arg) {
     msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name, g_args.disable_ui,
         g_args.disable_vuln_hunt);
 
-    bool guidsJsonOk = guidsJsonExists();
-    msg("[%s] guids.json exists: %s\n", plugin_name, BTOA(guidsJsonOk));
+    auto guids_path = getGuidsJsonFile();
+    msg("[%s] guids.json exists: %s\n", plugin_name, BTOA(!guids_path.empty()));
 
-    if (!guidsJsonOk) {
+    if (guids_path.empty()) {
         std::string msg_text =
             "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
         msg("[%s] %s\n", plugin_name, msg_text.c_str());
