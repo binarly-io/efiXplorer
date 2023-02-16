@@ -797,7 +797,7 @@ void EfiAnalysis::EfiAnalyzerX86::getAllRuntimeServices() {
                     service_offset = insn.ops[1].addr;
                 }
 
-                if (insn.itype == NN_callni && insn.ops[0].reg == REG_RAX) {
+                if (insn.itype == NN_callni && insn.ops[0].reg == rt_reg) {
 
                     if (insn.ops[0].addr) {
                         service_offset = insn.ops[0].addr;
