@@ -2024,7 +2024,7 @@ bool EfiAnalysis::EfiAnalyzer::findPPIGetVariableStackOveflow() {
         while (ea < curr_addr) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_callni || insn.itype == NN_call ||
-                insn.itype == NN_retn) {
+                insn.itype == NN_retn || insn.itype == NN_jmp || insn.itype == NN_jmpni) {
                 ok = false;
                 break;
             }
@@ -2206,7 +2206,8 @@ bool EfiAnalysis::EfiAnalyzer::findGetVariableOveflow(std::vector<json> allServi
                 dataSizeUseCounter++;
             }
             if ((insn.itype == NN_callni && insn.ops[0].addr == 0x48) ||
-                insn.itype == NN_retn || dataSizeUseCounter > 1) {
+                insn.itype == NN_retn || insn.itype == NN_jmp || insn.itype == NN_jmpni ||
+                dataSizeUseCounter > 1) {
                 ok = false;
                 break;
             }
@@ -2322,7 +2323,8 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
         size_t dataSizeUseCounter = 0;
         while (ea < curr_addr) {
             decode_insn(&insn, ea);
-            if (insn.itype == NN_callni || insn.itype == NN_retn) {
+            if (insn.itype == NN_callni || insn.itype == NN_retn ||
+                            insn.itype == NN_jmpni || insn.itype ==NN_jmp) {
                 ok = false;
                 break;
             }
