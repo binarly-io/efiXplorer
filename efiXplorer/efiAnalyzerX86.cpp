@@ -2324,7 +2324,7 @@ bool EfiAnalysis::EfiAnalyzer::findSmmGetVariableOveflow() {
         while (ea < curr_addr) {
             decode_insn(&insn, ea);
             if (insn.itype == NN_callni || insn.itype == NN_retn ||
-                            insn.itype == NN_jmpni || insn.itype ==NN_jmp) {
+                insn.itype == NN_jmpni || insn.itype == NN_jmp) {
                 ok = false;
                 break;
             }
@@ -2433,11 +2433,11 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
     }
 
     std::map<uint8_t, std::string> attributes_defs = {
-        {0x00000001, std::string("NON_VOLATILE")},
-        {0x00000002, std::string("BOOTSERVICE_ACCESS")},
-        {0x00000004, std::string("RUNTIME_ACCESS")},
-        {0x00000008, std::string("HARDWARE_ERROR_RECORD")},
-        {0x00000010, std::string("AUTHENTICATED_WRITE_ACCESS")}};
+        {0x00000001, "NON_VOLATILE"},
+        {0x00000002, "BOOTSERVICE_ACCESS"},
+        {0x00000004, "RUNTIME_ACCESS"},
+        {0x00000008, "HARDWARE_ERROR_RECORD"},
+        {0x00000010, "AUTHENTICATED_WRITE_ACCESS"}};
 
     addr = args[2]; // Get Attributes
     decode_insn(&insn, addr);
