@@ -1938,7 +1938,6 @@ void findCalloutRec(func_t *func) {
 //--------------------------------------------------------------------------
 // Find SmiHandler function inside SMM drivers
 void EfiAnalysis::EfiAnalyzer::findSwSmiHandlers() {
-    // Prefix: Sw, IoTrap, Sx, Gpi, Usb, StandbyButton, PeriodicTimer, PowerButton
     std::map<EfiGuid *, std::string> types = {
         {&sw_guid2, "Sw"},
         {&sw_guid, "Sw"},
@@ -2410,8 +2409,8 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
     addr = args[1]; // Get VendorGuid
     decode_insn(&insn, addr);
     // If GUID is global variable
-    if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-        insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+    if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RDX &&
+        insn.ops[1].type == o_mem) {
         msg("[%s]  VendorGuid address (global): 0x%016llX\n", plugin_name,
             u64_addr(insn.ops[1].addr));
         EfiGuid guid = getGlobalGuid(insn.ops[1].addr);
@@ -2636,8 +2635,8 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzerX86 analyzer) {
     }
 
     // open window with vulnerabilities
-    if (calloutAddrs.size() + peiGetVariableOverflow.size() + getVariableOverflow.size() +
-        smmGetVariableOverflow.size()) {
+    if (calloutAddrs.size() || peiGetVariableOverflow.size() ||
+        getVariableOverflow.size() || smmGetVariableOverflow.size()) {
         std::vector<json> vulns;
         std::map<std::string, std::vector<ea_t>> vulns_map = {
             {std::string("smm_callout"), calloutAddrs},
