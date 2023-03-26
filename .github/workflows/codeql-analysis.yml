@@ -43,6 +43,9 @@ jobs:
         cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
         cmake --build . --config Release
 
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
   analyze-efiXloader:
     name: Analyze efiXloader
     runs-on: ubuntu-latest
