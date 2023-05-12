@@ -685,7 +685,7 @@ class PrototypesFixer : public ctree_visitor_t {
             return false;
         }
 
-        cfuncptr_t cf = decompile(f, &hf);
+        cfuncptr_t cf = decompile(f, &hf, DECOMP_NO_WAIT);
         if (cf == nullptr) {
             return false;
         }

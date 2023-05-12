@@ -216,7 +216,7 @@ bool applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
         retyperBs.SetFuncEa(f->start_ea);
 
         hexrays_failure_t hf;
-        cfuncptr_t cfunc = decompile(f, &hf);
+        cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
 
         // Сheck that the function is decompiled
         if (cfunc == nullptr) {
@@ -264,7 +264,7 @@ bool applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
         retyperSmm.SetFuncEa(f->start_ea);
 
         hexrays_failure_t hf;
-        cfuncptr_t cfunc = decompile(f, &hf);
+        cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
 
         // Сheck that the function is decompiled
         if (cfunc == nullptr) {
@@ -288,7 +288,7 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
     }
     VariablesInfoExtractor extractor(code_addr);
     hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(f, &hf);
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
     // Сheck that the function is decompiled
     if (cfunc == nullptr) {
         return 0xff;
@@ -311,7 +311,7 @@ bool TrackEntryParams(func_t *f, uint8_t depth) {
         return false;
     }
     hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(f, &hf);
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
     if (cfunc == nullptr) {
         return false;
     }
@@ -338,7 +338,7 @@ json DetectVars(func_t *f) {
     }
     VariablesDetector vars_detector;
     hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(f, &hf);
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
     if (cfunc == nullptr) {
         return res;
     }
@@ -367,7 +367,7 @@ std::vector<json> DetectServices(func_t *f) {
     }
     ServicesDetector services_detector;
     hexrays_failure_t hf;
-    cfuncptr_t cfunc = decompile(f, &hf);
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
     if (cfunc == nullptr) {
         return res;
     }
