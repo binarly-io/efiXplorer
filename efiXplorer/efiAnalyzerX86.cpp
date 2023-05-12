@@ -149,6 +149,8 @@ EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
     g_get_smst_location_calls.clear();
     g_smm_get_variable_calls.clear();
     g_smm_set_variable_calls.clear();
+
+    clear_cached_cfuncs();
 }
 
 void EfiAnalysis::EfiAnalyzer::setStrings() {
