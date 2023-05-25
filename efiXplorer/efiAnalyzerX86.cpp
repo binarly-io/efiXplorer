@@ -394,7 +394,7 @@ bool EfiAnalysis::EfiAnalyzerX86::findSmstPostProcX64() {
                 if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
                     insn.ops[0].reg == smst_reg &&
                     insn.ops[0].addr == SmiHandlerRegisterOffset64) {
-                    opStroff(ea, std::string("_EFI_SMM_SYSTEM_TABLE2"));
+                    opStroff(ea, "_EFI_SMM_SYSTEM_TABLE2");
                     // save child SW SMI handler
                     func_t *handler_func = get_func(rcx_last);
                     if (handler_func != nullptr) {
@@ -1174,7 +1174,7 @@ void EfiAnalysis::EfiAnalyzerX86::getPpiNamesX86() {
                 ppiItem["xref"] = guidCodeAddress;
                 ppiItem["service"] = pei_services_table[i].name;
                 ppiItem["guid"] = getGuidFromValue(guid);
-                ppiItem["module"] = std::string("Current");
+                ppiItem["module"] = "Current";
 
                 // find GUID name
                 auto it = dbProtocolsMap.find(guid);
@@ -2455,7 +2455,7 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
     if (insn.itype == NN_xor && insn.ops[0].type == o_reg && insn.ops[1].type == o_reg &&
         insn.ops[0].reg == insn.ops[1].reg && insn.ops[0].reg == REG_R8) {
         item["Attributes"] = 0;
-        std::string attributes_hr = std::string("No attributes");
+        std::string attributes_hr = "No attributes";
         item["AttributesHumanReadable"] = attributes_hr;
         msg("[%s]  Attributes: %d (%s)\n", plugin_name, 0, attributes_hr.c_str());
     } else {
@@ -2465,11 +2465,11 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         item["Attributes"] = res;
         std::string attributes_hr = std::string();
         if (res == 0xff) {
-            attributes_hr = std::string("Unknown attributes");
+            attributes_hr = "Unknown attributes";
         } else {
             for (auto &[attr, attr_def] : attributes_defs) {
                 if (res & attr & 0x0f) {
-                    attributes_hr += attr_def + std::string(" | ");
+                    attributes_hr += attr_def + " | ";
                 }
             }
             if (attributes_hr.size() >= 3) { // remove the last operation OR
@@ -2481,7 +2481,7 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
 #else
         // If Hex-Rays analysis is not used, this feature does not work
         item["Attributes"] = 0xff;
-        item["AttributesHumanReadable"] = std::string("Unknown attributes");
+        item["AttributesHumanReadable"] = "Unknown attributes";
 #endif
     }
 
@@ -2641,10 +2641,10 @@ void showAllChoosers(EfiAnalysis::EfiAnalyzerX86 analyzer) {
         getVariableOverflow.size() || smmGetVariableOverflow.size()) {
         std::vector<json> vulns;
         std::map<std::string, std::vector<ea_t>> vulns_map = {
-            {std::string("smm_callout"), calloutAddrs},
-            {std::string("pei_get_variable_buffer_overflow"), peiGetVariableOverflow},
-            {std::string("get_variable_buffer_overflow"), getVariableOverflow},
-            {std::string("smm_get_variable_buffer_overflow"), smmGetVariableOverflow}};
+            {"SmmCallout", calloutAddrs},
+            {"PeiGetVariableOverflow", peiGetVariableOverflow},
+            {"DxeGetVariableOverflow", getVariableOverflow},
+            {"SmmGetVariableOverflow", smmGetVariableOverflow}};
         for (const auto &[type, addrs] : vulns_map) {
             for (auto addr : addrs) {
                 json item;

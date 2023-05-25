@@ -170,12 +170,12 @@ json getService(ea_t addr, uint8_t table_id) {
                 s["address"] = ea;
                 if (table_id == 1) {
                     s["service_name"] = lookupBootServiceName(service_offset);
-                    s["table_name"] = std::string("EFI_BOOT_SERVICES");
+                    s["table_name"] = "EFI_BOOT_SERVICES";
                 } else if (table_id == 2) {
                     s["service_name"] = lookupRuntimeServiceName(service_offset);
-                    s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
+                    s["table_name"] = "EFI_RUNTIME_SERVICES";
                 } else {
-                    s["table_name"] = std::string("OTHER");
+                    s["table_name"] = "OTHER";
                 }
                 return s;
             }
@@ -208,12 +208,12 @@ json getService(ea_t addr, uint8_t table_id) {
                 s["address"] = ea;
                 if (table_id == 1) {
                     s["service_name"] = lookupBootServiceName(insn.ops[1].addr);
-                    s["table_name"] = std::string("EFI_BOOT_SERVICES");
+                    s["table_name"] = "EFI_BOOT_SERVICES";
                 } else if (table_id == 2) {
                     s["service_name"] = lookupRuntimeServiceName(insn.ops[1].addr);
-                    s["table_name"] = std::string("EFI_RUNTIME_SERVICES");
+                    s["table_name"] = "EFI_RUNTIME_SERVICES";
                 } else {
-                    s["table_name"] = std::string("OTHER");
+                    s["table_name"] = "OTHER";
                 }
                 return s;
             }
@@ -310,7 +310,7 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             std::string name = s["service_name"];
-            if (name == std::string("Unknown")) {
+            if (name == "Unknown") {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {
@@ -328,7 +328,7 @@ void EfiAnalysis::EfiAnalyzerArm::servicesDetection() {
                 continue;
             }
             std::string name = s["service_name"];
-            if (name == std::string("Unknown")) {
+            if (name == "Unknown") {
                 continue;
             }
             if (!jsonInVec(allServices, s)) {

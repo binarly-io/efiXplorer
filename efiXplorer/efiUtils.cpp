@@ -723,15 +723,15 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
 
     std::string name;
 
-    if (type == std::string("gSmst")) {
+    if (type == "gSmst") {
         setPtrTypeAndName(varCopy, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
     }
 
-    if (type == std::string("gBS")) {
+    if (type == "gBS") {
         setPtrTypeAndName(varCopy, "gBS", "EFI_BOOT_SERVICES");
     }
 
-    if (type == std::string("gRT")) {
+    if (type == "gRT") {
         setPtrTypeAndName(varCopy, "gRT", "EFI_RUNTIME_SERVICES");
     }
 
@@ -907,7 +907,7 @@ std::string getWideString(ea_t addr) {
     while (get_wide_word(addr + index)) {
         auto byte = get_wide_byte(addr + index);
         if (byte < 0x20 || byte > 0x7e) {
-            return std::string("INVALID_STRING");
+            return "INVALID_STRING";
         }
         res.push_back(byte);
         index += 2;
@@ -981,15 +981,15 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
 std::string getTable(std::string service_name) {
     for (auto i = 0; i < BTABLE_LEN; i++) {
         if (static_cast<std::string>(boot_services_table[i].name) == service_name) {
-            return std::string("EFI_BOOT_SERVICES");
+            return "EFI_BOOT_SERVICES";
         }
     }
     for (auto i = 0; i < RTABLE_LEN; i++) {
         if (static_cast<std::string>(runtime_services_table[i].name) == service_name) {
-            return std::string("EFI_RUNTIME_SERVICES");
+            return "EFI_RUNTIME_SERVICES";
         }
     }
-    return std::string("OTHER");
+    return "OTHER";
 }
 
 std::string lookupBootServiceName(uint64_t offset) {
@@ -998,7 +998,7 @@ std::string lookupBootServiceName(uint64_t offset) {
             return static_cast<std::string>(boot_services_table[i].name);
         }
     }
-    return std::string("Unknown");
+    return "Unknown";
 }
 
 std::string lookupRuntimeServiceName(uint64_t offset) {
@@ -1007,7 +1007,7 @@ std::string lookupRuntimeServiceName(uint64_t offset) {
             return static_cast<std::string>(runtime_services_table[i].name);
         }
     }
-    return std::string("Unknown");
+    return "Unknown";
 }
 
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }

@@ -276,12 +276,11 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
             reg = BAD_REG; // resetting
 
             // op_stroff + set_name
-            std::string name = prefix + std::string("SmiHandler");
+            std::string name = prefix + "SmiHandler";
             set_name(dispatch_func, name.c_str(), SN_FORCE);
             std::string prefix_upper;
             std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(), ::toupper);
-            std::string type = std::string("EFI_SMM_") + prefix_upper +
-                               std::string("_DISPATCH2_PROTOCOL");
+            std::string type = "EFI_SMM_" + prefix_upper + "_DISPATCH2_PROTOCOL";
             opStroff(ea, type);
         }
 
