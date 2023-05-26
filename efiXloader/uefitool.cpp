@@ -181,6 +181,33 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &pa
     return res;
 }
 
+std::vector<std::string>
+efiloader::Uefitool::parseAprioriRawSection(const UModelIndex &index) {
+    // Adopted from FfsParser::parseDepexSectionBody
+    std::vector<std::string> res;
+
+    if (!index.isValid())
+        return res;
+
+    UByteArray body = model.body(index);
+
+    // Sanity check
+    if (body.size() % sizeof(EFI_GUID)) {
+        return res;
+    }
+
+    UINT32 count = (UINT32)(body.size() / sizeof(EFI_GUID));
+    if (count > 0) {
+        for (UINT32 i = 0; i < count; i++) {
+            const EFI_GUID *guid = (const EFI_GUID *)body.constData() + i;
+            res.push_back(
+                reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
+        }
+    }
+
+    return res;
+}
+
 void efiloader::Uefitool::set_machine_type(UByteArray pe_body) {
     const char *data = pe_body.constData();
     if (pe_body.size() < 64) {
@@ -196,12 +223,31 @@ void efiloader::Uefitool::set_machine_type(UByteArray pe_body) {
     }
 }
 
+void efiloader::Uefitool::handle_raw_section(const UModelIndex &index) {
+    UModelIndex parent_file = model.findParentOfType(index, Types::File);
+    if (!parent_file.isValid()) {
+        return;
+    }
+    UByteArray parent_file_guid(model.header(parent_file).constData(), sizeof(EFI_GUID));
+    if (parent_file_guid == EFI_PEI_APRIORI_FILE_GUID) {
+        msg("[efiXloader] PEI Apriori file found\n");
+        get_apriori(index, "PEI_APRIORI_FILE");
+    }
+    if (parent_file_guid == EFI_DXE_APRIORI_FILE_GUID) {
+        msg("[efiXloader] DXE Apriori file found\n");
+        get_apriori(index, "DXE_APRIORI_FILE");
+    }
+}
+
 void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                                efiloader::File *file) {
     qstring module_name("");
     qstring guid("");
 
     switch (model.subtype(index)) {
+    case EFI_SECTION_RAW:
+        handle_raw_section(index);
+        break;
     case EFI_SECTION_TE:
         file->is_te = true;
         file->ubytes = model.body(index);
@@ -249,7 +295,6 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     case EFI_SECTION_PEI_DEPEX:
         get_deps(index, "EFI_SECTION_PEI_DEPEX");
         break;
-    case EFI_SECTION_RAW:
     case EFI_SECTION_VERSION:
         break;
     default:
@@ -301,6 +346,17 @@ void efiloader::Uefitool::get_deps(UModelIndex index, std::string key) {
             image_guid.c_str(), parsed.data);
         all_deps[key][image_guid.c_str()] = deps;
     }
+}
+
+void efiloader::Uefitool::get_apriori(UModelIndex index, std::string key) {
+    if (all_deps.contains(key)) {
+        return;
+    }
+    std::vector<std::string> deps = parseAprioriRawSection(index);
+    if (deps.empty()) {
+        return;
+    }
+    all_deps[key] = deps;
 }
 
 void efiloader::Uefitool::dump_jsons() {

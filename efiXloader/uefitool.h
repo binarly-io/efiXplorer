@@ -117,6 +117,7 @@ class Uefitool {
     void dump();
     void dump(const UModelIndex &index);
     void dump(const UModelIndex &index, uint8_t el_type, File *pe_file);
+    void handle_raw_section(const UModelIndex &index);
     bool is_pe_index(const UModelIndex &index) { return model.rowCount(index) == 4; };
     bool is_file_index(const UModelIndex &index) {
         return model.type(index) == Types::File;
@@ -125,7 +126,9 @@ class Uefitool {
     void get_image_guid(qstring &image_guid, UModelIndex index);
     std::vector<std::string> parseDepexSectionBody(const UModelIndex &index,
                                                    UString &parsed);
+    std::vector<std::string> parseAprioriRawSection(const UModelIndex &index);
     void get_deps(UModelIndex index, std::string key);
+    void get_apriori(UModelIndex index, std::string key);
     void dump_jsons(); // dump JSON with DEPEX and GUIDs information for each image
     json all_deps;     // DEPEX information for each image
     json images_guids; // matching the modules to the parent's GUIDs
