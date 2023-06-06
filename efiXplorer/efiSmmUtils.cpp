@@ -112,23 +112,34 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
         for (auto xref : data_xrefs) {
             ea_t res_addr = BADADDR;
             ea_t cur_addr = xref;
+            bool in_smram = false;
             // Check 16 instructions below
             for (auto i = 0; i < 16; i++) {
                 cur_addr = next_head(cur_addr, BADADDR);
                 decode_insn(&insn, cur_addr);
                 if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
                     insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
-                    msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n",
-                        plugin_name, u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
                     res_addr = insn.ops[1].addr;
-                    if (addrInVec(gBsList, res_addr)) {
-                        continue;
-                    }
-                    set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-                    setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
-                    smst_addrs.push_back(res_addr);
-                    break;
+                    msg("[%s] found gSmst/gInSmram at 0x%016llX, address = 0x%016llX\n",
+                        plugin_name, u64_addr(cur_addr), u64_addr(res_addr));
                 }
+                if (res_addr != BADADDR && insn.itype == NN_callni &&
+                    insn.ops[0].type == o_phrase && !insn.ops[0].addr) {
+                    // gEfiSmmBase2Protocol->InSmm(gEfiSmmBase2Protocol, &gInSmram)
+                    in_smram = true;
+                }
+            }
+            if (!in_smram) {
+                // we found gSmst
+                if (addrInVec(gBsList, res_addr)) {
+                    continue;
+                }
+                set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
+                setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+                smst_addrs.push_back(res_addr);
+            } else {
+                // we found gInSmram
+                setTypeAndName(res_addr, "gInSmram", "BOOLEAN");
             }
         }
     }
