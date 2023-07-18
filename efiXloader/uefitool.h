@@ -38,7 +38,9 @@
 
 #include "3rd/uefitool/UEFIExtract/ffsdumper.h"
 #include "3rd/uefitool/UEFIExtract/uefidump.h"
+#include "fstream"
 #include "json.hpp"
+
 
 #include "ida_core.h"
 
