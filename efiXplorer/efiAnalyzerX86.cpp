@@ -1967,6 +1967,16 @@ void EfiAnalysis::EfiAnalyzer::findSwSmiHandlers() {
         {&espi_guid, "Espi"},
         {&acpi_en_guid, "AcpiEn"},
         {&acpi_dis_guid, "AcpiDis"},
+        {&fch_gpi_guid2, "Gpi"},
+        {&fch_io_trap_guid2, "IoTrap"},
+        {&fch_periodical_guid2, "PeriodicTimer"},
+        {&fch_pwr_btn_guid2, "PowerButton"},
+        {&fch_sw_guid2, "Sw"},
+        {&fch_sx_guid2, "Sx"},
+        {&fch_usb_guid2, "Usb"},
+        {&fch_usb_guid, "Usb"},
+        {&fch_misc_guid, "Misc"},
+        {&fch_apu_ras_guid, "ApuRas"},
     };
     for (auto &[guid, prefix] : types) {
         auto res = findSmiHandlersSmmDispatch(*guid, prefix);
