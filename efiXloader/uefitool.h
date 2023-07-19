@@ -41,7 +41,6 @@
 #include "fstream"
 #include "json.hpp"
 
-
 #include "ida_core.h"
 
 #include <set>

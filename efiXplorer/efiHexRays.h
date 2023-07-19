@@ -505,7 +505,12 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
         if (GUIDName.empty()) {
             return 0;
         }
+
         std::string interfaceTypeName = GUIDName.substr(0, GUIDName.find("_GUID"));
+        if (!interfaceTypeName.find("FCH_")) {
+            // convert FCH_SMM_* dispatcher type to EFI_SMM_* dispatcher type
+            interfaceTypeName.replace(0, 4, "EFI_");
+        }
 
         // Need to get the type for the interface variable here
         tinfo_t tif;
