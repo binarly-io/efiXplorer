@@ -374,3 +374,23 @@ std::vector<json> DetectServices(func_t *f) {
     services_detector.apply_to(&cfunc->body, nullptr);
     return services_detector.services;
 }
+
+bool DetectPeiServices(func_t *f) {
+    if (!init_hexrays_plugin()) {
+        return false;
+    }
+
+    if (f == nullptr) {
+        return false;
+    }
+
+    PeiServicesDetector pei_services_detector;
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
+    if (cfunc == nullptr) {
+        return false;
+    }
+    pei_services_detector.apply_to(&cfunc->body, nullptr);
+
+    return true;
+}

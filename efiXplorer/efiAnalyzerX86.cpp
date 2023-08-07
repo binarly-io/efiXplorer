@@ -2852,6 +2852,11 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
         if (!g_args.disable_vuln_hunt) {
             analyzer.findPPIGetVariableStackOveflow();
         }
+#ifdef HEX_RAYS
+        for (auto addr : analyzer.funcs) {
+            DetectPeiServices(get_func(addr));
+        }
+#endif
     }
 
     // dump info to JSON file

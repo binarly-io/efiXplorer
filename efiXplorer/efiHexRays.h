@@ -27,6 +27,7 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
 bool TrackEntryParams(func_t *f, uint8_t depth);
 json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
+bool DetectPeiServices(func_t *f);
 bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
 bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
@@ -947,6 +948,95 @@ class ServicesDetector : public ctree_visitor_t {
 
         if (!jsonInVec(services, s)) {
             services.push_back(s);
+        }
+
+        return false;
+    }
+
+  protected:
+    bool mDebug = true;
+};
+
+class PeiServicesDetector : public ctree_visitor_t {
+    // detect and mark all PEI services
+  public:
+    PeiServicesDetector() : ctree_visitor_t(CV_FAST){};
+
+    bool make_shifted_ptr(tinfo_t outer, tinfo_t inner, int32 offset,
+                          tinfo_t *shifted_tif) {
+        ptr_type_data_t pi;
+        pi.taptr_bits = TAPTR_SHIFTED;
+        pi.delta = offset;
+        pi.parent = outer;
+        pi.obj_type = inner;
+        shifted_tif->create_ptr(pi);
+        return shifted_tif->is_correct();
+    }
+
+    bool set_var_type(ea_t func_ea, lvar_t lvar, tinfo_t tif) {
+        lvar_saved_info_t lsi;
+        lsi.ll = lvar;
+        lsi.type = tif;
+        return modify_user_lvar_info(func_ea, MLI_TYPE, lsi);
+    }
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        ea_t pointer_offset = BADADDR;
+        ea_t service_offset = BADADDR;
+        bool call = false;
+        var_ref_t var_ref;
+        if (e->op == cot_ptr && e->x->op == cot_cast && e->x->x->op == cot_add &&
+            e->x->x->x->op == cot_ptr && e->x->x->x->x->op == cot_ptr &&
+            e->x->x->x->x->x->op == cot_cast && e->x->x->x->x->x->x->op == cot_sub &&
+            e->x->x->x->x->x->x->x->op == cot_var &&
+            e->x->x->x->x->x->x->y->op == cot_num && e->x->x->y->op == cot_num) {
+            // (*ADJ(v2)->PeiServices)->GetHobList((const EFI_PEI_SERVICES
+            // **)ADJ(v2)->PeiServices, HobList);
+            service_offset = e->x->x->y->numval();
+            pointer_offset = e->x->x->x->x->x->x->y->numval();
+            var_ref = e->x->x->x->x->x->x->x->v;
+            call = true;
+        } else if (e->op == cot_asg && e->x->op == cot_var && e->y->op == cot_ptr &&
+                   e->y->x->op == cot_cast && e->y->x->x->op == cot_sub &&
+                   e->y->x->x->x->op == cot_var && e->y->x->x->y->op == cot_num) {
+            // __sidt(v6);
+            // PeiServices = ADJ(v7)->PeiServices;
+            pointer_offset = e->y->x->x->y->numval();
+            var_ref = e->y->x->x->x->v;
+        } else {
+            return false;
+        }
+
+        msg("[efiXplorer] address: 0x%08llX, PEI service detected\n", u64_addr(e->ea));
+        msg("[efiXplorer]   delta: %llx\n", u64_addr(pointer_offset));
+        if (service_offset != BADADDR) {
+            msg("[efiXplorer]   service offset: %llx\n", u64_addr(service_offset));
+        }
+
+        if (pointer_offset != 4) {
+            // handle only 4 for now
+            return false;
+        }
+
+        tinfo_t outer;
+        if (!outer.get_named_type(get_idati(), "EFI_PEI_SERVICES_4", BTF_STRUCT)) {
+            return false;
+        }
+
+        tinfo_t shifted_tif;
+        if (!make_shifted_ptr(outer, outer, pointer_offset, &shifted_tif)) {
+            return false;
+        }
+
+        lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
+        func_t *func = get_func(e->ea);
+        if (func == nullptr) {
+            return false;
+        }
+        if (set_var_type(func->start_ea, dest_var, shifted_tif)) {
+            msg("[efiXplorer] shifted pointer applied (0x%08llX)", u64_addr(e->ea));
         }
 
         return false;
