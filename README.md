@@ -22,23 +22,16 @@ __Supported Platforms:__ Windows, Linux and OSX.
 ## Publications
 
 * [efiXplorer: Hunting for UEFI Firmware Vulnerabilities at Scale with Automated Static Analysis](https://i.blackhat.com/eu-20/Wednesday/eu-20-Labunets-efiXplorer-Hunting-For-UEFI-Firmware-Vulnerabilities-At-Scale-With-Automated-Static-Analysis.pdf)
-* [Static analysis-based recovery of service function calls in UEFI firmware](https://www.youtube.com/watch?v=rK0tmVa19ME)
+* [Static analysis-based recovery of service function calls in UEFI firmware](https://github.com/binarly-io/Research_Publications/blob/main/EKO_2020/EKO_2020_efiXplorer.pdf)
 * [How efiXplorer helping to solve challenges in reverse engineering of UEFI firmware](https://www.youtube.com/watch?v=FFGQJBmRkLw)
 
 ## References
 
 * https://github.com/LongSoft/UEFITool
-* https://github.com/yeggor/UEFI_RETool
+* https://github.com/yeggor/uefi_retool
 * https://github.com/gdbinit/EFISwissKnife
 * https://github.com/snare/ida-efiutils
 * https://github.com/al3xtjames/ghidra-firmware-utils
 * https://github.com/DSecurity/efiSeek
 * https://github.com/p-state/ida-efitools2
 * https://github.com/zznop/bn-uefi-helper
-
-## Thank you for support
-
-<p align="center">
-  <img alt="HexRays Logo" src="pics/hexrays_logo.svg" width="40%">
-  <img alt="JetBrains Logo" src="https://www.jetbrains.com/company/brand/img/jetbrains_logo.png" width="14%">
-</p>
