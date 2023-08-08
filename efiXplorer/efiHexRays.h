@@ -621,24 +621,24 @@ class VariablesInfoExtractor : public ctree_visitor_t {
     // in the CTREE.
     int visit_expr(cexpr_t *e) {
         if (mCodeAddr == BADADDR) {
-            return false;
+            return 0;
         }
 
         if (e->ea != mCodeAddr) {
-            return false;
+            return 0;
         }
 
         if (e->op != cot_call)
-            return false;
+            return 0;
 
         carglist_t *args = e->a;
         if (args == nullptr) {
-            return false;
+            return 0;
         }
 
         size_t args_size = args->size();
         if (args_size < 3) {
-            return false;
+            return 0;
         }
 
         cexpr_t *attributes_arg = &args->at(2);
@@ -651,7 +651,7 @@ class VariablesInfoExtractor : public ctree_visitor_t {
             mAttributes = static_cast<uint8_t>(attributes_arg->numval());
         }
 
-        return false;
+        return 0;
     }
 
   protected:
@@ -668,11 +668,11 @@ class PrototypesFixer : public ctree_visitor_t {
     // in the CTREE.
     int visit_expr(cexpr_t *e) {
         if (e->op != cot_call)
-            return false;
+            return 0;
 
         // get child function address
         if (e->x->op != cot_obj) {
-            return false;
+            return 0;
         }
         if (mDebug) {
             msg("[I] Child function address: %016llX\n", u64_addr(e->x->obj_ea));
@@ -680,7 +680,7 @@ class PrototypesFixer : public ctree_visitor_t {
 
         carglist_t *args = e->a;
         if (args == nullptr) {
-            return false;
+            return 0;
         }
 
         // get child function prototype
@@ -688,12 +688,12 @@ class PrototypesFixer : public ctree_visitor_t {
         hexrays_failure_t hf;
         func_t *f = get_func(func_addr);
         if (f == nullptr) {
-            return false;
+            return 0;
         }
 
         cfuncptr_t cf = decompile(f, &hf, DECOMP_NO_WAIT);
         if (cf == nullptr) {
-            return false;
+            return 0;
         }
 
         msg("[I] Call address: 0x%016llX\n", u64_addr(e->ea));
@@ -738,7 +738,7 @@ class PrototypesFixer : public ctree_visitor_t {
                     }
                     // set argument type and name
                     if (cf->argidx.size() <= i) {
-                        return false;
+                        return 0;
                     }
                     auto argid = cf->argidx[i];
                     lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
@@ -754,7 +754,7 @@ class PrototypesFixer : public ctree_visitor_t {
             }
         }
 
-        return false;
+        return 0;
     }
 
   protected:
@@ -787,7 +787,7 @@ class VariablesDetector : public ctree_visitor_t {
         bool global_var = false;
         bool local_var = false;
         if (e->op != cot_asg) {
-            return false;
+            return 0;
         }
 
         switch (e->x->op) {
@@ -800,11 +800,11 @@ class VariablesDetector : public ctree_visitor_t {
             local_var = true;
             break;
         default:
-            return false;
+            return 0;
         }
 
         if (e->y->op != cot_cast && e->y->op != cot_var) {
-            return false;
+            return 0;
         }
 
         // extract variable type
@@ -826,7 +826,7 @@ class VariablesDetector : public ctree_visitor_t {
         if (!var_type.get_type_name(&type_name)) {
             if (!var_type_no_ptr.get_type_name(&type_name)) {
                 msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
-                return false;
+                return 0;
             }
             is_ptr = true;
         }
@@ -880,7 +880,7 @@ class VariablesDetector : public ctree_visitor_t {
             // setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
         }
 
-        return false;
+        return 0;
     }
 
   protected:
@@ -899,11 +899,11 @@ class ServicesDetector : public ctree_visitor_t {
     // in the CTREE.
     int visit_expr(cexpr_t *e) {
         if (e->op != cot_call) {
-            return false;
+            return 0;
         }
 
         if (e->x->op != cot_cast) {
-            return false;
+            return 0;
         }
 
         // extract function type
@@ -921,9 +921,9 @@ class ServicesDetector : public ctree_visitor_t {
         if (!func_type.get_type_name(&type_name)) {
             if (!func_type_no_ptr.get_type_name(&type_name)) {
                 // msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
-                return false;
+                return 0;
             }
-            is_ptr = true;
+            is_ptr = 0;
         }
 
         auto service_name = typeToName(static_cast<std::string>(type_name.c_str()));
@@ -950,7 +950,7 @@ class ServicesDetector : public ctree_visitor_t {
             services.push_back(s);
         }
 
-        return false;
+        return 0;
     }
 
   protected:
@@ -1006,7 +1006,7 @@ class PeiServicesDetector : public ctree_visitor_t {
             pointer_offset = e->y->x->x->y->numval();
             var_ref = e->y->x->x->x->v;
         } else {
-            return false;
+            return 0;
         }
 
         msg("[efiXplorer] address: 0x%08llX, PEI service detected\n", u64_addr(e->ea));
@@ -1017,29 +1017,33 @@ class PeiServicesDetector : public ctree_visitor_t {
 
         if (pointer_offset != 4) {
             // handle only 4 for now
-            return false;
+            return 0;
         }
 
         tinfo_t outer;
         if (!outer.get_named_type(get_idati(), "EFI_PEI_SERVICES_4", BTF_STRUCT)) {
-            return false;
+            return 0;
         }
 
         tinfo_t shifted_tif;
         if (!make_shifted_ptr(outer, outer, pointer_offset, &shifted_tif)) {
-            return false;
+            return 0;
         }
 
         lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
         func_t *func = get_func(e->ea);
         if (func == nullptr) {
-            return false;
+            return 0;
         }
         if (set_var_type(func->start_ea, dest_var, shifted_tif)) {
-            msg("[efiXplorer] shifted pointer applied (0x%08llX)", u64_addr(e->ea));
+            msg("[efiXplorer] shifted pointer applied (0x%08llX)\n", u64_addr(e->ea));
         }
 
-        return false;
+        if (call) {
+            opStroff(e->ea, "EFI_PEI_SERVICES");
+        }
+
+        return 0;
     }
 
   protected:
