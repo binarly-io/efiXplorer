@@ -417,6 +417,7 @@ void EfiAnalysis::EfiAnalyzerArm::findPeiServicesFunction() {
             msg("[efiXplorer] found GetPeiServices() function: 0x%016llX\n",
                 u64_addr(start_ea));
             set_name(start_ea, "GetPeiServices", SN_FORCE);
+            setRetToPeiSvc(start_ea);
         }
     }
 }

@@ -458,6 +458,46 @@ void setEntryArgToPeiSvc() {
     }
 }
 
+bool setRetToPeiSvc(ea_t start_ea) {
+    tinfo_t tif_ea;
+    if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
+        msg("[%s] guess_tinfo failed, function = 0x%016llX", plugin_name,
+            u64_addr(start_ea));
+        return false;
+    }
+    func_type_data_t fi;
+    if (!tif_ea.get_func_details(&fi)) {
+        msg("[%s] get_func_details failed, function = 0x%016llX", plugin_name,
+            u64_addr(start_ea));
+        return false;
+    }
+    tinfo_t tif_pei;
+    bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
+    if (!res) {
+        msg("[%s] get_named_type failed, res = %d\n", plugin_name, res);
+        return false;
+    }
+    tinfo_t ptrTinfo;
+    tinfo_t ptrPtrTinfo;
+    ptrTinfo.create_ptr(tif_pei);
+    ptrPtrTinfo.create_ptr(ptrTinfo);
+
+    fi.rettype = ptrPtrTinfo;
+
+    tinfo_t func_tinfo;
+    if (!func_tinfo.create_func(fi)) {
+        msg("[%s] create_func failed, function = 0x%016llX", plugin_name,
+            u64_addr(start_ea));
+        return false;
+    }
+    if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
+        msg("[%s] apply_tinfo failed, function = 0x%016llX", plugin_name,
+            u64_addr(start_ea));
+        return false;
+    }
+    return true;
+}
+
 //--------------------------------------------------------------------------
 // Add EFI_PEI_SERVICES_4 structure
 bool addStrucForShiftedPtr() {

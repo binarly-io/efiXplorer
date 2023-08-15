@@ -230,6 +230,10 @@ bool summaryJsonExist();
 // for ModuleEntryPoint
 void setEntryArgToPeiSvc();
 
+// Set return value type to EFI_PEI_SERVICES **PeiService
+// for specified function
+bool setRetToPeiSvc(ea_t start_ea);
+
 // Set type and name
 void setTypeAndName(ea_t ea, std::string name, std::string type);
 
