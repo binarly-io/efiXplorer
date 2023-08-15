@@ -100,6 +100,8 @@ enum Registers64bit {
 };
 
 enum RegistersAarch64 {
+    REG_C0 = 0,
+    REG_C13 = 13,
     REG_X0 = 129,
     REG_X1,
     REG_X2,

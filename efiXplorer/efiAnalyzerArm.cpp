@@ -404,7 +404,9 @@ void EfiAnalysis::EfiAnalyzerArm::findPeiServicesFunction() {
         if (!(insn.itype == ARM_mrs && insn.ops[0].type == o_reg &&
               insn.ops[0].reg == REG_X0 && insn.ops[1].type == o_imm &&
               insn.ops[1].value == 0x3 && insn.ops[2].type == o_idpspec3 &&
-              insn.ops[3].type == o_idpspec3 && insn.ops[4].type == o_imm &&
+              insn.ops[2].reg == REG_C13 &&
+              insn.ops[3].type == o_idpspec3 &&
+              insn.ops[3].reg == REG_C0 && insn.ops[4].type == o_imm &&
               insn.ops[4].value == 0x2)) {
             continue;
         }
