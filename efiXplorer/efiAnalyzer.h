@@ -293,6 +293,7 @@ class EfiAnalyzerArm : public EfiAnalyzer {
     void initialGlobalVarsDetection();
     void servicesDetection();
     void protocolsDetection();
+    void findPeiServicesFunction();
 
   private:
     bool getProtocol(ea_t address, uint32_t p_reg, std::string service_name);

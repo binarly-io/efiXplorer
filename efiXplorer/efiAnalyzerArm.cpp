@@ -26,8 +26,6 @@
 
 using namespace EfiAnalysis;
 
-static const char plugin_name[] = "efiXplorer";
-
 std::vector<ea_t> gImageHandleListArm;
 std::vector<ea_t> gStListArm;
 std::vector<ea_t> gBsListArm;
@@ -399,6 +397,31 @@ void EfiAnalysis::EfiAnalyzerArm::protocolsDetection() {
     }
 }
 
+void EfiAnalysis::EfiAnalyzerArm::findPeiServicesFunction() {
+    insn_t insn;
+    for (auto ea : funcs) {
+        decode_insn(&insn, ea);
+        if (!(insn.itype == ARM_mrs && insn.ops[0].type == o_reg &&
+              insn.ops[0].reg == REG_X0 && insn.ops[1].type == o_imm &&
+              insn.ops[1].value == 0x3 && insn.ops[2].type == o_idpspec3 &&
+              insn.ops[3].type == o_idpspec3 && insn.ops[4].type == o_imm &&
+              insn.ops[4].value == 0x2)) {
+            continue;
+        }
+        auto end_addr = next_head(ea, BADADDR);
+        if (end_addr == BADADDR) {
+            continue;
+        }
+        decode_insn(&insn, end_addr);
+        if (insn.itype == ARM_ret) {
+            msg("[efiXplorer] found GetPeiServices() function: 0x%016llX\n",
+                u64_addr(ea));
+            // rename function
+            set_name(ea, "GetPeiServices", SN_FORCE);
+        }
+    }
+}
+
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
 void showAllChoosers(EfiAnalysis::EfiAnalyzerArm analyzer) {
@@ -450,18 +473,23 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     }
 
     if (analyzer.fileType == FTYPE_PEI) {
-        msg("[%s] input file is PEI module\n", plugin_name);
+        msg("[efiXplorer] input file is PEI module\n");
     }
 
     // set the correct name for the entry point and automatically fix the prototype
     analyzer.initialAnalysis();
-    analyzer.initialGlobalVarsDetection();
 
-    // detect services
-    analyzer.servicesDetection();
+    if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+        analyzer.initialGlobalVarsDetection();
 
-    // detect protocols
-    analyzer.protocolsDetection();
+        // detect services
+        analyzer.servicesDetection();
+
+        // detect protocols
+        analyzer.protocolsDetection();
+    } else if (analyzer.fileType == FTYPE_PEI) {
+        analyzer.findPeiServicesFunction();
+    }
 
 #ifdef HEX_RAYS
     applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
