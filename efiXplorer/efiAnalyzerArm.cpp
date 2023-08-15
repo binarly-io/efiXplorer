@@ -399,8 +399,8 @@ void EfiAnalysis::EfiAnalyzerArm::protocolsDetection() {
 
 void EfiAnalysis::EfiAnalyzerArm::findPeiServicesFunction() {
     insn_t insn;
-    for (auto ea : funcs) {
-        decode_insn(&insn, ea);
+    for (auto start_ea : funcs) {
+        decode_insn(&insn, start_ea);
         if (!(insn.itype == ARM_mrs && insn.ops[0].type == o_reg &&
               insn.ops[0].reg == REG_X0 && insn.ops[1].type == o_imm &&
               insn.ops[1].value == 0x3 && insn.ops[2].type == o_idpspec3 &&
@@ -408,16 +408,15 @@ void EfiAnalysis::EfiAnalyzerArm::findPeiServicesFunction() {
               insn.ops[4].value == 0x2)) {
             continue;
         }
-        auto end_addr = next_head(ea, BADADDR);
-        if (end_addr == BADADDR) {
+        auto end_ea = next_head(start_ea, BADADDR);
+        if (end_ea == BADADDR) {
             continue;
         }
-        decode_insn(&insn, end_addr);
+        decode_insn(&insn, end_ea);
         if (insn.itype == ARM_ret) {
             msg("[efiXplorer] found GetPeiServices() function: 0x%016llX\n",
-                u64_addr(ea));
-            // rename function
-            set_name(ea, "GetPeiServices", SN_FORCE);
+                u64_addr(start_ea));
+            set_name(start_ea, "GetPeiServices", SN_FORCE);
         }
     }
 }
