@@ -825,7 +825,7 @@ class VariablesDetector : public ctree_visitor_t {
         bool is_ptr = false;
         if (!var_type.get_type_name(&type_name)) {
             if (!var_type_no_ptr.get_type_name(&type_name)) {
-                msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
+                // msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
                 return 0;
             }
             is_ptr = true;

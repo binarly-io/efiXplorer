@@ -160,7 +160,7 @@ uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
         hasPeiInPath = true;
     }
 
-    if (arch == X86 && (signature == VZ || hasPeiGuids)) {
+    if (signature == VZ || hasPeiGuids) {
         msg("[%s] Parsing binary file as PEI, signature = %llx, hasPeiGuids = %d\n",
             plugin_name, signature, hasPeiGuids);
         return FTYPE_PEI;
@@ -441,6 +441,7 @@ void setEntryArgToPeiSvc() {
         tinfo_t ptrPtrTinfo;
         ptrTinfo.create_ptr(tif_pei);
         ptrPtrTinfo.create_ptr(ptrTinfo);
+        // funcdata.size() does not work for aarch64
         if (funcdata.size() == 2) {
             funcdata[1].type = ptrPtrTinfo;
             funcdata[1].name = "PeiServices";

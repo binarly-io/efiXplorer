@@ -21,9 +21,12 @@
  */
 
 #include "efiAnalyzer.h"
+#include "efiGlobal.h"
 #include "efiUi.h"
 
 using namespace EfiAnalysis;
+
+static const char plugin_name[] = "efiXplorer";
 
 std::vector<ea_t> gImageHandleListArm;
 std::vector<ea_t> gStListArm;
@@ -63,6 +66,9 @@ void EfiAnalysis::EfiAnalyzerArm::initialAnalysis() {
 #ifdef HEX_RAYS
         TrackEntryParams(get_func(ep), 0);
 #endif /* HEX_RAYS */
+    }
+    if (fileType == FTYPE_PEI) {
+        // setEntryArgToPeiSvc();
     }
 }
 
@@ -434,6 +440,18 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
 
     // mark GUIDs
     analyzer.markDataGuids();
+
+    if (g_args.disable_ui) {
+        analyzer.fileType = g_args.module_type == PEI
+                                ? analyzer.fileType = FTYPE_PEI
+                                : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
+    } else {
+        analyzer.fileType = getFileType(&analyzer.allGuids);
+    }
+
+    if (analyzer.fileType == FTYPE_PEI) {
+        msg("[%s] input file is PEI module\n", plugin_name);
+    }
 
     // set the correct name for the entry point and automatically fix the prototype
     analyzer.initialAnalysis();

@@ -2841,8 +2841,8 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
 #endif
 
     } else if (analyzer.fileType == FTYPE_PEI) {
-        addStrucForShiftedPtr();
         setEntryArgToPeiSvc();
+        addStrucForShiftedPtr();
         analyzer.getAllPeiServicesX86();
         analyzer.getPpiNamesX86();
         analyzer.getAllVariablePPICallsX86();
