@@ -394,3 +394,23 @@ bool DetectPeiServices(func_t *f) {
 
     return true;
 }
+
+bool DetectPeiServicesArm(func_t *f) {
+    if (!init_hexrays_plugin()) {
+        return false;
+    }
+
+    if (f == nullptr) {
+        return false;
+    }
+
+    PeiServicesDetectorArm pei_services_detector_arm;
+    hexrays_failure_t hf;
+    cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
+    if (cfunc == nullptr) {
+        return false;
+    }
+    pei_services_detector_arm.apply_to(&cfunc->body, nullptr);
+
+    return true;
+}

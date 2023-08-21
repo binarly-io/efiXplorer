@@ -493,6 +493,9 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
     }
 
 #ifdef HEX_RAYS
+    for (auto addr : analyzer.funcs) {
+        DetectPeiServicesArm(get_func(addr));
+    }
     applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
 #endif /* HEX_RAYS */
     showAllChoosers(analyzer);

@@ -28,6 +28,7 @@ bool TrackEntryParams(func_t *f, uint8_t depth);
 json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
 bool DetectPeiServices(func_t *f);
+bool DetectPeiServicesArm(func_t *f);
 bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
 bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
@@ -1042,6 +1043,42 @@ class PeiServicesDetector : public ctree_visitor_t {
         if (call) {
             opStroff(e->ea, "EFI_PEI_SERVICES");
         }
+
+        return 0;
+    }
+
+  protected:
+    bool mDebug = true;
+};
+
+class PeiServicesDetectorArm : public ctree_visitor_t {
+    // detect and mark all PEI services for ARM firmware
+    // tested on Ampere firmware that contains small PEI stack
+  public:
+    PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST){};
+
+    // This is the callback function that Hex-Rays invokes for every expression
+    // in the CTREE.
+    int visit_expr(cexpr_t *e) {
+        if (!(e->op == cot_call && e->x->op == cot_memptr && e->x->x->op == cot_ptr &&
+              e->x->x->x->op == cot_var)) {
+            return 0;
+        }
+        ea_t offset = e->x->m;
+        tinfo_t service_type = e->x->type;
+
+        // get service name from function type
+        qstring type_name;
+        service_type.get_type_name(&type_name);
+        std::string func_type = static_cast<std::string>(type_name.c_str());
+        std::string prefix = "EFI_PEI_";
+        if (func_type.substr(0, prefix.length()) == prefix) {
+            func_type.erase(0, prefix.length());
+        }
+        std::string name = typeToName(func_type);
+
+        msg("[efiXplorer] 0x%08llX: Potencial PEI service detected (offset: %d): %s\n",
+            u64_addr(e->ea), u32_addr(offset), name.c_str());
 
         return 0;
     }
