@@ -1065,24 +1065,75 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
             return 0;
         }
         ea_t offset = e->x->m;
-        tinfo_t service_type = e->x->type;
+
+        // check if service from EFI_PEI_SERVICES
+        tinfo_t table_type = e->x->x->type;
+        tinfo_t table_type_no_ptr;
+        qstring table_type_name;
+        if (table_type.is_ptr()) {
+            table_type_no_ptr = remove_pointer(table_type);
+            table_type_no_ptr.get_type_name(&table_type_name);
+        } else {
+            table_type.get_type_name(&table_type_name);
+        }
 
         // get service name from function type
-        qstring type_name;
-        service_type.get_type_name(&type_name);
-        std::string func_type = static_cast<std::string>(type_name.c_str());
-        std::string prefix = "EFI_PEI_";
-        if (func_type.substr(0, prefix.length()) == prefix) {
-            func_type.erase(0, prefix.length());
+        std::string service_name;
+        if (table_type_name != "EFI_PEI_SERVICES") {
+            qstring func_type_name;
+            tinfo_t service_type = e->x->type;
+            service_type.get_type_name(&func_type_name);
+            std::string func_type = static_cast<std::string>(func_type_name.c_str());
+            std::string prefix = "EFI_PEI_";
+            if (func_type.substr(0, prefix.length()) == prefix) {
+                func_type.erase(0, prefix.length());
+            }
+            service_name = typeToName(func_type);
+        } else {
+            auto s = mPeiServices.find(offset);
+            if (s == mPeiServices.end()) {
+                return 0;
+            }
+            service_name = s->second;
         }
-        std::string name = typeToName(func_type);
-
-        msg("[efiXplorer] 0x%08llX: Potencial PEI service detected (offset: %d): %s\n",
-            u64_addr(e->ea), u32_addr(offset), name.c_str());
+        if (mDebug) {
+            msg("[efiXplorer] 0x%08llX: %s service detected (offset: %d): %s\n",
+                u64_addr(e->ea), table_type_name.c_str(), u32_addr(offset),
+                service_name.c_str());
+        }
 
         return 0;
     }
 
   protected:
     bool mDebug = true;
+    std::map<ea_t, std::string> mPeiServices = {
+        {0x18, "InstallPpi"},
+        {0x20, "ReInstallPpi"},
+        {0x28, "LocatePpi"},
+        {0x30, "NotifyPpi"},
+        {0x38, "GetBootMode"},
+        {0x40, "SetBootMode"},
+        {0x48, "GetHobList"},
+        {0x50, "CreateHob"},
+        {0x58, "FfsFindNextVolume"},
+        {0x60, "FfsFindNextFile"},
+        {0x68, "FfsFindSectionData"},
+        {0x70, "InstallPeiMemory"},
+        {0x78, "AllocatePages"},
+        {0x80, "AllocatePool"},
+        {0x88, "CopyMem"},
+        {0x90, "SetMem"},
+        {0x98, "ReportStatusCode"},
+        {0xA0, "ResetSystem"},
+        {0xA8, "CpuIo"},
+        {0xB0, "PciCfg"},
+        {0xB8, "FfsFindFileByName"},
+        {0xC0, "FfsGetFileInfo"},
+        {0xC8, "FfsGetVolumeInfo"},
+        {0xD0, "RegisterForShadow"},
+        {0xD8, "FindSectionData4"},
+        {0xE0, "FfsGetFileInfo3"},
+        {0xE8, "ResetSystem3"},
+    };
 };
