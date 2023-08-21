@@ -27,8 +27,8 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
 bool TrackEntryParams(func_t *f, uint8_t depth);
 json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
+std::vector<json> DetectPeiServicesArm(func_t *f);
 bool DetectPeiServices(func_t *f);
-bool DetectPeiServicesArm(func_t *f);
 bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
 bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
@@ -1057,6 +1057,8 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
   public:
     PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST){};
 
+    std::vector<json> services;
+
     // This is the callback function that Hex-Rays invokes for every expression
     // in the CTREE.
     int visit_expr(cexpr_t *e) {
@@ -1100,6 +1102,15 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
             msg("[efiXplorer] 0x%08llX: %s service detected (offset: %d): %s\n",
                 u64_addr(e->ea), table_type_name.c_str(), u32_addr(offset),
                 service_name.c_str());
+        }
+
+        json s;
+        s["address"] = e->ea;
+        s["service_name"] = service_name;
+        s["table_name"] = table_type_name.c_str();
+
+        if (!jsonInVec(services, s)) {
+            services.push_back(s);
         }
 
         return 0;

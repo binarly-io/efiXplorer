@@ -494,7 +494,10 @@ bool EfiAnalysis::efiAnalyzerMainArm() {
 
 #ifdef HEX_RAYS
     for (auto addr : analyzer.funcs) {
-        DetectPeiServicesArm(get_func(addr));
+        std::vector<json> services = DetectPeiServicesArm(get_func(addr));
+        for (auto service : services) {
+            analyzer.allServices.push_back(service);
+        }
     }
     applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
 #endif /* HEX_RAYS */
