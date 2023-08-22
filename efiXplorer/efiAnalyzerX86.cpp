@@ -1718,6 +1718,7 @@ void EfiAnalysis::EfiAnalyzer::markInterfaces() {
 //--------------------------------------------------------------------------
 // Mark GUIDs found in the .text and .data segment
 void EfiAnalysis::EfiAnalyzer::markDataGuids() {
+    ea_t ptrSize = inf_is_64bit() ? 8 : 4;
     auto guids_segments = textSegments;
     // find GUIDs in .text and .data segments
     // TODO: scan only the areas between the beginning of the .text segment and the first
@@ -1740,6 +1741,29 @@ void EfiAnalysis::EfiAnalyzer::markDataGuids() {
                 std::string guidName = it->second;
                 set_name(ea, guidName.c_str(), SN_FORCE);
                 setGuidType(ea);
+
+                // rename PPI
+                if (guidName.length() > 9 &&
+                    guidName.rfind("_PPI_GUID") == guidName.length() - 9) {
+                    auto xrefs = getXrefs(ea);
+                    for (auto addr : xrefs) {
+                        std::string ppiName =
+                            "g" + typeToName(guidName.substr(0, guidName.length() - 5));
+                        ea_t ppiEa = addr - ptrSize;
+                        // check flags
+                        if (ptrSize == 8 && get_wide_dword(ppiEa + 4)) {
+                            // 4 high bytes must be 0
+                            continue;
+                        }
+                        uint64_t flags = static_cast<uint64_t>(get_wide_dword(ppiEa));
+                        if (!qwordInVec(ppiFlags, flags)) {
+                            continue;
+                        }
+                        msg("[%s] address: 0x%016llX, PPI: %s\n", plugin_name,
+                            u64_addr(ppiEa), ppiName.c_str());
+                        set_name(ppiEa, ppiName.c_str(), SN_FORCE);
+                    }
+                }
 
                 std::string comment = "EFI_GUID " + guidName;
                 msg("[%s] address: 0x%016llX, comment: %s\n", plugin_name, u64_addr(ea),

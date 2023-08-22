@@ -912,6 +912,10 @@ void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName) {
     }
 }
 
+bool qwordInVec(std::vector<uint64_t> vec, uint64_t value) {
+    return find(vec.begin(), vec.end(), value) != vec.end();
+}
+
 bool addrInVec(std::vector<ea_t> vec, ea_t addr) {
     return find(vec.begin(), vec.end(), addr) != vec.end();
 }

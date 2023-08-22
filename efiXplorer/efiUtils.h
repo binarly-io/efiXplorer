@@ -285,6 +285,7 @@ void opstroffForInterface(xreflist_t localXrefs, qstring typeName);
 void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName);
 
 // Find wrappers
+bool qwordInVec(std::vector<uint64_t> vec, uint64_t value);
 bool addrInVec(std::vector<ea_t> vec, ea_t addr);
 bool jsonInVec(std::vector<json> vec, json item);
 bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
