@@ -999,10 +999,16 @@ void EfiAnalysis::EfiAnalyzerX86::getAllPeiServicesX86() {
                     }
 
                     if (found_src_reg && found_push) {
+                        eavec_t args;
+                        get_arg_addrs(&args, ea);
+                        if (!args.size()) {
+                            // looks like a FP
+                            break;
+                        }
                         std::string cmt =
                             getPeiSvcComment(u32_addr(pei_services_table[j].offset));
                         set_cmt(ea, cmt.c_str(), true);
-                        // opStroff(ea, "EFI_PEI_SERVICES");
+                        opStroff(ea, "EFI_PEI_SERVICES");
                         msg("[%s] 0x%016llX : %s\n", plugin_name, u64_addr(ea),
                             static_cast<char *>(pei_services_table[j].name));
                         peiServicesAll[static_cast<std::string>(
@@ -1017,8 +1023,6 @@ void EfiAnalysis::EfiAnalyzerX86::getAllPeiServicesX86() {
                         psItem["offset"] = pei_services_table[j].offset;
 
                         // add code addresses for arguments
-                        eavec_t args;
-                        get_arg_addrs(&args, ea);
                         psItem["args"] = args;
 
                         if (!jsonInVec(allServices, psItem)) {
@@ -2867,6 +2871,11 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
     } else if (analyzer.fileType == FTYPE_PEI) {
         setEntryArgToPeiSvc();
         addStrucForShiftedPtr();
+#ifdef HEX_RAYS
+        for (auto addr : analyzer.funcs) {
+            DetectPeiServices(get_func(addr));
+        }
+#endif
         analyzer.getAllPeiServicesX86();
         analyzer.getPpiNamesX86();
         analyzer.getAllVariablePPICallsX86();
@@ -2876,11 +2885,6 @@ bool EfiAnalysis::efiAnalyzerMainX86() {
         if (!g_args.disable_vuln_hunt) {
             analyzer.findPPIGetVariableStackOveflow();
         }
-#ifdef HEX_RAYS
-        for (auto addr : analyzer.funcs) {
-            DetectPeiServices(get_func(addr));
-        }
-#endif
     }
 
     // dump info to JSON file
