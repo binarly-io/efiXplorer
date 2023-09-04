@@ -35,12 +35,12 @@ jobs:
         PASSWORD: ${{ secrets.ZIP_PASSWORD }}
       run: |
         cd ..
-        curl -J -L "$IDA_SDK" -o idasdk82.zip
-        unzip -P $PASSWORD idasdk82.zip
+        curl -J -L "$IDA_SDK" -o idasdk83.zip
+        unzip -P $PASSWORD idasdk83.zip
         cd efiXplorer/efiXplorer
         mkdir build
         cd build
-        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
+        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk83" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
         cmake --build . --config Release
 
     - name: Perform CodeQL Analysis
@@ -75,12 +75,12 @@ jobs:
       run: |
         git submodule update --init --recursive
         cd ..
-        curl -J -L "$IDA_SDK" -o idasdk82.zip
-        unzip -P $PASSWORD idasdk82.zip
+        curl -J -L "$IDA_SDK" -o idasdk83.zip
+        unzip -P $PASSWORD idasdk83.zip
         cd efiXplorer/efiXloader
         mkdir build
         cd build
-        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk82"
+        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk83"
         cmake --build . --config Release
 
     - name: Perform CodeQL Analysis
