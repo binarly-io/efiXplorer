@@ -145,14 +145,10 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     }
 
     // Not sure why, but `find_plugin("Find functions", true)` returns NULL.
-    plugin_info_t *plugin_info = get_plugins();
-    while(plugin_info){
-        if (strcmp(plugin_info->name, "Find functions") == 0){
-            msg("Running the Find functions plugin\n");
-            invoke_plugin(plugin_info);
-            break;
-        }
-        plugin_info = plugin_info->next;
+    plugin_t *findpat = find_plugin("patfind", true);
+    if (findpat){
+        msg("Running the Find functions plugin\n");
+        run_plugin(findpat, 0);
     }
 }
 
