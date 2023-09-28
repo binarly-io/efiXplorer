@@ -143,6 +143,13 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     } else {
         msg("[efiXloader] Can not parse input firmware\n");
     }
+
+    // Not sure why, but `find_plugin("Find functions", true)` returns NULL.
+    plugin_t *findpat = find_plugin("patfind", true);
+    if (findpat){
+        msg("Running the Find functions plugin\n");
+        run_plugin(findpat, 0);
+    }
 }
 
 static int idaapi move_segm(ea_t from, ea_t to, asize_t, const char *) { return 1; }
