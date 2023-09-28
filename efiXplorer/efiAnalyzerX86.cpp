@@ -150,7 +150,9 @@ EfiAnalysis::EfiAnalyzer::~EfiAnalyzer() {
     g_smm_get_variable_calls.clear();
     g_smm_set_variable_calls.clear();
 
+#ifdef HEX_RAYS
     clear_cached_cfuncs();
+#endif
 }
 
 void EfiAnalysis::EfiAnalyzer::setStrings() {
