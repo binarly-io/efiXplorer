@@ -43,7 +43,6 @@ def build_plugin(idasdk: str, hexrays_sdk: str, batch: bool):
     if hexrays_sdk:
         print("[INFO] HexRays analysis will be enabled")
         command.append(f"-DHexRaysSdk_ROOT_DIR={hexrays_sdk}")
-    print(command)
     subprocess.call(command)
     subprocess.call(["cmake", "--build", ".", "--config", "Release", "--parallel"])
 
