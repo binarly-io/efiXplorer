@@ -34,6 +34,7 @@ jobs:
         IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
         PASSWORD: ${{ secrets.ZIP_PASSWORD }}
       run: |
+        git submodule update --init --recursive
         cd ..
         curl -J -L "$IDA_SDK" -o idasdk83.zip
         unzip -P $PASSWORD idasdk83.zip
