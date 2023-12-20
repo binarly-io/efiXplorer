@@ -27,15 +27,15 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer.dll
-          path: build/efiXplorer/efiXplorer.dll
+          path: build/efiXplorer/Release/efiXplorer.dll
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dll
-          path: build/efiXplorer/efiXplorer64.dll
+          path: build/efiXplorer/Release/efiXplorer64.dll
       - uses: actions/upload-artifact@master
         with:
           name: efiXloader64.dll
-          path: build/efiXloader/efiXloader64.dll
+          path: build/efiXloader/Release/efiXloader64.dll
   build_linux:
     runs-on: ubuntu-20.04
     steps:
