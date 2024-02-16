@@ -33,9 +33,15 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     }
 
     // Find the udt member
+#if IDA_SDK_VERSION < 840
     udt_member_t udm;
     udm.name = name;
     int fIdx = tif.find_udt_member(&udm, STRMEM_NAME);
+#else
+    udm_t udm;
+    udm.name = name;
+    int fIdx = tif.find_udm(&udm, STRMEM_NAME);
+#endif
     if (fIdx < 0) {
         qstring tstr;
         tif.get_type_name(&tstr);
