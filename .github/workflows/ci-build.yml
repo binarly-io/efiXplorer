@@ -1,7 +1,6 @@
 name: efiXplorer CI
 on:
   push:
-  pull_request:
 jobs:
   build_windows:
     runs-on: windows-2019
