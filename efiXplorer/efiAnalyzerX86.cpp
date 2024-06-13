@@ -2443,6 +2443,10 @@ bool EfiAnalysis::EfiAnalyzer::AnalyzeVariableService(ea_t ea, std::string servi
         msg("[%s]  VariableName address: 0x%016llX\n", plugin_name,
             u64_addr(insn.ops[1].addr));
         std::string var_name = getWideString(insn.ops[1].addr);
+
+        // retype CHAR16 to const CHAR16 to improve pseudocode quality
+        setConstChar16Type(insn.ops[1].addr);
+
         msg("[%s]  VariableName: %s\n", plugin_name, var_name.c_str());
         item["VariableName"] = var_name;
         name_found = true;
