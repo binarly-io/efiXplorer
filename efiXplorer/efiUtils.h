@@ -239,6 +239,9 @@ bool setRetToPeiSvc(ea_t start_ea);
 // Set type and name
 void setTypeAndName(ea_t ea, std::string name, std::string type);
 
+// Set const CHAR16 type
+void setConstChar16Type(ea_t ea);
+
 // Get module name by address
 qstring getModuleNameLoader(ea_t address);
 

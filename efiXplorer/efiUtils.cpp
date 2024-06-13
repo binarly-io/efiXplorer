@@ -93,6 +93,16 @@ void setTypeAndName(ea_t ea, std::string name, std::string type) {
 }
 
 //--------------------------------------------------------------------------
+// Set const CHAR16 type
+void setConstChar16Type(ea_t ea) {
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(get_idati(), "CHAR16")) {
+        tinfo.set_const();
+        apply_tinfo(ea, tinfo, TINFO_DEFINITE);
+    }
+}
+
+//--------------------------------------------------------------------------
 // Get file format name (fileformatname)
 std::string getFileFormatName() {
     char file_format[256] = {0};
