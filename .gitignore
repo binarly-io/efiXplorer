@@ -1,28 +1,28 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
 *$py.class
+*.py[cod]
+__pycache__/
 
 # Distribution / packaging
+*.egg
+*.egg-info/
+.eggs/
+.installed.cfg
 .Python
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
 lib/
 lib64/
+MANIFEST
 parts/
+pip-wheel-metadata/
 sdist/
+share/python-wheels/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
 # pyenv
 .python-version
@@ -30,17 +30,19 @@ MANIFEST
 # Environments
 .env
 .venv
-env/
-venv/
-ENV/
 env.bak/
+env/
+ENV/
 venv.bak/
+venv/
 
 # custom directories
-.vscode/
-.vs/
+.cache
 .idea/
+.vs/
+.vscode/
 test/
+tests
 
 # OSX
 .DS_Store
