@@ -71,8 +71,10 @@ class ServiceDescriptor {
 
     // Ensure we can look up the type that this instance describes
     bool InitType(const char *name) {
+#if IDA_SDK_VERSION < 900
         // Import type
         import_type(get_idati(), -1, name);
+#endif
 
         // Get type by name
         if (!mType.get_named_type(get_idati(), name, BTF_STRUCT))
@@ -516,7 +518,9 @@ class GUIDRetyper : public GUIDRelatedVisitorBase {
 
         // Need to get the type for the interface variable here
         tinfo_t tif;
+#if IDA_SDK_VERSION < 900
         import_type(get_idati(), -1, interfaceTypeName.c_str());
+#endif
         if (!tif.get_named_type(get_idati(), interfaceTypeName.c_str())) {
             // Get the referent for the interface argument.
             cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);

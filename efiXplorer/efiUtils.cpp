@@ -56,24 +56,6 @@ extern size_t variable_ppi_table_size;
 static const char plugin_name[] = "efiXplorer";
 
 //--------------------------------------------------------------------------
-// Create EFI_GUID structure
-void createGuidStructure(ea_t ea) {
-    static const char struct_name[] = "_EFI_GUID";
-    struc_t *sptr = get_struc(get_struc_id(struct_name));
-    if (sptr == nullptr) {
-        sptr = get_struc(add_struc(-1, struct_name));
-        if (sptr == nullptr)
-            return;
-        add_struc_member(sptr, "data1", -1, dword_flag(), NULL, 4);
-        add_struc_member(sptr, "data2", -1, word_flag(), NULL, 2);
-        add_struc_member(sptr, "data3", -1, word_flag(), NULL, 2);
-        add_struc_member(sptr, "data4", -1, byte_flag(), NULL, 8);
-    }
-    asize_t size = get_struc_size(sptr);
-    create_struct(ea, size, sptr->id);
-}
-
-//--------------------------------------------------------------------------
 // Set EFI_GUID type
 void setGuidType(ea_t ea) {
     tinfo_t tinfo;
@@ -114,7 +96,7 @@ std::string getFileFormatName() {
 // Get input file type (64-bit, 32-bit image or UEFI firmware)
 uint8_t getInputFileType() {
     processor_t &ph = PH;
-    auto filetype = (filetype_t)inf.filetype;
+    auto filetype = inf_get_filetype();
     auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
 
     // check if input file is UEFI firmware image
@@ -333,8 +315,8 @@ std::vector<ea_t> getXrefsToArray(ea_t addr) {
 bool opStroff(ea_t addr, std::string type) {
     insn_t insn;
     decode_insn(&insn, addr);
-    tid_t struc_id = get_struc_id(type.c_str());
-    return op_stroff(insn, 0, &struc_id, 1, 0);
+    tid_t tid = get_named_type_tid(type.c_str());
+    return op_stroff(insn, 0, &tid, 1, 0);
 }
 
 //--------------------------------------------------------------------------
@@ -511,6 +493,7 @@ bool setRetToPeiSvc(ea_t start_ea) {
 //--------------------------------------------------------------------------
 // Add EFI_PEI_SERVICES_4 structure
 bool addStrucForShiftedPtr() {
+#if IDA_SDK_VERSION < 900
     auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
     if (sid == BADADDR) {
         return false;
@@ -541,6 +524,10 @@ bool addStrucForShiftedPtr() {
     set_member_tinfo(new_struct, member, 0, ptr2Tinfo, 0);
 
     return true;
+#endif
+
+    // use parse_decls() instead
+    return false;
 }
 
 //--------------------------------------------------------------------------
@@ -648,7 +635,11 @@ std::vector<ea_t> searchProtocol(std::string protocol) {
     std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
     ea_t start = 0;
     while (true) {
+#if IDA_SDK_VERSION < 900
         ea_t addr = bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+#else
+        ea_t addr = bin_search3(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+#endif
         if (addr == BADADDR) {
             break;
         }
@@ -830,23 +821,24 @@ std::string typeToName(std::string type) {
 }
 
 xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName) {
+    xreflist_t xrefs_list;
+
+#if IDA_SDK_VERSION < 900
     struc_t *frame = get_frame(funcEa);
     func_t *func = get_func(funcEa);
     member_t member; // Get member by name
-    bool found = false;
     for (int i = 0; i < frame->memqty; i++) {
         member = frame->members[i];
         qstring name;
         get_member_name(&name, frame->members[i].id);
         if (name == varName) {
-            found = true;
-            break;
+            build_stkvar_xrefs(&xrefs_list, func, &member);
+            return xrefs_list;
         }
     }
-    xreflist_t xrefs_list; // Get xrefs
-    if (found) {
-        build_stkvar_xrefs(&xrefs_list, func, &member);
-    }
+#endif
+
+    // TODO: rewrite for idasdk90
     return xrefs_list;
 }
 
@@ -944,7 +936,11 @@ std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) 
     ea_t start = start_ea;
     int counter = 0;
     while (true) {
+#if IDA_SDK_VERSION < 900
         auto ea = bin_search2(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
+#else
+        auto ea = bin_search3(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
+#endif
         if (ea == BADADDR) {
             break;
         }

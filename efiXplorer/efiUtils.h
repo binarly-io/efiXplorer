@@ -44,7 +44,9 @@
 #include <pro.h>
 #include <stdio.h>
 #include <string>
+#if IDA_SDK_VERSION < 900
 #include <struct.hpp>
+#endif
 #include <typeinf.hpp>
 
 #ifdef HEX_RAYS
@@ -190,9 +192,6 @@ std::vector<ea_t> getXrefsToArray(ea_t addr);
 
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type);
-
-// Create EFI_GUID structure
-void createGuidStructure(ea_t ea);
 
 // Get boot service description comment
 std::string getBsComment(uint32_t offset, uint8_t arch);

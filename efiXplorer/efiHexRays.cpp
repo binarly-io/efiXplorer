@@ -63,9 +63,11 @@ bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t 
 
     // Set lvar name
     if (ll.is_stk_var()) { // Rename local variable on stack
+#if IDA_SDK_VERSION < 900
         sval_t stkoff = ll.get_stkoff();
         struc_t *frame = get_frame(funcEa);
         set_member_name(frame, stkoff, name.c_str());
+#endif       // TODO: add support for idasdk90
     } else { // Modufy user lvar info
         lsi.name = static_cast<qstring>(name.c_str());
         modify_user_lvar_info(funcEa, MLI_NAME, lsi);
@@ -106,9 +108,11 @@ bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string na
 
     // Set lvar name
     if (ll.is_stk_var()) { // Rename local variable on stack
+#if IDA_SDK_VERSION < 900
         sval_t stkoff = ll.get_stkoff();
         struc_t *frame = get_frame(funcEa);
         set_member_name(frame, stkoff, name.c_str());
+#endif       // TODO: add support for idasdk90
     } else { // Modufy user lvar info
         lsi.name = static_cast<qstring>(name.c_str());
         modify_user_lvar_info(funcEa, MLI_NAME, lsi);
