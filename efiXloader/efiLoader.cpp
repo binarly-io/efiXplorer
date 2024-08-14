@@ -123,10 +123,12 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     } else {
         msg("[efiXloader] loaded IDA types\n");
     }
+#if IDA_SDK_VERSION < 900
     tid_t struct_err = import_type(idati, -1, "EFI_GUID");
     if (struct_err == BADNODE) {
         loader_failure("failed to import \"EFI_GUID\"");
     }
+#endif
     msg("processing UEFI binaries:\n");
     if (uefiParser.files.size()) {
         for (int i = 0; i < uefiParser.files.size(); i++) {
