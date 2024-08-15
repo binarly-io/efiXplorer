@@ -54,27 +54,27 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
 }
 
 // Utility function to set a Hex-Rays variable type and set types for the interfaces
-bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t tif,
+bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                                std::string name) {
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
-    modify_user_lvar_info(funcEa, MLI_TYPE, lsi);
+    modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
 
     // Set lvar name
     if (ll.is_stk_var()) { // Rename local variable on stack
 #if IDA_SDK_VERSION < 900
         sval_t stkoff = ll.get_stkoff();
-        struc_t *frame = get_frame(funcEa);
+        struc_t *frame = get_frame(func_addr);
         set_member_name(frame, stkoff, name.c_str());
 #endif       // TODO: add support for idasdk90
     } else { // Modufy user lvar info
         lsi.name = static_cast<qstring>(name.c_str());
-        modify_user_lvar_info(funcEa, MLI_NAME, lsi);
+        modify_user_lvar_info(func_addr, MLI_NAME, lsi);
     }
 
     // Get xrefs to local variable
-    xreflist_t xrefs = xrefsToStackVar(funcEa, static_cast<qstring>(name.c_str()));
+    xreflist_t xrefs = xrefsToStackVar(func_addr, static_cast<qstring>(name.c_str()));
     qstring typeName;
     ptr_type_data_t pi;
     tif.get_ptr_details(&pi);
@@ -100,22 +100,22 @@ bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr) {
 }
 
 // Utility function to set a Hex-Rays variable type and name
-bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name) {
+bool setHexRaysVariableInfo(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name) {
     lvar_saved_info_t lsi;
     lsi.ll = ll;
     lsi.type = tif;
-    modify_user_lvar_info(funcEa, MLI_TYPE, lsi);
+    modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
 
     // Set lvar name
     if (ll.is_stk_var()) { // Rename local variable on stack
 #if IDA_SDK_VERSION < 900
         sval_t stkoff = ll.get_stkoff();
-        struc_t *frame = get_frame(funcEa);
+        struc_t *frame = get_frame(func_addr);
         set_member_name(frame, stkoff, name.c_str());
 #endif       // TODO: add support for idasdk90
     } else { // Modufy user lvar info
         lsi.name = static_cast<qstring>(name.c_str());
-        modify_user_lvar_info(funcEa, MLI_NAME, lsi);
+        modify_user_lvar_info(func_addr, MLI_NAME, lsi);
     }
 
     return true;

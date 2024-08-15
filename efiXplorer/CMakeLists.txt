@@ -13,15 +13,9 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness -Wno-varargs")
-endif()
-
-if(BATCH)
-  add_definitions(-DBATCH=1)
-  set(BATCH 1)
-  message(STATUS "efiXplorer plugin version for idat/idat64 binaries")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)

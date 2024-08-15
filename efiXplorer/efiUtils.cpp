@@ -313,9 +313,20 @@ std::vector<ea_t> getXrefsToArray(ea_t addr) {
 //--------------------------------------------------------------------------
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type) {
+    tinfo_t tinfo;
+    if (!tinfo.get_named_type(get_idati(), type.c_str())) {
+        return false;
+    }
+
+    // use force_tid() instead of get_tid()
+    // to import type if it's not imported
+    tid_t tid = tinfo.force_tid();
+    if (tid == BADADDR) {
+        return false;
+    }
+
     insn_t insn;
     decode_insn(&insn, addr);
-    tid_t tid = get_named_type_tid(type.c_str());
     return op_stroff(insn, 0, &tid, 1, 0);
 }
 
@@ -858,22 +869,21 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
                 plugin_name, u64_addr(ea), typeName.c_str());
 
             // check for EfiSmmBase2Protocol->GetSmstLocation
-            if (typeName == qstring("EFI_SMM_BASE2_PROTOCOL") &&
-                insn.ops[0].type == o_displ && insn.ops[0].addr == 8) {
+            if (typeName == "EFI_SMM_BASE2_PROTOCOL" && insn.ops[0].type == o_displ &&
+                insn.ops[0].addr == 8) {
                 if (!addrInVec(g_get_smst_location_calls, ea)) {
                     g_get_smst_location_calls.push_back(ea);
                 }
             }
 
-            if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
-                insn.ops[0].type == o_phrase) {
+            if (typeName == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_phrase) {
                 if (!addrInVec(g_smm_get_variable_calls, ea)) {
                     g_smm_get_variable_calls.push_back(ea);
                 }
             }
 
-            if (typeName == qstring("EFI_SMM_VARIABLE_PROTOCOL") &&
-                insn.ops[0].type == o_displ && insn.ops[0].addr == 0x10) {
+            if (typeName == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_displ &&
+                insn.ops[0].addr == 0x10) {
                 if (!addrInVec(g_smm_set_variable_calls, ea)) {
                     g_smm_set_variable_calls.push_back(ea);
                 }

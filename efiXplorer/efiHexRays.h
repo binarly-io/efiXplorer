@@ -77,7 +77,7 @@ class ServiceDescriptor {
 #endif
 
         // Get type by name
-        if (!mType.get_named_type(get_idati(), name, BTF_STRUCT))
+        if (!mType.get_named_type(get_idati(), name))
             return false;
 
         // Save ordinal and name
@@ -107,7 +107,7 @@ class ServiceDescriptor {
 
   public:
     // Constructor does nothing
-    ServiceDescriptor() : mOrdinal(0), bInitialized(false){};
+    ServiceDescriptor() : mOrdinal(0), bInitialized(false) {};
 
     // Accessor for ordinal
     uint32 GetOrdinal() { return mOrdinal; };
@@ -203,7 +203,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
   public:
     // We need access to a ServiceDescriptorMap from above.
     GUIDRelatedVisitorBase(ServiceDescriptorMap &m)
-        : ctree_visitor_t(CV_FAST), mDebug(true), mServices(m){};
+        : ctree_visitor_t(CV_FAST), mDebug(true), mServices(m) {};
 
     // We need the function ea when setting Hex-Rays variable types.
     void SetFuncEa(ea_t ea) { mFuncEa = ea; };
@@ -483,7 +483,7 @@ class GUIDRelatedVisitorBase : public ctree_visitor_t {
 // we know about, and setting the types of the output variables accordingly.
 class GUIDRetyper : public GUIDRelatedVisitorBase {
   public:
-    GUIDRetyper(ServiceDescriptorMap &m) : GUIDRelatedVisitorBase(m), mNumApplied(0){};
+    GUIDRetyper(ServiceDescriptorMap &m) : GUIDRelatedVisitorBase(m), mNumApplied(0) {};
 
     // This is the callback function that Hex-Rays invokes for every expression
     // in the CTREE.
@@ -666,7 +666,7 @@ class VariablesInfoExtractor : public ctree_visitor_t {
 
 class PrototypesFixer : public ctree_visitor_t {
   public:
-    PrototypesFixer() : ctree_visitor_t(CV_FAST){};
+    PrototypesFixer() : ctree_visitor_t(CV_FAST) {};
     std::vector<ea_t> child_functions;
 
     // This is the callback function that Hex-Rays invokes for every expression
@@ -768,7 +768,7 @@ class PrototypesFixer : public ctree_visitor_t {
 
 class VariablesDetector : public ctree_visitor_t {
   public:
-    VariablesDetector() : ctree_visitor_t(CV_FAST){};
+    VariablesDetector() : ctree_visitor_t(CV_FAST) {};
 
     std::vector<ea_t> child_functions;
 
@@ -896,7 +896,7 @@ class VariablesDetector : public ctree_visitor_t {
 class ServicesDetector : public ctree_visitor_t {
     // detect all services (Boot services, Runtime services, etc)
   public:
-    ServicesDetector() : ctree_visitor_t(CV_FAST){};
+    ServicesDetector() : ctree_visitor_t(CV_FAST) {};
 
     std::vector<json> services;
 
@@ -965,7 +965,7 @@ class ServicesDetector : public ctree_visitor_t {
 class PeiServicesDetector : public ctree_visitor_t {
     // detect and mark all PEI services
   public:
-    PeiServicesDetector() : ctree_visitor_t(CV_FAST){};
+    PeiServicesDetector() : ctree_visitor_t(CV_FAST) {};
 
     bool make_shifted_ptr(tinfo_t outer, tinfo_t inner, int32 offset,
                           tinfo_t *shifted_tif) {
@@ -1059,7 +1059,7 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
     // detect and mark all PEI services for ARM firmware
     // tested on Ampere firmware that contains small PEI stack
   public:
-    PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST){};
+    PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST) {};
 
     std::vector<json> services;
 
