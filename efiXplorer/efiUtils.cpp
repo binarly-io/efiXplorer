@@ -537,7 +537,7 @@ bool addStrucForShiftedPtr() {
     return true;
 #endif
 
-    // use parse_decls() instead
+    // TODO: in idasdk90+ use parse_decls() instead
     return false;
 }
 
@@ -1079,3 +1079,14 @@ uint16_t get_machine_type() {
     ea_t pe_offset = get_dword(0x3c);
     return get_word(pe_offset + 4);
 }
+
+#if IDA_SDK_VERSION >= 900
+tid_t import_type(const til_t *til, int _idx, const char *name) {
+    tinfo_t tinfo;
+    if (!tinfo.get_named_type(til, name)) {
+        return BADADDR;
+    }
+
+    return tinfo.force_tid();
+}
+#endif

@@ -83,7 +83,8 @@ bool idaapi run(size_t arg) {
         g_args.disable_vuln_hunt = 1;
     }
 
-    msg("[%s] plugin run with argument %lu (sdk version: %d)\n", plugin_name, arg, IDA_SDK_VERSION);
+    msg("[%s] plugin run with argument %lu (sdk version: %d)\n", plugin_name, arg,
+        IDA_SDK_VERSION);
     msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name, g_args.disable_ui,
         g_args.disable_vuln_hunt);
 

@@ -234,7 +234,6 @@ class EfiAnalyzer {
 class EfiAnalyzerX86 : public EfiAnalyzer {
   public:
     EfiAnalyzerX86() : EfiAnalyzer() {
-#if IDA_SDK_VERSION < 900
         // import necessary types
         const til_t *idati = get_idati();
         import_type(idati, -1, "EFI_GUID");
@@ -246,7 +245,6 @@ class EfiAnalyzerX86 : public EfiAnalyzer {
         import_type(idati, -1, "EFI_PEI_SERVICES");
         import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
         import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
-#endif
 #ifdef HEX_RAYS
         for (auto idx = 0; idx < get_entry_qty(); idx++) {
             uval_t ord = get_entry_ordinal(idx);
@@ -290,14 +288,12 @@ class EfiAnalyzerArm : public EfiAnalyzer {
         // uefi.til, uefi64.til files in {idadir}/til/arm/
         add_til("uefi64.til", ADDTIL_DEFAULT);
 
-#if IDA_SDK_VERSION < 900
         const til_t *idati = get_idati();
         import_type(idati, -1, "EFI_GUID");
         import_type(idati, -1, "EFI_HANDLE");
         import_type(idati, -1, "EFI_SYSTEM_TABLE");
         import_type(idati, -1, "EFI_BOOT_SERVICES");
         import_type(idati, -1, "EFI_RUNTIME_SERVICES");
-#endif
     }
     void fixOffsets();
     void initialAnalysis();

@@ -308,3 +308,7 @@ std::string lookupRuntimeServiceName(uint64_t offset);
 uint64_t u64_addr(ea_t addr);
 uint32_t u32_addr(ea_t addr);
 uint16_t get_machine_type();
+
+#if IDA_SDK_VERSION >= 900
+tid_t import_type(const til_t *til, int _idx, const char *name);
+#endif
