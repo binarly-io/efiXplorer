@@ -114,21 +114,10 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
     uefiParser.dump_jsons();
     msg("[efiXloader] machine type: %04x\n", uefiParser.machine_type);
     efiloader::PeManager peManager(uefiParser.machine_type);
+
     add_til("uefi.til", ADDTIL_DEFAULT);
     add_til("uefi64.til", ADDTIL_DEFAULT);
-    qstring err;
-    const til_t *idati = get_idati();
-    if (!idati) {
-        loader_failure("failed to load IDA types");
-    } else {
-        msg("[efiXloader] loaded IDA types\n");
-    }
-#if IDA_SDK_VERSION < 900
-    tid_t struct_err = import_type(idati, -1, "EFI_GUID");
-    if (struct_err == BADNODE) {
-        loader_failure("failed to import \"EFI_GUID\"");
-    }
-#endif
+
     msg("processing UEFI binaries:\n");
     if (uefiParser.files.size()) {
         for (int i = 0; i < uefiParser.files.size(); i++) {

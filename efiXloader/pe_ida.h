@@ -46,7 +46,7 @@
 struct petab_t {
     uint32 rva;  // relative virtual address
     uint32 size; // size
-};               // PE va/size array element
+}; // PE va/size array element
 
 template <class pointer_t> struct peheader_tpl {
     int32 signature; // 00 Current value is "PE/0/0".

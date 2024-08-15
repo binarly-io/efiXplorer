@@ -112,7 +112,7 @@ class Uefitool {
         }
         messages = ffs.getMessages();
     }
-    ~Uefitool(){};
+    ~Uefitool() {};
     void show_messages();
     bool messages_occurs() { return !messages.empty(); };
     void dump();
