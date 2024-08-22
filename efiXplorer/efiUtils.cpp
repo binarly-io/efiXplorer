@@ -501,6 +501,24 @@ bool setRetToPeiSvc(ea_t start_ea) {
     return true;
 }
 
+int parseEfiPeiServices4() {
+    return parse_decls(nullptr,
+                       "struct EFI_PEI_SERVICES_4 {\n"
+                       "  EFI_PEI_SERVICES **PeiServices;\n"
+                       "  UINT32 BaseAddress;\n"
+                       "};",
+                       msg, HTI_DCL);
+}
+
+int parseEfiPeiSidt() {
+    return parse_decls(nullptr,
+                       "struct EFI_PEI_SIDT {\n"
+                       "  UINT16 Limit;\n"
+                       "  int *__shifted(EFI_PEI_SERVICES_4, 4) BaseAddress;\n"
+                       "};",
+                       msg, HTI_DCL | HTI_PAK1);
+}
+
 //--------------------------------------------------------------------------
 // Add EFI_PEI_SERVICES_4 structure
 bool addStrucForShiftedPtr() {
@@ -518,7 +536,7 @@ bool addStrucForShiftedPtr() {
     add_struc_member(new_struct, nullptr, 0, dword_flag(), nullptr, 4);
     add_struc_member(new_struct, nullptr, 4, dword_flag(), nullptr, 4);
     set_member_name(new_struct, 0, "PeiServices");
-    set_member_name(new_struct, 4, "PeiServices4");
+    set_member_name(new_struct, 4, "BaseAddress");
 
     tinfo_t tinfo;
     if (!tinfo.get_named_type(get_idati(), "EFI_PEI_SERVICES")) {
@@ -537,8 +555,8 @@ bool addStrucForShiftedPtr() {
     return true;
 #endif
 
-    // TODO: in idasdk90+ use parse_decls() instead
-    return false;
+    // return true if there are no errors from parse_decls()
+    return !parseEfiPeiServices4() && !parseEfiPeiSidt();
 }
 
 //--------------------------------------------------------------------------

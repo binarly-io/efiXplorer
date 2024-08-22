@@ -19,6 +19,8 @@
  *
  */
 
+#pragma once
+
 #include "efiDeps.h"
 
 enum module_types { DXE_SMM = 0, PEI = 1 };

@@ -984,8 +984,8 @@ class PeiServicesDetector : public ctree_visitor_t {
     // This is the callback function that Hex-Rays invokes for every expression
     // in the CTREE.
     int visit_expr(cexpr_t *e) {
-        ea_t pointer_offset = BADADDR;
-        ea_t service_offset = BADADDR;
+        auto pointer_offset = BADADDR;
+        auto service_offset = BADADDR;
         bool call = false;
         var_ref_t var_ref;
         if (e->op == cot_ptr && e->x->op == cot_cast && e->x->x->op == cot_add &&
@@ -993,8 +993,8 @@ class PeiServicesDetector : public ctree_visitor_t {
             e->x->x->x->x->x->op == cot_cast && e->x->x->x->x->x->x->op == cot_sub &&
             e->x->x->x->x->x->x->x->op == cot_var &&
             e->x->x->x->x->x->x->y->op == cot_num && e->x->x->y->op == cot_num) {
-            // (*ADJ(v2)->PeiServices)->GetHobList((const EFI_PEI_SERVICES
-            // **)ADJ(v2)->PeiServices, HobList);
+            // (*ADJ(v2)->PeiServices)->GetHobList(
+            // (const EFI_PEI_SERVICES**)ADJ(v2)->PeiServices, HobList);
             service_offset = e->x->x->y->numval();
             pointer_offset = e->x->x->x->x->x->x->y->numval();
             var_ref = e->x->x->x->x->x->x->x->v;
@@ -1017,7 +1017,6 @@ class PeiServicesDetector : public ctree_visitor_t {
         }
 
         if (pointer_offset != 4) {
-            // handle only 4 for now
             return 0;
         }
 
