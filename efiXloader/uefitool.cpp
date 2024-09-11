@@ -272,6 +272,8 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
                         .is_null()) { // check if GUID already exists
                     get_unique_name(module_name);
                     images_guids[guid.c_str()] = module_name.c_str();
+                    mod_types[module_name.c_str()] =
+                        fileTypeToUString(model.subtype(index.parent())).toLocal8Bit();
                     file->qname.swap(module_name);
                     file->write();
                     files.push_back(file);
@@ -307,6 +309,8 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
             if (module_name.size()) {
                 // save image to the images_guids
                 images_guids[module_name.c_str()] = module_name.c_str();
+                mod_types[module_name.c_str()] =
+                    fileTypeToUString(model.subtype(index.parent())).toLocal8Bit();
             }
         }
         break;
@@ -370,4 +374,8 @@ void efiloader::Uefitool::dump_jsons() {
     out.replace_extension("").replace_extension(".images.json");
     std::ofstream out_guids(out);
     out_guids << std::setw(4) << images_guids << std::endl;
+    // Dump module types
+    out.replace_extension("").replace_extension(".mod_types.json");
+    std::ofstream out_mod_types(out);
+    out_mod_types << std::setw(4) << mod_types << std::endl;
 }
