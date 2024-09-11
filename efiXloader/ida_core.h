@@ -1,6 +1,6 @@
 /*
  * efiXloader
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,32 +61,32 @@
 template <class T>
 bool _validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
                            int64 current_offset = -1, int64 max_offset = -1) {
-    if (current_offset == -1)
-        current_offset = qltell(li);
-    if (max_offset == -1)
-        max_offset = qlsize(li);
-    int64 rest = max_offset - current_offset;
-    T cnt = *p_cnt;
-    if (current_offset >= 0 && rest >= 0) {
+  if (current_offset == -1)
+    current_offset = qltell(li);
+  if (max_offset == -1)
+    max_offset = qlsize(li);
+  int64 rest = max_offset - current_offset;
+  T cnt = *p_cnt;
+  if (current_offset >= 0 && rest >= 0) {
 #ifndef __X86__
-        typedef size_t biggest_t;
+    typedef size_t biggest_t;
 #else
-        typedef ea_t biggest_t;
+    typedef ea_t biggest_t;
 #endif
-        if (is_mul_ok<biggest_t>(elsize, cnt)) {
-            biggest_t needed = elsize * cnt;
+    if (is_mul_ok<biggest_t>(elsize, cnt)) {
+      biggest_t needed = elsize * cnt;
 #ifdef __X86__
-            if (needed == size_t(needed))
+      if (needed == size_t(needed))
 #endif
-                if (rest >= needed)
-                    return true; // all ok
-        }
-        cnt = rest / elsize;
-    } else {
-        cnt = 0;
+        if (rest >= needed)
+          return true; // all ok
     }
-    *p_cnt = cnt;
-    return false;
+    cnt = rest / elsize;
+  } else {
+    cnt = 0;
+  }
+  *p_cnt = cnt;
+  return false;
 }
 
 //--------------------------------------------------------------------------
@@ -95,21 +95,21 @@ bool _validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
 template <class T>
 void validate_array_count(linput_t *li, T *p_cnt, size_t elsize, const char *counter_name,
                           int64 curoff = -1, int64 maxoff = -1) {
-    T old = *p_cnt;
-    if (!_validate_array_count(li, p_cnt, elsize, curoff, maxoff)) {
-        static const char *const format =
-            "AUTOHIDE SESSION\n"
-            "HIDECANCEL\n"
-            "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64 "u%s";
+  T old = *p_cnt;
+  if (!_validate_array_count(li, p_cnt, elsize, curoff, maxoff)) {
+    static const char *const format =
+        "AUTOHIDE SESSION\n"
+        "HIDECANCEL\n"
+        "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64 "u%s";
 #ifndef __KERNEL__
-        if (ask_yn(ASKBTN_YES, format, counter_name, uint64(old), uint64(*p_cnt),
-                   ". Do you want to continue with the new value?") != ASKBTN_YES) {
-            loader_failure(NULL);
-        }
-#else
-        warning(format, counter_name, uint64(old), uint64(*p_cnt), "");
-#endif
+    if (ask_yn(ASKBTN_YES, format, counter_name, uint64(old), uint64(*p_cnt),
+               ". Do you want to continue with the new value?") != ASKBTN_YES) {
+      loader_failure(NULL);
     }
+#else
+    warning(format, counter_name, uint64(old), uint64(*p_cnt), "");
+#endif
+  }
 }
 
 //--------------------------------------------------------------------------
@@ -119,36 +119,35 @@ template <class T>
 void validate_array_count_or_die(linput_t *li, T cnt, size_t elsize,
                                  const char *counter_name, int64 curoff = -1,
                                  int64 maxoff = -1) {
-    if (!_validate_array_count(li, &cnt, elsize, curoff, maxoff)) {
-        static const char *const format =
-            "%s is incorrect, maximum possible value is %u%s";
+  if (!_validate_array_count(li, &cnt, elsize, curoff, maxoff)) {
+    static const char *const format = "%s is incorrect, maximum possible value is %u%s";
 #ifndef __KERNEL__
-        loader_failure(format, counter_name, uint(cnt), "");
+    loader_failure(format, counter_name, uint(cnt), "");
 #else
-        error(format, counter_name, uint(cnt), "");
+    error(format, counter_name, uint(cnt), "");
 #endif
-    }
+  }
 }
 
 //----------------------------------
 inline uchar readchar(linput_t *li) {
-    uchar x;
-    lread(li, &x, sizeof(x));
-    return x;
+  uchar x;
+  lread(li, &x, sizeof(x));
+  return x;
 }
 
 //----------------------------------
 inline uint16 readshort(linput_t *li) {
-    uint16 x;
-    lread(li, &x, sizeof(x));
-    return x;
+  uint16 x;
+  lread(li, &x, sizeof(x));
+  return x;
 }
 
 //----------------------------------
 inline uint32 readlong(linput_t *li) {
-    uint32 x;
-    lread(li, &x, sizeof(x));
-    return x;
+  uint32 x;
+  lread(li, &x, sizeof(x));
+  return x;
 }
 
 inline uint32 mf_readlong(linput_t *li) { return swap32(readlong(li)); }

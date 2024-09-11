@@ -59,7 +59,7 @@ file(
 # efiLoader sources
 file(GLOB efiloader_src "*.h" "*.c" "*.cpp")
 
-add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efiLoader.cpp)
+add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cpp)
 
 set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
