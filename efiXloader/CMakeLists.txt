@@ -57,13 +57,13 @@ file(
   "3rd/uefitool/uefidump.h")
 
 # efiLoader sources
-file(GLOB efiloader_src "*.h" "*.c" "*.cpp")
+file(GLOB efiloader_src "*.h" "*.c" "*.cpp", "*.cc")
 
-add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cpp)
+add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cc)
 
 set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src} uefitool.cpp
+add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src} uefitool.cc
                 uefitool.h)
 ida_target_link_libraries(efiXloader efiXloader_lib)
