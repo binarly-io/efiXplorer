@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,127 +53,37 @@
 #include <hexrays.hpp>
 #endif
 
+#include "efi_defs.h"
+
 using namespace nlohmann;
 
-#define BTOA(x) ((x) ? "true" : "false")
-
-#define VZ 0x5A56
-#define MZ 0x5A4D
-
-enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
-
-enum ArchFileType { UNSUPPORTED_TYPE, X86, X64, UEFI, ARM64 };
-
-enum FfsFileType { FTYPE_PEI = 6, FTYPE_DXE_AND_THE_LIKE = 7 };
-
-enum BootServicesOffset { BS_OFFSET_64BIT = 0x60, BS_OFFSET_32BIT = 0x3c };
-
-enum RuntimeServiesOffset { RT_OFFSET_64BIT = 0x58, RT_OFFSET_32BIT = 0x38 };
-
-enum Registers32bit {
-    REG_EAX,
-    REG_ECX,
-    REG_EDX,
-    REG_EBX,
-    REG_ESP,
-    REG_EBP,
-    REG_ESI,
-    REG_EDI,
-    REG_AL = 0x10,
-    REG_DL = 0x12
-};
-
-enum Registers64bit {
-    REG_RAX,
-    REG_RCX,
-    REG_RDX,
-    REG_RBX,
-    REG_RSP,
-    REG_RBP,
-    REG_RSI,
-    REG_RDI,
-    REG_R8,
-    REG_R9,
-    REG_R10,
-    REG_R11,
-    REG_R12,
-    REG_R13,
-    REG_R14,
-};
-
-enum RegistersAarch64 {
-    REG_C0 = 0,
-    REG_C13 = 13,
-    REG_X0 = 129,
-    REG_X1,
-    REG_X2,
-    REG_X3,
-    REG_X4,
-    REG_X5,
-    REG_X6,
-    REG_X7,
-    REG_X8,
-    REG_X9,
-    REG_X10,
-    REG_X11,
-    REG_X12,
-    REG_X13,
-    REG_X14,
-    REG_X15,
-    REG_X16,
-    REG_X17,
-    REG_X18,
-    REG_X19,
-    REG_X20,
-    REG_X21,
-    REG_X22,
-    REG_X23,
-    REG_X24,
-    REG_X25,
-    REG_X26,
-    REG_X27,
-    REG_X28,
-    REG_X29,
-    REG_X30,
-    REG_XZR,
-    REG_XSP,
-    REG_XPC,
-};
-
-enum HelperValues {
-    GUID_OFFSET_DWORD = 4,
-    GUID_OFFSET_NONE = 0xffff,
-    PUSH_NONE = 0xffff,
-    BAD_REG = 0xffff,
-};
-
 struct EfiGuid {
-    uint32_t data1;
-    uint16_t data2;
-    uint16_t data3;
-    uint8_t data4[8];
-    std::vector<uchar> uchar_data() {
-        std::vector<uchar> res;
-        res.push_back(data1 & 0xff);
-        res.push_back(data1 >> 8 & 0xff);
-        res.push_back(data1 >> 16 & 0xff);
-        res.push_back(data1 >> 24 & 0xff);
-        res.push_back(data2 & 0xff);
-        res.push_back(data2 >> 8 & 0xff);
-        res.push_back(data3 & 0xff);
-        res.push_back(data3 >> 8 & 0xff);
-        for (auto i = 0; i < 8; i++) {
-            res.push_back(data4[i]);
-        }
-        return res;
+  uint32_t data1;
+  uint16_t data2;
+  uint16_t data3;
+  uint8_t data4[8];
+  std::vector<uchar> uchar_data() {
+    std::vector<uchar> res;
+    res.push_back(data1 & 0xff);
+    res.push_back(data1 >> 8 & 0xff);
+    res.push_back(data1 >> 16 & 0xff);
+    res.push_back(data1 >> 24 & 0xff);
+    res.push_back(data2 & 0xff);
+    res.push_back(data2 >> 8 & 0xff);
+    res.push_back(data3 & 0xff);
+    res.push_back(data3 >> 8 & 0xff);
+    for (auto i = 0; i < 8; i++) {
+      res.push_back(data4[i]);
     }
-    std::string to_string() {
-        char res[37] = {0};
-        snprintf(res, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1,
-                 data2, data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5],
-                 data4[6], data4[7]);
-        return static_cast<std::string>(res);
-    }
+    return res;
+  }
+  std::string to_string() {
+    char res[37] = {0};
+    snprintf(res, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1, data2,
+             data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5], data4[6],
+             data4[7]);
+    return static_cast<std::string>(res);
+  }
 };
 
 // Get input file type
@@ -192,21 +102,6 @@ std::vector<ea_t> getXrefsToArray(ea_t addr);
 
 // Wrapper for op_stroff function
 bool opStroff(ea_t addr, std::string type);
-
-// Get boot service description comment
-std::string getBsComment(uint32_t offset, uint8_t arch);
-
-// Get PEI service description comment (X86 is assumed)
-std::string getPeiSvcComment(uint32_t offset);
-
-// Get PPI service description comment (X86 is assumed)
-std::string getPPICallComment(uint32_t offset, std::string name);
-
-// Get SMM service description comment
-std::string getSmmVarComment();
-
-// Get runtime service description comment
-std::string getRtComment(uint32_t offset, uint8_t arch);
 
 // Find address of global gBS variable
 // for X64 module for each service

@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,11 @@
  *
  */
 
-#include "efiXplorer.h"
+#include "efixplorer.h"
 #include "efiAnalyzer.h"
 #include "efiGlobal.h"
 #include "efiUi.h"
 
-static const char plugin_name[] = "efiXplorer";
 static const char plugin_hotkey[] = "Ctrl+Alt+E";
 static const char plugin_comment[] =
     "This plugin performs automatic analysis of the input UEFI module";
@@ -46,86 +45,86 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-    uint8_t file_type = getInputFileType();
-    if (file_type == UNSUPPORTED_TYPE) {
-        return PLUGIN_SKIP;
-    }
+  uint8_t file_type = getInputFileType();
+  if (file_type == UNSUPPORTED_TYPE) {
+    return PLUGIN_SKIP;
+  }
 
-    msg(welcome_msg);
-    msg("%s\n\n", COPYRIGHT);
+  msg(welcome_msg);
+  msg("%s\n\n", COPYRIGHT);
 
-    // Register action
-    register_action(action_load_report);
-    attach_action_to_menu("File/Load file/", action_load_report.name, SETMENU_APP);
+  // Register action
+  register_action(action_load_report);
+  attach_action_to_menu("File/Load file/", action_load_report.name, SETMENU_APP);
 
-    return PLUGIN_KEEP;
+  return PLUGIN_KEEP;
 }
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
 
-    if (arg >> 0 & 1) { // Parse arg value:
-        //  * arg = 0 (000): default (DXE)
-        //  * arg = 1 (001): default (PEI, 32-bit binaries only)
-        //  * arg = 2 (010): disable_ui (DXE)
-        //  * arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
-        //  * arg = 4 (100): disable_vuln_hunt (DXE)
-        //  * arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
-        //  * arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
-        //  * arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
-        g_args.module_type = PEI;
+  if (arg >> 0 & 1) { // Parse arg value:
+    //  * arg = 0 (000): default (DXE)
+    //  * arg = 1 (001): default (PEI, 32-bit binaries only)
+    //  * arg = 2 (010): disable_ui (DXE)
+    //  * arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
+    //  * arg = 4 (100): disable_vuln_hunt (DXE)
+    //  * arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
+    //  * arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
+    //  * arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
+    g_args.module_type = PEI;
+  }
+
+  if (arg >> 1 & 1) {
+    g_args.disable_ui = 1;
+  }
+  if (arg >> 2 & 1) {
+    g_args.disable_vuln_hunt = 1;
+  }
+
+  msg("[%s] plugin run with argument %lu (sdk version: %d)\n", g_plugin_name, arg,
+      IDA_SDK_VERSION);
+  msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name, g_args.disable_ui,
+      g_args.disable_vuln_hunt);
+
+  auto guids_path = getGuidsJsonFile();
+  msg("[%s] guids.json exists: %s\n", g_plugin_name, BTOA(!guids_path.empty()));
+
+  if (guids_path.empty()) {
+    std::string msg_text =
+        "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
+    msg("[%s] %s\n", g_plugin_name, msg_text.c_str());
+    warning("%s: %s\n", g_plugin_name, msg_text.c_str());
+    return false;
+  }
+
+  uint8_t arch = getInputFileType();
+  if (arch == X64) {
+    msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
+    efi_analysis::efiAnalyzerMainX64();
+  } else if (arch == X86) {
+    msg("[%s] input file is 32-bit module (x86)\n", g_plugin_name);
+    efi_analysis::efiAnalyzerMainX86();
+  } else if (arch == UEFI) {
+    msg("[%s] input file is UEFI firmware\n", g_plugin_name);
+    warning("%s: analysis may take some time, please wait for it to complete\n",
+            g_plugin_name);
+    if (get_machine_type() == AARCH64) {
+      msg("[%s] analyze AARCH64 modules\n", g_plugin_name);
+      efi_analysis::efiAnalyzerMainArm();
+    } else {
+      msg("[%s] analyze AMD64 modules\n", g_plugin_name);
+      efi_analysis::efiAnalyzerMainX64();
     }
+  } else if (arch == ARM64) {
+    msg("[%s] input file is 64-bit module (ARM)\n", g_plugin_name);
+    efi_analysis::efiAnalyzerMainArm();
+  }
 
-    if (arg >> 1 & 1) {
-        g_args.disable_ui = 1;
-    }
-    if (arg >> 2 & 1) {
-        g_args.disable_vuln_hunt = 1;
-    }
+  // Reset arguments
+  g_args = {DXE_SMM, 0, 0};
 
-    msg("[%s] plugin run with argument %lu (sdk version: %d)\n", plugin_name, arg,
-        IDA_SDK_VERSION);
-    msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", plugin_name, g_args.disable_ui,
-        g_args.disable_vuln_hunt);
-
-    auto guids_path = getGuidsJsonFile();
-    msg("[%s] guids.json exists: %s\n", plugin_name, BTOA(!guids_path.empty()));
-
-    if (guids_path.empty()) {
-        std::string msg_text =
-            "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
-        msg("[%s] %s\n", plugin_name, msg_text.c_str());
-        warning("%s: %s\n", plugin_name, msg_text.c_str());
-        return false;
-    }
-
-    uint8_t arch = getInputFileType();
-    if (arch == X64) {
-        msg("[%s] input file is 64-bit module (x86)\n", plugin_name);
-        EfiAnalysis::efiAnalyzerMainX64();
-    } else if (arch == X86) {
-        msg("[%s] input file is 32-bit module (x86)\n", plugin_name);
-        EfiAnalysis::efiAnalyzerMainX86();
-    } else if (arch == UEFI) {
-        msg("[%s] input file is UEFI firmware\n", plugin_name);
-        warning("%s: analysis may take some time, please wait for it to complete\n",
-                plugin_name);
-        if (get_machine_type() == AARCH64) {
-            msg("[%s] analyze AARCH64 modules\n", plugin_name);
-            EfiAnalysis::efiAnalyzerMainArm();
-        } else {
-            msg("[%s] analyze AMD64 modules\n", plugin_name);
-            EfiAnalysis::efiAnalyzerMainX64();
-        }
-    } else if (arch == ARM64) {
-        msg("[%s] input file is 64-bit module (ARM)\n", plugin_name);
-        EfiAnalysis::efiAnalyzerMainArm();
-    }
-
-    // Reset arguments
-    g_args = {DXE_SMM, 0, 0};
-
-    return true;
+  return true;
 }
 
 //--------------------------------------------------------------------------
@@ -138,6 +137,6 @@ plugin_t PLUGIN = {
     run,            // invoke plugin
     plugin_comment, // long comment about the plugin
     plugin_help,    // multiline help about the plugin
-    plugin_name,    // the preferred short name of the plugin
+    g_plugin_name,  // the preferred short name of the plugin
     plugin_hotkey   // the preferred hotkey to run the plugin
 };

@@ -27,21 +27,24 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 
 # efiXplorer sources
 set(efiXplorer_src
+    "efi_defs.h"
+    "efi_defs.cpp"
+    "efiAnalyzer.h"
     "efiAnalyzerArm.cpp"
     "efiAnalyzerX86.cpp"
-    "efiAnalyzer.h"
     "efiDeps.cpp"
     "efiDeps.h"
-    "efiGlobal.h"
     "efiGlobal.cpp"
+    "efiGlobal.h"
     "efiSmmUtils.cpp"
     "efiSmmUtils.h"
     "efiUi.cpp"
     "efiUi.h"
     "efiUtils.cpp"
     "efiUtils.h"
-    "efiXplorer.cpp"
-    "efiXplorer.h")
+    "efixplorer.cpp"
+    "efixplorer.h"
+)
 
 if(HexRaysSdk_ROOT_DIR)
   add_definitions(-DHEX_RAYS=1)

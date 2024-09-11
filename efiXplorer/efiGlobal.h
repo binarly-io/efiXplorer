@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,11 @@
 
 #include "efiDeps.h"
 
-enum module_types { DXE_SMM = 0, PEI = 1 };
+typedef struct args {
+  int module_type;
+  int disable_ui;
+  int disable_vuln_hunt;
+} args_t;
 
-struct args {
-    int module_type;
-    int disable_ui;
-    int disable_vuln_hunt;
-};
-
-extern struct args g_args;
+extern args_t g_args;
 extern EfiDependencies g_deps;

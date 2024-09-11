@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2022  Binarly
+ * Copyright (C) 2020-2024  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,196 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * efi_services.h
- *
  */
 
-#pragma once
+#include "efi_defs.h"
 
-#include "stdint.h"
+const char *g_plugin_name = "efiXplorer";
 
-enum BootServicesOffsets64bit {
-    RaiseTPLOffset64 = 0x18,
-    RestoreTPLOffset64 = 0x20,
-    AllocatePagesOffset64 = 0x28,
-    FreePagesOffset64 = 0x30,
-    GetMemoryMapOffset64 = 0x38,
-    AllocatePoolOffset64 = 0x40,
-    FreePoolOffset64 = 0x48,
-    CreateEventOffset64 = 0x50,
-    SetTimerOffset64 = 0x58,
-    WaitForEventOffset64 = 0x60,
-    SignalEventOffset64 = 0x68,
-    CloseEventOffset64 = 0x70,
-    CheckEventOffset64 = 0x78,
-    InstallProtocolInterfaceOffset64 = 0x80,
-    RenstallProtocolInterfaceOffset64 = 0x88,
-    UninstallProtocolInterfaceOffset64 = 0x90,
-    HandleProtocolOffset64 = 0x98,
-    RegisterProtocolNotifyOffset64 = 0xa8,
-    LocateHandleOffset64 = 0xb0,
-    LocateDevicePathOffset64 = 0xb8,
-    InstallConfigurationTableOffset64 = 0xc0,
-    LoadImageOffset64 = 0xc8,
-    StartImageOffset64 = 0xd0,
-    ExitOffset64 = 0xd8,
-    UnloadImageOffset64 = 0xe0,
-    ExitBootServicesOffset64 = 0xe8,
-    GetNextMonotonicCountOffset64 = 0xf0,
-    StallOffset64 = 0xf0,
-    SetWatchdogTimerOffset64 = 0x100,
-    ConnectControllerOffset64 = 0x108,
-    DisconnectControllerOffset64 = 0x110,
-    OpenProtocolOffset64 = 0x118,
-    CloseProtocolOffset64 = 0x120,
-    OpenProtocolInformationOffset64 = 0x128,
-    ProtocolsPerHandleOffset64 = 0x130,
-    LocateHandleBufferOffset64 = 0x138,
-    LocateProtocolOffset64 = 0x140,
-    InstallMultipleProtocolInterfacesOffset64 = 0x148,
-    UninstallMultipleProtocolInterfacesOffset64 = 0x150,
-    CalculateCrc32Offset64 = 0x158,
-    CopyMemOffset64 = 0x160,
-    SetMemOffset64 = 0x168,
-    CreateEventExOffset64 = 0x170,
-};
-
-enum BootServicesOffsets32bit {
-    RaiseTPLOffset32 = 0x18,
-    RestoreTPLOffset32 = 0x1c,
-    AllocatePagesOffset32 = 0x20,
-    FreePagesOffset32 = 0x24,
-    GetMemoryMapOffset32 = 0x28,
-    AllocatePoolOffset32 = 0x2c,
-    FreePoolOffset32 = 0x30,
-    CreateEventOffset32 = 0x34,
-    SetTimerOffset32 = 0x38,
-    WaitForEventOffset32 = 0x3c,
-    SignalEventOffset32 = 0x40,
-    CloseEventOffset32 = 0x44,
-    CheckEventOffset32 = 0x48,
-    InstallProtocolInterfaceOffset32 = 0x4c,
-    RenstallProtocolInterfaceOffset32 = 0x50,
-    UninstallProtocolInterfaceOffset32 = 0x54,
-    HandleProtocolOffset32 = 0x58,
-    RegisterProtocolNotifyOffset32 = 0x60,
-    LocateHandleOffset32 = 0x64,
-    LocateDevicePathOffset32 = 0x68,
-    InstallConfigurationTableOffset32 = 0x6c,
-    LoadImageOffset32 = 0x70,
-    StartImageOffset32 = 0x74,
-    ExitOffset32 = 0x78,
-    UnloadImageOffset32 = 0x7c,
-    ExitBootServicesOffset32 = 0x80,
-    GetNextMonotonicCountOffset32 = 0x84,
-    StallOffset32 = 0x88,
-    SetWatchdogTimerOffset32 = 0x8c,
-    ConnectControllerOffset32 = 0x90,
-    DisconnectControllerOffset32 = 0x94,
-    OpenProtocolOffset32 = 0x98,
-    CloseProtocolOffset32 = 0x9c,
-    OpenProtocolInformationOffset32 = 0xa0,
-    ProtocolsPerHandleOffset32 = 0xa4,
-    LocateHandleBufferOffset32 = 0xa8,
-    LocateProtocolOffset32 = 0xac,
-    InstallMultipleProtocolInterfacesOffset32 = 0xb0,
-    UninstallMultipleProtocolInterfacesOffset32 = 0xb4,
-    CalculateCrc32Offset32 = 0xb8,
-    CopyMemOffset32 = 0xbc,
-    SetMemOffset32 = 0xc0,
-    CreateEventExOffset32 = 0xc4,
-};
-
-enum RuntimeServicesOffsets64bit {
-    GetTimeOffset64 = 0x18,
-    SetTimeOffset64 = 0x20,
-    GetWakeupTimeOffset64 = 0x28,
-    SetWakeupTimeOffset64 = 0x30,
-    SetVirtualAddressMapOffset64 = 0x38,
-    ConvertPointerOffset64 = 0x40,
-    GetVariableOffset64 = 0x48,
-    GetNextVariableNameOffset64 = 0x50,
-    SetVariableOffset64 = 0x58,
-    GetNextHighMonotonicCountOffset64 = 0x60,
-    ResetSystemOffset64 = 0x68,
-    UpdateCapsuleOffset64 = 0x70,
-    QueryCapsuleCapabilitiesOffset64 = 0x78,
-    QueryVariableInfoOffset64 = 0x80,
-};
-
-enum RuntimeServicesOffsets32bit {
-    GetTimeOffset32 = 0x18,
-    SetTimeOffset32 = 0x1c,
-    GetWakeupTimeOffset32 = 0x20,
-    SetWakeupTimeOffset32 = 0x24,
-    SetVirtualAddressMapOffset32 = 0x28,
-    ConvertPointerOffset32 = 0x2c,
-    GetVariableOffset32 = 0x30,
-    GetNextVariableNameOffset32 = 0x34,
-    SetVariableOffset32 = 0x38,
-    GetNextHighMonotonicCountOffset32 = 0x3c,
-    ResetSystemOffset32 = 0x40,
-    UpdateCapsuleOffset32 = 0x44,
-    QueryCapsuleCapabilitiesOffset32 = 0x48,
-    QueryVariableInfoOffset32 = 0x4c,
-};
-
-enum SmmServicesOffsets64bit {
-    SmmInstallConfigurationTableOffset64 = 0x28,
-    SmmAllocatePoolOffset64 = 0x50,
-    SmmFreePoolOffset64 = 0x58,
-    SmmAllocatePagesOffset64 = 0x60,
-    SmmFreePagesOffset64 = 0x68,
-    SmmStartupThisApOffset64 = 0x70,
-    SmmInstallProtocolInterfaceOffset64 = 0xa8,
-    SmmUninstallProtocolInterfaceOffset64 = 0xb0,
-    SmmHandleProtocolOffset64 = 0xb8,
-    SmmRegisterProtocolNotifyOffset64 = 0xc0,
-    SmmLocateHandleOffset64 = 0xc8,
-    SmmLocateProtocolOffset64 = 0xd0,
-    SmiManageOffset64 = 0xd8,
-    SmiHandlerRegisterOffset64 = 0xe0,
-    SmiHandlerUnRegisterOffset64 = 0xe8,
-};
-
-enum SmmServicesOffsets32bit {
-    SmmInstallConfigurationTableOffset32 = 0x20,
-    SmmAllocatePoolOffset32 = 0x34,
-    SmmFreePoolOffset32 = 0x38,
-    SmmAllocatePagesOffset32 = 0x3c,
-    SmmFreePagesOffset32 = 0x40,
-    SmmStartupThisApOffset32 = 0x44,
-    SmmInstallProtocolInterfaceOffset32 = 0x60,
-    SmmUninstallProtocolInterfaceOffset32 = 0x64,
-    SmmHandleProtocolOffset32 = 0x68,
-    SmmRegisterProtocolNotifyOffset32 = 0x6c,
-    SmmLocateHandleOffset32 = 0x70,
-    SmmLocateProtocolOffset32 = 0x74,
-    SmiManageOffset32 = 0x78,
-    SmiHandlerRegisterOffset32 = 0x7c,
-    SmiHandlerUnRegisterOffset32 = 0x80,
-};
-
-struct service_info_64bit {
-    char service_name[64];
-    uint32_t offset;
-    uint32_t reg;
-    uint16_t arg_index;
-};
-
-struct service_info_32bit {
-    char service_name[64];
-    uint32_t offset;
-    uint16_t push_number;
-};
-
-struct service {
-    char service_name[64];
-    uint32_t offset64;
-    uint32_t offset32;
-};
-
-struct service_info_64bit bootServicesTable64[] = {
+service_info_64_t bootServicesTable64[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 1},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 1},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 1},
@@ -220,10 +37,9 @@ struct service_info_64bit bootServicesTable64[] = {
      REG_RDX, 1},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
      REG_RDX, 1}};
-size_t bootServicesTable64Length =
-    sizeof(bootServicesTable64) / sizeof(service_info_64bit);
+size_t bootServicesTable64Count = sizeof(bootServicesTable64) / sizeof(service_info_64_t);
 
-struct service_info_32bit bootServicesTable32[] = {
+service_info_32_t bootServicesTable32[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset32, 2},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset32, 2},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset32, 2},
@@ -238,10 +54,9 @@ struct service_info_32bit bootServicesTable32[] = {
     {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset32, 2},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset32,
      2}};
-size_t bootServicesTable32Length =
-    sizeof(bootServicesTable32) / sizeof(service_info_32bit);
+size_t bootServicesTable32Count = sizeof(bootServicesTable32) / sizeof(service_info_32_t);
 
-struct service bootServicesTableAll[] = {
+service_t bootServicesTableAll[] = {
     // difficult to check false positives
     // {"RaiseTPL", RaiseTPLOffset64, RaiseTPLOffset32},
     // {"RestoreTPL", RestoreTPLOffset64, RestoreTPLOffset32},
@@ -295,9 +110,9 @@ struct service bootServicesTableAll[] = {
     {"CopyMem", CopyMemOffset64, CopyMemOffset32},
     {"SetMem", SetMemOffset64, SetMemOffset32},
     {"CreateEventEx", CreateEventExOffset64, CreateEventExOffset32}};
-size_t bootServicesTableAllLength = sizeof(bootServicesTableAll) / sizeof(service);
+size_t bootServicesTableAllCount = sizeof(bootServicesTableAll) / sizeof(service_t);
 
-struct service runtimeServicesTableAll[] = {
+service_t runtimeServicesTableAll[] = {
     {"GetTime", GetTimeOffset64, GetTimeOffset32},
     {"SetTime", SetTimeOffset64, SetTimeOffset32},
     {"GetWakeupTime", GetWakeupTimeOffset64, GetWakeupTimeOffset32},
@@ -314,18 +129,18 @@ struct service runtimeServicesTableAll[] = {
     {"QueryCapsuleCapabilities", QueryCapsuleCapabilitiesOffset64,
      QueryCapsuleCapabilitiesOffset32},
     {"QueryVariableInfo", QueryVariableInfoOffset64, QueryVariableInfoOffset32}};
-size_t runtimeServicesTableAllLength = sizeof(runtimeServicesTableAll) / sizeof(service);
+size_t runtimeServicesTableAllCount = sizeof(runtimeServicesTableAll) / sizeof(service_t);
 
-struct service_info_64bit smmServicesProt64[] = {
+service_info_64_t smmServicesProt64[] = {
     {"SmmInstallProtocolInterface", SmmInstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmUninstallProtocolInterface", SmmUninstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmHandleProtocol", SmmHandleProtocolOffset64, REG_RDX},
     {"SmmRegisterProtocolNotify", SmmRegisterProtocolNotifyOffset64, REG_RCX},
     {"SmmLocateHandle", SmmLocateHandleOffset64, REG_RDX},
     {"SmmLocateProtocol", SmmLocateProtocolOffset64, REG_RCX}};
-size_t smmServicesProt64Length = sizeof(smmServicesProt64) / sizeof(service_info_64bit);
+size_t smmServicesProt64Count = sizeof(smmServicesProt64) / sizeof(service_info_64_t);
 
-struct service smmServicesTableAll[] = {
+service_t smmServicesTableAll[] = {
     {"SmmInstallConfigurationTable", SmmInstallConfigurationTableOffset64,
      SmmInstallConfigurationTableOffset32},
     {"SmmAllocatePool", SmmAllocatePoolOffset64, SmmAllocatePoolOffset32},
@@ -345,4 +160,65 @@ struct service smmServicesTableAll[] = {
     {"SmiManage", SmiManageOffset64, SmiManageOffset32},
     {"SmiHandlerRegister", SmiHandlerRegisterOffset64, SmiHandlerRegisterOffset32},
     {"SmiHandlerUnRegister", SmiHandlerUnRegisterOffset64, SmiHandlerUnRegisterOffset32}};
-size_t smmServicesTableAllLength = sizeof(smmServicesTableAll) / sizeof(service);
+size_t smmServicesTableAllCount = sizeof(smmServicesTableAll) / sizeof(service_t);
+
+service_info_32_t peiServicesTable32[] = {{"InstallPpi", 0x18, 2},
+                                          {"ReInstallPpi", 0x1c, 3},
+                                          {"LocatePpi", 0x20, 2},
+                                          {"NotifyPpi", 0x24, PUSH_NONE},
+                                          {"GetBootMode", 0x28, PUSH_NONE},
+                                          {"SetBootMode", 0x2c, PUSH_NONE},
+                                          {"GetHobList", 0x30, PUSH_NONE},
+                                          {"CreateHob", 0x34, PUSH_NONE},
+                                          {"FfsFindNextVolume", 0x38, PUSH_NONE},
+                                          {"FfsFindNextFile", 0x3c, PUSH_NONE},
+                                          {"FfsFindSectionData", 0x40, PUSH_NONE},
+                                          {"InstallPeiMemory", 0x44, PUSH_NONE},
+                                          {"AllocatePages", 0x48, PUSH_NONE},
+                                          {"AllocatePool", 0x4c, PUSH_NONE},
+                                          {"CopyMem", 0x50, PUSH_NONE},
+                                          {"SetMem", 0x54, PUSH_NONE},
+                                          {"ReportStatusCode", 0x58, PUSH_NONE},
+                                          {"ResetSystem", 0x5c, PUSH_NONE},
+                                          {"CpuIo", 0x60, PUSH_NONE},
+                                          {"PciCfg", 0x64, PUSH_NONE},
+                                          {"FfsFindFileByName", 0x68, PUSH_NONE},
+                                          {"FfsGetFileInfo", 0x6c, PUSH_NONE},
+                                          {"FfsGetVolumeInfo", 0x70, PUSH_NONE},
+                                          {"RegisterForShadow", 0x74, PUSH_NONE},
+                                          {"FindSectionData3", 0x78, PUSH_NONE},
+                                          {"FfsGetFileInfo2", 0x7c, PUSH_NONE},
+                                          {"ResetSystem2", 0x80, PUSH_NONE}};
+size_t peiServicesTable32Count = sizeof(peiServicesTable32) / sizeof(service_info_32_t);
+
+service_t peiServicesTableAll[] = {{"InstallPpi", 0x18, 0x18},
+                                   {"ReInstallPpi", 0x20, 0x1c},
+                                   {"LocatePpi", 0x28, 0x20},
+                                   {"NotifyPpi", 0x30, 0x24},
+                                   {"GetBootMode", 0x38, 0x28},
+                                   {"SetBootMode", 0x40, 0x2c},
+                                   {"GetHobList", 0x48, 0x30},
+                                   {"CreateHob", 0x50, 0x34},
+                                   {"FfsFindNextVolume", 0x58, 0x38},
+                                   {"FfsFindNextFile", 0x60, 0x3c},
+                                   {"FfsFindSectionData", 0x68, 0x40},
+                                   {"InstallPeiMemory", 0x70, 0x44},
+                                   {"AllocatePages", 0x78, 0x48},
+                                   {"AllocatePool", 0x80, 0x4c},
+                                   {"CopyMem", 0x88, 0x50},
+                                   {"SetMem", 0x90, 0x54},
+                                   {"ReportStatusCode", 0x98, 0x58},
+                                   {"ResetSystem", 0xa0, 0x5c},
+                                   {"CpuIo", 0xa8, 0x60},
+                                   {"PciCfg", 0xb0, 0x64},
+                                   {"FfsFindFileByName", 0xb8, 0x68},
+                                   {"FfsGetFileInfo", 0xc0, 0x6c},
+                                   {"FfsGetVolumeInfo", 0xc8, 0x70},
+                                   {"RegisterForShadow", 0xd0, 0x74},
+                                   {"FindSectionData3", 0xc8, 0x78},
+                                   {"FfsGetFileInfo2", 0xe0, 0x7c},
+                                   {"ResetSystem2", 0xe8, 0x80}};
+size_t peiServicesTableAllCount = sizeof(peiServicesTableAll) / sizeof(service_t);
+
+service_t variablePpiTableAll[] = {{"GetVariable", 0, 0}, {"NextVariableName", 8, 4}};
+size_t variablePpiTableAllCount = sizeof(variablePpiTableAll) / sizeof(service_t);
