@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "efiUtils.h"
+#include "efi_utils.h"
 
 std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList);
 std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList);

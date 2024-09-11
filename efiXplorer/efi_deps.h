@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "efiUtils.h"
+#include "efi_utils.h"
 
 class EfiDependencies {
 public:

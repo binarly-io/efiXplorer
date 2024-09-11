@@ -19,9 +19,9 @@
  *
  */
 
-#include "efiUi.h"
-#include "efiDeps.h"
-#include "efiGlobal.h"
+#include "efi_ui.h"
+#include "efi_deps.h"
+#include "efi_global.h"
 
 // vulns column widths
 const int vulns_chooser_t::widths_vulns[] = {

@@ -19,8 +19,8 @@
  *
  */
 
-#include "efiSmmUtils.h"
-#include "efiGlobal.h"
+#include "efi_smm_utils.h"
+#include "efi_global.h"
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID

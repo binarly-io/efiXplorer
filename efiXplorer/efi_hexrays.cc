@@ -19,7 +19,7 @@
  *
  */
 
-#include "efiHexRays.h"
+#include "efi_hexrays.h"
 
 // Given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.

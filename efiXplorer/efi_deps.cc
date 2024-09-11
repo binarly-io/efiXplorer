@@ -19,7 +19,7 @@
  *
  */
 
-#include "efiDeps.h"
+#include "efi_deps.h"
 
 EfiDependencies::EfiDependencies() {
   // Read DEPEX (for protocols) from

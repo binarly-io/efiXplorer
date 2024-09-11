@@ -20,9 +20,9 @@
  */
 
 #include "efixplorer.h"
-#include "efiAnalyzer.h"
-#include "efiGlobal.h"
-#include "efiUi.h"
+#include "efi_analyser.h"
+#include "efi_global.h"
+#include "efi_ui.h"
 
 static const char plugin_hotkey[] = "Ctrl+Alt+E";
 static const char plugin_comment[] =

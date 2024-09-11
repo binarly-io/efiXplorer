@@ -15,10 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiGlobal.cpp
+ * efiGlobal.h
  *
  */
 
-#include "efiDeps.h"
+#pragma once
 
-EfiDependencies g_deps;
+#include "efi_deps.h"
+
+typedef struct args {
+  int module_type;
+  int disable_ui;
+  int disable_vuln_hunt;
+} args_t;
+
+extern args_t g_args;
+extern EfiDependencies g_deps;

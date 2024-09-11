@@ -21,12 +21,12 @@
 
 #pragma once
 
-#include "efiSmmUtils.h"
-#include "efiUtils.h"
 #include "efi_defs.h"
+#include "efi_smm_utils.h"
+#include "efi_utils.h"
 
 #ifdef HEX_RAYS
-#include "efiHexRays.h"
+#include "efi_hexrays.h"
 #endif
 
 namespace efi_analysis {

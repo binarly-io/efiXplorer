@@ -20,10 +20,10 @@
  *
  */
 
-#include "efiAnalyzer.h"
-#include "efiGlobal.h"
-#include "efiUi.h"
-#include "efiUtils.h"
+#include "efi_analyser.h"
+#include "efi_global.h"
+#include "efi_ui.h"
+#include "efi_utils.h"
 
 using namespace efi_analysis;
 

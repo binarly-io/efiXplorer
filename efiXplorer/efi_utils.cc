@@ -19,9 +19,9 @@
  *
  */
 
-#include "efiUtils.h"
-#include "efiGlobal.h"
+#include "efi_utils.h"
 #include "efi_defs.h"
+#include "efi_global.h"
 
 // can be used after Hex-Rays based analysis
 std::vector<ea_t> g_get_smst_location_calls;

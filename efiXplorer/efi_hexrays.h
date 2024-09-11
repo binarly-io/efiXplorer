@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "efiUtils.h"
+#include "efi_utils.h"
 
 uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
 bool TrackEntryParams(func_t *f, uint8_t depth);

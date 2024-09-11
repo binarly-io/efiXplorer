@@ -21,6 +21,6 @@
 
 #pragma once
 
-#include "efiUtils.h"
+#include "efi_utils.h"
 
 #define COPYRIGHT "(c) 2020-2024, Binarly - https://github.com/binarly-io/efiXplorer"

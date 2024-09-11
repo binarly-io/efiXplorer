@@ -28,21 +28,21 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 # efiXplorer sources
 set(efiXplorer_src
     "efi_defs.h"
-    "efi_defs.cpp"
-    "efiAnalyzer.h"
-    "efiAnalyzerArm.cpp"
-    "efiAnalyzerX86.cpp"
-    "efiDeps.cpp"
-    "efiDeps.h"
-    "efiGlobal.cpp"
-    "efiGlobal.h"
-    "efiSmmUtils.cpp"
-    "efiSmmUtils.h"
-    "efiUi.cpp"
-    "efiUi.h"
-    "efiUtils.cpp"
-    "efiUtils.h"
-    "efixplorer.cpp"
+    "efi_defs.cc"
+    "efi_analyser.h"
+    "efi_analyser_arm.cc"
+    "efi_analyser_X86.cc"
+    "efi_deps.cc"
+    "efi_deps.h"
+    "efi_global.cc"
+    "efi_global.h"
+    "efi_smm_utils.cc"
+    "efi_smm_utils.h"
+    "efi_ui.cc"
+    "efi_ui.h"
+    "efi_utils.cc"
+    "efi_utils.h"
+    "efixplorer.cc"
     "efixplorer.h"
 )
 
@@ -50,10 +50,10 @@ if(HexRaysSdk_ROOT_DIR)
   add_definitions(-DHEX_RAYS=1)
   set(HexRaysSdk_INCLUDE_DIRS ${HexRaysSdk_ROOT_DIR}/include)
   include_directories(${HexRaysSdk_INCLUDE_DIRS})
-  list(APPEND efiXplorer_src "efiHexRays.cpp" "efiHexRays.h")
+  list(APPEND efiXplorer_src "efi_hexrays.cc" "efi_hexrays.h")
 endif()
 
-add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efiXplorer.cpp)
+add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efixplorer.cc)
 
 set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
