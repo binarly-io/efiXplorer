@@ -22,6 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define COPYRIGHT "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
+
 #define BTOA(x) ((x) ? "true" : "false")
 
 #define VZ 0x5A56

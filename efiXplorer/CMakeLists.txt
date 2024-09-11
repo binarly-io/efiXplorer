@@ -42,9 +42,7 @@ set(efiXplorer_src
     "efi_ui.h"
     "efi_utils.cc"
     "efi_utils.h"
-    "efixplorer.cc"
-    "efixplorer.h"
-)
+    "efixplorer.cc")
 
 if(HexRaysSdk_ROOT_DIR)
   add_definitions(-DHEX_RAYS=1)
