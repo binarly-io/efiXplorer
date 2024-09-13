@@ -29,17 +29,18 @@
 #define VZ 0x5A56
 #define MZ 0x5A4D
 
-enum ModuleType { DXE_SMM = 0, PEI = 1 };
+#define BS_OFFSET_64 0x60
+#define BS_OFFSET_32 0x3c
+#define RT_OFFSET_64 0x58
+#define RT_OFFSET_32 0x38
+
+enum class ModuleType { DxeSmm = 0, Pei = 1 };
+
+enum class ArchFileType { Unsupported, X8632, X8664, Uefi, Aarch64 };
+
+enum class FfsFileType { Unsupported = 0, Pei = 6, DxeAndTheLike = 7 };
 
 enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
-
-enum ArchFileType { UNSUPPORTED_TYPE, X86, X64, UEFI, ARM64 };
-
-enum FfsFileType { FTYPE_PEI = 6, FTYPE_DXE_AND_THE_LIKE = 7 };
-
-enum BootServicesOffset { BS_OFFSET_64BIT = 0x60, BS_OFFSET_32BIT = 0x3c };
-
-enum RuntimeServiesOffset { RT_OFFSET_64BIT = 0x58, RT_OFFSET_32BIT = 0x38 };
 
 enum RegsAmd32 {
   REG_EAX,
