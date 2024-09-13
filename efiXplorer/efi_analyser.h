@@ -56,8 +56,8 @@ public:
   bool findPPIGetVariableStackOveflow();
   bool findSmmGetVariableOveflow();
   bool findSmmCallout();
-  bool analyzeNvramVariables();
-  bool AnalyzeVariableService(ea_t ea, std::string service_str);
+  bool analyseNvramVariables();
+  bool AnalyseVariableService(ea_t ea, std::string service_str);
   bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
                    ea_t callAddress);
   void dumpInfo();
@@ -327,9 +327,9 @@ private:
       {"UninstallMultipleProtocolInterfaces", 0x150, REG_X1, 1}};
 };
 
-bool efiAnalyzerMainX64();
-bool efiAnalyzerMainX86();
-bool efiAnalyzerMainArm();
+bool efiAnalyserMainX64();
+bool efiAnalyserMainX86();
+bool efiAnalyserMainArm();
 }; // namespace efi_analysis
 
 void showAllChoosers(efi_analysis::EfiAnalyser analyser);

@@ -148,7 +148,7 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
 // Find SmiHandler in reg_smi_func function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
 // StandbyButton, PeriodicTimer, PowerButton)
 std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
-  msg("[%s] Analyze xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", g_plugin_name,
+  msg("[%s] Analyse xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", g_plugin_name,
       prefix.c_str(), u64_addr(address));
 
   std::vector<func_t *> smiHandlers;
@@ -164,7 +164,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
     return smiHandlers;
   }
 
-  // Analyze current basic block
+  // Analyse current basic block
   auto ea = address;
 
   // Search for SmmLocateProtocol

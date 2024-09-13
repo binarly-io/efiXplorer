@@ -34,7 +34,7 @@ extern loader_t LDSC;
 
 void idaapi load_binary(const char *fname);
 void idaapi close_and_save_db(const char *fname);
-void idaapi reanalyze_all(void);
+void idaapi reanalyse_all(void);
 void idaapi wait(void);
 void idaapi idb_to_asm(const char *fname);
 void idaapi clean_db(void);

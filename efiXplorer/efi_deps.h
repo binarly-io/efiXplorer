@@ -39,7 +39,7 @@ public:
   void getProtocolsChooser(std::vector<json> protocols);
   json getDeps(std::string protocol); // get dependencies for specific protocol
   void getAdditionalInstallers();     // get installers by protocol GUIDs by searching in
-                                      // the firmware and analyzing xrefs
+                                      // the firmware and analysing xrefs
   bool buildModulesSequence();
   bool getImagesInfo();
 

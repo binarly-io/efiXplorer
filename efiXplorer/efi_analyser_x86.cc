@@ -2337,7 +2337,7 @@ bool efi_analysis::EfiAnalyser::findSmmGetVariableOveflow() {
   return (smmGetVariableOverflow.size() > 0);
 }
 
-bool efi_analysis::EfiAnalyser::AnalyzeVariableService(ea_t ea, std::string service_str) {
+bool efi_analysis::EfiAnalyser::AnalyseVariableService(ea_t ea, std::string service_str) {
   msg("[%s] %s call: 0x%016llX\n", g_plugin_name, service_str.c_str(), u64_addr(ea));
   json item;
   item["addr"] = ea;
@@ -2456,7 +2456,7 @@ bool efi_analysis::EfiAnalyser::AnalyzeVariableService(ea_t ea, std::string serv
   return true;
 }
 
-bool efi_analysis::EfiAnalyser::analyzeNvramVariables() {
+bool efi_analysis::EfiAnalyser::analyseNvramVariables() {
   msg("[%s] Get NVRAM variables information\n", g_plugin_name);
   std::vector<std::string> nvram_services = {"GetVariable", "SetVariable"};
   for (auto service_str : nvram_services) {
@@ -2471,15 +2471,15 @@ bool efi_analysis::EfiAnalyser::analyzeNvramVariables() {
     }
     sort(var_services.begin(), var_services.end());
     for (auto ea : var_services) {
-      AnalyzeVariableService(ea, service_str);
+      AnalyseVariableService(ea, service_str);
     }
 
     for (auto ea : g_smm_get_variable_calls) {
-      AnalyzeVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmGetVariable");
+      AnalyseVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmGetVariable");
     }
 
     for (auto ea : g_smm_set_variable_calls) {
-      AnalyzeVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmSetVariable");
+      AnalyseVariableService(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmSetVariable");
     }
   }
   return true;
@@ -2622,8 +2622,8 @@ void showAllChoosers(efi_analysis::EfiAnalyserX86 analyser) {
 
 //--------------------------------------------------------------------------
 // Main function for X64 modules
-bool efi_analysis::efiAnalyzerMainX64() {
-  show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+bool efi_analysis::efiAnalyserMainX64() {
+  show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::EfiAnalyserX86 analyser;
 
@@ -2634,10 +2634,10 @@ bool efi_analysis::efiAnalyzerMainX64() {
   // find .text and .data segments
   analyser.getSegments();
 
-  // analyze all
+  // analyse all
   auto res = ASKBTN_NO;
   if (analyser.arch == ArchFileType::Uefi) {
-    res = ask_yn(1, "Want to further analyze all drivers with auto_mark_range?");
+    res = ask_yn(1, "Want to further analyse all drivers with auto_mark_range?");
   }
   if (res == ASKBTN_YES && textSegments.size() && dataSegments.size()) {
     segment_t *start_seg = textSegments.at(0);
@@ -2715,7 +2715,7 @@ bool efi_analysis::efiAnalyzerMainX64() {
     applyAllTypesForInterfacesSmmServices(analyser.allProtocols);
 #endif
 
-    analyser.analyzeNvramVariables();
+    analyser.analyseNvramVariables();
 
   } else {
     msg("[%s] Parsing of 64-bit PEI files is not supported yet\n", g_plugin_name);
@@ -2746,9 +2746,9 @@ bool efi_analysis::efiAnalyzerMainX64() {
 
 //--------------------------------------------------------------------------
 // Main function for X86 modules
-bool efi_analysis::efiAnalyzerMainX86() {
+bool efi_analysis::efiAnalyserMainX86() {
 
-  show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+  show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::EfiAnalyserX86 analyser;
 

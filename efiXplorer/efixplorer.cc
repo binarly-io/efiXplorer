@@ -97,24 +97,24 @@ bool idaapi run(size_t arg) {
   ArchFileType arch = input_file_type();
   if (arch == ArchFileType::X8664) {
     msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
-    efi_analysis::efiAnalyzerMainX64();
+    efi_analysis::efiAnalyserMainX64();
   } else if (arch == ArchFileType::X8632) {
     msg("[%s] input file is 32-bit module (x86)\n", g_plugin_name);
-    efi_analysis::efiAnalyzerMainX86();
+    efi_analysis::efiAnalyserMainX86();
   } else if (arch == ArchFileType::Uefi) {
     msg("[%s] input file is UEFI firmware\n", g_plugin_name);
     warning("%s: analysis may take some time, please wait for it to complete\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
-      msg("[%s] analyze AARCH64 modules\n", g_plugin_name);
-      efi_analysis::efiAnalyzerMainArm();
+      msg("[%s] analyse AARCH64 modules\n", g_plugin_name);
+      efi_analysis::efiAnalyserMainArm();
     } else {
-      msg("[%s] analyze AMD64 modules\n", g_plugin_name);
-      efi_analysis::efiAnalyzerMainX64();
+      msg("[%s] analyse AMD64 modules\n", g_plugin_name);
+      efi_analysis::efiAnalyserMainX64();
     }
   } else if (arch == ArchFileType::Aarch64) {
     msg("[%s] input file is 64-bit module (ARM)\n", g_plugin_name);
-    efi_analysis::efiAnalyzerMainArm();
+    efi_analysis::efiAnalyserMainArm();
   }
 
   // Reset arguments

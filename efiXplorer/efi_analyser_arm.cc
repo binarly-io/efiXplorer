@@ -225,7 +225,7 @@ json getService(ea_t addr, uint8_t table_id) {
 
 void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
 #ifdef HEX_RAYS
-  // analyze entry point with Hex-Rays
+  // analyse entry point with Hex-Rays
   for (auto func_addr : funcs) {
     json res = DetectVars(get_func(func_addr));
     if (res.contains("gImageHandleList")) {
@@ -301,7 +301,7 @@ void efi_analysis::EfiAnalyserArm::servicesDetection() {
   }
 #endif /* HEX_RAYS */
 
-  // analyze xrefs to gBS, gRT
+  // analyse xrefs to gBS, gRT
   for (auto bs : gBsListArm) {
     auto xrefs = getXrefs(bs);
     for (auto ea : xrefs) {
@@ -444,9 +444,9 @@ void showAllChoosers(efi_analysis::EfiAnalyserArm analyser) {
 
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
-bool efi_analysis::efiAnalyzerMainArm() {
+bool efi_analysis::efiAnalyserMainArm() {
 
-  show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
+  show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::EfiAnalyserArm analyser;
 

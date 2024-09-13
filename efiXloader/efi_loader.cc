@@ -64,10 +64,10 @@ void idaapi wait(void) {
 }
 
 //------------------------
-// IDA analyzing
+// IDA analysing
 //------------------------
 
-void inline idaapi reanalyze_all(void) {
+void inline idaapi reanalyse_all(void) {
   plan_range(inf_get_min_ea(), inf_get_max_ea());
   auto_wait();
   auto_make_proc(inf_get_min_ea());
