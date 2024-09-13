@@ -22,7 +22,7 @@
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
-std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
+std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> bs_list) {
   std::vector<ea_t> smst_addrs;
   EfiGuid guid2 = {0x18a3c6dc,
                    0x5eea,
@@ -34,13 +34,13 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
                   0x420c,
                   {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8,
                    0xbf}}; // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID
-  std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
-  std::vector<ea_t> data2_addrs = findData(0, BADADDR, guid2.uchar_data().data(), 16);
+  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
+  std::vector<ea_t> data2_addrs = find_data(0, BADADDR, guid2.uchar_data().data(), 16);
   data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
   for (auto data_addr : data_addrs) {
     msg("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID: 0x%016llX\n", g_plugin_name,
         u64_addr(data_addr));
-    std::vector<ea_t> xrefs = getXrefs(data_addr);
+    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
     insn_t insn;
     for (auto xref : xrefs) {
       uint16_t smst_reg = 0xffff; // Smst register
@@ -73,11 +73,11 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
           msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n", g_plugin_name,
               u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
           res_addr = insn.ops[1].addr;
-          if (addrInVec(gBsList, res_addr)) {
+          if (addr_in_vec(bs_list, res_addr)) {
             continue;
           }
           set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-          setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+          set_ptr_type_and_name(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
           smst_addrs.push_back(res_addr);
           break;
         }
@@ -93,18 +93,18 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList) {
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
-std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
+std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> bs_list) {
   std::vector<ea_t> smst_addrs;
   EfiGuid guid = {
       0xf4ccbfb7,
       0xf6e0,
       0x47fd,
       {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
-  std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
+  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   for (auto data_addr : data_addrs) {
     msg("[%s] EFI_SMM_BASE2_PROTOCOL_GUID: 0x%016llX\n", g_plugin_name,
         u64_addr(data_addr));
-    std::vector<ea_t> data_xrefs = getXrefs(data_addr);
+    std::vector<ea_t> data_xrefs = get_xrefs_util(data_addr);
     insn_t insn;
     for (auto xref : data_xrefs) {
       ea_t res_addr = BADADDR;
@@ -128,15 +128,15 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList) {
       }
       if (!in_smram) {
         // we found gSmst
-        if (addrInVec(gBsList, res_addr)) {
+        if (addr_in_vec(bs_list, res_addr)) {
           continue;
         }
         set_cmt(cur_addr, "_EFI_SMM_SYSTEM_TABLE2 *gSmst;", true);
-        setPtrTypeAndName(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+        set_ptr_type_and_name(res_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
         smst_addrs.push_back(res_addr);
       } else {
         // we found gInSmram
-        setTypeAndName(res_addr, "gInSmram", "BOOLEAN");
+        set_type_and_name(res_addr, "gInSmram", "BOOLEAN");
       }
     }
   }
@@ -289,7 +289,7 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
       std::string prefix_upper;
       std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(), ::toupper);
       std::string type = "EFI_SMM_" + prefix_upper + "_DISPATCH2_PROTOCOL";
-      opStroff(ea, type);
+      op_stroff_util(ea, type);
     }
 
     if (insn.itype == NN_retn || insn.itype == NN_int3) {
@@ -312,10 +312,10 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
 //        call    qword ptr [...]
 std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix) {
   std::vector<func_t *> smiHandlers;
-  std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
+  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   msg("[%s] %sSmiHandler function finding\n", g_plugin_name, prefix.c_str());
   for (auto data_addr : data_addrs) {
-    std::vector<ea_t> xrefs = getXrefs(data_addr);
+    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
 
     for (auto xref : xrefs) {
       msg("[%s] findSmiHandlers: 0x%016llX\n", g_plugin_name, u64_addr(xref));
@@ -369,10 +369,10 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
       {0x9c, 0xc0, 0x2d, 0x72, 0xcd, 0xd9, 0x98, 0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
 
   // Find all EFI_GUID EFI_SMM_VARIABLE_PROTOCOL_GUID addresses
-  std::vector<ea_t> data_addrs = findData(0, BADADDR, guid.uchar_data().data(), 16);
+  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   std::vector<ea_t> gSmmVarAddrs; // Find all gSmmVar variables
   for (auto data_addr : data_addrs) {
-    std::vector<ea_t> xrefs = getXrefs(data_addr);
+    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
 
     for (auto xref : xrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(xref));
@@ -398,7 +398,7 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
           msg("[%s] gSmmVar address: 0x%016llX\n", g_plugin_name,
               u64_addr(insn.ops[1].addr));
           set_cmt(ea, "EFI_SMM_VARIABLE_PROTOCOL *gSmmVar", true);
-          setPtrTypeAndName(insn.ops[1].addr, "gSmmVar", "EFI_SMM_VARIABLE_PROTOCOL");
+          set_ptr_type_and_name(insn.ops[1].addr, "gSmmVar", "EFI_SMM_VARIABLE_PROTOCOL");
           gSmmVarAddrs.push_back(insn.ops[1].addr);
           break;
         }
@@ -412,7 +412,7 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
   }
 
   for (auto smmVarAddr : gSmmVarAddrs) {
-    std::vector<ea_t> smmVarXrefs = getXrefs(static_cast<ea_t>(smmVarAddr));
+    std::vector<ea_t> smmVarXrefs = get_xrefs_util(static_cast<ea_t>(smmVarAddr));
     for (auto smmVarXref : smmVarXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(smmVarXref));
       qstring seg_name;
@@ -450,7 +450,7 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
             // Temporarily add a "virtual" smm service call
             // for easier annotations and UI
 
-            opStroff(ea, "EFI_SMM_VARIABLE_PROTOCOL");
+            op_stroff_util(ea, "EFI_SMM_VARIABLE_PROTOCOL");
             msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea), "SmmGetVariable");
             std::string smm_call = "gSmmVar->SmmGetVariable";
             json smm_item;
@@ -479,7 +479,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
                                            std::vector<json> *allServices) {
   std::vector<ea_t> readSaveStateCalls;
   msg("[%s] Looking for EFI_SMM_CPU_PROTOCOL\n", g_plugin_name);
-  std::vector<ea_t> codeAddrs;
+  std::vector<ea_t> code_addrs;
   std::vector<ea_t> gSmmCpuAddrs;
   for (auto guid : stackGuids) {
     std::string name = static_cast<std::string>(guid["name"]);
@@ -488,7 +488,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
     ea_t address = static_cast<ea_t>(guid["address"]);
     msg("[%s] found EFI_SMM_CPU_PROTOCOL on stack: 0x%016llX\n", g_plugin_name,
         u64_addr(address));
-    codeAddrs.push_back(address);
+    code_addrs.push_back(address);
   }
 
   for (auto guid : dataGuids) {
@@ -498,7 +498,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
 
     ea_t address = static_cast<ea_t>(guid["address"]);
     msg("[%s] found EFI_SMM_CPU_PROTOCOL: 0x%016llX\n", g_plugin_name, u64_addr(address));
-    std::vector<ea_t> guidXrefs = getXrefs(address);
+    std::vector<ea_t> guidXrefs = get_xrefs_util(address);
 
     for (auto guidXref : guidXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(guidXref));
@@ -508,11 +508,11 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
       if (index == std::string::npos) {
         continue;
       }
-      codeAddrs.push_back(static_cast<ea_t>(guidXref));
+      code_addrs.push_back(static_cast<ea_t>(guidXref));
     }
   }
 
-  for (auto addr : codeAddrs) {
+  for (auto addr : code_addrs) {
     msg("[%s] current address: 0x%016llX\n", g_plugin_name, u64_addr(addr));
     insn_t insn;
     ea_t ea = prev_head(addr, 0);
@@ -525,7 +525,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
         msg("[%s] gSmmCpu address: 0x%016llX\n", g_plugin_name,
             u64_addr(insn.ops[1].addr));
         set_cmt(ea, "EFI_SMM_CPU_PROTOCOL *gSmmCpu", true);
-        setPtrTypeAndName(insn.ops[1].addr, "gSmmCpu", "EFI_SMM_CPU_PROTOCOL");
+        set_ptr_type_and_name(insn.ops[1].addr, "gSmmCpu", "EFI_SMM_CPU_PROTOCOL");
         gSmmCpuAddrs.push_back(insn.ops[1].addr);
         break;
       }
@@ -539,7 +539,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
   }
 
   for (auto smmCpu : gSmmCpuAddrs) {
-    std::vector<ea_t> smmCpuXrefs = getXrefs(static_cast<ea_t>(smmCpu));
+    std::vector<ea_t> smmCpuXrefs = get_xrefs_util(static_cast<ea_t>(smmCpu));
 
     for (auto smmCpuXref : smmCpuXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(smmCpuXref));
@@ -571,7 +571,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
               readSaveStateCalls.push_back(ea);
             }
 
-            opStroff(ea, "EFI_SMM_CPU_PROTOCOL");
+            op_stroff_util(ea, "EFI_SMM_CPU_PROTOCOL");
             msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea),
                 "gSmmCpu->ReadSaveState");
             std::string smm_call = "gSmmCpu->ReadSaveState";

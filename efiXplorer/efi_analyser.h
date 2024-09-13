@@ -59,7 +59,7 @@ public:
   bool analyseNvramVariables();
   bool AnalyseVariableService(ea_t ea, std::string service_str);
   bool AddProtocol(std::string serviceName, ea_t guidAddress, ea_t xrefAddress,
-                   ea_t callAddress);
+                   ea_t call_address);
   void dumpInfo();
 
   json dbProtocols;

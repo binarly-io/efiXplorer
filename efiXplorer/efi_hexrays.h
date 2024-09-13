@@ -27,11 +27,11 @@ json DetectVars(func_t *f);
 std::vector<json> DetectServices(func_t *f);
 std::vector<json> DetectPeiServicesArm(func_t *f);
 bool DetectPeiServices(func_t *f);
-bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr);
+bool setLvar_name(qstring name, lvar_t lvar, ea_t func_addr);
 bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
 bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
-bool setHexRaysVariableInfo(ea_t funcEa, lvar_t &ll, tinfo_t tif, std::string name);
-bool setHexRaysVariableInfoAndHandleInterfaces(ea_t funcEa, lvar_t &ll, tinfo_t tif,
+bool setHexRaysVariableInfo(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name);
+bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                                std::string name);
 bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
 bool isPODArray(tinfo_t tif, unsigned int ptrDepth);
@@ -560,17 +560,17 @@ protected:
       ++mNumApplied;
 
       // Rename global variable
-      auto name = "g" + typeToName(static_cast<std::string>(tStr.c_str()));
+      auto name = "g" + type_to_name(static_cast<std::string>(tStr.c_str()));
       set_name(dest_ea, name.c_str(), SN_FORCE);
 
       // Get xrefs to global variable
-      auto xrefs = getXrefs(dest_ea);
-      qstring typeName;
+      auto xrefs = get_xrefs_util(dest_ea);
+      qstring type_name;
       ptr_type_data_t pi;
       ptrTif.get_ptr_details(&pi);
-      pi.obj_type.get_type_name(&typeName);
+      pi.obj_type.get_type_name(&type_name);
       // Handling all interface functions (to rename function arguments)
-      opstroffForGlobalInterface(xrefs, typeName);
+      op_stroff_for_global_interface(xrefs, type_name);
     }
 
     // For local variables
@@ -578,8 +578,8 @@ protected:
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
-      auto name = typeToName(static_cast<std::string>(tStr.c_str()));
-      setLvarName(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
+      auto name = type_to_name(static_cast<std::string>(tStr.c_str()));
+      setLvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
       if (setHexRaysVariableInfoAndHandleInterfaces(mFuncEa, destVar, ptrTif, name)) {
         ++mNumApplied;
       }
@@ -592,7 +592,7 @@ protected:
     // For global variables
     if (outArg->op == cot_obj) {
       // Rename global variable
-      auto name = "g" + typeToName(type_name);
+      auto name = "g" + type_to_name(type_name);
       set_name(dest_ea, name.c_str(), SN_FORCE);
     }
 
@@ -601,8 +601,8 @@ protected:
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
-      auto name = typeToName(type_name);
-      setLvarName(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
+      auto name = type_to_name(type_name);
+      setLvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
     }
   }
 };
@@ -731,7 +731,7 @@ public:
 
         if (type_name == qstring("EFI_HANDLE") ||
             type_name == qstring("EFI_SYSTEM_TABLE")) {
-          if (!addrInVec(child_functions, func_addr)) {
+          if (!addr_in_vec(child_functions, func_addr)) {
             child_functions.push_back(func_addr);
           }
           // set argument type and name
@@ -764,9 +764,9 @@ public:
   std::vector<ea_t> child_functions;
 
   std::vector<ea_t> gImageHandleList;
-  std::vector<ea_t> gStList;
-  std::vector<ea_t> gBsList;
-  std::vector<ea_t> gRtList;
+  std::vector<ea_t> st_list;
+  std::vector<ea_t> bs_list;
+  std::vector<ea_t> rt_list;
 
   void SetFuncEa(ea_t ea) { mFuncEa = ea; };
 
@@ -775,7 +775,7 @@ public:
   int visit_expr(cexpr_t *e) {
     if (e->op == cot_asg) {
       // saving a child function for recursive analysis
-      if (!addrInVec(child_functions, e->ea)) {
+      if (!addr_in_vec(child_functions, e->ea)) {
         child_functions.push_back(e->x->obj_ea);
       }
     }
@@ -837,27 +837,27 @@ public:
       ea_t g_addr = e->x->obj_ea;
       std::string type_name_str = static_cast<std::string>(type_name.c_str());
       if (type_name == qstring("EFI_HANDLE")) {
-        setTypeAndName(g_addr, "gImageHandle", type_name_str);
-        if (!addrInVec(gImageHandleList, g_addr)) {
+        set_type_and_name(g_addr, "gImageHandle", type_name_str);
+        if (!addr_in_vec(gImageHandleList, g_addr)) {
           gImageHandleList.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_SYSTEM_TABLE")) {
-        setPtrTypeAndName(g_addr, "gST", type_name_str);
-        if (!addrInVec(gStList, g_addr)) {
-          gStList.push_back(g_addr);
+        set_ptr_type_and_name(g_addr, "gST", type_name_str);
+        if (!addr_in_vec(st_list, g_addr)) {
+          st_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_BOOT_SERVICES")) {
-        setPtrTypeAndName(g_addr, "gBS", type_name_str);
-        if (!addrInVec(gBsList, g_addr)) {
-          gBsList.push_back(g_addr);
+        set_ptr_type_and_name(g_addr, "gBS", type_name_str);
+        if (!addr_in_vec(bs_list, g_addr)) {
+          bs_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
-        setPtrTypeAndName(g_addr, "gRT", type_name_str);
-        if (!addrInVec(gRtList, g_addr)) {
-          gRtList.push_back(g_addr);
+        set_ptr_type_and_name(g_addr, "gRT", type_name_str);
+        if (!addr_in_vec(rt_list, g_addr)) {
+          rt_list.push_back(g_addr);
         }
       }
     }
@@ -872,7 +872,7 @@ public:
       }
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
       // Set the Hex-Rays variable type
-      auto name = typeToName(static_cast<std::string>(type_name.c_str()));
+      auto name = type_to_name(static_cast<std::string>(type_name.c_str()));
       // setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
     }
 
@@ -922,7 +922,7 @@ public:
       is_ptr = 0;
     }
 
-    auto service_name = typeToName(static_cast<std::string>(type_name.c_str()));
+    auto service_name = type_to_name(static_cast<std::string>(type_name.c_str()));
     if (service_name.rfind("Efi", 0) == 0) {
       service_name = service_name.substr(3);
       if (service_name == "RaiseTpl") {
@@ -940,9 +940,9 @@ public:
     json s;
     s["address"] = e->ea;
     s["service_name"] = service_name;
-    s["table_name"] = getTable(service_name);
+    s["table_name"] = get_table_name(service_name);
 
-    if (!jsonInVec(services, s)) {
+    if (!json_in_vec(services, s)) {
       services.push_back(s);
     }
 
@@ -1035,7 +1035,7 @@ public:
     }
 
     if (call) {
-      opStroff(e->ea, "EFI_PEI_SERVICES");
+      op_stroff_util(e->ea, "EFI_PEI_SERVICES");
     }
 
     return 0;
@@ -1084,7 +1084,7 @@ public:
       if (func_type.substr(0, prefix.length()) == prefix) {
         func_type.erase(0, prefix.length());
       }
-      service_name = typeToName(func_type);
+      service_name = type_to_name(func_type);
     } else {
       auto s = mPeiServices.find(offset);
       if (s == mPeiServices.end()) {
@@ -1103,7 +1103,7 @@ public:
     s["service_name"] = service_name;
     s["table_name"] = table_type_name.c_str();
 
-    if (!jsonInVec(services, s)) {
+    if (!json_in_vec(services, s)) {
       services.push_back(s);
     }
 

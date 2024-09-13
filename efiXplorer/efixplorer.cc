@@ -83,7 +83,7 @@ bool idaapi run(size_t arg) {
   msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name, g_args.disable_ui,
       g_args.disable_vuln_hunt);
 
-  auto guids_path = getGuidsJsonFile();
+  auto guids_path = get_guids_json_file();
   msg("[%s] guids.json exists: %s\n", g_plugin_name, BTOA(!guids_path.empty()));
 
   if (guids_path.empty()) {

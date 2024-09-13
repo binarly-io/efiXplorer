@@ -21,8 +21,8 @@
 
 #include "efi_utils.h"
 
-std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> gBsList);
-std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> gBsList);
+std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> bs_list);
+std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> bs_list);
 std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix);
 std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix);
 std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGuids,

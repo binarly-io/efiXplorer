@@ -87,118 +87,66 @@ struct EfiGuid {
 };
 
 ArchFileType input_file_type();
+
+bool add_struct_for_shifted_ptr();
+bool addr_in_tables(std::vector<ea_t> st_list, std::vector<ea_t> bs_list,
+                    std::vector<ea_t> rt_list, ea_t ea);
+bool addr_in_vec(std::vector<ea_t> vec, ea_t addr);
+bool check_boot_service_protocol_xrefs(ea_t call_addr);
+bool check_boot_service_protocol(ea_t call_addr);
+bool check_install_protocol(ea_t ea);
+bool json_in_vec(std::vector<json> vec, json item);
+bool mark_copies_for_gvars(std::vector<ea_t> gvars, std::string type);
+bool op_stroff_util(ea_t addr, std::string type);
+bool set_ptr_type(ea_t addr, std::string type);
+bool set_ret_to_pei_svc(ea_t start_ea);
+bool summary_json_exists();
+bool uint64_in_vec(std::vector<uint64_t> vec, uint64_t value);
+bool valid_guid(json guid);
+
+ea_t find_unknown_bs_var_64(ea_t ea);
+
+EfiGuid get_global_guid(ea_t addr);
+EfiGuid get_local_guid(func_t *f, uint64_t offset);
+
 FfsFileType ask_file_type(std::vector<json> *all_guids);
 
-// Set EFI_GUID type
-void setGuidType(ea_t ea);
+json get_guid_by_address(ea_t addr);
 
-// Get all data xrefs for address
-std::vector<ea_t> getXrefs(ea_t addr);
-std::vector<ea_t> getXrefsToArray(ea_t addr);
+qstring get_module_name_loader(ea_t addr);
 
-// Wrapper for op_stroff function
-bool opStroff(ea_t addr, std::string type);
+std::filesystem::path get_guids_json_file();
+std::filesystem::path get_summary_file();
 
-// Find address of global gBS variable
-// for X64 module for each service
-ea_t findUnknownBsVarX64(ea_t ea);
+std::string as_hex(uint64_t value);
+std::string get_table_name(std::string service_name);
+std::string get_wide_string(ea_t addr);
+std::string guid_to_string(json guid);
+std::string lookup_boot_service_name(uint64_t offset);
+std::string lookup_runtime_service_name(uint64_t offset);
+std::string type_to_name(std::string type);
 
-// Get pointer to named type and apply it
-bool setPtrType(ea_t addr, std::string type);
+std::vector<ea_t> find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+std::vector<ea_t> get_xrefs_to_array(ea_t addr);
+std::vector<ea_t> get_xrefs_util(ea_t addr);
+std::vector<ea_t> search_protocol(std::string protocol);
+std::vector<uint8_t> unpack_guid(std::string guid);
 
-// Set name and apply pointer to named type
-void setPtrTypeAndName(ea_t ea, std::string name, std::string type);
-
-// Get guids.json file name
-std::filesystem::path getGuidsJsonFile();
-
-// Get json summary file name
-std::filesystem::path getSummaryFile();
-
-// Check for summary json file exist
-bool summaryJsonExist();
-
-// Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
-// for ModuleEntryPoint
-void setEntryArgToPeiSvc();
-
-// Set return value type to EFI_PEI_SERVICES **PeiService
-// for specified function
-bool setRetToPeiSvc(ea_t start_ea);
-
-// Set type and name
-void setTypeAndName(ea_t ea, std::string name, std::string type);
-
-// Set const CHAR16 type
-void setConstChar16Type(ea_t ea);
-
-// Get module name by address
-qstring getModuleNameLoader(ea_t address);
-
-// Print std::vector<json> object
-void printVectorJson(std::vector<json> in);
-
-// Change the value of a number to match the data type
-uval_t truncImmToDtype(uval_t value, op_dtype_t dtype);
-
-// Get GUID data by address
-json getGuidByAddr(ea_t addr);
-
-// Validate GUID value
-bool checkGuid(json guid);
-
-// Make sure the first argument looks like protocol
-bool bootServiceProtCheck(ea_t callAddr);
-
-// Make sure that the address does not belong to the protocol interface
-bool bootServiceProtCheckXrefs(ea_t callAddr);
-
-// Convert GUID value to string
-std::string getGuidFromValue(json guid);
-
-// Convert string GUID to vector of bytes
-std::vector<uint8_t> unpackGuid(std::string guid);
-
-// Convert 64-bit value to hex string
-std::string getHex(uint64_t value);
-
-// Mark copies for global variables
-bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type);
-
-//  Generate name string from type
-std::string typeToName(std::string type);
-
-// Get XREFs to stack variable
-xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName);
-
-// Mark the arguments of each function from an interface derived from a local variable
-void opstroffForInterface(xreflist_t localXrefs, qstring typeName);
-
-// Mark the arguments of each function from an interface derived from a global variable
-void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName);
-
-// Find wrappers
-bool qwordInVec(std::vector<uint64_t> vec, uint64_t value);
-bool addrInVec(std::vector<ea_t> vec, ea_t addr);
-bool jsonInVec(std::vector<json> vec, json item);
-bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
-                  std::vector<ea_t> gRtList, ea_t ea);
-
-// Search protocol GUID bytes in binary
-std::vector<ea_t> searchProtocol(std::string protocol);
-
-bool checkInstallProtocol(ea_t ea);
-std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
-std::string getWideString(ea_t addr);
-EfiGuid getGlobalGuid(ea_t addr);
-EfiGuid getStackGuid(func_t *f, uint64_t offset);
-bool addStrucForShiftedPtr();
-std::string getTable(std::string service_name);
-std::string lookupBootServiceName(uint64_t offset);
-std::string lookupRuntimeServiceName(uint64_t offset);
-uint64_t u64_addr(ea_t addr);
-uint32_t u32_addr(ea_t addr);
 uint16_t get_machine_type();
+uint32_t u32_addr(ea_t addr);
+uint64_t u64_addr(ea_t addr);
+
+uval_t trunc_imm_to_dtype(uval_t value, op_dtype_t dtype);
+
+void op_stroff_for_global_interface(std::vector<ea_t> xrefs, qstring type_name);
+void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name);
+void set_const_char16_type(ea_t ea);
+void set_entry_arg_to_pei_svc();
+void set_guid_type(ea_t ea);
+void set_ptr_type_and_name(ea_t ea, std::string name, std::string type);
+void set_type_and_name(ea_t ea, std::string name, std::string type);
+
+xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring var_name);
 
 #if IDA_SDK_VERSION >= 900
 tid_t import_type(const til_t *til, int _idx, const char *name);

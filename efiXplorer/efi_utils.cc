@@ -27,8 +27,8 @@ std::vector<ea_t> g_smm_get_variable_calls;
 std::vector<ea_t> g_smm_set_variable_calls;
 
 //--------------------------------------------------------------------------
-// Set EFI_GUID type
-void setGuidType(ea_t ea) {
+// set EFI_GUID type
+void set_guid_type(ea_t ea) {
   tinfo_t tinfo;
   if (tinfo.get_named_type(get_idati(), "EFI_GUID")) {
     apply_tinfo(ea, tinfo, TINFO_DEFINITE);
@@ -36,8 +36,8 @@ void setGuidType(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// Set type and name
-void setTypeAndName(ea_t ea, std::string name, std::string type) {
+// set type and name
+void set_type_and_name(ea_t ea, std::string name, std::string type) {
   set_name(ea, name.c_str(), SN_FORCE);
   tinfo_t tinfo;
   if (tinfo.get_named_type(get_idati(), type.c_str())) {
@@ -46,8 +46,8 @@ void setTypeAndName(ea_t ea, std::string name, std::string type) {
 }
 
 //--------------------------------------------------------------------------
-// Set const CHAR16 type
-void setConstChar16Type(ea_t ea) {
+// set const CHAR16 type
+void set_const_char16_type(ea_t ea) {
   tinfo_t tinfo;
   if (tinfo.get_named_type(get_idati(), "CHAR16")) {
     tinfo.set_const();
@@ -56,7 +56,7 @@ void setConstChar16Type(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// get file format name (fileformatname)
+// get file format name
 std::string file_format_name() {
   char file_format[256] = {0};
   get_file_type_name(file_format, 256);
@@ -152,27 +152,27 @@ FfsFileType ask_file_type(std::vector<json> *all_guids) {
 }
 
 //--------------------------------------------------------------------------
-// Find address of global gBS var for X64 module for each service
-ea_t findUnknownBsVarX64(ea_t ea) {
-  ea_t resAddr = 0;
+// find address of global gBS var for X64 module for each service
+ea_t find_unknown_bs_var_64(ea_t ea) {
+  ea_t res = BADADDR;
   insn_t insn;
 
-  // Check 10 instructions below
+  // check 10 instructions below
   for (int i = 0; i < 10; i++) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RAX &&
         insn.ops[1].type == o_mem) {
-      resAddr = insn.ops[1].addr;
+      res = insn.ops[1].addr;
       break;
     }
     ea = prev_head(ea, 0);
   }
-  return resAddr;
+  return res;
 }
 
 //--------------------------------------------------------------------------
-// Get all xrefs for given address
-std::vector<ea_t> getXrefs(ea_t addr) {
+// get all xrefs for given address
+std::vector<ea_t> get_xrefs_util(ea_t addr) {
   std::vector<ea_t> xrefs;
   ea_t xref = get_first_dref_to(addr);
   while (xref != BADADDR) {
@@ -183,25 +183,25 @@ std::vector<ea_t> getXrefs(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// Get all xrefs for given array element
-std::vector<ea_t> getXrefsToArray(ea_t addr) {
+// get all xrefs for given array element
+std::vector<ea_t> get_xrefs_to_array(ea_t addr) {
   ea_t first_ea;
   ea_t ea = addr;
   while (true) {
     auto ptr = get_qword(ea);
-    auto xrefs = getXrefs(ptr);
+    auto xrefs = get_xrefs_util(ptr);
     if (std::find(xrefs.begin(), xrefs.end(), ea) == xrefs.end()) {
       break;
     }
     first_ea = ea;
     ea -= 8;
   }
-  return getXrefs(first_ea);
+  return get_xrefs_util(first_ea);
 }
 
 //--------------------------------------------------------------------------
-// Wrapper for op_stroff function
-bool opStroff(ea_t addr, std::string type) {
+// wrapper for op_stroff function
+bool op_stroff_util(ea_t addr, std::string type) {
   tinfo_t tinfo;
   if (!tinfo.get_named_type(get_idati(), type.c_str())) {
     return false;
@@ -220,95 +220,95 @@ bool opStroff(ea_t addr, std::string type) {
 }
 
 //--------------------------------------------------------------------------
-// Get pointer to named type and apply it
-bool setPtrType(ea_t addr, std::string type) {
+// get pointer to named type and apply it
+bool set_ptr_type(ea_t addr, std::string type) {
   tinfo_t tinfo;
   if (!tinfo.get_named_type(get_idati(), type.c_str())) {
     return false;
   }
-  tinfo_t ptrTinfo;
-  ptrTinfo.create_ptr(tinfo);
-  apply_tinfo(addr, ptrTinfo, TINFO_DEFINITE);
+  tinfo_t p_tinfo;
+  p_tinfo.create_ptr(tinfo);
+  apply_tinfo(addr, p_tinfo, TINFO_DEFINITE);
   return true;
 }
 
 //--------------------------------------------------------------------------
-// Set name and apply pointer to named type
-void setPtrTypeAndName(ea_t ea, std::string name, std::string type) {
+// set name and apply pointer to named type
+void set_ptr_type_and_name(ea_t ea, std::string name, std::string type) {
   set_name(ea, name.c_str(), SN_FORCE);
-  setPtrType(ea, type.c_str());
+  set_ptr_type(ea, type.c_str());
 }
 
 //--------------------------------------------------------------------------
-// Get guids.json file name
-std::filesystem::path getGuidsJsonFile() {
-  std::filesystem::path guidsJsonPath;
+// get guids.json file name
+std::filesystem::path get_guids_json_file() {
+  std::filesystem::path guids_json_path;
 
   // check {idadir}/plugins/guids.json
-  guidsJsonPath /= idadir("plugins");
-  guidsJsonPath /= "guids.json";
-  if (std::filesystem::exists(guidsJsonPath)) {
-    return guidsJsonPath;
+  guids_json_path /= idadir("plugins");
+  guids_json_path /= "guids.json";
+  if (std::filesystem::exists(guids_json_path)) {
+    return guids_json_path;
   }
 
   // check {idadir}/plugins/guids/guids.json
-  guidsJsonPath.clear();
-  guidsJsonPath /= idadir("plugins");
-  guidsJsonPath /= "guids";
-  guidsJsonPath /= "guids.json";
-  if (std::filesystem::exists(guidsJsonPath)) {
-    return guidsJsonPath;
+  guids_json_path.clear();
+  guids_json_path /= idadir("plugins");
+  guids_json_path /= "guids";
+  guids_json_path /= "guids.json";
+  if (std::filesystem::exists(guids_json_path)) {
+    return guids_json_path;
   }
 
-  // Try to load it from the per-user directory.
-  guidsJsonPath.clear();
-  guidsJsonPath /= get_user_idadir();
-  guidsJsonPath /= "plugins";
-  guidsJsonPath /= "guids.json";
-  if (std::filesystem::exists(guidsJsonPath)) {
-    return guidsJsonPath;
+  // try to load it from the per-user directory.
+  guids_json_path.clear();
+  guids_json_path /= get_user_idadir();
+  guids_json_path /= "plugins";
+  guids_json_path /= "guids.json";
+  if (std::filesystem::exists(guids_json_path)) {
+    return guids_json_path;
   }
 
-  guidsJsonPath.clear();
-  guidsJsonPath /= get_user_idadir();
-  guidsJsonPath /= "plugins";
-  guidsJsonPath /= "guids";
-  guidsJsonPath /= "guids.json";
-  if (std::filesystem::exists(guidsJsonPath)) {
-    return guidsJsonPath;
+  guids_json_path.clear();
+  guids_json_path /= get_user_idadir();
+  guids_json_path /= "plugins";
+  guids_json_path /= "guids";
+  guids_json_path /= "guids.json";
+  if (std::filesystem::exists(guids_json_path)) {
+    return guids_json_path;
   }
 
-  // Does not exist.
-  guidsJsonPath.clear();
-  return guidsJsonPath;
+  // does not exist
+  guids_json_path.clear();
+  return guids_json_path;
 }
 
 //--------------------------------------------------------------------------
-// Get json summary file name
-std::filesystem::path getSummaryFile() {
-  std::string idbPath;
-  idbPath = get_path(PATH_TYPE_IDB);
-  std::filesystem::path logFile;
-  logFile /= idbPath;
-  logFile.replace_extension(".json");
-  return logFile;
+// get json summary file name
+std::filesystem::path get_summary_file() {
+  std::string idb_path;
+  idb_path = get_path(PATH_TYPE_IDB);
+  std::filesystem::path log_file;
+  log_file /= idb_path;
+  log_file.replace_extension(".json");
+  return log_file;
 }
 
 //--------------------------------------------------------------------------
-// Check for summary json file exist
-bool summaryJsonExist() {
-  std::string idbPath;
-  idbPath = get_path(PATH_TYPE_IDB);
-  std::filesystem::path logFile;
-  logFile /= idbPath;
-  logFile.replace_extension(".json");
-  return std::filesystem::exists(logFile);
+// check if summary json file exists
+bool summary_json_exists() {
+  std::string idb_path;
+  idb_path = get_path(PATH_TYPE_IDB);
+  std::filesystem::path log_file;
+  log_file /= idb_path;
+  log_file.replace_extension(".json");
+  return std::filesystem::exists(log_file);
 }
 
 //--------------------------------------------------------------------------
-// Change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
-// for ModuleEntryPoint
-void setEntryArgToPeiSvc() {
+// change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
+// at ModuleEntryPoint
+void set_entry_arg_to_pei_svc() {
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
     ea_t start_ea = get_entry(ord);
@@ -318,24 +318,28 @@ void setEntryArgToPeiSvc() {
           u64_addr(start_ea), idx);
       continue;
     }
+
     func_type_data_t funcdata;
     if (!tif_ea.get_func_details(&funcdata)) {
       msg("[%s] get_func_details failed, %d\n", g_plugin_name, idx);
       continue;
     }
+
     tinfo_t tif_pei;
     bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
     if (!res) {
       msg("[%s] get_named_type failed, res = %d, idx=%d\n", g_plugin_name, res, idx);
       continue;
     }
-    tinfo_t ptrTinfo;
-    tinfo_t ptrPtrTinfo;
-    ptrTinfo.create_ptr(tif_pei);
-    ptrPtrTinfo.create_ptr(ptrTinfo);
+
+    tinfo_t p_tinfo;
+    tinfo_t pp_tinfo;
+    p_tinfo.create_ptr(tif_pei);
+    pp_tinfo.create_ptr(p_tinfo);
+
     // funcdata.size() does not work for aarch64
     if (funcdata.size() == 2) {
-      funcdata[1].type = ptrPtrTinfo;
+      funcdata[1].type = pp_tinfo;
       funcdata[1].name = "PeiServices";
       tinfo_t func_tinfo;
       if (!func_tinfo.create_func(funcdata)) {
@@ -350,7 +354,7 @@ void setEntryArgToPeiSvc() {
   }
 }
 
-bool setRetToPeiSvc(ea_t start_ea) {
+bool set_ret_to_pei_svc(ea_t start_ea) {
   tinfo_t tif_ea;
   if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
     msg("[%s] guess_tinfo failed, function = 0x%016llX", g_plugin_name,
@@ -369,12 +373,12 @@ bool setRetToPeiSvc(ea_t start_ea) {
     msg("[%s] get_named_type failed, res = %d\n", g_plugin_name, res);
     return false;
   }
-  tinfo_t ptrTinfo;
-  tinfo_t ptrPtrTinfo;
-  ptrTinfo.create_ptr(tif_pei);
-  ptrPtrTinfo.create_ptr(ptrTinfo);
+  tinfo_t p_tinfo;
+  tinfo_t pp_tinfo;
+  p_tinfo.create_ptr(tif_pei);
+  pp_tinfo.create_ptr(p_tinfo);
 
-  fi.rettype = ptrPtrTinfo;
+  fi.rettype = pp_tinfo;
 
   tinfo_t func_tinfo;
   if (!func_tinfo.create_func(fi)) {
@@ -390,7 +394,7 @@ bool setRetToPeiSvc(ea_t start_ea) {
   return true;
 }
 
-int parseEfiPeiServices4() {
+int parse_efi_pei_svc4() {
   return parse_decls(nullptr,
                      "struct EFI_PEI_SERVICES_4 {\n"
                      "  EFI_PEI_SERVICES **PeiServices;\n"
@@ -399,7 +403,7 @@ int parseEfiPeiServices4() {
                      msg, HTI_DCL);
 }
 
-int parseEfiPeiSidt() {
+int parse_efi_pei_sidt() {
   return parse_decls(nullptr,
                      "struct EFI_PEI_SIDT {\n"
                      "  UINT16 Limit;\n"
@@ -409,8 +413,8 @@ int parseEfiPeiSidt() {
 }
 
 //--------------------------------------------------------------------------
-// Add EFI_PEI_SERVICES_4 structure
-bool addStrucForShiftedPtr() {
+// add EFI_PEI_SERVICES_4 structure
+bool add_struct_for_shifted_ptr() {
 #if IDA_SDK_VERSION < 900
   auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
   if (sid == BADADDR) {
@@ -433,24 +437,24 @@ bool addStrucForShiftedPtr() {
   }
 
   // set type "EFI_PEI_SERVICES **PeiServices"
-  tinfo_t ptrTinfo;
-  tinfo_t ptr2Tinfo;
-  ptrTinfo.create_ptr(tinfo);
-  ptr2Tinfo.create_ptr(ptrTinfo);
+  tinfo_t p_tinfo;
+  tinfo_t pp_tinfo;
+  p_tinfo.create_ptr(tinfo);
+  pp_tinfo.create_ptr(p_tinfo);
 
   auto member = get_member_by_name(new_struct, "PeiServices");
-  set_member_tinfo(new_struct, member, 0, ptr2Tinfo, 0);
+  set_member_tinfo(new_struct, member, 0, pp_tinfo, 0);
 
   return true;
 #endif
 
   // return true if there are no errors from parse_decls()
-  return !parseEfiPeiServices4() && !parseEfiPeiSidt();
+  return !parse_efi_pei_svc4() && !parse_efi_pei_sidt();
 }
 
 //--------------------------------------------------------------------------
-// Change the value of a number to match the data type
-uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
+// change the value of a number to match the data type
+uval_t trunc_imm_to_dtype(uval_t value, op_dtype_t dtype) {
   switch (dtype) {
   case dt_byte:
     return value & 0xff;
@@ -464,17 +468,17 @@ uval_t truncImmToDtype(uval_t value, op_dtype_t dtype) {
 }
 
 //--------------------------------------------------------------------------
-// Get module name by address
-qstring getModuleNameLoader(ea_t address) {
-  segment_t *seg = getseg(address);
+// get module name by address
+qstring get_module_name_loader(ea_t addr) {
+  segment_t *seg = getseg(addr);
   qstring seg_name;
   get_segm_name(&seg_name, seg);
   return seg_name.remove(seg_name.size() - 7, seg_name.size());
 }
 
 //--------------------------------------------------------------------------
-// Get GUID data by address
-json getGuidByAddr(ea_t addr) {
+// get GUID data by address
+json get_guid_by_address(ea_t addr) {
   return json::array(
       {get_wide_dword(addr), get_wide_word(addr + 4), get_wide_word(addr + 6),
        get_wide_byte(addr + 8), get_wide_byte(addr + 9), get_wide_byte(addr + 10),
@@ -483,8 +487,8 @@ json getGuidByAddr(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// Validate GUID value
-bool checkGuid(json guid) {
+// validate GUID value
+bool valid_guid(json guid) {
   if (static_cast<uint32_t>(guid[0]) == 0x00000000 && (uint16_t)guid[1] == 0x0000) {
     return false;
   }
@@ -495,28 +499,28 @@ bool checkGuid(json guid) {
 }
 
 //--------------------------------------------------------------------------
-// Convert GUID value to string
-std::string getGuidFromValue(json guid) {
-  char guidStr[37] = {0};
-  snprintf(guidStr, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+// convert GUID value to string
+std::string guid_to_string(json guid) {
+  char guid_str[37] = {0};
+  snprintf(guid_str, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
            static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
            static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
            static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
            static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
            static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
            static_cast<uint8_t>(guid[10]));
-  return static_cast<std::string>(guidStr);
+  return static_cast<std::string>(guid_str);
 }
 
-std::vector<uint8_t> unpackGuid(std::string guid) {
+std::vector<uint8_t> unpack_guid(std::string guid) {
   std::vector<uint8_t> res;
-  std::string delimiter = "-";
+  std::string delim = "-";
   std::string byte_str;
   uint8_t byte;
   size_t pos = 0;
 
   auto index = 0;
-  while ((pos = guid.find(delimiter)) != std::string::npos) {
+  while ((pos = guid.find(delim)) != std::string::npos) {
     std::vector<uint8_t> tmp;
     auto hex = guid.substr(0, pos);
     if (hex.size() % 2) {
@@ -533,7 +537,7 @@ std::vector<uint8_t> unpackGuid(std::string guid) {
       res.insert(res.end(), tmp.begin(), tmp.end());
     }
     index += 1;
-    guid.erase(0, pos + delimiter.size());
+    guid.erase(0, pos + delim.size());
     tmp.clear();
   }
 
@@ -546,10 +550,10 @@ std::vector<uint8_t> unpackGuid(std::string guid) {
   return res;
 }
 
-std::vector<ea_t> searchProtocol(std::string protocol) {
+std::vector<ea_t> search_protocol(std::string protocol) {
   uchar bytes[17] = {0};
   std::vector<ea_t> res;
-  auto guid_bytes = unpackGuid(protocol);
+  auto guid_bytes = unpack_guid(protocol);
   std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
   ea_t start = 0;
   while (true) {
@@ -567,7 +571,7 @@ std::vector<ea_t> searchProtocol(std::string protocol) {
   return res;
 }
 
-bool checkInstallProtocol(ea_t ea) {
+bool check_install_protocol(ea_t ea) {
   insn_t insn;
   // search for `call [REG + offset]` insn
   // offset in [0x80, 0xA8, 0x148]
@@ -589,19 +593,19 @@ bool checkInstallProtocol(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// Convert 64-bit value to hex string
-std::string getHex(uint64_t value) {
+// convert 64-bit value to hex string
+std::string as_hex(uint64_t value) {
   char hexstr[21] = {};
   snprintf(hexstr, 21, "%llX", value);
   return static_cast<std::string>(hexstr);
 }
 
 //--------------------------------------------------------------------------
-// Make sure the first argument looks like protocol
-bool bootServiceProtCheck(ea_t callAddr) {
+// make sure the first argument looks like a protocol
+bool check_boot_service_protocol(ea_t call_addr) {
   bool valid = false;
   insn_t insn;
-  auto addr = prev_head(callAddr, 0);
+  auto addr = prev_head(call_addr, 0);
   decode_insn(&insn, addr);
   while (!is_basic_block_end(insn, false)) {
 
@@ -623,10 +627,10 @@ bool bootServiceProtCheck(ea_t callAddr) {
 }
 
 //--------------------------------------------------------------------------
-// Make sure that the address does not belong to the protocol interface
-bool bootServiceProtCheckXrefs(ea_t callAddr) {
+// make sure that the address does not belong to the protocol interface
+bool check_boot_service_protocol_xrefs(ea_t call_addr) {
   insn_t insn;
-  for (auto xref : getXrefs(callAddr)) {
+  for (auto xref : get_xrefs_util(call_addr)) {
     decode_insn(&insn, xref);
     if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_R8) {
       // load interface instruction
@@ -636,16 +640,15 @@ bool bootServiceProtCheckXrefs(ea_t callAddr) {
   return true;
 }
 
-bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
+bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
   insn_t insn;
   int reg = -1;
-  ea_t ea = codeAddr;
-  ea_t varCopy = BADADDR;
+  ea_t ea = code_addr;
+  ea_t var_copy = BADADDR;
   decode_insn(&insn, ea);
 
-  // get `reg` value
   if (insn.itype == NN_mov && insn.ops[0].type == o_reg && insn.ops[1].type == o_mem &&
-      insn.ops[1].addr == varAddr) {
+      insn.ops[1].addr == var_addr) {
     reg = insn.ops[0].reg;
   }
 
@@ -666,49 +669,48 @@ bool markCopy(ea_t codeAddr, ea_t varAddr, std::string type) {
       break;
     }
 
-    // get `varCopy`
     if (insn.itype == NN_mov && insn.ops[0].type == o_mem && insn.ops[1].type == o_reg &&
         insn.ops[1].reg == reg) {
-      varCopy = insn.ops[0].addr;
-      msg("[efiXplorer] Found copy for global variable: 0x%016llX\n", u64_addr(ea));
+      var_copy = insn.ops[0].addr;
+      msg("[efiXplorer] found copy for global variable: 0x%016llX\n", u64_addr(ea));
       break;
     }
   }
 
-  if (varCopy == BADADDR) {
+  if (var_copy == BADADDR) {
     return false;
   }
 
   std::string name;
 
   if (type == "gSmst") {
-    setPtrTypeAndName(varCopy, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
+    set_ptr_type_and_name(var_copy, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
   }
 
   if (type == "gBS") {
-    setPtrTypeAndName(varCopy, "gBS", "EFI_BOOT_SERVICES");
+    set_ptr_type_and_name(var_copy, "gBS", "EFI_BOOT_SERVICES");
   }
 
   if (type == "gRT") {
-    setPtrTypeAndName(varCopy, "gRT", "EFI_RUNTIME_SERVICES");
+    set_ptr_type_and_name(var_copy, "gRT", "EFI_RUNTIME_SERVICES");
   }
 
   return true;
 }
 
-bool markCopiesForGlobalVars(std::vector<ea_t> globalVars, std::string type) {
-  for (auto var : globalVars) {
-    auto xrefs = getXrefs(var);
+bool mark_copies_for_gvars(std::vector<ea_t> gvars, std::string type) {
+  for (auto var : gvars) {
+    auto xrefs = get_xrefs_util(var);
     for (auto addr : xrefs) {
-      markCopy(addr, var, type);
+      mark_copy(addr, var, type);
     }
   }
   return true;
 }
 
 //--------------------------------------------------------------------------
-// Generate name string from type
-std::string typeToName(std::string type) {
+// generate name string from type
+std::string type_to_name(std::string type) {
   std::string result;
   size_t counter = 0;
   for (char const &c : type) {
@@ -736,18 +738,18 @@ std::string typeToName(std::string type) {
   return result;
 }
 
-xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName) {
+xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring var_name) {
   xreflist_t xrefs_list;
 
 #if IDA_SDK_VERSION < 900
-  struc_t *frame = get_frame(funcEa);
-  func_t *func = get_func(funcEa);
+  struc_t *frame = get_frame(func_addr);
+  func_t *func = get_func(func_addr);
   member_t member; // Get member by name
   for (int i = 0; i < frame->memqty; i++) {
     member = frame->members[i];
     qstring name;
     get_member_name(&name, frame->members[i].id);
-    if (name == varName) {
+    if (name == var_name) {
       build_stkvar_xrefs(&xrefs_list, func, &member);
       return xrefs_list;
     }
@@ -758,44 +760,43 @@ xreflist_t xrefsToStackVar(ea_t funcEa, qstring varName) {
   return xrefs_list;
 }
 
-void opstroffForAddress(ea_t ea, qstring typeName) {
+void op_stroff_for_addr(ea_t ea, qstring type_name) {
   insn_t insn;
 
   for (auto i = 0; i < 16; i++) {
     ea = next_head(ea, BADADDR);
     decode_insn(&insn, ea);
-    // Found interface function call
+    // check for interface function call
     if ((insn.itype == NN_call || insn.itype == NN_callfi || insn.itype == NN_callni) &&
         (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
         insn.ops[0].reg == REG_RAX) {
-      opStroff(ea, static_cast<std::string>(typeName.c_str()));
-      msg("[%s] Mark arguments at address 0x%016llX (interface type: %s)\n",
-          g_plugin_name, u64_addr(ea), typeName.c_str());
+      op_stroff_util(ea, static_cast<std::string>(type_name.c_str()));
+      msg("[%s] mark arguments at address 0x%016llX (interface type: %s)\n",
+          g_plugin_name, u64_addr(ea), type_name.c_str());
 
       // check for EfiSmmBase2Protocol->GetSmstLocation
-      if (typeName == "EFI_SMM_BASE2_PROTOCOL" && insn.ops[0].type == o_displ &&
+      if (type_name == "EFI_SMM_BASE2_PROTOCOL" && insn.ops[0].type == o_displ &&
           insn.ops[0].addr == 8) {
-        if (!addrInVec(g_get_smst_location_calls, ea)) {
+        if (!addr_in_vec(g_get_smst_location_calls, ea)) {
           g_get_smst_location_calls.push_back(ea);
         }
       }
 
-      if (typeName == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_phrase) {
-        if (!addrInVec(g_smm_get_variable_calls, ea)) {
+      if (type_name == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_phrase) {
+        if (!addr_in_vec(g_smm_get_variable_calls, ea)) {
           g_smm_get_variable_calls.push_back(ea);
         }
       }
 
-      if (typeName == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_displ &&
+      if (type_name == "EFI_SMM_VARIABLE_PROTOCOL" && insn.ops[0].type == o_displ &&
           insn.ops[0].addr == 0x10) {
-        if (!addrInVec(g_smm_set_variable_calls, ea)) {
+        if (!addr_in_vec(g_smm_set_variable_calls, ea)) {
           g_smm_set_variable_calls.push_back(ea);
         }
       }
-
       break;
     }
-    // If the RAX value is overridden
+    // if the RAX value is overridden
     if (insn.ops[0].reg == REG_RAX) {
       break;
     }
@@ -803,49 +804,50 @@ void opstroffForAddress(ea_t ea, qstring typeName) {
 }
 
 //--------------------------------------------------------------------------
-// Mark the arguments of each function from an interface derived from
+// mark the arguments of each function from an interface derived from
 // a local variable
-void opstroffForInterface(xreflist_t localXrefs, qstring typeName) {
+void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name) {
   insn_t insn;
-  for (auto xref : localXrefs) {
+  for (auto xref : local_xrefs) {
     decode_insn(&insn, xref.ea);
     if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
-      opstroffForAddress(xref.ea, typeName);
+      op_stroff_for_addr(xref.ea, type_name);
     }
   }
 }
 
 //--------------------------------------------------------------------------
-// Mark the arguments of each function from an interface derived from
+// mark the arguments of each function from an interface derived from
 // a global variable
-void opstroffForGlobalInterface(std::vector<ea_t> xrefs, qstring typeName) {
+void op_stroff_for_global_interface(std::vector<ea_t> xrefs, qstring type_name) {
   insn_t insn;
   for (auto ea : xrefs) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
-      opstroffForAddress(ea, typeName);
+      op_stroff_for_addr(ea, type_name);
     }
   }
 }
 
-bool qwordInVec(std::vector<uint64_t> vec, uint64_t value) {
+bool uint64_in_vec(std::vector<uint64_t> vec, uint64_t value) {
   return find(vec.begin(), vec.end(), value) != vec.end();
 }
 
-bool addrInVec(std::vector<ea_t> vec, ea_t addr) {
+bool addr_in_vec(std::vector<ea_t> vec, ea_t addr) {
   return find(vec.begin(), vec.end(), addr) != vec.end();
 }
 
-bool jsonInVec(std::vector<json> vec, json item) {
+bool json_in_vec(std::vector<json> vec, json item) {
   return find(vec.begin(), vec.end(), item) != vec.end();
 }
 
-bool addrInTables(std::vector<ea_t> gStList, std::vector<ea_t> gBsList,
-                  std::vector<ea_t> gRtList, ea_t ea) {
-  return (addrInVec(gStList, ea) || addrInVec(gBsList, ea) || addrInVec(gRtList, ea));
+bool addr_in_tables(std::vector<ea_t> st_list, std::vector<ea_t> bs_list,
+                    std::vector<ea_t> rt_list, ea_t ea) {
+  return (addr_in_vec(st_list, ea) || addr_in_vec(bs_list, ea) ||
+          addr_in_vec(rt_list, ea));
 }
 
-std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {
+std::vector<ea_t> find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {
   std::vector<ea_t> res;
   ea_t start = start_ea;
   int counter = 0;
@@ -866,7 +868,7 @@ std::vector<ea_t> findData(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) 
 
 //--------------------------------------------------------------------------
 // get wide string by address
-std::string getWideString(ea_t addr) {
+std::string get_wide_string(ea_t addr) {
   std::string res;
   int index = 0;
   while (get_wide_word(addr + index)) {
@@ -881,8 +883,8 @@ std::string getWideString(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// Get EfiGuid by address
-EfiGuid getGlobalGuid(ea_t addr) {
+// get EfiGuid by address
+EfiGuid get_global_guid(ea_t addr) {
   EfiGuid guid;
   guid.data1 = get_wide_dword(addr);
   guid.data2 = get_wide_word(addr + 4);
@@ -894,8 +896,8 @@ EfiGuid getGlobalGuid(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// Get EfiGuid by stack offset
-EfiGuid getStackGuid(func_t *f, uint64_t offset) {
+// get EfiGuid by stack offset
+EfiGuid get_local_guid(func_t *f, uint64_t offset) {
   EfiGuid guid;
   insn_t insn;
   auto ea = f->start_ea;
@@ -943,35 +945,39 @@ EfiGuid getStackGuid(func_t *f, uint64_t offset) {
   return guid;
 }
 
-std::string getTable(std::string service_name) {
-  for (auto i = 0; i < bootServicesTableAllCount; i++) {
-    if (static_cast<std::string>(bootServicesTableAll[i].name) == service_name) {
+std::string get_table_name(std::string service_name) {
+  for (auto i = 0; i < g_boot_services_table_all_count; i++) {
+    if (static_cast<std::string>(g_boot_services_table_all[i].name) == service_name) {
       return "EFI_BOOT_SERVICES";
     }
   }
-  for (auto i = 0; i < runtimeServicesTableAllCount; i++) {
-    if (static_cast<std::string>(runtimeServicesTableAll[i].name) == service_name) {
+
+  for (auto i = 0; i < g_runtime_services_table_all_count; i++) {
+    if (static_cast<std::string>(g_runtime_services_table_all[i].name) == service_name) {
       return "EFI_RUNTIME_SERVICES";
     }
   }
-  return "OTHER";
-}
 
-std::string lookupBootServiceName(uint64_t offset) {
-  for (auto i = 0; i < bootServicesTableAllCount; i++) {
-    if (bootServicesTableAll[i].offset64 == offset) {
-      return static_cast<std::string>(bootServicesTableAll[i].name);
-    }
-  }
   return "Unknown";
 }
 
-std::string lookupRuntimeServiceName(uint64_t offset) {
-  for (auto i = 0; i < runtimeServicesTableAllCount; i++) {
-    if (runtimeServicesTableAll[i].offset64 == offset) {
-      return static_cast<std::string>(runtimeServicesTableAll[i].name);
+std::string lookup_boot_service_name(uint64_t offset) {
+  for (auto i = 0; i < g_boot_services_table_all_count; i++) {
+    if (g_boot_services_table_all[i].offset64 == offset) {
+      return static_cast<std::string>(g_boot_services_table_all[i].name);
     }
   }
+
+  return "Unknown";
+}
+
+std::string lookup_runtime_service_name(uint64_t offset) {
+  for (auto i = 0; i < g_runtime_services_table_all_count; i++) {
+    if (g_runtime_services_table_all[i].offset64 == offset) {
+      return static_cast<std::string>(g_runtime_services_table_all[i].name);
+    }
+  }
+
   return "Unknown";
 }
 

@@ -72,19 +72,19 @@ bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo
   }
 
   // Get xrefs to local variable
-  xreflist_t xrefs = xrefsToStackVar(func_addr, static_cast<qstring>(name.c_str()));
-  qstring typeName;
+  xreflist_t xrefs = xrefs_to_stack_var(func_addr, static_cast<qstring>(name.c_str()));
+  qstring type_name;
   ptr_type_data_t pi;
   tif.get_ptr_details(&pi);
-  pi.obj_type.get_type_name(&typeName);
+  pi.obj_type.get_type_name(&type_name);
   // Handling all interface functions (to rename function arguments)
-  opstroffForInterface(xrefs, typeName);
+  op_stroff_for_interface(xrefs, type_name);
 
   return true;
 }
 
 // Utility function to set a Hex-Rays variable name
-bool setLvarName(qstring name, lvar_t lvar, ea_t func_addr) {
+bool setLvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
   lvar_saved_info_t lsi;
   lvar_uservec_t lvuv;
 
@@ -355,9 +355,9 @@ json DetectVars(func_t *f) {
   vars_detector.apply_to(&cfunc->body, nullptr);
 
   res["gImageHandleList"] = vars_detector.gImageHandleList;
-  res["gStList"] = vars_detector.gStList;
-  res["gBsList"] = vars_detector.gBsList;
-  res["gRtList"] = vars_detector.gRtList;
+  res["st_list"] = vars_detector.st_list;
+  res["bs_list"] = vars_detector.bs_list;
+  res["rt_list"] = vars_detector.rt_list;
 
   return res;
 }

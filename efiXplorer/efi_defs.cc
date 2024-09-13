@@ -21,7 +21,7 @@
 
 const char *g_plugin_name = "efiXplorer";
 
-service_info_64_t bootServicesTable64[] = {
+service_info_64_t g_boot_services_table64[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 1},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 1},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 1},
@@ -37,9 +37,10 @@ service_info_64_t bootServicesTable64[] = {
      REG_RDX, 1},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
      REG_RDX, 1}};
-size_t bootServicesTable64Count = sizeof(bootServicesTable64) / sizeof(service_info_64_t);
+size_t g_boot_services_table64_count =
+    sizeof(g_boot_services_table64) / sizeof(service_info_64_t);
 
-service_info_32_t bootServicesTable32[] = {
+service_info_32_t g_boot_services_table32[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset32, 2},
     {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset32, 2},
     {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset32, 2},
@@ -54,9 +55,10 @@ service_info_32_t bootServicesTable32[] = {
     {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset32, 2},
     {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset32,
      2}};
-size_t bootServicesTable32Count = sizeof(bootServicesTable32) / sizeof(service_info_32_t);
+size_t g_boot_services_table32_count =
+    sizeof(g_boot_services_table32) / sizeof(service_info_32_t);
 
-service_t bootServicesTableAll[] = {
+service_t g_boot_services_table_all[] = {
     // difficult to check false positives
     // {"RaiseTPL", RaiseTPLOffset64, RaiseTPLOffset32},
     // {"RestoreTPL", RestoreTPLOffset64, RestoreTPLOffset32},
@@ -110,9 +112,10 @@ service_t bootServicesTableAll[] = {
     {"CopyMem", CopyMemOffset64, CopyMemOffset32},
     {"SetMem", SetMemOffset64, SetMemOffset32},
     {"CreateEventEx", CreateEventExOffset64, CreateEventExOffset32}};
-size_t bootServicesTableAllCount = sizeof(bootServicesTableAll) / sizeof(service_t);
+size_t g_boot_services_table_all_count =
+    sizeof(g_boot_services_table_all) / sizeof(service_t);
 
-service_t runtimeServicesTableAll[] = {
+service_t g_runtime_services_table_all[] = {
     {"GetTime", GetTimeOffset64, GetTimeOffset32},
     {"SetTime", SetTimeOffset64, SetTimeOffset32},
     {"GetWakeupTime", GetWakeupTimeOffset64, GetWakeupTimeOffset32},
@@ -129,18 +132,20 @@ service_t runtimeServicesTableAll[] = {
     {"QueryCapsuleCapabilities", QueryCapsuleCapabilitiesOffset64,
      QueryCapsuleCapabilitiesOffset32},
     {"QueryVariableInfo", QueryVariableInfoOffset64, QueryVariableInfoOffset32}};
-size_t runtimeServicesTableAllCount = sizeof(runtimeServicesTableAll) / sizeof(service_t);
+size_t g_runtime_services_table_all_count =
+    sizeof(g_runtime_services_table_all) / sizeof(service_t);
 
-service_info_64_t smmServicesProt64[] = {
+service_info_64_t g_smm_services_prot64[] = {
     {"SmmInstallProtocolInterface", SmmInstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmUninstallProtocolInterface", SmmUninstallProtocolInterfaceOffset64, REG_RDX},
     {"SmmHandleProtocol", SmmHandleProtocolOffset64, REG_RDX},
     {"SmmRegisterProtocolNotify", SmmRegisterProtocolNotifyOffset64, REG_RCX},
     {"SmmLocateHandle", SmmLocateHandleOffset64, REG_RDX},
     {"SmmLocateProtocol", SmmLocateProtocolOffset64, REG_RCX}};
-size_t smmServicesProt64Count = sizeof(smmServicesProt64) / sizeof(service_info_64_t);
+size_t g_smm_services_prot64_count =
+    sizeof(g_smm_services_prot64) / sizeof(service_info_64_t);
 
-service_t smmServicesTableAll[] = {
+service_t g_smm_services_table_all[] = {
     {"SmmInstallConfigurationTable", SmmInstallConfigurationTableOffset64,
      SmmInstallConfigurationTableOffset32},
     {"SmmAllocatePool", SmmAllocatePoolOffset64, SmmAllocatePoolOffset32},
@@ -160,65 +165,70 @@ service_t smmServicesTableAll[] = {
     {"SmiManage", SmiManageOffset64, SmiManageOffset32},
     {"SmiHandlerRegister", SmiHandlerRegisterOffset64, SmiHandlerRegisterOffset32},
     {"SmiHandlerUnRegister", SmiHandlerUnRegisterOffset64, SmiHandlerUnRegisterOffset32}};
-size_t smmServicesTableAllCount = sizeof(smmServicesTableAll) / sizeof(service_t);
+size_t g_smm_services_table_all_count =
+    sizeof(g_smm_services_table_all) / sizeof(service_t);
 
-service_info_32_t peiServicesTable32[] = {{"InstallPpi", 0x18, 2},
-                                          {"ReInstallPpi", 0x1c, 3},
-                                          {"LocatePpi", 0x20, 2},
-                                          {"NotifyPpi", 0x24, PUSH_NONE},
-                                          {"GetBootMode", 0x28, PUSH_NONE},
-                                          {"SetBootMode", 0x2c, PUSH_NONE},
-                                          {"GetHobList", 0x30, PUSH_NONE},
-                                          {"CreateHob", 0x34, PUSH_NONE},
-                                          {"FfsFindNextVolume", 0x38, PUSH_NONE},
-                                          {"FfsFindNextFile", 0x3c, PUSH_NONE},
-                                          {"FfsFindSectionData", 0x40, PUSH_NONE},
-                                          {"InstallPeiMemory", 0x44, PUSH_NONE},
-                                          {"AllocatePages", 0x48, PUSH_NONE},
-                                          {"AllocatePool", 0x4c, PUSH_NONE},
-                                          {"CopyMem", 0x50, PUSH_NONE},
-                                          {"SetMem", 0x54, PUSH_NONE},
-                                          {"ReportStatusCode", 0x58, PUSH_NONE},
-                                          {"ResetSystem", 0x5c, PUSH_NONE},
-                                          {"CpuIo", 0x60, PUSH_NONE},
-                                          {"PciCfg", 0x64, PUSH_NONE},
-                                          {"FfsFindFileByName", 0x68, PUSH_NONE},
-                                          {"FfsGetFileInfo", 0x6c, PUSH_NONE},
-                                          {"FfsGetVolumeInfo", 0x70, PUSH_NONE},
-                                          {"RegisterForShadow", 0x74, PUSH_NONE},
-                                          {"FindSectionData3", 0x78, PUSH_NONE},
-                                          {"FfsGetFileInfo2", 0x7c, PUSH_NONE},
-                                          {"ResetSystem2", 0x80, PUSH_NONE}};
-size_t peiServicesTable32Count = sizeof(peiServicesTable32) / sizeof(service_info_32_t);
+service_info_32_t g_pei_services_table32[] = {{"InstallPpi", 0x18, 2},
+                                              {"ReInstallPpi", 0x1c, 3},
+                                              {"LocatePpi", 0x20, 2},
+                                              {"NotifyPpi", 0x24, PUSH_NONE},
+                                              {"GetBootMode", 0x28, PUSH_NONE},
+                                              {"SetBootMode", 0x2c, PUSH_NONE},
+                                              {"GetHobList", 0x30, PUSH_NONE},
+                                              {"CreateHob", 0x34, PUSH_NONE},
+                                              {"FfsFindNextVolume", 0x38, PUSH_NONE},
+                                              {"FfsFindNextFile", 0x3c, PUSH_NONE},
+                                              {"FfsFindSectionData", 0x40, PUSH_NONE},
+                                              {"InstallPeiMemory", 0x44, PUSH_NONE},
+                                              {"AllocatePages", 0x48, PUSH_NONE},
+                                              {"AllocatePool", 0x4c, PUSH_NONE},
+                                              {"CopyMem", 0x50, PUSH_NONE},
+                                              {"SetMem", 0x54, PUSH_NONE},
+                                              {"ReportStatusCode", 0x58, PUSH_NONE},
+                                              {"ResetSystem", 0x5c, PUSH_NONE},
+                                              {"CpuIo", 0x60, PUSH_NONE},
+                                              {"PciCfg", 0x64, PUSH_NONE},
+                                              {"FfsFindFileByName", 0x68, PUSH_NONE},
+                                              {"FfsGetFileInfo", 0x6c, PUSH_NONE},
+                                              {"FfsGetVolumeInfo", 0x70, PUSH_NONE},
+                                              {"RegisterForShadow", 0x74, PUSH_NONE},
+                                              {"FindSectionData3", 0x78, PUSH_NONE},
+                                              {"FfsGetFileInfo2", 0x7c, PUSH_NONE},
+                                              {"ResetSystem2", 0x80, PUSH_NONE}};
+size_t g_pei_services_table32_count =
+    sizeof(g_pei_services_table32) / sizeof(service_info_32_t);
 
-service_t peiServicesTableAll[] = {{"InstallPpi", 0x18, 0x18},
-                                   {"ReInstallPpi", 0x20, 0x1c},
-                                   {"LocatePpi", 0x28, 0x20},
-                                   {"NotifyPpi", 0x30, 0x24},
-                                   {"GetBootMode", 0x38, 0x28},
-                                   {"SetBootMode", 0x40, 0x2c},
-                                   {"GetHobList", 0x48, 0x30},
-                                   {"CreateHob", 0x50, 0x34},
-                                   {"FfsFindNextVolume", 0x58, 0x38},
-                                   {"FfsFindNextFile", 0x60, 0x3c},
-                                   {"FfsFindSectionData", 0x68, 0x40},
-                                   {"InstallPeiMemory", 0x70, 0x44},
-                                   {"AllocatePages", 0x78, 0x48},
-                                   {"AllocatePool", 0x80, 0x4c},
-                                   {"CopyMem", 0x88, 0x50},
-                                   {"SetMem", 0x90, 0x54},
-                                   {"ReportStatusCode", 0x98, 0x58},
-                                   {"ResetSystem", 0xa0, 0x5c},
-                                   {"CpuIo", 0xa8, 0x60},
-                                   {"PciCfg", 0xb0, 0x64},
-                                   {"FfsFindFileByName", 0xb8, 0x68},
-                                   {"FfsGetFileInfo", 0xc0, 0x6c},
-                                   {"FfsGetVolumeInfo", 0xc8, 0x70},
-                                   {"RegisterForShadow", 0xd0, 0x74},
-                                   {"FindSectionData3", 0xc8, 0x78},
-                                   {"FfsGetFileInfo2", 0xe0, 0x7c},
-                                   {"ResetSystem2", 0xe8, 0x80}};
-size_t peiServicesTableAllCount = sizeof(peiServicesTableAll) / sizeof(service_t);
+service_t g_pei_services_table_all[] = {{"InstallPpi", 0x18, 0x18},
+                                        {"ReInstallPpi", 0x20, 0x1c},
+                                        {"LocatePpi", 0x28, 0x20},
+                                        {"NotifyPpi", 0x30, 0x24},
+                                        {"GetBootMode", 0x38, 0x28},
+                                        {"SetBootMode", 0x40, 0x2c},
+                                        {"GetHobList", 0x48, 0x30},
+                                        {"CreateHob", 0x50, 0x34},
+                                        {"FfsFindNextVolume", 0x58, 0x38},
+                                        {"FfsFindNextFile", 0x60, 0x3c},
+                                        {"FfsFindSectionData", 0x68, 0x40},
+                                        {"InstallPeiMemory", 0x70, 0x44},
+                                        {"AllocatePages", 0x78, 0x48},
+                                        {"AllocatePool", 0x80, 0x4c},
+                                        {"CopyMem", 0x88, 0x50},
+                                        {"SetMem", 0x90, 0x54},
+                                        {"ReportStatusCode", 0x98, 0x58},
+                                        {"ResetSystem", 0xa0, 0x5c},
+                                        {"CpuIo", 0xa8, 0x60},
+                                        {"PciCfg", 0xb0, 0x64},
+                                        {"FfsFindFileByName", 0xb8, 0x68},
+                                        {"FfsGetFileInfo", 0xc0, 0x6c},
+                                        {"FfsGetVolumeInfo", 0xc8, 0x70},
+                                        {"RegisterForShadow", 0xd0, 0x74},
+                                        {"FindSectionData3", 0xc8, 0x78},
+                                        {"FfsGetFileInfo2", 0xe0, 0x7c},
+                                        {"ResetSystem2", 0xe8, 0x80}};
+size_t g_pei_services_table_all_count =
+    sizeof(g_pei_services_table_all) / sizeof(service_t);
 
-service_t variablePpiTableAll[] = {{"GetVariable", 0, 0}, {"NextVariableName", 8, 4}};
-size_t variablePpiTableAllCount = sizeof(variablePpiTableAll) / sizeof(service_t);
+service_t g_variable_ppi_table_all[] = {{"GetVariable", 0, 0},
+                                        {"NextVariableName", 8, 4}};
+size_t g_variable_ppi_table_all_count =
+    sizeof(g_variable_ppi_table_all) / sizeof(service_t);

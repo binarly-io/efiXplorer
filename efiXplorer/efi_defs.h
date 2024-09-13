@@ -299,31 +299,31 @@ enum SmmServicesOffsets32 {
   SmiHandlerUnRegisterOffset32 = 0x80,
 };
 
-extern service_info_64_t bootServicesTable64[];
-extern size_t bootServicesTable64Count;
+extern service_info_64_t g_boot_services_table64[];
+extern size_t g_boot_services_table64_count;
 
-extern service_info_32_t bootServicesTable32[];
-extern size_t bootServicesTable32Count;
+extern service_info_32_t g_boot_services_table32[];
+extern size_t g_boot_services_table32_count;
 
-extern service_t bootServicesTableAll[];
-extern size_t bootServicesTableAllCount;
+extern service_t g_boot_services_table_all[];
+extern size_t g_boot_services_table_all_count;
 
-extern service_t runtimeServicesTableAll[];
-extern size_t runtimeServicesTableAllCount;
+extern service_t g_runtime_services_table_all[];
+extern size_t g_runtime_services_table_all_count;
 
-extern service_info_64_t smmServicesProt64[];
-extern size_t smmServicesProt64Count;
+extern service_info_64_t g_smm_services_prot64[];
+extern size_t g_smm_services_prot64_count;
 
-extern service_t smmServicesTableAll[];
-extern size_t smmServicesTableAllCount;
+extern service_t g_smm_services_table_all[];
+extern size_t g_smm_services_table_all_count;
 
-extern service_info_32_t peiServicesTable32[];
-extern size_t peiServicesTable32Count;
+extern service_info_32_t g_pei_services_table32[];
+extern size_t g_pei_services_table32_count;
 
-extern service_t peiServicesTableAll[];
-extern size_t peiServicesTableAllCount;
+extern service_t g_pei_services_table_all[];
+extern size_t g_pei_services_table_all_count;
 
-extern service_t variablePpiTableAll[];
-extern size_t variablePpiTableAllCount;
+extern service_t g_variable_ppi_table_all[];
+extern size_t g_variable_ppi_table_all_count;
 
 extern const char *g_plugin_name;
