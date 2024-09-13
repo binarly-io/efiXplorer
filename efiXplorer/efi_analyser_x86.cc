@@ -63,7 +63,7 @@ std::vector<ea_t> smmGetVariableOverflow;
 
 efi_analysis::EfiAnalyzer::EfiAnalyzer() {
   // 32-bit, 64-bit, ARM or UEFI (in loader instance)
-  arch = getInputFileType();
+  arch = input_file_type();
 
   // get guids.json path
   guidsJsonPath /= getGuidsJsonFile();
@@ -154,14 +154,12 @@ efi_analysis::EfiAnalyzer::~EfiAnalyzer() {
 }
 
 void efi_analysis::EfiAnalyzer::setStrings() {
-
-  if (fileType == FTYPE_DXE_AND_THE_LIKE) {
+  if (file_type == FfsFileType::DxeAndTheLike) {
     if_name = " Protocol name ";
     if_pl = "protocols";
     if_key = "prot_name";
     if_tbl = &allProtocols;
-
-  } else if (fileType == FTYPE_PEI) {
+  } else if (file_type == FfsFileType::Pei) {
     if_name = " PPI name ";
     if_pl = "PPIs";
     if_key = "ppi_name";
@@ -413,11 +411,11 @@ bool efi_analysis::EfiAnalyzerX86::findSmstPostProcX64() {
 bool efi_analysis::EfiAnalyzerX86::findBootServicesTables() {
 
   // init architecture-specific constants
-  auto BS_OFFSET = BS_OFFSET_64BIT;
+  auto BS_OFFSET = BS_OFFSET_64;
   uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
 
-  if (arch == X86) {
-    BS_OFFSET = BS_OFFSET_32BIT;
+  if (arch == ArchFileType::X8632) {
+    BS_OFFSET = BS_OFFSET_32;
     REG_SP = static_cast<uint16_t>(REG_ESP);
   }
 
@@ -527,11 +525,11 @@ bool efi_analysis::EfiAnalyzerX86::findBootServicesTables() {
 bool efi_analysis::EfiAnalyzerX86::findRuntimeServicesTables() {
 
   // init architecture-specific constants
-  auto RT_OFFSET = RT_OFFSET_64BIT;
+  auto RT_OFFSET = RT_OFFSET_64;
   uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
 
-  if (arch == X86) {
-    RT_OFFSET = RT_OFFSET_32BIT;
+  if (arch == ArchFileType::X8632) {
+    RT_OFFSET = RT_OFFSET_32;
     REG_SP = static_cast<uint16_t>(REG_ESP);
   }
 
@@ -684,7 +682,7 @@ void efi_analysis::EfiAnalyzerX86::getAllBootServices() {
 
             // architecture-specific variables
             auto offset = bootServicesTableAll[j].offset64;
-            if (arch == X86) {
+            if (arch == ArchFileType::X8632) {
               offset = bootServicesTableAll[j].offset32;
             }
 
@@ -784,7 +782,7 @@ void efi_analysis::EfiAnalyzerX86::getAllRuntimeServices() {
 
             // architecture-specific variables
             auto offset = runtimeServicesTableAll[j].offset64;
-            if (arch == X86) {
+            if (arch == ArchFileType::X8632) {
               offset = runtimeServicesTableAll[j].offset32;
             }
             if (service_offset == u32_addr(offset)) {
@@ -1289,7 +1287,8 @@ void efi_analysis::EfiAnalyzerX86::findOtherBsTablesX64() {
 bool efi_analysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAddress,
                                             ea_t xrefAddress, ea_t callAddress) {
 
-  if (arch != UEFI && guidAddress >= startAddress && guidAddress <= endAddress) {
+  if (arch != ArchFileType::Uefi && guidAddress >= startAddress &&
+      guidAddress <= endAddress) {
     msg("[%s] wrong service call detection: 0x%016llX\n", g_plugin_name,
         u64_addr(callAddress));
     return false; // filter FP
@@ -1304,7 +1303,7 @@ bool efi_analysis::EfiAnalyzer::AddProtocol(std::string serviceName, ea_t guidAd
   protocol["ea"] = callAddress;
 
   qstring moduleName("Current");
-  if (getInputFileType() == UEFI) {
+  if (input_file_type() == ArchFileType::Uefi) {
     moduleName = getModuleNameLoader(callAddress);
   }
   protocol["module"] = static_cast<std::string>(moduleName.c_str());
@@ -2577,13 +2576,13 @@ void showAllChoosers(efi_analysis::EfiAnalyzerX86 analyzer) {
   }
 
   // open window with protocols
-  if (analyzer.fileType == FTYPE_PEI) {
+  if (analyzer.file_type == FfsFileType::Pei) {
     if (analyzer.allPPIs.size()) {
       title = "efiXplorer: PPIs";
       ppis_show(analyzer.allPPIs, title);
     }
 
-  } else { // FTYPE_DXE_AND_THE_LIKE
+  } else { // FfsFileType::DxeAndTheLike
     if (analyzer.allProtocols.size()) {
       title = "efiXplorer: protocols";
       protocols_show(analyzer.allProtocols, title);
@@ -2640,7 +2639,7 @@ bool efi_analysis::efiAnalyzerMainX64() {
 
   // analyze all
   auto res = ASKBTN_NO;
-  if (analyzer.arch == UEFI) {
+  if (analyzer.arch == ArchFileType::Uefi) {
     res = ask_yn(1, "Want to further analyze all drivers with auto_mark_range?");
   }
   if (res == ASKBTN_YES && textSegments.size() && dataSegments.size()) {
@@ -2657,17 +2656,17 @@ bool efi_analysis::efiAnalyzerMainX64() {
   analyzer.markLocalGuidsX64();
 
   if (g_args.disable_ui) {
-    analyzer.fileType = g_args.module_type == PEI
-                            ? analyzer.fileType = FTYPE_PEI
-                            : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
+    analyzer.file_type = g_args.module_type == ModuleType::Pei
+                             ? analyzer.file_type = FfsFileType::Pei
+                             : analyzer.file_type = FfsFileType::DxeAndTheLike;
   } else {
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    analyzer.file_type = ask_file_type(&analyzer.allGuids);
   }
 
   analyzer.setStrings();
 
   // find global vars for gImageHandle, gST, gBS, gRT, gSmst
-  if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+  if (analyzer.file_type == FfsFileType::DxeAndTheLike) {
     analyzer.findImageHandleX64();
     analyzer.findSystemTableX64();
     analyzer.findBootServicesTables();
@@ -2733,7 +2732,7 @@ bool efi_analysis::efiAnalyzerMainX64() {
     showAllChoosers(analyzer);
   }
 
-  if (analyzer.arch == UEFI) {
+  if (analyzer.arch == ArchFileType::Uefi) {
     // Init public EdiDependencies members
     g_deps.getProtocolsChooser(analyzer.allProtocols);
     g_deps.getProtocolsByGuids(analyzer.allProtocols);
@@ -2767,16 +2766,16 @@ bool efi_analysis::efiAnalyzerMainX86() {
   analyzer.markDataGuids();
 
   if (g_args.disable_ui) {
-    analyzer.fileType = g_args.module_type == PEI
-                            ? analyzer.fileType = FTYPE_PEI
-                            : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
+    analyzer.file_type = g_args.module_type == ModuleType::Pei
+                             ? analyzer.file_type = FfsFileType::Pei
+                             : analyzer.file_type = FfsFileType::DxeAndTheLike;
   } else {
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    analyzer.file_type = ask_file_type(&analyzer.allGuids);
   }
 
   analyzer.setStrings();
 
-  if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+  if (analyzer.file_type == FfsFileType::DxeAndTheLike) {
 
     // find global vars for gST, gBS, gRT
     analyzer.findBootServicesTables();
@@ -2796,7 +2795,7 @@ bool efi_analysis::efiAnalyzerMainX86() {
     applyAllTypesForInterfacesSmmServices(analyzer.allProtocols);
 #endif
 
-  } else if (analyzer.fileType == FTYPE_PEI) {
+  } else if (analyzer.file_type == FfsFileType::Pei) {
     setEntryArgToPeiSvc();
     addStrucForShiftedPtr();
 #ifdef HEX_RAYS

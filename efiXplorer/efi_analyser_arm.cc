@@ -66,7 +66,7 @@ void efi_analysis::EfiAnalyzerArm::initialAnalysis() {
     TrackEntryParams(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
-  if (fileType == FTYPE_PEI) {
+  if (file_type == FfsFileType::Pei) {
     // setEntryArgToPeiSvc();
   }
 }
@@ -464,21 +464,21 @@ bool efi_analysis::efiAnalyzerMainArm() {
   analyzer.markDataGuids();
 
   if (g_args.disable_ui) {
-    analyzer.fileType = g_args.module_type == PEI
-                            ? analyzer.fileType = FTYPE_PEI
-                            : analyzer.fileType = FTYPE_DXE_AND_THE_LIKE;
+    analyzer.file_type = g_args.module_type == ModuleType::Pei
+                             ? analyzer.file_type = FfsFileType::Pei
+                             : analyzer.file_type = FfsFileType::DxeAndTheLike;
   } else {
-    analyzer.fileType = getFileType(&analyzer.allGuids);
+    analyzer.file_type = ask_file_type(&analyzer.allGuids);
   }
 
-  if (analyzer.fileType == FTYPE_PEI) {
+  if (analyzer.file_type == FfsFileType::Pei) {
     msg("[efiXplorer] input file is PEI module\n");
   }
 
   // set the correct name for the entry point and automatically fix the prototype
   analyzer.initialAnalysis();
 
-  if (analyzer.fileType == FTYPE_DXE_AND_THE_LIKE) {
+  if (analyzer.file_type == FfsFileType::DxeAndTheLike) {
     analyzer.initialGlobalVarsDetection();
 
     // detect services
@@ -486,7 +486,7 @@ bool efi_analysis::efiAnalyzerMainArm() {
 
     // detect protocols
     analyzer.protocolsDetection();
-  } else if (analyzer.fileType == FTYPE_PEI) {
+  } else if (analyzer.file_type == FfsFileType::Pei) {
     analyzer.findPeiServicesFunction();
   }
 

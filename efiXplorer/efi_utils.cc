@@ -58,98 +58,99 @@ void setConstChar16Type(ea_t ea) {
 }
 
 //--------------------------------------------------------------------------
-// Get file format name (fileformatname)
-std::string getFileFormatName() {
+// get file format name (fileformatname)
+std::string file_format_name() {
   char file_format[256] = {0};
   get_file_type_name(file_format, 256);
   return static_cast<std::string>(file_format);
 }
 
 //--------------------------------------------------------------------------
-// Get input file type (64-bit, 32-bit image or UEFI firmware)
-uint8_t getInputFileType() {
+// get input file type (64-bit, 32-bit module or UEFI firmware)
+ArchFileType input_file_type() {
   processor_t &ph = PH;
   auto filetype = inf_get_filetype();
   auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
 
-  // check if input file is UEFI firmware image
-  if (getFileFormatName().find("UEFI") != std::string::npos) {
-    return UEFI;
+  // check if the input file is a UEFI firmware image
+  if (file_format_name().find("UEFI") != std::string::npos) {
+    return ArchFileType::Uefi;
   }
 
   if (filetype == f_PE || filetype == f_ELF) {
     if (ph.id == PLFM_386) {
-      if (bits == 64) // x86 64-bit executable
-        return X64;
-      if (bits == 32) // x86 32-bit executable
-        return X86;
+      if (bits == 64)
+        return ArchFileType::X8664;
+      if (bits == 32)
+        return ArchFileType::X8632;
     }
     if (ph.id == PLFM_ARM) {
-      if (bits == 64) // ARM 64-bit executable
-        return ARM64;
+      if (bits == 64)
+        return ArchFileType::Aarch64;
     }
   }
-  return UNSUPPORTED_TYPE;
+  return ArchFileType::Unsupported;
 }
 
 //--------------------------------------------------------------------------
-// Get input file type (PEI or DXE-like). No reliable way to determine FFS
+// get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-uint8_t guessFileType(uint8_t arch, std::vector<json> *allGuids) {
-  if (arch == UEFI) {
-    return FTYPE_DXE_AND_THE_LIKE;
+FfsFileType guess_file_type(ArchFileType arch, std::vector<json> *all_guids) {
+  if (arch == ArchFileType::Uefi) {
+    return FfsFileType::DxeAndTheLike;
   }
-  segment_t *hdr_seg = get_segm_by_name("HEADER");
-  if (hdr_seg == NULL) {
-    return FTYPE_DXE_AND_THE_LIKE;
-  }
-  uint64_t signature = get_wide_word(hdr_seg->start_ea);
-  bool hasPeiGuids = false;
-  for (auto guid = allGuids->begin(); guid != allGuids->end(); guid++) {
-    json guidVal = *guid;
 
-    if (static_cast<std::string>(guidVal["name"]).find("PEI") != std::string::npos ||
-        static_cast<std::string>(guidVal["name"]).find("Pei") != std::string::npos) {
-      hasPeiGuids = true;
+  segment_t *hdr_seg = get_segm_by_name("HEADER");
+  if (hdr_seg == nullptr) {
+    return FfsFileType::DxeAndTheLike;
+  }
+
+  uint64_t signature = get_wide_word(hdr_seg->start_ea);
+  bool has_pei_guids = false;
+  for (auto guid = all_guids->begin(); guid != all_guids->end(); guid++) {
+    json guid_value = *guid;
+
+    if (static_cast<std::string>(guid_value["name"]).find("PEI") != std::string::npos) {
+      has_pei_guids = true;
       break;
     }
   }
 
-  bool hasPeiInPath = false;
-  char fileName[0x1000] = {0};
-  get_input_file_path(fileName, sizeof(fileName));
-  auto fileNameStr = static_cast<std::string>(fileName);
-  if ((fileNameStr.find("Pei") != std::string::npos ||
-       fileNameStr.find("pei") != std::string::npos || signature == VZ) &&
-      arch == X86) {
-    hasPeiInPath = true;
+  bool has_pei_in_path = false;
+  char file_name[0x1000] = {0};
+  get_input_file_path(file_name, sizeof(file_name));
+  auto file_name_str = static_cast<std::string>(file_name);
+  if ((file_name_str.find("Pei") != std::string::npos ||
+       file_name_str.find("pei") != std::string::npos || signature == VZ) &&
+      arch == ArchFileType::X8664) {
+    has_pei_in_path = true;
   }
 
-  if (signature == VZ || hasPeiGuids) {
-    msg("[%s] Parsing binary file as PEI, signature = %llx, hasPeiGuids = %d\n",
-        g_plugin_name, signature, hasPeiGuids);
-    return FTYPE_PEI;
-  } else {
-    msg("[%s] Parsing binary file as DXE/SMM, signature = %llx, hasPeiGuids = %d\n",
-        g_plugin_name, signature, hasPeiGuids);
-    return FTYPE_DXE_AND_THE_LIKE;
+  if (signature == VZ || has_pei_guids) {
+    msg("[%s] parsing binary file as PEI, signature = %llx, has_pei_guids = %d\n",
+        g_plugin_name, signature, has_pei_guids);
+    return FfsFileType::Pei;
   }
+
+  msg("[%s] parsing binary file as DXE/SMM, signature = %llx, has_pei_guids = %d\n",
+      g_plugin_name, signature, has_pei_guids);
+  return FfsFileType::DxeAndTheLike;
 }
 
-uint8_t getFileType(std::vector<json> *allGuids) {
-  uint8_t arch = getInputFileType();
-  if (arch == UEFI || arch == X64) {
-    return FTYPE_DXE_AND_THE_LIKE;
+FfsFileType ask_file_type(std::vector<json> *all_guids) {
+  auto arch = input_file_type();
+  if (arch == ArchFileType::Uefi || arch == ArchFileType::X8664) {
+    return FfsFileType::DxeAndTheLike;
   }
-  auto ftype = guessFileType(arch, allGuids);
-  auto deflt = ftype == FTYPE_DXE_AND_THE_LIKE;
-  auto fmt_param = ftype == FTYPE_DXE_AND_THE_LIKE ? "DXE/SMM" : "PEI";
-  auto btnId = ask_buttons("DXE/SMM", "PEI", "", deflt, "Parse file as %s", fmt_param);
-  if (btnId == ASKBTN_YES) {
-    return FTYPE_DXE_AND_THE_LIKE;
-  } else {
-    return FTYPE_PEI;
+  auto ftype = guess_file_type(arch, all_guids);
+  auto deflt = ftype == FfsFileType::DxeAndTheLike;
+  auto fmt_param = ftype == FfsFileType::DxeAndTheLike ? "DXE/SMM" : "PEI";
+  auto btn_id = ask_buttons("DXE/SMM", "PEI", "", deflt, "Parse file as %s", fmt_param);
+  if (btn_id == ASKBTN_YES) {
+    return FfsFileType::DxeAndTheLike;
   }
+
+  return FfsFileType::Pei;
 }
 
 //--------------------------------------------------------------------------

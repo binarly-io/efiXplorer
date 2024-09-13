@@ -86,12 +86,8 @@ struct EfiGuid {
   }
 };
 
-// Get input file type
-// (64-bit, 32-bit image or UEFI firmware)
-uint8_t getInputFileType();
-
-// Get image type (PEI or DXE-like)
-uint8_t getFileType(std::vector<json> *allGuids);
+ArchFileType input_file_type();
+FfsFileType ask_file_type(std::vector<json> *all_guids);
 
 // Set EFI_GUID type
 void setGuidType(ea_t ea);

@@ -35,8 +35,7 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "            /_/\n";
 
 // Default arguments
-struct args g_args = {/* module_type */ DXE_SMM, /* disable_ui */ 0,
-                      /* disable_vuln_hunt */ 0};
+struct args g_args = {ModuleType::DxeSmm, 0, 0};
 
 #if IDA_SDK_VERSION < 760
 hexdsp_t *hexdsp = nullptr;
@@ -44,8 +43,8 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-  uint8_t file_type = getInputFileType();
-  if (file_type == UNSUPPORTED_TYPE) {
+  ArchFileType file_type = input_file_type();
+  if (file_type == ArchFileType::Unsupported) {
     return PLUGIN_SKIP;
   }
 
@@ -71,7 +70,7 @@ bool idaapi run(size_t arg) {
     //  * arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
     //  * arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
     //  * arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
-    g_args.module_type = PEI;
+    g_args.module_type = ModuleType::Pei;
   }
 
   if (arg >> 1 & 1) {
@@ -97,14 +96,14 @@ bool idaapi run(size_t arg) {
     return false;
   }
 
-  uint8_t arch = getInputFileType();
-  if (arch == X64) {
+  ArchFileType arch = input_file_type();
+  if (arch == ArchFileType::X8664) {
     msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
     efi_analysis::efiAnalyzerMainX64();
-  } else if (arch == X86) {
+  } else if (arch == ArchFileType::X8632) {
     msg("[%s] input file is 32-bit module (x86)\n", g_plugin_name);
     efi_analysis::efiAnalyzerMainX86();
-  } else if (arch == UEFI) {
+  } else if (arch == ArchFileType::Uefi) {
     msg("[%s] input file is UEFI firmware\n", g_plugin_name);
     warning("%s: analysis may take some time, please wait for it to complete\n",
             g_plugin_name);
@@ -115,13 +114,13 @@ bool idaapi run(size_t arg) {
       msg("[%s] analyze AMD64 modules\n", g_plugin_name);
       efi_analysis::efiAnalyzerMainX64();
     }
-  } else if (arch == ARM64) {
+  } else if (arch == ArchFileType::Aarch64) {
     msg("[%s] input file is 64-bit module (ARM)\n", g_plugin_name);
     efi_analysis::efiAnalyzerMainArm();
   }
 
   // Reset arguments
-  g_args = {DXE_SMM, 0, 0};
+  g_args = {ModuleType::DxeSmm, 0, 0};
 
   return true;
 }

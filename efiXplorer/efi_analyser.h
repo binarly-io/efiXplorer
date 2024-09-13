@@ -41,7 +41,9 @@ public:
   std::vector<json> allPPIs;
   std::vector<json> allServices;
   std::vector<func_t *> smiHandlers;
-  uint8_t arch;
+
+  ArchFileType arch = ArchFileType::Unsupported;
+  FfsFileType file_type = FfsFileType::Unsupported;
 
   void getSegments();
   void setStrings();
@@ -62,7 +64,6 @@ public:
                    ea_t callAddress);
   void dumpInfo();
 
-  uint8_t fileType = 0;
   json dbProtocols;
   ea_t base;
   ea_t startAddress = 0;
