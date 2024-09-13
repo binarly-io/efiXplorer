@@ -15,9 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiAnalyzerArm.cpp
- * contains ARM specific analysis routines
- *
  */
 
 #include "efi_analyser.h"
@@ -32,7 +29,7 @@ std::vector<ea_t> gStListArm;
 std::vector<ea_t> gBsListArm;
 std::vector<ea_t> gRtListArm;
 
-void efi_analysis::EfiAnalyzerArm::fixOffsets() {
+void efi_analysis::EfiAnalyserArm::fixOffsets() {
   insn_t insn;
   for (auto func_addr : funcs) {
     func_t *f = get_func(func_addr);
@@ -56,7 +53,7 @@ void efi_analysis::EfiAnalyzerArm::fixOffsets() {
   }
 }
 
-void efi_analysis::EfiAnalyzerArm::initialAnalysis() {
+void efi_analysis::EfiAnalyserArm::initialAnalysis() {
   fixOffsets();
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
@@ -226,7 +223,7 @@ json getService(ea_t addr, uint8_t table_id) {
   return s;
 }
 
-void efi_analysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
+void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
 #ifdef HEX_RAYS
   // analyze entry point with Hex-Rays
   for (auto func_addr : funcs) {
@@ -293,7 +290,7 @@ void efi_analysis::EfiAnalyzerArm::initialGlobalVarsDetection() {
   }
 }
 
-void efi_analysis::EfiAnalyzerArm::servicesDetection() {
+void efi_analysis::EfiAnalyserArm::servicesDetection() {
 
 #ifdef HEX_RAYS
   for (auto func_addr : funcs) {
@@ -343,7 +340,7 @@ void efi_analysis::EfiAnalyzerArm::servicesDetection() {
   }
 }
 
-bool efi_analysis::EfiAnalyzerArm::getProtocol(ea_t address, uint32_t p_reg,
+bool efi_analysis::EfiAnalyserArm::getProtocol(ea_t address, uint32_t p_reg,
                                                std::string service_name) {
   ea_t ea = address;
   insn_t insn;
@@ -381,7 +378,7 @@ bool efi_analysis::EfiAnalyzerArm::getProtocol(ea_t address, uint32_t p_reg,
   return AddProtocol(service_name, guid_addr, code_addr, address);
 }
 
-void efi_analysis::EfiAnalyzerArm::protocolsDetection() {
+void efi_analysis::EfiAnalyserArm::protocolsDetection() {
   for (auto s : allServices) {
     std::string service_name = s["service_name"];
     for (auto i = 0; i < 13; i++) {
@@ -395,7 +392,7 @@ void efi_analysis::EfiAnalyzerArm::protocolsDetection() {
   }
 }
 
-void efi_analysis::EfiAnalyzerArm::findPeiServicesFunction() {
+void efi_analysis::EfiAnalyserArm::findPeiServicesFunction() {
   insn_t insn;
   for (auto start_ea : funcs) {
     decode_insn(&insn, start_ea);
@@ -423,25 +420,25 @@ void efi_analysis::EfiAnalyzerArm::findPeiServicesFunction() {
 
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
-void showAllChoosers(efi_analysis::EfiAnalyzerArm analyzer) {
+void showAllChoosers(efi_analysis::EfiAnalyserArm analyser) {
   qstring title;
 
   // open window with all services
-  if (analyzer.allServices.size()) {
+  if (analyser.allServices.size()) {
     title = "efiXplorer: services";
-    services_show(analyzer.allServices, title);
+    services_show(analyser.allServices, title);
   }
 
   // open window with data guids
-  if (analyzer.allGuids.size()) {
+  if (analyser.allGuids.size()) {
     qstring title = "efiXplorer: GUIDs";
-    guids_show(analyzer.allGuids, title);
+    guids_show(analyser.allGuids, title);
   }
 
   // open window with protocols
-  if (analyzer.allProtocols.size()) {
+  if (analyser.allProtocols.size()) {
     title = "efiXplorer: protocols";
-    protocols_show(analyzer.allProtocols, title);
+    protocols_show(analyser.allProtocols, title);
   }
 }
 
@@ -451,57 +448,57 @@ bool efi_analysis::efiAnalyzerMainArm() {
 
   show_wait_box("HIDECANCEL\nAnalyzing module(s) with efiXplorer...");
 
-  efi_analysis::EfiAnalyzerArm analyzer;
+  efi_analysis::EfiAnalyserArm analyser;
 
   while (!auto_is_ok()) {
     auto_wait();
   };
 
   // find .text and .data segments
-  analyzer.getSegments();
+  analyser.getSegments();
 
   // mark GUIDs
-  analyzer.markDataGuids();
+  analyser.markDataGuids();
 
   if (g_args.disable_ui) {
-    analyzer.file_type = g_args.module_type == ModuleType::Pei
-                             ? analyzer.file_type = FfsFileType::Pei
-                             : analyzer.file_type = FfsFileType::DxeAndTheLike;
+    analyser.file_type = g_args.module_type == ModuleType::Pei
+                             ? analyser.file_type = FfsFileType::Pei
+                             : analyser.file_type = FfsFileType::DxeAndTheLike;
   } else {
-    analyzer.file_type = ask_file_type(&analyzer.allGuids);
+    analyser.file_type = ask_file_type(&analyser.allGuids);
   }
 
-  if (analyzer.file_type == FfsFileType::Pei) {
+  if (analyser.file_type == FfsFileType::Pei) {
     msg("[efiXplorer] input file is PEI module\n");
   }
 
   // set the correct name for the entry point and automatically fix the prototype
-  analyzer.initialAnalysis();
+  analyser.initialAnalysis();
 
-  if (analyzer.file_type == FfsFileType::DxeAndTheLike) {
-    analyzer.initialGlobalVarsDetection();
+  if (analyser.file_type == FfsFileType::DxeAndTheLike) {
+    analyser.initialGlobalVarsDetection();
 
     // detect services
-    analyzer.servicesDetection();
+    analyser.servicesDetection();
 
     // detect protocols
-    analyzer.protocolsDetection();
-  } else if (analyzer.file_type == FfsFileType::Pei) {
-    analyzer.findPeiServicesFunction();
+    analyser.protocolsDetection();
+  } else if (analyser.file_type == FfsFileType::Pei) {
+    analyser.findPeiServicesFunction();
   }
 
 #ifdef HEX_RAYS
-  for (auto addr : analyzer.funcs) {
+  for (auto addr : analyser.funcs) {
     std::vector<json> services = DetectPeiServicesArm(get_func(addr));
     for (auto service : services) {
-      analyzer.allServices.push_back(service);
+      analyser.allServices.push_back(service);
     }
   }
-  applyAllTypesForInterfacesBootServices(analyzer.allProtocols);
+  applyAllTypesForInterfacesBootServices(analyser.allProtocols);
 #endif /* HEX_RAYS */
-  showAllChoosers(analyzer);
+  showAllChoosers(analyser);
 
-  analyzer.dumpInfo();
+  analyser.dumpInfo();
 
   hide_wait_box();
 

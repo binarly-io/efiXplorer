@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiXplorer.cpp
- *
  */
 
 #include "efi_analyser.h"
@@ -61,15 +59,15 @@ static plugmod_t *idaapi init(void) {
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
 
-  if (arg >> 0 & 1) { // Parse arg value:
-    //  * arg = 0 (000): default (DXE)
-    //  * arg = 1 (001): default (PEI, 32-bit binaries only)
-    //  * arg = 2 (010): disable_ui (DXE)
-    //  * arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
-    //  * arg = 4 (100): disable_vuln_hunt (DXE)
-    //  * arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
-    //  * arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
-    //  * arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
+  if (arg >> 0 & 1) { // parse arg value:
+    // - arg = 0 (000): default (DXE)
+    // - arg = 1 (001): default (PEI, 32-bit binaries only)
+    // - arg = 2 (010): disable_ui (DXE)
+    // - arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
+    // - arg = 4 (100): disable_vuln_hunt (DXE)
+    // - arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
+    // - arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
+    // - arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
     g_args.module_type = ModuleType::Pei;
   }
 

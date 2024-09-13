@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiAnalyzer.h
- *
  */
 
 #pragma once
@@ -31,10 +29,10 @@
 
 namespace efi_analysis {
 
-class EfiAnalyzer {
+class EfiAnalyser {
 public:
-  EfiAnalyzer();
-  ~EfiAnalyzer();
+  EfiAnalyser();
+  ~EfiAnalyser();
 
   std::vector<json> allGuids;
   std::vector<json> allProtocols;
@@ -232,9 +230,9 @@ public:
                                           "NotifyPpi"};
 };
 
-class EfiAnalyzerX86 : public EfiAnalyzer {
+class EfiAnalyserX86 : public EfiAnalyser {
 public:
-  EfiAnalyzerX86() : EfiAnalyzer() {
+  EfiAnalyserX86() : EfiAnalyser() {
     // import necessary types
     const til_t *idati = get_idati();
     import_type(idati, -1, "EFI_GUID");
@@ -282,9 +280,9 @@ private:
   bool InstallMultipleProtocolInterfacesHandler();
 };
 
-class EfiAnalyzerArm : public EfiAnalyzer {
+class EfiAnalyserArm : public EfiAnalyser {
 public:
-  EfiAnalyzerArm() : EfiAnalyzer() {
+  EfiAnalyserArm() : EfiAnalyser() {
     // in order to make it work, it is necessary to copy
     // uefi.til, uefi64.til files in {idadir}/til/arm/
     add_til("uefi64.til", ADDTIL_DEFAULT);
@@ -334,4 +332,4 @@ bool efiAnalyzerMainX86();
 bool efiAnalyzerMainArm();
 }; // namespace efi_analysis
 
-void showAllChoosers(efi_analysis::EfiAnalyzer analyzer);
+void showAllChoosers(efi_analysis::EfiAnalyser analyser);

@@ -15,8 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiUtils.h
- *
  */
 
 #pragma once
@@ -62,6 +60,7 @@ struct EfiGuid {
   uint16_t data2;
   uint16_t data3;
   uint8_t data4[8];
+
   std::vector<uchar> uchar_data() {
     std::vector<uchar> res;
     res.push_back(data1 & 0xff);
@@ -77,6 +76,7 @@ struct EfiGuid {
     }
     return res;
   }
+
   std::string to_string() {
     char res[37] = {0};
     snprintf(res, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1, data2,
