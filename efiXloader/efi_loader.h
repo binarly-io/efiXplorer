@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiLoader.h
  */
 
-#ifndef EFILOADER_EFILOADER_H
-#define EFILOADER_EFILOADER_H
+#pragma once
 
 #include "ida_core.h"
 #include "pe.h"
@@ -94,5 +92,3 @@ protected:
     ok = true;
   };
 };
-
-#endif // EFILOADER_EFILOADER_H

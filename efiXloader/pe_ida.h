@@ -15,23 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * pe_ida.h
  */
 
-#ifndef EFILOADER_PE_IDA_H
-#define EFILOADER_PE_IDA_H
-
-/*
- *      Interactive disassembler (IDA).
- *      Version 3.05
- *      Copyright (c) 1990-95 by Ilfak Guilfanov. (2:5020/209@fidonet)
- *      ALL RIGHTS RESERVED.
- *
- */
-
-//
-//      Portable Executable file format (MS Windows 95, MS Windows NT)
-//
+#pragma once
 
 #include "ida_core.h"
 #include <stddef.h>
@@ -1073,5 +1059,3 @@ const char *get_pe_machine_name(uint16 machine);
 void print_pe_flags(uint16 flags);
 
 #pragma pack(pop)
-
-#endif // EFILOADER_PE_IDA_H

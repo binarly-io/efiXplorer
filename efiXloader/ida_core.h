@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * ida_core.h
  */
 
-#ifndef EFILOADER_IDA_CORE_H
-#define EFILOADER_IDA_CORE_H
+#pragma once
 
 #define USE_STANDARD_FILE_FUNCTIONS 1
 
@@ -152,5 +150,3 @@ inline uint32 readlong(linput_t *li) {
 
 inline uint32 mf_readlong(linput_t *li) { return swap32(readlong(li)); }
 inline uint16 mf_readshort(linput_t *li) { return swap16(readshort(li)); }
-
-#endif // EFILOADER_IDA_CORE_H

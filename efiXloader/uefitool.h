@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * uefitool.h
  */
 
-#ifndef EFILOADER_UEFITOOL_H
-#define EFILOADER_UEFITOOL_H
+#pragma once
 
 #include "3rd/uefitool/common/LZMA/LzmaCompress.h"
 #include "3rd/uefitool/common/LZMA/LzmaDecompress.h"
@@ -145,5 +143,3 @@ public:
   bool machine_type_detected = false;
 };
 } // namespace efiloader
-
-#endif // EFILOADER_UEFITOOL_H

@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * pe_manager.h
  */
 
-#ifndef EFILOADER_PE_MANAGER_H
-#define EFILOADER_PE_MANAGER_H
+#pragma once
 
 #include "ida_core.h"
 #include "pe.h"
@@ -52,5 +50,3 @@ private:
   void pe_head_to_base(linput_t *li);
 };
 } // namespace efiloader
-
-#endif // EFILOADER_PE_MANAGER_H

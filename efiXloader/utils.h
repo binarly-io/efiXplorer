@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * utils.h
  */
 
-#ifndef EFILOADER_UTILS_H
-#define EFILOADER_UTILS_H
+#pragma once
 
 #include "ida_core.h"
 #include <algorithm>
@@ -39,5 +37,3 @@ public:
   void skip(memory_deserializer_t *ser, size_t size, size_t count);
 };
 } // namespace efiloader
-
-#endif // EFILOADER_UTILS_H

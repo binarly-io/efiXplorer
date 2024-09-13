@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * pe.h
  */
 
-#ifndef EFILOADER_PE_H
-#define EFILOADER_PE_H
+#pragma once
 
 //
 // IDA header
@@ -180,5 +178,3 @@ private:
 } // namespace efiloader
 
 enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
-
-#endif // EFILOADER_PE_H
