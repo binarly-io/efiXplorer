@@ -248,7 +248,7 @@ public:
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
       uval_t ord = get_entry_ordinal(idx);
       ea_t ep = get_entry(ord);
-      TrackEntryParams(get_func(ep), 0);
+      track_entry_params(get_func(ep), 0);
     }
 #endif
   }

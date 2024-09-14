@@ -60,7 +60,7 @@ void efi_analysis::EfiAnalyserArm::initialAnalysis() {
     ea_t ep = get_entry(ord);
     set_name(ep, "_ModuleEntryPoint", SN_FORCE);
 #ifdef HEX_RAYS
-    TrackEntryParams(get_func(ep), 0);
+    track_entry_params(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
   if (file_type == FfsFileType::Pei) {
@@ -227,9 +227,9 @@ void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
 #ifdef HEX_RAYS
   // analyse entry point with Hex-Rays
   for (auto func_addr : funcs) {
-    json res = DetectVars(get_func(func_addr));
-    if (res.contains("gImageHandleList")) {
-      for (auto addr : res["gImageHandleList"]) {
+    json res = detect_vars(get_func(func_addr));
+    if (res.contains("image_handle_list")) {
+      for (auto addr : res["image_handle_list"]) {
         if (!addr_in_vec(image_handle_list_arm, addr)) {
           image_handle_list_arm.push_back(addr);
         }
@@ -294,7 +294,7 @@ void efi_analysis::EfiAnalyserArm::servicesDetection() {
 
 #ifdef HEX_RAYS
   for (auto func_addr : funcs) {
-    std::vector<json> services = DetectServices(get_func(func_addr));
+    std::vector<json> services = detect_services(get_func(func_addr));
     for (auto service : services) {
       allServices.push_back(service);
     }
@@ -489,12 +489,12 @@ bool efi_analysis::efiAnalyserMainArm() {
 
 #ifdef HEX_RAYS
   for (auto addr : analyser.funcs) {
-    std::vector<json> services = DetectPeiServicesArm(get_func(addr));
+    std::vector<json> services = detect_pei_services_arm(get_func(addr));
     for (auto service : services) {
       analyser.allServices.push_back(service);
     }
   }
-  applyAllTypesForInterfacesBootServices(analyser.allProtocols);
+  apply_all_types_for_interfaces(analyser.allProtocols);
 #endif /* HEX_RAYS */
   showAllChoosers(analyser);
 

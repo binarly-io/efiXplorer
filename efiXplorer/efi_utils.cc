@@ -528,7 +528,7 @@ std::vector<uint8_t> unpack_guid(std::string guid) {
     }
     for (auto i = 0; i < hex.size(); i += 2) {
       byte_str = hex.substr(i, 2);
-      byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+      byte = static_cast<uint8_t>(strtol(byte_str.c_str(), nullptr, 16));
       tmp.push_back(byte);
     }
     if (index != 3) {
@@ -543,7 +543,7 @@ std::vector<uint8_t> unpack_guid(std::string guid) {
 
   for (auto i = 0; i < guid.size(); i += 2) {
     byte_str = guid.substr(i, 2);
-    byte = static_cast<uint8_t>(strtol(byte_str.c_str(), NULL, 16));
+    byte = static_cast<uint8_t>(strtol(byte_str.c_str(), nullptr, 16));
     res.push_back(byte);
   }
 

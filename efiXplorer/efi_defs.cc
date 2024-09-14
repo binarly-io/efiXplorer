@@ -59,7 +59,7 @@ size_t g_boot_services_table32_count =
     sizeof(g_boot_services_table32) / sizeof(service_info_32_t);
 
 service_t g_boot_services_table_all[] = {
-    // difficult to check false positives
+    // difficult to detect false positives
     // {"RaiseTPL", RaiseTPLOffset64, RaiseTPLOffset32},
     // {"RestoreTPL", RestoreTPLOffset64, RestoreTPLOffset32},
     {"AllocatePages", AllocatePagesOffset64, AllocatePagesOffset32},

@@ -290,8 +290,9 @@ struct protocols_deps_handler_t : public action_handler_t {
 };
 
 static protocols_deps_handler_t protocols_deps_ah;
-action_desc_t protocols_deps = ACTION_DESC_LITERAL(
-    "efiXplorer:protocolsDeps", "Show dependencies", &protocols_deps_ah, NULL, NULL, -1);
+action_desc_t protocols_deps =
+    ACTION_DESC_LITERAL("efiXplorer:protocolsDeps", "Show dependencies",
+                        &protocols_deps_ah, nullptr, nullptr, -1);
 
 void attachActionProtocolsDeps() {
   // Attach action in protocols chooser
@@ -323,7 +324,7 @@ struct modules_seq_handler_t : public action_handler_t {
 static modules_seq_handler_t modules_seq_ah;
 action_desc_t modules_seq =
     ACTION_DESC_LITERAL("efiXplorer:modulesSeq", "Show the sequence of modules execution",
-                        &modules_seq_ah, NULL, NULL, -1);
+                        &modules_seq_ah, nullptr, nullptr, -1);
 
 void attachActionModulesSeq() {
   // Attach action in protocols chooser
@@ -439,4 +440,4 @@ static action_handler_loadreport_t load_report_handler;
 // Action to load efiXplorer analysis report
 action_desc_t action_load_report =
     ACTION_DESC_LITERAL("efiXplorer:loadReport", "efiXplorer analysis report...",
-                        &load_report_handler, NULL, NULL, -1);
+                        &load_report_handler, nullptr, nullptr, -1);

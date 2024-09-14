@@ -21,10 +21,8 @@
 #include "efi_global.h"
 #include "efi_ui.h"
 
-static const char plugin_hotkey[] = "Ctrl+Alt+E";
-static const char plugin_comment[] =
-    "This plugin performs automatic analysis of the input UEFI module";
-static const char plugin_help[] =
+static const char hotkey[] = "Ctrl+Alt+E";
+static const char description[] =
     "This plugin performs automatic analysis of the input UEFI module";
 static const char welcome_msg[] = "      ____ _  __     __\n"
                                   " ___ / _(_) |/_/__  / /__  _______ ____\n"
@@ -127,12 +125,12 @@ bool idaapi run(size_t arg) {
 // PLUGIN DESCRIPTION BLOCK
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
-    0,              // plugin flags
-    init,           // initialize plugin
-    nullptr,        // terminate plugin
-    run,            // invoke plugin
-    plugin_comment, // long comment about the plugin
-    plugin_help,    // multiline help about the plugin
-    g_plugin_name,  // the preferred short name of the plugin
-    plugin_hotkey   // the preferred hotkey to run the plugin
+    0,             // plugin flags
+    init,          // initialize plugin
+    nullptr,       // terminate plugin
+    run,           // invoke plugin
+    description,   // long comment about the plugin
+    description,   // multiline help about the plugin
+    g_plugin_name, // the preferred short name of the plugin
+    hotkey         // the preferred hotkey to run the plugin
 };

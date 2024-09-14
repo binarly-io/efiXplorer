@@ -21,21 +21,21 @@
 
 #include "efi_utils.h"
 
-uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr);
-bool TrackEntryParams(func_t *f, uint8_t depth);
-json DetectVars(func_t *f);
-std::vector<json> DetectServices(func_t *f);
-std::vector<json> DetectPeiServicesArm(func_t *f);
-bool DetectPeiServices(func_t *f);
-bool setLvar_name(qstring name, lvar_t lvar, ea_t func_addr);
-bool applyAllTypesForInterfacesBootServices(std::vector<json> guids);
-bool applyAllTypesForInterfacesSmmServices(std::vector<json> guids); // unused
-bool setHexRaysVariableInfo(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name);
-bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
-                                               std::string name);
-bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset);
-bool isPODArray(tinfo_t tif, unsigned int ptrDepth);
-const char *Expr2String(cexpr_t *e, qstring *out);
+uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
+bool track_entry_params(func_t *f, uint8_t depth);
+json detect_vars(func_t *f);
+std::vector<json> detect_services(func_t *f);
+std::vector<json> detect_pei_services_arm(func_t *f);
+bool detect_pei_services(func_t *f);
+bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
+bool apply_all_types_for_interfaces(std::vector<json> guids);
+bool apply_all_types_for_interfaces_smm(std::vector<json> guids);
+bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name);
+bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
+                                                std::string name);
+bool offset_of(tinfo_t tif, const char *name, unsigned int *offset);
+bool is_pod_array(tinfo_t tif, unsigned int ptrDepth);
+const char *expr_to_string(cexpr_t *e, qstring *out);
 
 // Description of a function pointer within a structure. Ultimately, this
 // plugin is looking for calls to specific UEFI functions. This structure
@@ -94,7 +94,7 @@ protected:
 
       // Retrieve the offsets of each named function pointer
       unsigned int offset;
-      if (!offsetOf(mType, targets[i].name, &offset)) {
+      if (!offset_of(mType, targets[i].name, &offset)) {
         return false;
       }
     }
@@ -410,10 +410,10 @@ protected:
       lvar_t destVar = varRef.mba->vars[varRef.idx];
 
       // Ensure that it's an array of POD types, or pointers to them
-      bool bisPODArray = isPODArray(destVar.tif, 1);
+      bool bis_pod_array = is_pod_array(destVar.tif, 1);
 
       // If it is a POD array, good, we'll take it.
-      return bisPODArray ? x : nullptr;
+      return bis_pod_array ? x : nullptr;
     }
 
     // For everything else, we really want it to be a reference: either to a
@@ -579,8 +579,8 @@ protected:
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
       auto name = type_to_name(static_cast<std::string>(tStr.c_str()));
-      setLvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
-      if (setHexRaysVariableInfoAndHandleInterfaces(mFuncEa, destVar, ptrTif, name)) {
+      set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
+      if (set_hexrays_var_info_and_handle_interfaces(mFuncEa, destVar, ptrTif, name)) {
         ++mNumApplied;
       }
     }
@@ -602,7 +602,7 @@ protected:
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
       auto name = type_to_name(type_name);
-      setLvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
+      set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
     }
   }
 };
@@ -741,10 +741,10 @@ public:
           auto argid = cf->argidx[i];
           lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
           if (type_name == qstring("EFI_HANDLE")) {
-            setHexRaysVariableInfo(func_addr, arg_var, arg_type, "ImageHandle");
+            set_hexrays_var_info(func_addr, arg_var, arg_type, "ImageHandle");
           }
           if (type_name == qstring("EFI_SYSTEM_TABLE")) {
-            setHexRaysVariableInfo(func_addr, arg_var, arg_type, "SystemTable");
+            set_hexrays_var_info(func_addr, arg_var, arg_type, "SystemTable");
           }
         }
       }
@@ -763,7 +763,7 @@ public:
 
   std::vector<ea_t> child_functions;
 
-  std::vector<ea_t> gImageHandleList;
+  std::vector<ea_t> image_handle_list;
   std::vector<ea_t> st_list;
   std::vector<ea_t> bs_list;
   std::vector<ea_t> rt_list;
@@ -838,8 +838,8 @@ public:
       std::string type_name_str = static_cast<std::string>(type_name.c_str());
       if (type_name == qstring("EFI_HANDLE")) {
         set_type_and_name(g_addr, "gImageHandle", type_name_str);
-        if (!addr_in_vec(gImageHandleList, g_addr)) {
-          gImageHandleList.push_back(g_addr);
+        if (!addr_in_vec(image_handle_list, g_addr)) {
+          image_handle_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_SYSTEM_TABLE")) {
@@ -873,7 +873,7 @@ public:
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
       // Set the Hex-Rays variable type
       auto name = type_to_name(static_cast<std::string>(type_name.c_str()));
-      // setHexRaysVariableInfo(mFuncEa, dest_var, var_type, name);
+      // set_hexrays_var_info(mFuncEa, dest_var, var_type, name);
     }
 
     return 0;

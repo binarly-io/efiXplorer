@@ -19,10 +19,10 @@
 
 #include "efi_hexrays.h"
 
-// Given a tinfo_t specifying a user-defined type (UDT), look up the specified
+// given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.
-bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
-  // Get the udt details
+bool offset_of(tinfo_t tif, const char *name, unsigned int *offset) {
+  // get the udt details
   udt_type_data_t udt;
   if (!tif.get_udt_details(&udt)) {
     qstring str;
@@ -30,7 +30,7 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     return false;
   }
 
-  // Find the udt member
+  // find the udt member
 #if IDA_SDK_VERSION < 840
   udt_member_t udm;
   udm.name = name;
@@ -46,14 +46,14 @@ bool offsetOf(tinfo_t tif, const char *name, unsigned int *offset) {
     return false;
   }
 
-  // Get the offset of the field
+  // get the offset of the field
   *offset = static_cast<unsigned int>(udt.at(fIdx).offset >> 3ULL);
   return true;
 }
 
 // Utility function to set a Hex-Rays variable type and set types for the interfaces
-bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
-                                               std::string name) {
+bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
+                                                std::string name) {
   lvar_saved_info_t lsi;
   lsi.ll = ll;
   lsi.type = tif;
@@ -84,7 +84,7 @@ bool setHexRaysVariableInfoAndHandleInterfaces(ea_t func_addr, lvar_t &ll, tinfo
 }
 
 // Utility function to set a Hex-Rays variable name
-bool setLvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
+bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
   lvar_saved_info_t lsi;
   lvar_uservec_t lvuv;
 
@@ -98,7 +98,7 @@ bool setLvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
 }
 
 // Utility function to set a Hex-Rays variable type and name
-bool setHexRaysVariableInfo(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name) {
+bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name) {
   lvar_saved_info_t lsi;
   lsi.ll = ll;
   lsi.type = tif;
@@ -127,7 +127,7 @@ bool setHexRaysVariableInfo(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string
 // types, or perhaps pointers to POD types. The final argument allows the
 // caller to specify the maximum depth "depth" of the pointers. E.g. at
 // depth 1, "int *[10]" is acceptable. At depth 2, "int **[10]" is acceptable.
-bool isPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
+bool is_pod_array(tinfo_t tif, unsigned int ptrDepth = 0) {
   // If it's not an array, we're done
   if (!tif.is_array())
     return false;
@@ -181,13 +181,13 @@ bool isPODArray(tinfo_t tif, unsigned int ptrDepth = 0) {
 }
 
 // Utility function to get a printable qstring from a cexpr_t
-const char *Expr2String(cexpr_t *e, qstring *out) {
-  e->print1(out, NULL);
+const char *expr_to_string(cexpr_t *e, qstring *out) {
+  e->print1(out, nullptr);
   tag_remove(out);
   return out->c_str();
 }
 
-bool applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
+bool apply_all_types_for_interfaces(std::vector<json> protocols) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -237,7 +237,7 @@ bool applyAllTypesForInterfacesBootServices(std::vector<json> protocols) {
   return true;
 }
 
-bool applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
+bool apply_all_types_for_interfaces_smm(std::vector<json> protocols) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -285,7 +285,7 @@ bool applyAllTypesForInterfacesSmmServices(std::vector<json> protocols) {
   return true;
 }
 
-uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
+uint8_t variables_info_extract_all(func_t *f, ea_t code_addr) {
   if (!init_hexrays_plugin()) {
     return 0xff;
   }
@@ -306,7 +306,7 @@ uint8_t VariablesInfoExtractAll(func_t *f, ea_t code_addr) {
   return res;
 }
 
-bool TrackEntryParams(func_t *f, uint8_t depth) {
+bool track_entry_params(func_t *f, uint8_t depth) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -314,26 +314,29 @@ bool TrackEntryParams(func_t *f, uint8_t depth) {
   if (depth == 2) {
     return true;
   }
-  // check func
+
   if (f == nullptr) {
     return false;
   }
+
   hexrays_failure_t hf;
   cfuncptr_t cfunc = decompile(f, &hf, DECOMP_NO_WAIT);
   if (cfunc == nullptr) {
     return false;
   }
+
   PrototypesFixer *pf = new PrototypesFixer();
   pf->apply_to(&cfunc->body, nullptr);
   for (auto addr : pf->child_functions) {
-    TrackEntryParams(get_func(addr), ++depth);
+    track_entry_params(get_func(addr), ++depth);
   }
+
   delete pf;
 
   return true;
 }
 
-json DetectVars(func_t *f) {
+json detect_vars(func_t *f) {
   json res;
 
   if (!init_hexrays_plugin()) {
@@ -354,7 +357,7 @@ json DetectVars(func_t *f) {
   vars_detector.SetFuncEa(f->start_ea);
   vars_detector.apply_to(&cfunc->body, nullptr);
 
-  res["gImageHandleList"] = vars_detector.gImageHandleList;
+  res["image_handle_list"] = vars_detector.image_handle_list;
   res["st_list"] = vars_detector.st_list;
   res["bs_list"] = vars_detector.bs_list;
   res["rt_list"] = vars_detector.rt_list;
@@ -362,7 +365,7 @@ json DetectVars(func_t *f) {
   return res;
 }
 
-std::vector<json> DetectServices(func_t *f) {
+std::vector<json> detect_services(func_t *f) {
   // check func
   std::vector<json> res;
 
@@ -383,7 +386,7 @@ std::vector<json> DetectServices(func_t *f) {
   return services_detector.services;
 }
 
-bool DetectPeiServices(func_t *f) {
+bool detect_pei_services(func_t *f) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -403,7 +406,7 @@ bool DetectPeiServices(func_t *f) {
   return true;
 }
 
-std::vector<json> DetectPeiServicesArm(func_t *f) {
+std::vector<json> detect_pei_services_arm(func_t *f) {
   std::vector<json> res;
 
   if (!init_hexrays_plugin()) {

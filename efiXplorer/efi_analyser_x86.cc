@@ -32,13 +32,13 @@ extern std::vector<ea_t> g_get_smst_location_calls;
 extern std::vector<ea_t> g_smm_get_variable_calls;
 extern std::vector<ea_t> g_smm_set_variable_calls;
 
-std::vector<ea_t> st_list;
-std::vector<ea_t> gPeiSvcList;
-std::vector<ea_t> bs_list;
-std::vector<ea_t> rt_list;
-std::vector<ea_t> gSmstList;
-std::vector<ea_t> gImageHandleList;
-std::vector<ea_t> gRtServicesList;
+std::vector<ea_t> st_list;               // gST list (system table addresses)
+std::vector<ea_t> ps_list;               // gPS list (PEI services addresses)
+std::vector<ea_t> bs_list;               // gBS list (boot services addresses)
+std::vector<ea_t> rt_list;               // gRT list (runtime services addresses)
+std::vector<ea_t> smst_list;             // gSmst list (SMM system table addresses)
+std::vector<ea_t> image_handle_list;     // gImageHandle list (image handle addresses)
+std::vector<ea_t> runtime_services_list; // runtime services list
 
 std::vector<json> stackGuids;
 std::vector<json> dataGuids;
@@ -119,12 +119,13 @@ efi_analysis::EfiAnalyser::~EfiAnalyser() {
   funcs.clear();
 
   st_list.clear();
-  gPeiSvcList.clear();
+  ps_list.clear();
   bs_list.clear();
   rt_list.clear();
-  gSmstList.clear();
-  gImageHandleList.clear();
-  gRtServicesList.clear();
+  smst_list.clear();
+  image_handle_list.clear();
+  runtime_services_list.clear();
+
   stackGuids.clear();
   dataGuids.clear();
 
@@ -167,7 +168,7 @@ void efi_analysis::EfiAnalyser::setStrings() {
 //--------------------------------------------------------------------------
 // Get all .text and .data segments
 void efi_analysis::EfiAnalyser::getSegments() {
-  for (segment_t *s = get_first_seg(); s != NULL; s = get_next_seg(s->start_ea)) {
+  for (segment_t *s = get_first_seg(); s != nullptr; s = get_next_seg(s->start_ea)) {
     qstring seg_name;
     get_segm_name(&seg_name, s);
 
@@ -227,7 +228,7 @@ bool efi_analysis::EfiAnalyserX86::findImageHandleX64() {
 
         // set type and name
         set_type_and_name(insn.ops[0].addr, "gImageHandle", "EFI_IMAGE_HANDLE");
-        gImageHandleList.push_back(insn.ops[0].addr);
+        image_handle_list.push_back(insn.ops[0].addr);
         break;
       }
       ea = next_head(ea, endAddress);
@@ -267,20 +268,20 @@ bool efi_analysis::EfiAnalyserX86::findSystemTableX64() {
 // Find and mark gSmst global variable address for X64 module
 bool efi_analysis::EfiAnalyserX86::findSmstX64() {
   msg("[%s] gSmst finding\n", g_plugin_name);
-  std::vector<ea_t> gSmstListSmmBase = findSmstSmmBase(bs_list);
-  std::vector<ea_t> gSmstListSwDispatch = findSmstSwDispatch(bs_list);
-  gSmstList.insert(gSmstList.end(), gSmstListSwDispatch.begin(),
-                   gSmstListSwDispatch.end());
-  gSmstList.insert(gSmstList.end(), gSmstListSmmBase.begin(), gSmstListSmmBase.end());
+  std::vector<ea_t> smst_listSmmBase = findSmstSmmBase(bs_list);
+  std::vector<ea_t> smst_listSwDispatch = findSmstSwDispatch(bs_list);
+  smst_list.insert(smst_list.end(), smst_listSwDispatch.begin(),
+                   smst_listSwDispatch.end());
+  smst_list.insert(smst_list.end(), smst_listSmmBase.begin(), smst_listSmmBase.end());
 
   // Deduplicate
-  auto last = std::unique(gSmstList.begin(), gSmstList.end());
-  gSmstList.erase(last, gSmstList.end());
+  auto last = std::unique(smst_list.begin(), smst_list.end());
+  smst_list.erase(last, smst_list.end());
 
-  for (auto smst : gSmstList) {
+  for (auto smst : smst_list) {
     msg("[%s] 0x%016llX: gSmst\n", g_plugin_name, u64_addr(smst));
   }
-  return gSmstList.size();
+  return smst_list.size();
 }
 
 //--------------------------------------------------------------------------
@@ -332,9 +333,9 @@ bool efi_analysis::EfiAnalyserX86::findSmstPostProcX64() {
 
     if (smst_stack.is_null() && smst_addr != BADADDR) {
       msg("[%s]   gSmst: 0x%016llX\n", g_plugin_name, u64_addr(smst_addr));
-      if (!addr_in_vec(gSmstList, smst_addr)) {
+      if (!addr_in_vec(smst_list, smst_addr)) {
         set_ptr_type_and_name(smst_addr, "gSmst", "_EFI_SMM_SYSTEM_TABLE2");
-        gSmstList.push_back(smst_addr);
+        smst_list.push_back(smst_addr);
       }
     }
 
@@ -806,7 +807,7 @@ void efi_analysis::EfiAnalyserX86::getAllRuntimeServices() {
               if (!json_in_vec(allServices, rtItem)) {
                 allServices.push_back(rtItem);
               }
-              gRtServicesList.push_back(addr);
+              runtime_services_list.push_back(addr);
               break;
             }
           }
@@ -821,12 +822,12 @@ void efi_analysis::EfiAnalyserX86::getAllRuntimeServices() {
 void efi_analysis::EfiAnalyserX86::getAllSmmServicesX64() {
   msg("[%s] SmmServices finding (xrefs)\n", g_plugin_name);
 
-  if (!gSmstList.size()) {
+  if (!smst_list.size()) {
     return;
   }
 
   insn_t insn;
-  for (auto smms : gSmstList) {
+  for (auto smms : smst_list) {
     auto xrefs = get_xrefs_util(smms);
 
     msg("[%s] SmmServices finding by xref to gSmst (0x%016llX)\n", g_plugin_name,
@@ -1368,7 +1369,7 @@ bool efi_analysis::EfiAnalyserX86::InstallMultipleProtocolInterfacesHandler() {
         }
       }
 
-      // Exit from loop if found last argument (NULL)
+      // Exit from loop if found last argument
       if (insn.itype == NN_xor && insn.ops[0].reg == REG_R9 &&
           insn.ops[1].reg == REG_R9) {
         check_stack = false;
@@ -2433,7 +2434,7 @@ bool efi_analysis::EfiAnalyser::AnalyseVariableService(ea_t ea, std::string serv
   } else {
 #ifdef HEX_RAYS
     // Extract attributes with Hex-Rays SDK
-    auto res = VariablesInfoExtractAll(f, ea);
+    auto res = variables_info_extract_all(f, ea);
     item["Attributes"] = res;
     std::string attributes_hr = std::string();
     if (res == 0xff) {
@@ -2515,11 +2516,11 @@ void efi_analysis::EfiAnalyser::dumpInfo() {
   if (rt_list.size()) {
     info["rt_list"] = rt_list;
   }
-  if (gSmstList.size()) {
-    info["gSmstList"] = gSmstList;
+  if (smst_list.size()) {
+    info["smst_list"] = smst_list;
   }
-  if (gImageHandleList.size()) {
-    info["gImageHandleList"] = gImageHandleList;
+  if (image_handle_list.size()) {
+    info["image_handle_list"] = image_handle_list;
   }
   if (allPPIs.size()) {
     info["allPPIs"] = allPPIs;
@@ -2690,7 +2691,7 @@ bool efi_analysis::efiAnalyserMainX64() {
     analyser.getBsProtNamesX64();
 
 #ifdef HEX_RAYS
-    applyAllTypesForInterfacesBootServices(analyser.allProtocols);
+    apply_all_types_for_interfaces(analyser.allProtocols);
     analyser.findSmstPostProcX64();
 #endif
 
@@ -2702,7 +2703,7 @@ bool efi_analysis::efiAnalyserMainX64() {
     analyser.markInterfaces();
 
     // search for copies of global variables
-    mark_copies_for_gvars(gSmstList, "gSmst");
+    mark_copies_for_gvars(smst_list, "gSmst");
     mark_copies_for_gvars(bs_list, "gBS");
     mark_copies_for_gvars(rt_list, "gRT");
 
@@ -2722,7 +2723,7 @@ bool efi_analysis::efiAnalyserMainX64() {
     }
 
 #ifdef HEX_RAYS
-    applyAllTypesForInterfacesSmmServices(analyser.allProtocols);
+    apply_all_types_for_interfaces_smm(analyser.allProtocols);
 #endif
 
     analyser.analyseNvramVariables();
@@ -2798,8 +2799,8 @@ bool efi_analysis::efiAnalyserMainX86() {
     analyser.markInterfaces();
 
 #ifdef HEX_RAYS
-    applyAllTypesForInterfacesBootServices(analyser.allProtocols);
-    applyAllTypesForInterfacesSmmServices(analyser.allProtocols);
+    apply_all_types_for_interfaces(analyser.allProtocols);
+    apply_all_types_for_interfaces_smm(analyser.allProtocols);
 #endif
 
   } else if (analyser.file_type == FfsFileType::Pei) {
@@ -2807,7 +2808,7 @@ bool efi_analysis::efiAnalyserMainX86() {
     add_struct_for_shifted_ptr();
 #ifdef HEX_RAYS
     for (auto addr : analyser.funcs) {
-      DetectPeiServices(get_func(addr));
+      detect_pei_services(get_func(addr));
     }
 #endif
     analyser.getAllPeiServicesX86();
