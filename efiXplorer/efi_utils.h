@@ -22,27 +22,22 @@
 // 3rd party
 #include "json.hpp"
 
-#include <algorithm>
 #include <allins.hpp>
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
 #include <entry.hpp>
-#include <filesystem>
 #include <format>
 #include <frame.hpp>
 #include <fstream>
 #include <graph.hpp>
 #include <ida.hpp>
 #include <idp.hpp>
-#include <iostream>
 #include <kernwin.hpp>
 #include <lines.hpp>
 #include <loader.hpp>
 #include <name.hpp>
 #include <pro.h>
-#include <stdio.h>
-#include <string>
 #if IDA_SDK_VERSION < 900
 #include <struct.hpp>
 #endif
