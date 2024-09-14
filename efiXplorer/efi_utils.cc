@@ -501,15 +501,14 @@ bool valid_guid(json guid) {
 //--------------------------------------------------------------------------
 // convert GUID value to string
 std::string guid_to_string(json guid) {
-  char guid_str[37] = {0};
-  snprintf(guid_str, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-           static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
-           static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
-           static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-           static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
-           static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
-           static_cast<uint8_t>(guid[10]));
-  return static_cast<std::string>(guid_str);
+  return std::format(
+      "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+      static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+      static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+      static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+      static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+      static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+      static_cast<uint8_t>(guid[10]));
 }
 
 std::vector<uint8_t> unpack_guid(std::string guid) {
@@ -594,11 +593,7 @@ bool check_install_protocol(ea_t ea) {
 
 //--------------------------------------------------------------------------
 // convert 64-bit value to hex string
-std::string as_hex(uint64_t value) {
-  char hexstr[21] = {};
-  snprintf(hexstr, 21, "%llX", value);
-  return static_cast<std::string>(hexstr);
-}
+std::string as_hex(uint64_t value) { return std::format("{:016X}", value); }
 
 //--------------------------------------------------------------------------
 // make sure the first argument looks like a protocol
@@ -841,10 +836,13 @@ bool json_in_vec(std::vector<json> vec, json item) {
   return find(vec.begin(), vec.end(), item) != vec.end();
 }
 
-bool addr_in_tables(std::vector<ea_t> st_list, std::vector<ea_t> bs_list,
-                    std::vector<ea_t> rt_list, ea_t ea) {
-  return (addr_in_vec(st_list, ea) || addr_in_vec(bs_list, ea) ||
-          addr_in_vec(rt_list, ea));
+bool addr_in_tables(std::vector<ea_t> t1, std::vector<ea_t> t2, ea_t ea) {
+  return (addr_in_vec(t1, ea) || addr_in_vec(t2, ea));
+}
+
+bool addr_in_tables(std::vector<ea_t> t1, std::vector<ea_t> t2, std::vector<ea_t> t3,
+                    ea_t ea) {
+  return (addr_in_vec(t1, ea) || addr_in_vec(t2, ea) || addr_in_vec(t3, ea));
 }
 
 std::vector<ea_t> find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {

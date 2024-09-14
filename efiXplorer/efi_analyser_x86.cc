@@ -1263,24 +1263,28 @@ void efi_analysis::EfiAnalyserX86::getProtBootServicesX86() {
 }
 
 //--------------------------------------------------------------------------
-// find other addresses of global gBS vars for X64 modules
+// find other addresses of gBS variables for X86-64 modules
 void efi_analysis::EfiAnalyserX86::findOtherBsTablesX64() {
-  msg("[%s] Finding of other addresses of global gBS variables\n", g_plugin_name);
+  msg("[%s] find other addresses of gBS variables\n", g_plugin_name);
   for (auto s : allServices) {
     std::string table_name = s["table_name"];
-    if (table_name.compare(static_cast<std::string>("EFI_BOOT_SERVICES"))) {
+    if (table_name.compare("EFI_BOOT_SERVICES")) {
       continue;
     }
+
     auto offset = u32_addr(s["offset"]);
     if (offset < 0xf0) {
       continue;
     }
+
     ea_t addr = static_cast<ea_t>(s["address"]);
     msg("[%s] current service: 0x%016llX\n", g_plugin_name, u64_addr(addr));
     ea_t addr_bs = find_unknown_bs_var_64(addr);
-    if (!addr_bs || addr_in_vec(bs_list, addr_bs) || addr_in_vec(rt_list, addr_bs)) {
+
+    if (addr_bs == BADADDR || addr_in_tables(bs_list, rt_list, addr_bs)) {
       continue;
     }
+
     msg("[%s] found BootServices table at 0x%016llX, address = 0x%016llX\n",
         g_plugin_name, u64_addr(addr), u64_addr(addr_bs));
     set_ptr_type_and_name(addr_bs, "gBS", "EFI_BOOT_SERVICES");

@@ -29,6 +29,7 @@
 #include <diskio.hpp>
 #include <entry.hpp>
 #include <filesystem>
+#include <format>
 #include <frame.hpp>
 #include <fstream>
 #include <graph.hpp>
@@ -77,18 +78,18 @@ struct EfiGuid {
     return res;
   }
 
-  std::string to_string() {
-    char res[37] = {0};
-    snprintf(res, 37, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1, data2,
-             data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5], data4[6],
-             data4[7]);
-    return static_cast<std::string>(res);
+  std::string to_string() const {
+    return std::format(
+        "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}", data1,
+        data2, data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5],
+        data4[6], data4[7]);
   }
 };
 
 ArchFileType input_file_type();
 
 bool add_struct_for_shifted_ptr();
+bool addr_in_tables(std::vector<ea_t> bs_list, std::vector<ea_t> rt_list, ea_t ea);
 bool addr_in_tables(std::vector<ea_t> st_list, std::vector<ea_t> bs_list,
                     std::vector<ea_t> rt_list, ea_t ea);
 bool addr_in_vec(std::vector<ea_t> vec, ea_t addr);

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 
 project(efiXplorer CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -53,7 +53,7 @@ endif()
 
 add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efixplorer.cc)
 
-set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 17)
+set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 20)
 ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
 add_ida_library(efiXplorer_lib ${efiXplorer_src})
