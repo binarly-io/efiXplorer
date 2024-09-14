@@ -32,11 +32,11 @@ public:
   json additionalInstallers; // getAdditionalInstallers result
   json imagesInfo;           // getImagesInfo result
   json modulesSequence;      // buildModulesSequence result
-  std::vector<std::string> imagesFromIdb;
+  string_list_t imagesFromIdb;
   std::set<std::string> untrackedProtocols;
   // Input: protocols from report
-  void getProtocolsByGuids(std::vector<json> protocols);
-  void getProtocolsChooser(std::vector<json> protocols);
+  void getProtocolsByGuids(json_list_t protocols);
+  void getProtocolsChooser(json_list_t protocols);
   json getDeps(std::string protocol); // get dependencies for specific protocol
   void getAdditionalInstallers();     // get installers by protocol GUIDs by searching in
                                       // the firmware and analysing xrefs

@@ -28,35 +28,35 @@
 
 using namespace efi_analysis;
 
-extern std::vector<ea_t> g_get_smst_location_calls;
-extern std::vector<ea_t> g_smm_get_variable_calls;
-extern std::vector<ea_t> g_smm_set_variable_calls;
+extern ea_list_t g_get_smst_location_calls;
+extern ea_list_t g_smm_get_variable_calls;
+extern ea_list_t g_smm_set_variable_calls;
 
-std::vector<ea_t> st_list;               // gST list (system table addresses)
-std::vector<ea_t> ps_list;               // gPS list (PEI services addresses)
-std::vector<ea_t> bs_list;               // gBS list (boot services addresses)
-std::vector<ea_t> rt_list;               // gRT list (runtime services addresses)
-std::vector<ea_t> smst_list;             // gSmst list (SMM system table addresses)
-std::vector<ea_t> image_handle_list;     // gImageHandle list (image handle addresses)
-std::vector<ea_t> runtime_services_list; // runtime services list
+ea_list_t st_list;               // gST list (system table addresses)
+ea_list_t ps_list;               // gPS list (PEI services addresses)
+ea_list_t bs_list;               // gBS list (boot services addresses)
+ea_list_t rt_list;               // gRT list (runtime services addresses)
+ea_list_t smst_list;             // gSmst list (SMM system table addresses)
+ea_list_t image_handle_list;     // gImageHandle list (image handle addresses)
+ea_list_t runtime_services_list; // runtime services list
 
-std::vector<json> stackGuids;
-std::vector<json> dataGuids;
+json_list_t stackGuids;
+json_list_t dataGuids;
 
 // all .text and .data segments for compatibility with the efiLoader
-std::vector<segment_t *> textSegments;
-std::vector<segment_t *> dataSegments;
+segment_list_t textSegments;
+segment_list_t dataSegments;
 
 // for smm callouts finding
-std::vector<ea_t> calloutAddrs;
-std::vector<func_t *> excFunctions;
-std::vector<func_t *> childSmiHandlers;
-std::vector<ea_t> readSaveStateCalls;
+ea_list_t calloutAddrs;
+func_list_t excFunctions;
+func_list_t childSmiHandlers;
+ea_list_t readSaveStateCalls;
 
 // for GetVariable stack overflow finding
-std::vector<ea_t> peiGetVariableOverflow;
-std::vector<ea_t> getVariableOverflow;
-std::vector<ea_t> smmGetVariableOverflow;
+ea_list_t peiGetVariableOverflow;
+ea_list_t getVariableOverflow;
+ea_list_t smmGetVariableOverflow;
 
 efi_analysis::EfiAnalyser::EfiAnalyser() {
   // 32-bit, 64-bit, ARM or UEFI (in loader instance)
@@ -89,7 +89,7 @@ efi_analysis::EfiAnalyser::EfiAnalyser() {
     funcs.push_back(func->start_ea);
   }
 
-  std::vector<ea_t> addrs;
+  ea_list_t addrs;
   for (auto service : protBsNames) {
     bootServices[service] = addrs;
   }
@@ -172,8 +172,7 @@ void efi_analysis::EfiAnalyser::getSegments() {
     qstring seg_name;
     get_segm_name(&seg_name, s);
 
-    std::vector<std::string> codeSegNames{
-        ".text", ".code"}; // for compatibility with ida-efitools2
+    string_list_t codeSegNames{".text", ".code"}; // for compatibility with ida-efitools2
     for (auto name : codeSegNames) {
       auto index = seg_name.find(name.c_str());
       if (index != std::string::npos) {
@@ -268,8 +267,8 @@ bool efi_analysis::EfiAnalyserX86::findSystemTableX64() {
 // Find and mark gSmst global variable address for X64 module
 bool efi_analysis::EfiAnalyserX86::findSmstX64() {
   msg("[%s] gSmst finding\n", g_plugin_name);
-  std::vector<ea_t> smst_listSmmBase = findSmstSmmBase(bs_list);
-  std::vector<ea_t> smst_listSwDispatch = findSmstSwDispatch(bs_list);
+  ea_list_t smst_listSmmBase = findSmstSmmBase(bs_list);
+  ea_list_t smst_listSwDispatch = findSmstSwDispatch(bs_list);
   smst_list.insert(smst_list.end(), smst_listSwDispatch.begin(),
                    smst_listSwDispatch.end());
   smst_list.insert(smst_list.end(), smst_listSmmBase.begin(), smst_listSmmBase.end());
@@ -1067,7 +1066,7 @@ void efi_analysis::EfiAnalyserX86::getPpiNamesX86() {
       continue;
     }
 
-    std::vector<ea_t> addrs = peiServicesAll[g_pei_services_table32[i].name];
+    ea_list_t addrs = peiServicesAll[g_pei_services_table32[i].name];
 
     // for each PEI service
     for (auto ea : addrs) {
@@ -1334,7 +1333,7 @@ bool efi_analysis::EfiAnalyser::AddProtocol(std::string serviceName, ea_t guidAd
 //--------------------------------------------------------------------------
 // Extract protocols from InstallMultipleProtocolInterfaces service call
 bool efi_analysis::EfiAnalyserX86::InstallMultipleProtocolInterfacesHandler() {
-  std::vector<ea_t> addrs = bootServices["InstallMultipleProtocolInterfaces"];
+  ea_list_t addrs = bootServices["InstallMultipleProtocolInterfaces"];
   std::map<ea_t, ea_t> stack_params;
   insn_t insn;
 
@@ -1434,7 +1433,7 @@ void efi_analysis::EfiAnalyserX86::getBsProtNamesX64() {
       continue;
     }
 
-    std::vector<ea_t> addrs = bootServices[g_boot_services_table64[i].name];
+    ea_list_t addrs = bootServices[g_boot_services_table64[i].name];
     for (auto ea : addrs) {
       ea_t address = ea;
       msg("[%s] looking for protocols in the 0x%016llX area\n", g_plugin_name,
@@ -1505,7 +1504,7 @@ void efi_analysis::EfiAnalyserX86::getBsProtNamesX86() {
     start = seg_info->start_ea;
   }
   for (int i = 0; i < g_boot_services_table32_count; i++) {
-    std::vector<ea_t> addrs = bootServices[g_boot_services_table32[i].name];
+    ea_list_t addrs = bootServices[g_boot_services_table32[i].name];
 
     // for each boot service
     for (auto ea : addrs) {
@@ -1973,7 +1972,7 @@ bool efi_analysis::EfiAnalyser::findPPIGetVariableStackOveflow() {
   msg("[%s] Looking for PPI GetVariable buffer overflow, "
       "allServices.size() = %lu\n",
       g_plugin_name, allServices.size());
-  std::vector<ea_t> getVariableServicesCalls;
+  ea_list_t getVariableServicesCalls;
   std::string getVariableStr("VariablePPI.GetVariable");
   for (auto j_service : allServices) {
     json service = j_service;
@@ -2137,9 +2136,9 @@ bool efi_analysis::EfiAnalyser::findPPIGetVariableStackOveflow() {
 
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double GetVariable calls
-bool efi_analysis::EfiAnalyser::findGetVariableOveflow(std::vector<json> allServices) {
+bool efi_analysis::EfiAnalyser::findGetVariableOveflow(json_list_t allServices) {
   msg("[%s] Looking for GetVariable stack/heap overflow\n", g_plugin_name);
-  std::vector<ea_t> getVariableServicesCalls;
+  ea_list_t getVariableServicesCalls;
   std::string getVariableStr("GetVariable");
   for (auto j_service : allServices) {
     json service = j_service;
@@ -2273,8 +2272,7 @@ bool efi_analysis::EfiAnalyser::findGetVariableOveflow(std::vector<json> allServ
 // Find potential stack/heap overflow with double SmmGetVariable calls
 bool efi_analysis::EfiAnalyser::findSmmGetVariableOveflow() {
   msg("[%s] Looking for SmmGetVariable stack/heap overflow\n", g_plugin_name);
-  std::vector<ea_t> smmGetVariableCalls =
-      findSmmGetVariableCalls(dataSegments, &allServices);
+  ea_list_t smmGetVariableCalls = findSmmGetVariableCalls(dataSegments, &allServices);
   sort(smmGetVariableCalls.begin(), smmGetVariableCalls.end());
   if (smmGetVariableCalls.size() < 2) {
     msg("[%s] less than 2 GetVariable calls found\n", g_plugin_name);
@@ -2473,9 +2471,9 @@ bool efi_analysis::EfiAnalyser::AnalyseVariableService(ea_t ea, std::string serv
 
 bool efi_analysis::EfiAnalyser::analyseNvramVariables() {
   msg("[%s] Get NVRAM variables information\n", g_plugin_name);
-  std::vector<std::string> nvram_services = {"GetVariable", "SetVariable"};
+  string_list_t nvram_services = {"GetVariable", "SetVariable"};
   for (auto service_str : nvram_services) {
-    std::vector<ea_t> var_services;
+    ea_list_t var_services;
     for (auto j_service : allServices) {
       json service = j_service;
       std::string service_name = static_cast<std::string>(service["service_name"]);
@@ -2557,7 +2555,7 @@ void efi_analysis::EfiAnalyser::dumpInfo() {
     info["vulns"]["smm_get_variable_buffer_overflow"] = smmGetVariableOverflow;
   }
 
-  std::vector<json> smiHandlersAddrs;
+  json_list_t smiHandlersAddrs;
   if (smiHandlers.size() > 0) {
     for (auto f : smiHandlers) {
       func_t *func = f;
@@ -2616,8 +2614,8 @@ void showAllChoosers(efi_analysis::EfiAnalyserX86 analyser) {
   // open window with vulnerabilities
   if (calloutAddrs.size() || peiGetVariableOverflow.size() ||
       getVariableOverflow.size() || smmGetVariableOverflow.size()) {
-    std::vector<json> vulns;
-    std::map<std::string, std::vector<ea_t>> vulns_map = {
+    json_list_t vulns;
+    std::map<std::string, ea_list_t> vulns_map = {
         {"SmmCallout", calloutAddrs},
         {"PeiGetVariableOverflow", peiGetVariableOverflow},
         {"DxeGetVariableOverflow", getVariableOverflow},

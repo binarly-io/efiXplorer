@@ -56,14 +56,23 @@
 
 using namespace nlohmann;
 
+using ea_list_t = std::vector<ea_t>;
+using func_list_t = std::vector<func_t *>;
+using json_list_t = std::vector<json>;
+using segment_list_t = std::vector<segment_t *>;
+using string_list_t = std::vector<std::string>;
+using uchar_list_t = std::vector<uchar>;
+using uint64_list_t = std::vector<uint64_t>;
+using uint8_list_t = std::vector<uint8_t>;
+
 struct EfiGuid {
   uint32_t data1;
   uint16_t data2;
   uint16_t data3;
   uint8_t data4[8];
 
-  std::vector<uchar> uchar_data() {
-    std::vector<uchar> res;
+  uchar_list_t uchar_data() {
+    uchar_list_t res;
     res.push_back(data1 & 0xff);
     res.push_back(data1 >> 8 & 0xff);
     res.push_back(data1 >> 16 & 0xff);
@@ -89,20 +98,19 @@ struct EfiGuid {
 ArchFileType input_file_type();
 
 bool add_struct_for_shifted_ptr();
-bool addr_in_tables(std::vector<ea_t> bs_list, std::vector<ea_t> rt_list, ea_t ea);
-bool addr_in_tables(std::vector<ea_t> st_list, std::vector<ea_t> bs_list,
-                    std::vector<ea_t> rt_list, ea_t ea);
-bool addr_in_vec(std::vector<ea_t> vec, ea_t addr);
+bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea);
+bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_list_t t3, ea_t ea);
+bool addr_in_vec(ea_list_t vec, ea_t addr);
 bool check_boot_service_protocol_xrefs(ea_t call_addr);
 bool check_boot_service_protocol(ea_t call_addr);
 bool check_install_protocol(ea_t ea);
-bool json_in_vec(std::vector<json> vec, json item);
-bool mark_copies_for_gvars(std::vector<ea_t> gvars, std::string type);
+bool json_in_vec(json_list_t vec, json item);
+bool mark_copies_for_gvars(ea_list_t gvars, std::string type);
 bool op_stroff_util(ea_t addr, std::string type);
 bool set_ptr_type(ea_t addr, std::string type);
 bool set_ret_to_pei_svc(ea_t start_ea);
 bool summary_json_exists();
-bool uint64_in_vec(std::vector<uint64_t> vec, uint64_t value);
+bool uint64_in_vec(uint64_list_t vec, uint64_t value);
 bool valid_guid(json guid);
 
 ea_t find_unknown_bs_var_64(ea_t ea);
@@ -110,7 +118,7 @@ ea_t find_unknown_bs_var_64(ea_t ea);
 EfiGuid get_global_guid(ea_t addr);
 EfiGuid get_local_guid(func_t *f, uint64_t offset);
 
-FfsFileType ask_file_type(std::vector<json> *all_guids);
+FfsFileType ask_file_type(json_list_t *all_guids);
 
 json get_guid_by_address(ea_t addr);
 
@@ -127,19 +135,20 @@ std::string lookup_boot_service_name(uint64_t offset);
 std::string lookup_runtime_service_name(uint64_t offset);
 std::string type_to_name(std::string type);
 
-std::vector<ea_t> find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
-std::vector<ea_t> get_xrefs_to_array(ea_t addr);
-std::vector<ea_t> get_xrefs_util(ea_t addr);
-std::vector<ea_t> search_protocol(std::string protocol);
-std::vector<uint8_t> unpack_guid(std::string guid);
+ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+ea_list_t get_xrefs_to_array(ea_t addr);
+ea_list_t get_xrefs_util(ea_t addr);
+ea_list_t search_protocol(std::string protocol);
 
 uint16_t get_machine_type();
 uint32_t u32_addr(ea_t addr);
 uint64_t u64_addr(ea_t addr);
 
+uint8_list_t unpack_guid(std::string guid);
+
 uval_t trunc_imm_to_dtype(uval_t value, op_dtype_t dtype);
 
-void op_stroff_for_global_interface(std::vector<ea_t> xrefs, qstring type_name);
+void op_stroff_for_global_interface(ea_list_t xrefs, qstring type_name);
 void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name);
 void set_const_char16_type(ea_t ea);
 void set_entry_arg_to_pei_svc();

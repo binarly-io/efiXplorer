@@ -24,12 +24,12 @@
 uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
 bool track_entry_params(func_t *f, uint8_t depth);
 json detect_vars(func_t *f);
-std::vector<json> detect_services(func_t *f);
-std::vector<json> detect_pei_services_arm(func_t *f);
+json_list_t detect_services(func_t *f);
+json_list_t detect_pei_services_arm(func_t *f);
 bool detect_pei_services(func_t *f);
 bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
-bool apply_all_types_for_interfaces(std::vector<json> guids);
-bool apply_all_types_for_interfaces_smm(std::vector<json> guids);
+bool apply_all_types_for_interfaces(json_list_t guids);
+bool apply_all_types_for_interfaces_smm(json_list_t guids);
 bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name);
 bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                                 std::string name);
@@ -204,7 +204,7 @@ public:
   // We need the function ea when setting Hex-Rays variable types.
   void SetFuncEa(ea_t ea) { mFuncEa = ea; };
   void SetCodeEa(ea_t ea) { mCodeEa = ea; };
-  void SetProtocols(std::vector<json> protocols) { mProtocols = protocols; };
+  void SetProtocols(json_list_t protocols) { mProtocols = protocols; };
 
 protected:
   //
@@ -216,7 +216,7 @@ protected:
   ea_t mCodeEa;
 
   // Protocols
-  std::vector<json> mProtocols;
+  json_list_t mProtocols;
 
   // Print debug messages?
   bool mDebug = false;
@@ -660,7 +660,7 @@ protected:
 class PrototypesFixer : public ctree_visitor_t {
 public:
   PrototypesFixer() : ctree_visitor_t(CV_FAST) {};
-  std::vector<ea_t> child_functions;
+  ea_list_t child_functions;
 
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.
@@ -761,12 +761,12 @@ class VariablesDetector : public ctree_visitor_t {
 public:
   VariablesDetector() : ctree_visitor_t(CV_FAST) {};
 
-  std::vector<ea_t> child_functions;
+  ea_list_t child_functions;
 
-  std::vector<ea_t> image_handle_list;
-  std::vector<ea_t> st_list;
-  std::vector<ea_t> bs_list;
-  std::vector<ea_t> rt_list;
+  ea_list_t image_handle_list;
+  ea_list_t st_list;
+  ea_list_t bs_list;
+  ea_list_t rt_list;
 
   void SetFuncEa(ea_t ea) { mFuncEa = ea; };
 
@@ -889,7 +889,7 @@ class ServicesDetector : public ctree_visitor_t {
 public:
   ServicesDetector() : ctree_visitor_t(CV_FAST) {};
 
-  std::vector<json> services;
+  json_list_t services;
 
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.
@@ -1051,7 +1051,7 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
 public:
   PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST) {};
 
-  std::vector<json> services;
+  json_list_t services;
 
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.

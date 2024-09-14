@@ -187,7 +187,7 @@ const char *expr_to_string(cexpr_t *e, qstring *out) {
   return out->c_str();
 }
 
-bool apply_all_types_for_interfaces(std::vector<json> protocols) {
+bool apply_all_types_for_interfaces(json_list_t protocols) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -237,7 +237,7 @@ bool apply_all_types_for_interfaces(std::vector<json> protocols) {
   return true;
 }
 
-bool apply_all_types_for_interfaces_smm(std::vector<json> protocols) {
+bool apply_all_types_for_interfaces_smm(json_list_t protocols) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -365,9 +365,9 @@ json detect_vars(func_t *f) {
   return res;
 }
 
-std::vector<json> detect_services(func_t *f) {
+json_list_t detect_services(func_t *f) {
   // check func
-  std::vector<json> res;
+  json_list_t res;
 
   if (!init_hexrays_plugin()) {
     return res;
@@ -406,8 +406,8 @@ bool detect_pei_services(func_t *f) {
   return true;
 }
 
-std::vector<json> detect_pei_services_arm(func_t *f) {
-  std::vector<json> res;
+json_list_t detect_pei_services_arm(func_t *f) {
+  json_list_t res;
 
   if (!init_hexrays_plugin()) {
     return res;

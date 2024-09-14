@@ -22,9 +22,9 @@
 #include "efi_global.h"
 
 // can be used after Hex-Rays based analysis
-std::vector<ea_t> g_get_smst_location_calls;
-std::vector<ea_t> g_smm_get_variable_calls;
-std::vector<ea_t> g_smm_set_variable_calls;
+ea_list_t g_get_smst_location_calls;
+ea_list_t g_smm_get_variable_calls;
+ea_list_t g_smm_set_variable_calls;
 
 //--------------------------------------------------------------------------
 // set EFI_GUID type
@@ -93,7 +93,7 @@ ArchFileType input_file_type() {
 //--------------------------------------------------------------------------
 // get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-FfsFileType guess_file_type(ArchFileType arch, std::vector<json> *all_guids) {
+FfsFileType guess_file_type(ArchFileType arch, json_list_t *all_guids) {
   if (arch == ArchFileType::Uefi) {
     return FfsFileType::DxeAndTheLike;
   }
@@ -135,7 +135,7 @@ FfsFileType guess_file_type(ArchFileType arch, std::vector<json> *all_guids) {
   return FfsFileType::DxeAndTheLike;
 }
 
-FfsFileType ask_file_type(std::vector<json> *all_guids) {
+FfsFileType ask_file_type(json_list_t *all_guids) {
   auto arch = input_file_type();
   if (arch == ArchFileType::Uefi || arch == ArchFileType::X8664) {
     return FfsFileType::DxeAndTheLike;
@@ -172,8 +172,8 @@ ea_t find_unknown_bs_var_64(ea_t ea) {
 
 //--------------------------------------------------------------------------
 // get all xrefs for given address
-std::vector<ea_t> get_xrefs_util(ea_t addr) {
-  std::vector<ea_t> xrefs;
+ea_list_t get_xrefs_util(ea_t addr) {
+  ea_list_t xrefs;
   ea_t xref = get_first_dref_to(addr);
   while (xref != BADADDR) {
     xrefs.push_back(xref);
@@ -184,7 +184,7 @@ std::vector<ea_t> get_xrefs_util(ea_t addr) {
 
 //--------------------------------------------------------------------------
 // get all xrefs for given array element
-std::vector<ea_t> get_xrefs_to_array(ea_t addr) {
+ea_list_t get_xrefs_to_array(ea_t addr) {
   ea_t first_ea;
   ea_t ea = addr;
   while (true) {
@@ -511,8 +511,8 @@ std::string guid_to_string(json guid) {
       static_cast<uint8_t>(guid[10]));
 }
 
-std::vector<uint8_t> unpack_guid(std::string guid) {
-  std::vector<uint8_t> res;
+uint8_list_t unpack_guid(std::string guid) {
+  uint8_list_t res;
   std::string delim = "-";
   std::string byte_str;
   uint8_t byte;
@@ -520,7 +520,7 @@ std::vector<uint8_t> unpack_guid(std::string guid) {
 
   auto index = 0;
   while ((pos = guid.find(delim)) != std::string::npos) {
-    std::vector<uint8_t> tmp;
+    uint8_list_t tmp;
     auto hex = guid.substr(0, pos);
     if (hex.size() % 2) {
       break;
@@ -549,9 +549,9 @@ std::vector<uint8_t> unpack_guid(std::string guid) {
   return res;
 }
 
-std::vector<ea_t> search_protocol(std::string protocol) {
+ea_list_t search_protocol(std::string protocol) {
   uchar bytes[17] = {0};
-  std::vector<ea_t> res;
+  ea_list_t res;
   auto guid_bytes = unpack_guid(protocol);
   std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
   ea_t start = 0;
@@ -693,7 +693,7 @@ bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
   return true;
 }
 
-bool mark_copies_for_gvars(std::vector<ea_t> gvars, std::string type) {
+bool mark_copies_for_gvars(ea_list_t gvars, std::string type) {
   for (auto var : gvars) {
     auto xrefs = get_xrefs_util(var);
     for (auto addr : xrefs) {
@@ -814,7 +814,7 @@ void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name) {
 //--------------------------------------------------------------------------
 // mark the arguments of each function from an interface derived from
 // a global variable
-void op_stroff_for_global_interface(std::vector<ea_t> xrefs, qstring type_name) {
+void op_stroff_for_global_interface(ea_list_t xrefs, qstring type_name) {
   insn_t insn;
   for (auto ea : xrefs) {
     decode_insn(&insn, ea);
@@ -824,29 +824,28 @@ void op_stroff_for_global_interface(std::vector<ea_t> xrefs, qstring type_name) 
   }
 }
 
-bool uint64_in_vec(std::vector<uint64_t> vec, uint64_t value) {
+bool uint64_in_vec(uint64_list_t vec, uint64_t value) {
   return find(vec.begin(), vec.end(), value) != vec.end();
 }
 
-bool addr_in_vec(std::vector<ea_t> vec, ea_t addr) {
+bool addr_in_vec(ea_list_t vec, ea_t addr) {
   return find(vec.begin(), vec.end(), addr) != vec.end();
 }
 
-bool json_in_vec(std::vector<json> vec, json item) {
+bool json_in_vec(json_list_t vec, json item) {
   return find(vec.begin(), vec.end(), item) != vec.end();
 }
 
-bool addr_in_tables(std::vector<ea_t> t1, std::vector<ea_t> t2, ea_t ea) {
+bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea) {
   return (addr_in_vec(t1, ea) || addr_in_vec(t2, ea));
 }
 
-bool addr_in_tables(std::vector<ea_t> t1, std::vector<ea_t> t2, std::vector<ea_t> t3,
-                    ea_t ea) {
+bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_list_t t3, ea_t ea) {
   return (addr_in_vec(t1, ea) || addr_in_vec(t2, ea) || addr_in_vec(t3, ea));
 }
 
-std::vector<ea_t> find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {
-  std::vector<ea_t> res;
+ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len) {
+  ea_list_t res;
   ea_t start = start_ea;
   int counter = 0;
   while (true) {

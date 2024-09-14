@@ -64,7 +64,7 @@ json EfiDependencies::getDeps(std::string guid) {
   return res;
 }
 
-void EfiDependencies::getProtocolsByGuids(std::vector<json> protocols) {
+void EfiDependencies::getProtocolsByGuids(json_list_t protocols) {
   for (auto p : protocols) {
     // check if entry for GUID already exist
     std::string guid = p["guid"];
@@ -75,7 +75,7 @@ void EfiDependencies::getProtocolsByGuids(std::vector<json> protocols) {
   }
 }
 
-void EfiDependencies::getProtocolsChooser(std::vector<json> protocols) {
+void EfiDependencies::getProtocolsChooser(json_list_t protocols) {
   auto i = 0;
   for (auto p : protocols) {
     protocolsChooser[i] = p;
@@ -121,7 +121,7 @@ bool EfiDependencies::installerFound(std::string protocol) {
 
 void EfiDependencies::getProtocolsWithoutInstallers() {
   // Check DXE_DEPEX and MM_DEPEX
-  std::vector<std::string> sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
+  string_list_t sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
   for (auto section : sections) {
     auto images = uefitoolDeps[section];
     for (auto &element : images.items()) {
@@ -186,7 +186,7 @@ void EfiDependencies::getImages() {
     qstring seg_name;
     get_segm_name(&seg_name, s);
 
-    std::vector<std::string> codeSegNames{"_.text", "_.code"};
+    string_list_t codeSegNames{"_.text", "_.code"};
     for (auto name : codeSegNames) {
       auto index = seg_name.find(name.c_str());
       if (index != std::string::npos) {
@@ -203,7 +203,7 @@ void EfiDependencies::getImages() {
 
 json EfiDependencies::getImageInfo(std::string image) {
   json info;
-  std::vector<std::string> installedProtocols;
+  string_list_t installedProtocols;
   json depsProtocols;
   std::vector installers({"InstallProtocolInterface", "InstallMultipleProtocolInterfaces",
                           "SmmInstallProtocolInterface"});
@@ -234,7 +234,7 @@ json EfiDependencies::getImageInfo(std::string image) {
 
   // Get deps
   bool found = false;
-  std::vector<std::string> sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
+  string_list_t sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
   for (auto section : sections) {
     json deps_images = uefitoolDeps[section];
     for (auto &element : deps_images.items()) {
@@ -275,7 +275,7 @@ std::string EfiDependencies::getInstaller(std::string protocol) {
   std::string res;
   for (auto &e : imagesInfo.items()) {
     std::string image = e.key();
-    std::vector<std::string> installers = imagesInfo[image]["installed_protocols"];
+    string_list_t installers = imagesInfo[image]["installed_protocols"];
     if (find(installers.begin(), installers.end(), protocol) != installers.end()) {
       return image;
     }
@@ -306,7 +306,7 @@ bool EfiDependencies::buildModulesSequence() {
         continue;
       }
 
-      std::vector<std::string> installers = imagesInfo[image]["installed_protocols"];
+      string_list_t installers = imagesInfo[image]["installed_protocols"];
 
       // if there are no dependencies
       if (imagesInfo[image]["deps_protocols"].is_null()) {
@@ -321,8 +321,8 @@ bool EfiDependencies::buildModulesSequence() {
         continue;
       }
 
-      std::vector<std::string> deps = imagesInfo[image]["deps_protocols"];
-      std::vector<std::string> unresolved_deps;
+      string_list_t deps = imagesInfo[image]["deps_protocols"];
+      string_list_t unresolved_deps;
       bool load = true;
       for (auto protocol : deps) {
         if (installed_protocols.find(protocol) != installed_protocols.end()) {
@@ -368,7 +368,7 @@ bool EfiDependencies::buildModulesSequence() {
           continue;
         }
 
-        std::vector<std::string> deps_protocols = imagesInfo[image]["deps_protocols"];
+        string_list_t deps_protocols = imagesInfo[image]["deps_protocols"];
         for (auto protocol : deps_protocols) {
           if (installed_protocols.find(protocol) != installed_protocols.end()) {
             continue;
@@ -402,7 +402,7 @@ bool EfiDependencies::buildModulesSequence() {
         break; // something went wrong, extra mitigation for an infinite loop
       }
       // load installer_image
-      std::vector<std::string> current_installers =
+      string_list_t current_installers =
           imagesInfo[installer_image]["installed_protocols"];
       for (auto protocol : current_installers) {
         installed_protocols.insert(protocol);

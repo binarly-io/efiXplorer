@@ -22,8 +22,8 @@
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
-std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> bs_list) {
-  std::vector<ea_t> smst_addrs;
+ea_list_t findSmstSwDispatch(ea_list_t bs_list) {
+  ea_list_t smst_addrs;
   EfiGuid guid2 = {0x18a3c6dc,
                    0x5eea,
                    0x48c8,
@@ -34,13 +34,13 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> bs_list) {
                   0x420c,
                   {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8,
                    0xbf}}; // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID
-  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
-  std::vector<ea_t> data2_addrs = find_data(0, BADADDR, guid2.uchar_data().data(), 16);
+  ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
+  ea_list_t data2_addrs = find_data(0, BADADDR, guid2.uchar_data().data(), 16);
   data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
   for (auto data_addr : data_addrs) {
     msg("[%s] EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID: 0x%016llX\n", g_plugin_name,
         u64_addr(data_addr));
-    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
+    ea_list_t xrefs = get_xrefs_util(data_addr);
     insn_t insn;
     for (auto xref : xrefs) {
       uint16_t smst_reg = 0xffff; // Smst register
@@ -93,18 +93,18 @@ std::vector<ea_t> findSmstSwDispatch(std::vector<ea_t> bs_list) {
 
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
-std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> bs_list) {
-  std::vector<ea_t> smst_addrs;
+ea_list_t findSmstSmmBase(ea_list_t bs_list) {
+  ea_list_t smst_addrs;
   EfiGuid guid = {
       0xf4ccbfb7,
       0xf6e0,
       0x47fd,
       {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
-  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
+  ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   for (auto data_addr : data_addrs) {
     msg("[%s] EFI_SMM_BASE2_PROTOCOL_GUID: 0x%016llX\n", g_plugin_name,
         u64_addr(data_addr));
-    std::vector<ea_t> data_xrefs = get_xrefs_util(data_addr);
+    ea_list_t data_xrefs = get_xrefs_util(data_addr);
     insn_t insn;
     for (auto xref : data_xrefs) {
       ea_t res_addr = BADADDR;
@@ -147,11 +147,11 @@ std::vector<ea_t> findSmstSmmBase(std::vector<ea_t> bs_list) {
 //--------------------------------------------------------------------------
 // Find SmiHandler in reg_smi_func function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
 // StandbyButton, PeriodicTimer, PowerButton)
-std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
+func_list_t findSmiHandlers(ea_t address, std::string prefix) {
   msg("[%s] Analyse xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", g_plugin_name,
       prefix.c_str(), u64_addr(address));
 
-  std::vector<func_t *> smiHandlers;
+  func_list_t smiHandlers;
   insn_t insn;
 
   // Find Dispatch interface address (via gSmst->SmmLocateProtocol call)
@@ -310,12 +310,12 @@ std::vector<func_t *> findSmiHandlers(ea_t address, std::string prefix) {
 //        lea     r8, ...
 //        lea     rdx, <func>
 //        call    qword ptr [...]
-std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix) {
-  std::vector<func_t *> smiHandlers;
-  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
+func_list_t findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix) {
+  func_list_t smiHandlers;
+  ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   msg("[%s] %sSmiHandler function finding\n", g_plugin_name, prefix.c_str());
   for (auto data_addr : data_addrs) {
-    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
+    ea_list_t xrefs = get_xrefs_util(data_addr);
 
     for (auto xref : xrefs) {
       msg("[%s] findSmiHandlers: 0x%016llX\n", g_plugin_name, u64_addr(xref));
@@ -330,10 +330,9 @@ std::vector<func_t *> findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefi
 //--------------------------------------------------------------------------
 // Find SwSmiHandler function inside SMM drivers in case where
 // EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID is a local variable
-std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGuids,
-                                                      std::string prefix) {
+func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids, std::string prefix) {
   // TODO: make it generic
-  std::vector<func_t *> smiHandlers;
+  func_list_t smiHandlers;
 
   for (auto guid : stackGuids) {
     std::string name = static_cast<std::string>(guid["name"]);
@@ -356,12 +355,11 @@ std::vector<func_t *> findSmiHandlersSmmDispatchStack(std::vector<json> stackGui
 
 //--------------------------------------------------------------------------
 // Find gSmmVar->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
-std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
-                                          std::vector<json> *allServices) {
+ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allServices) {
   msg("[%s] gSmmVar->SmmGetVariable calls finding via "
       "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
       g_plugin_name);
-  std::vector<ea_t> smmGetVariableCalls;
+  ea_list_t smmGetVariableCalls;
   EfiGuid guid = {
       0xed32d533,
       0x99e6,
@@ -369,10 +367,10 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
       {0x9c, 0xc0, 0x2d, 0x72, 0xcd, 0xd9, 0x98, 0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
 
   // Find all EFI_GUID EFI_SMM_VARIABLE_PROTOCOL_GUID addresses
-  std::vector<ea_t> data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
-  std::vector<ea_t> gSmmVarAddrs; // Find all gSmmVar variables
+  ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
+  ea_list_t gSmmVarAddrs; // Find all gSmmVar variables
   for (auto data_addr : data_addrs) {
-    std::vector<ea_t> xrefs = get_xrefs_util(data_addr);
+    ea_list_t xrefs = get_xrefs_util(data_addr);
 
     for (auto xref : xrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(xref));
@@ -412,7 +410,7 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
   }
 
   for (auto smmVarAddr : gSmmVarAddrs) {
-    std::vector<ea_t> smmVarXrefs = get_xrefs_util(static_cast<ea_t>(smmVarAddr));
+    ea_list_t smmVarXrefs = get_xrefs_util(static_cast<ea_t>(smmVarAddr));
     for (auto smmVarXref : smmVarXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(smmVarXref));
       qstring seg_name;
@@ -474,13 +472,12 @@ std::vector<ea_t> findSmmGetVariableCalls(std::vector<segment_t *> dataSegments,
   return smmGetVariableCalls;
 }
 
-std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
-                                           std::vector<json> dataGuids,
-                                           std::vector<json> *allServices) {
-  std::vector<ea_t> readSaveStateCalls;
+ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids,
+                                   json_list_t *allServices) {
+  ea_list_t readSaveStateCalls;
   msg("[%s] Looking for EFI_SMM_CPU_PROTOCOL\n", g_plugin_name);
-  std::vector<ea_t> code_addrs;
-  std::vector<ea_t> gSmmCpuAddrs;
+  ea_list_t code_addrs;
+  ea_list_t gSmmCpuAddrs;
   for (auto guid : stackGuids) {
     std::string name = static_cast<std::string>(guid["name"]);
     if (name != "EFI_SMM_CPU_PROTOCOL_GUID")
@@ -498,7 +495,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
 
     ea_t address = static_cast<ea_t>(guid["address"]);
     msg("[%s] found EFI_SMM_CPU_PROTOCOL: 0x%016llX\n", g_plugin_name, u64_addr(address));
-    std::vector<ea_t> guidXrefs = get_xrefs_util(address);
+    ea_list_t guidXrefs = get_xrefs_util(address);
 
     for (auto guidXref : guidXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(guidXref));
@@ -539,7 +536,7 @@ std::vector<ea_t> resolveEfiSmmCpuProtocol(std::vector<json> stackGuids,
   }
 
   for (auto smmCpu : gSmmCpuAddrs) {
-    std::vector<ea_t> smmCpuXrefs = get_xrefs_util(static_cast<ea_t>(smmCpu));
+    ea_list_t smmCpuXrefs = get_xrefs_util(static_cast<ea_t>(smmCpu));
 
     for (auto smmCpuXref : smmCpuXrefs) {
       segment_t *seg = getseg(static_cast<ea_t>(smmCpuXref));

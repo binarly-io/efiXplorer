@@ -97,8 +97,7 @@ const char *const nvram_chooser_t::header_nvram[] = {
     "Attributes"     // 4
 };
 
-inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok,
-                                        std::vector<json> nvram)
+inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok, json_list_t nvram)
     : chooser_t(0, qnumber(widths_nvram), widths_nvram, header_nvram, title_), list() {
   CASSERT(qnumber(widths_nvram) == qnumber(header_nvram));
   build_list(ok, nvram);
@@ -121,8 +120,7 @@ void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
   CASSERT(qnumber(header_nvram) == 5);
 }
 
-inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok,
-                                        std::vector<json> vulns)
+inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok, json_list_t vulns)
     : chooser_t(0, qnumber(widths_vulns), widths_vulns, header_vulns, title_), list() {
   CASSERT(qnumber(widths_vulns) == qnumber(header_vulns));
   build_list(ok, vulns);
@@ -139,8 +137,7 @@ void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
   CASSERT(qnumber(header_vulns) == 2);
 }
 
-inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
-                                        std::vector<json> guids)
+inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok, json_list_t guids)
     : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_), list() {
   CASSERT(qnumber(widths_guids) == qnumber(header_guids));
   build_list(ok, guids);
@@ -160,7 +157,7 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
 }
 
 inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
-                                                std::vector<json> protocols,
+                                                json_list_t protocols,
                                                 std::string name_key_)
     : chooser_t(0, qnumber(widths_protocols), widths_protocols, header_protocols, title_),
       list() {
@@ -186,7 +183,7 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_a
   CASSERT(qnumber(header_protocols) == 5);
 }
 
-inline s_chooser_t::s_chooser_t(const char *title_, bool ok, std::vector<json> services)
+inline s_chooser_t::s_chooser_t(const char *title_, bool ok, json_list_t services)
     : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
   CASSERT(qnumber(widths_s) == qnumber(header_s));
   build_list(ok, services);
@@ -205,7 +202,7 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *
   CASSERT(qnumber(header_s) == 3);
 }
 
-bool nvram_show(std::vector<json> nvram, qstring title) {
+bool nvram_show(json_list_t nvram, qstring title) {
   bool ok;
   // open the window
   nvram_chooser_t *ch = new nvram_chooser_t(title.c_str(), ok, nvram);
@@ -214,7 +211,7 @@ bool nvram_show(std::vector<json> nvram, qstring title) {
   return true;
 }
 
-bool vulns_show(std::vector<json> vulns, qstring title) {
+bool vulns_show(json_list_t vulns, qstring title) {
   bool ok;
   // open the window
   vulns_chooser_t *ch = new vulns_chooser_t(title.c_str(), ok, vulns);
@@ -223,7 +220,7 @@ bool vulns_show(std::vector<json> vulns, qstring title) {
   return true;
 }
 
-bool guids_show(std::vector<json> guids, qstring title) {
+bool guids_show(json_list_t guids, qstring title) {
   bool ok;
   // open the window
   guids_chooser_t *ch = new guids_chooser_t(title.c_str(), ok, guids);
@@ -232,7 +229,7 @@ bool guids_show(std::vector<json> guids, qstring title) {
   return true;
 }
 
-bool protocols_show(std::vector<json> protocols, qstring title) {
+bool protocols_show(json_list_t protocols, qstring title) {
   bool ok;
   // open the window
   protocols_chooser_t *ch =
@@ -242,7 +239,7 @@ bool protocols_show(std::vector<json> protocols, qstring title) {
   return true;
 }
 
-bool ppis_show(std::vector<json> ppis, qstring title) {
+bool ppis_show(json_list_t ppis, qstring title) {
   bool ok;
   // open the window
   protocols_chooser_t *ch = new protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
@@ -251,7 +248,7 @@ bool ppis_show(std::vector<json> ppis, qstring title) {
   return true;
 }
 
-bool services_show(std::vector<json> services, qstring title) {
+bool services_show(json_list_t services, qstring title) {
   bool ok;
   // open the window
   s_chooser_t *ch = new s_chooser_t(title.c_str(), ok, services);
@@ -360,9 +357,9 @@ struct action_handler_loadreport_t : public action_handler_t {
     }
 
     // Initialize vuln types list
-    std::vector<std::string> vulnTypes{"smm_callout", "pei_get_variable_buffer_overflow",
-                                       "get_variable_buffer_overflow",
-                                       "smm_get_variable_buffer_overflow"};
+    string_list_t vulnTypes{"smm_callout", "pei_get_variable_buffer_overflow",
+                            "get_variable_buffer_overflow",
+                            "smm_get_variable_buffer_overflow"};
 
     // Show all choosers with data from report
     qstring title;
@@ -395,7 +392,7 @@ struct action_handler_loadreport_t : public action_handler_t {
       }
       auto vulns = reportData["vulns"];
       if (!vulns.is_null()) { // show vulns
-        std::vector<json> vulnsRes;
+        json_list_t vulnsRes;
         for (auto vulnType : vulnTypes) {
           // For each vuln type add list of vulns in `vulnsRes`
           auto vulnAddrs = vulns[vulnType];

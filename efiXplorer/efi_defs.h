@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 #define COPYRIGHT "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
 

@@ -34,11 +34,11 @@ public:
   EfiAnalyser();
   ~EfiAnalyser();
 
-  std::vector<json> allGuids;
-  std::vector<json> allProtocols;
-  std::vector<json> allPPIs;
-  std::vector<json> allServices;
-  std::vector<func_t *> smiHandlers;
+  json_list_t allGuids;
+  json_list_t allProtocols;
+  json_list_t allPPIs;
+  json_list_t allServices;
+  func_list_t smiHandlers;
 
   ArchFileType arch = ArchFileType::Unsupported;
   FfsFileType file_type = FfsFileType::Unsupported;
@@ -52,7 +52,7 @@ public:
 
   bool efiSmmCpuProtocolResolver();
   void findSwSmiHandlers();
-  bool findGetVariableOveflow(std::vector<json> allServices);
+  bool findGetVariableOveflow(json_list_t allServices);
   bool findPPIGetVariableStackOveflow();
   bool findSmmGetVariableOveflow();
   bool findSmmCallout();
@@ -66,7 +66,7 @@ public:
   ea_t base;
   ea_t startAddress = 0;
   ea_t endAddress = 0;
-  std::vector<ea_t> funcs;
+  ea_list_t funcs;
   std::filesystem::path guidsJsonPath;
   std::map<json, std::string> dbProtocolsMap; // a map to look up a GUID name by value
   json bootServices;
@@ -76,14 +76,14 @@ public:
   json runtimeServicesAll;
   json smmServices;
   json smmServicesAll;
-  std::vector<json> nvramVariables;
-  std::vector<ea_t> markedInterfaces;
+  json_list_t nvramVariables;
+  ea_list_t markedInterfaces;
 
   // Format-dependent interface-related settings (protocols for DXE, PPIs for PEI)
   std::string if_name;
   std::string if_pl;
   std::string if_key;
-  std::vector<json> *if_tbl;
+  json_list_t *if_tbl;
 
   // EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
   EfiGuid sw_guid2 = {
@@ -194,7 +194,7 @@ public:
   EfiGuid fch_apu_ras_guid = {
       0xf871ee59, 0x29d2, 0x4b15, {0x9e, 0x67, 0xaf, 0x32, 0xcd, 0xc1, 0x41, 0x73}};
 
-  std::vector<uint64_t> ppiFlags = {
+  uint64_list_t ppiFlags = {
       0x1,        0x10,       0x11,       0x20,       0x21,       0x30,       0x31,
       0x40,       0x41,       0x50,       0x51,       0x60,       0x61,       0x70,
       0x71,       0x80000000, 0x80000001, 0x80000010, 0x80000011, 0x80000020, 0x80000021,
@@ -203,31 +203,30 @@ public:
   };
 
   // Set boot services that work with protocols
-  std::vector<std::string> protBsNames = {"InstallProtocolInterface",
-                                          "ReinstallProtocolInterface",
-                                          "UninstallProtocolInterface",
-                                          "HandleProtocol",
-                                          "RegisterProtocolNotify",
-                                          "OpenProtocol",
-                                          "CloseProtocol",
-                                          "OpenProtocolInformation",
-                                          "ProtocolsPerHandle",
-                                          "LocateHandleBuffer",
-                                          "LocateProtocol",
-                                          "InstallMultipleProtocolInterfaces",
-                                          "UninstallMultipleProtocolInterfaces"};
+  string_list_t protBsNames = {"InstallProtocolInterface",
+                               "ReinstallProtocolInterface",
+                               "UninstallProtocolInterface",
+                               "HandleProtocol",
+                               "RegisterProtocolNotify",
+                               "OpenProtocol",
+                               "CloseProtocol",
+                               "OpenProtocolInformation",
+                               "ProtocolsPerHandle",
+                               "LocateHandleBuffer",
+                               "LocateProtocol",
+                               "InstallMultipleProtocolInterfaces",
+                               "UninstallMultipleProtocolInterfaces"};
 
   // Set smm services that work with protocols
-  std::vector<std::string> protSmmNames = {"SmmInstallProtocolInterface",
-                                           "SmmUninstallProtocolInterface",
-                                           "SmmHandleProtocol",
-                                           "SmmRegisterProtocolNotify",
-                                           "SmmLocateHandle",
-                                           "SmmLocateProtocol"};
+  string_list_t protSmmNames = {"SmmInstallProtocolInterface",
+                                "SmmUninstallProtocolInterface",
+                                "SmmHandleProtocol",
+                                "SmmRegisterProtocolNotify",
+                                "SmmLocateHandle",
+                                "SmmLocateProtocol"};
 
   // Set of PEI services that work with PPI
-  std::vector<std::string> ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi",
-                                          "NotifyPpi"};
+  string_list_t ppiPEINames = {"InstallPpi", "ReInstallPpi", "LocatePpi", "NotifyPpi"};
 };
 
 class EfiAnalyserX86 : public EfiAnalyser {

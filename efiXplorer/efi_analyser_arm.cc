@@ -24,10 +24,10 @@
 
 using namespace efi_analysis;
 
-std::vector<ea_t> image_handle_list_arm;
-std::vector<ea_t> st_list_arm;
-std::vector<ea_t> bs_list_arm;
-std::vector<ea_t> rt_list_arm;
+ea_list_t image_handle_list_arm;
+ea_list_t st_list_arm;
+ea_list_t bs_list_arm;
+ea_list_t rt_list_arm;
 
 void efi_analysis::EfiAnalyserArm::fixOffsets() {
   insn_t insn;
@@ -294,7 +294,7 @@ void efi_analysis::EfiAnalyserArm::servicesDetection() {
 
 #ifdef HEX_RAYS
   for (auto func_addr : funcs) {
-    std::vector<json> services = detect_services(get_func(func_addr));
+    json_list_t services = detect_services(get_func(func_addr));
     for (auto service : services) {
       allServices.push_back(service);
     }
@@ -489,7 +489,7 @@ bool efi_analysis::efiAnalyserMainArm() {
 
 #ifdef HEX_RAYS
   for (auto addr : analyser.funcs) {
-    std::vector<json> services = detect_pei_services_arm(get_func(addr));
+    json_list_t services = detect_pei_services_arm(get_func(addr));
     for (auto service : services) {
       analyser.allServices.push_back(service);
     }
