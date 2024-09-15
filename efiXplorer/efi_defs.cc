@@ -23,8 +23,10 @@ const char *g_plugin_name = "efiXplorer";
 
 service_info_64_t g_boot_services_table64[] = {
     {"InstallProtocolInterface", InstallProtocolInterfaceOffset64, REG_RDX, 1},
-    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX, 1},
-    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX, 1},
+    {"ReinstallProtocolInterface", RenstallProtocolInterfaceOffset64, REG_RDX,
+     1},
+    {"UninstallProtocolInterface", UninstallProtocolInterfaceOffset64, REG_RDX,
+     1},
     {"HandleProtocol", HandleProtocolOffset64, REG_RDX, 1},
     {"RegisterProtocolNotify", RegisterProtocolNotifyOffset64, REG_RCX, 0},
     {"OpenProtocol", OpenProtocolOffset64, REG_RDX, 1},
@@ -33,10 +35,10 @@ service_info_64_t g_boot_services_table64[] = {
     {"OpenProtocolInformation", OpenProtocolInformationOffset64, REG_RDX, 1},
     {"LocateHandleBuffer", LocateHandleBufferOffset64, REG_RDX, 1},
     {"LocateProtocol", LocateProtocolOffset64, REG_RCX, 0},
-    {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset64,
-     REG_RDX, 1},
-    {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
-     REG_RDX, 1}};
+    {"InstallMultipleProtocolInterfaces",
+     InstallMultipleProtocolInterfacesOffset64, REG_RDX, 1},
+    {"UninstallMultipleProtocolInterfaces",
+     UninstallMultipleProtocolInterfacesOffset64, REG_RDX, 1}};
 size_t g_boot_services_table64_count =
     sizeof(g_boot_services_table64) / sizeof(service_info_64_t);
 
@@ -52,9 +54,10 @@ service_info_32_t g_boot_services_table32[] = {
     {"OpenProtocolInformation", OpenProtocolInformationOffset32, 2},
     {"LocateHandleBuffer", LocateHandleBufferOffset32, 2},
     {"LocateProtocol", LocateProtocolOffset32, 1},
-    {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset32, 2},
-    {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset32,
-     2}};
+    {"InstallMultipleProtocolInterfaces",
+     InstallMultipleProtocolInterfacesOffset32, 2},
+    {"UninstallMultipleProtocolInterfaces",
+     UninstallMultipleProtocolInterfacesOffset32, 2}};
 size_t g_boot_services_table32_count =
     sizeof(g_boot_services_table32) / sizeof(service_info_32_t);
 
@@ -96,17 +99,22 @@ service_t g_boot_services_table_all[] = {
     {"Stall", StallOffset64, StallOffset32},
     {"SetWatchdogTimer", SetWatchdogTimerOffset64, SetWatchdogTimerOffset32},
     {"ConnectController", ConnectControllerOffset64, ConnectControllerOffset32},
-    {"DisconnectController", DisconnectControllerOffset64, DisconnectControllerOffset32},
+    {"DisconnectController", DisconnectControllerOffset64,
+     DisconnectControllerOffset32},
     {"OpenProtocol", OpenProtocolOffset64, OpenProtocolOffset32},
     {"CloseProtocol", CloseProtocolOffset64, CloseProtocolOffset32},
     {"OpenProtocolInformation", OpenProtocolInformationOffset64,
      OpenProtocolInformationOffset32},
-    {"ProtocolsPerHandle", ProtocolsPerHandleOffset64, ProtocolsPerHandleOffset32},
-    {"LocateHandleBuffer", LocateHandleBufferOffset64, LocateHandleBufferOffset32},
+    {"ProtocolsPerHandle", ProtocolsPerHandleOffset64,
+     ProtocolsPerHandleOffset32},
+    {"LocateHandleBuffer", LocateHandleBufferOffset64,
+     LocateHandleBufferOffset32},
     {"LocateProtocol", LocateProtocolOffset64, LocateProtocolOffset32},
-    {"InstallMultipleProtocolInterfaces", InstallMultipleProtocolInterfacesOffset64,
+    {"InstallMultipleProtocolInterfaces",
+     InstallMultipleProtocolInterfacesOffset64,
      InstallMultipleProtocolInterfacesOffset32},
-    {"UninstallMultipleProtocolInterfaces", UninstallMultipleProtocolInterfacesOffset64,
+    {"UninstallMultipleProtocolInterfaces",
+     UninstallMultipleProtocolInterfacesOffset64,
      UninstallMultipleProtocolInterfacesOffset32},
     {"CalculateCrc32", CalculateCrc32Offset64, CalculateCrc32Offset32},
     {"CopyMem", CopyMemOffset64, CopyMemOffset32},
@@ -120,10 +128,12 @@ service_t g_runtime_services_table_all[] = {
     {"SetTime", SetTimeOffset64, SetTimeOffset32},
     {"GetWakeupTime", GetWakeupTimeOffset64, GetWakeupTimeOffset32},
     {"SetWakeupTime", SetWakeupTimeOffset64, SetWakeupTimeOffset32},
-    {"SetVirtualAddressMap", SetVirtualAddressMapOffset64, SetVirtualAddressMapOffset32},
+    {"SetVirtualAddressMap", SetVirtualAddressMapOffset64,
+     SetVirtualAddressMapOffset32},
     {"ConvertPointer", ConvertPointerOffset64, ConvertPointerOffset32},
     {"GetVariable", GetVariableOffset64, GetVariableOffset32},
-    {"GetNextVariableName", GetNextVariableNameOffset64, GetNextVariableNameOffset32},
+    {"GetNextVariableName", GetNextVariableNameOffset64,
+     GetNextVariableNameOffset32},
     {"SetVariable", SetVariableOffset64, SetVariableOffset32},
     {"GetNextHighMonotonicCount", GetNextHighMonotonicCountOffset64,
      GetNextHighMonotonicCountOffset32},
@@ -131,13 +141,16 @@ service_t g_runtime_services_table_all[] = {
     {"UpdateCapsule", UpdateCapsuleOffset64, UpdateCapsuleOffset32},
     {"QueryCapsuleCapabilities", QueryCapsuleCapabilitiesOffset64,
      QueryCapsuleCapabilitiesOffset32},
-    {"QueryVariableInfo", QueryVariableInfoOffset64, QueryVariableInfoOffset32}};
+    {"QueryVariableInfo", QueryVariableInfoOffset64,
+     QueryVariableInfoOffset32}};
 size_t g_runtime_services_table_all_count =
     sizeof(g_runtime_services_table_all) / sizeof(service_t);
 
 service_info_64_t g_smm_services_prot64[] = {
-    {"SmmInstallProtocolInterface", SmmInstallProtocolInterfaceOffset64, REG_RDX},
-    {"SmmUninstallProtocolInterface", SmmUninstallProtocolInterfaceOffset64, REG_RDX},
+    {"SmmInstallProtocolInterface", SmmInstallProtocolInterfaceOffset64,
+     REG_RDX},
+    {"SmmUninstallProtocolInterface", SmmUninstallProtocolInterfaceOffset64,
+     REG_RDX},
     {"SmmHandleProtocol", SmmHandleProtocolOffset64, REG_RDX},
     {"SmmRegisterProtocolNotify", SmmRegisterProtocolNotifyOffset64, REG_RCX},
     {"SmmLocateHandle", SmmLocateHandleOffset64, REG_RDX},
@@ -163,38 +176,41 @@ service_t g_smm_services_table_all[] = {
     {"SmmLocateHandle", SmmLocateHandleOffset64, SmmLocateHandleOffset32},
     {"SmmLocateProtocol", SmmLocateProtocolOffset64, SmmLocateProtocolOffset32},
     {"SmiManage", SmiManageOffset64, SmiManageOffset32},
-    {"SmiHandlerRegister", SmiHandlerRegisterOffset64, SmiHandlerRegisterOffset32},
-    {"SmiHandlerUnRegister", SmiHandlerUnRegisterOffset64, SmiHandlerUnRegisterOffset32}};
+    {"SmiHandlerRegister", SmiHandlerRegisterOffset64,
+     SmiHandlerRegisterOffset32},
+    {"SmiHandlerUnRegister", SmiHandlerUnRegisterOffset64,
+     SmiHandlerUnRegisterOffset32}};
 size_t g_smm_services_table_all_count =
     sizeof(g_smm_services_table_all) / sizeof(service_t);
 
-service_info_32_t g_pei_services_table32[] = {{"InstallPpi", 0x18, 2},
-                                              {"ReInstallPpi", 0x1c, 3},
-                                              {"LocatePpi", 0x20, 2},
-                                              {"NotifyPpi", 0x24, PUSH_NONE},
-                                              {"GetBootMode", 0x28, PUSH_NONE},
-                                              {"SetBootMode", 0x2c, PUSH_NONE},
-                                              {"GetHobList", 0x30, PUSH_NONE},
-                                              {"CreateHob", 0x34, PUSH_NONE},
-                                              {"FfsFindNextVolume", 0x38, PUSH_NONE},
-                                              {"FfsFindNextFile", 0x3c, PUSH_NONE},
-                                              {"FfsFindSectionData", 0x40, PUSH_NONE},
-                                              {"InstallPeiMemory", 0x44, PUSH_NONE},
-                                              {"AllocatePages", 0x48, PUSH_NONE},
-                                              {"AllocatePool", 0x4c, PUSH_NONE},
-                                              {"CopyMem", 0x50, PUSH_NONE},
-                                              {"SetMem", 0x54, PUSH_NONE},
-                                              {"ReportStatusCode", 0x58, PUSH_NONE},
-                                              {"ResetSystem", 0x5c, PUSH_NONE},
-                                              {"CpuIo", 0x60, PUSH_NONE},
-                                              {"PciCfg", 0x64, PUSH_NONE},
-                                              {"FfsFindFileByName", 0x68, PUSH_NONE},
-                                              {"FfsGetFileInfo", 0x6c, PUSH_NONE},
-                                              {"FfsGetVolumeInfo", 0x70, PUSH_NONE},
-                                              {"RegisterForShadow", 0x74, PUSH_NONE},
-                                              {"FindSectionData3", 0x78, PUSH_NONE},
-                                              {"FfsGetFileInfo2", 0x7c, PUSH_NONE},
-                                              {"ResetSystem2", 0x80, PUSH_NONE}};
+service_info_32_t g_pei_services_table32[] = {
+    {"InstallPpi", 0x18, 2},
+    {"ReInstallPpi", 0x1c, 3},
+    {"LocatePpi", 0x20, 2},
+    {"NotifyPpi", 0x24, PUSH_NONE},
+    {"GetBootMode", 0x28, PUSH_NONE},
+    {"SetBootMode", 0x2c, PUSH_NONE},
+    {"GetHobList", 0x30, PUSH_NONE},
+    {"CreateHob", 0x34, PUSH_NONE},
+    {"FfsFindNextVolume", 0x38, PUSH_NONE},
+    {"FfsFindNextFile", 0x3c, PUSH_NONE},
+    {"FfsFindSectionData", 0x40, PUSH_NONE},
+    {"InstallPeiMemory", 0x44, PUSH_NONE},
+    {"AllocatePages", 0x48, PUSH_NONE},
+    {"AllocatePool", 0x4c, PUSH_NONE},
+    {"CopyMem", 0x50, PUSH_NONE},
+    {"SetMem", 0x54, PUSH_NONE},
+    {"ReportStatusCode", 0x58, PUSH_NONE},
+    {"ResetSystem", 0x5c, PUSH_NONE},
+    {"CpuIo", 0x60, PUSH_NONE},
+    {"PciCfg", 0x64, PUSH_NONE},
+    {"FfsFindFileByName", 0x68, PUSH_NONE},
+    {"FfsGetFileInfo", 0x6c, PUSH_NONE},
+    {"FfsGetVolumeInfo", 0x70, PUSH_NONE},
+    {"RegisterForShadow", 0x74, PUSH_NONE},
+    {"FindSectionData3", 0x78, PUSH_NONE},
+    {"FfsGetFileInfo2", 0x7c, PUSH_NONE},
+    {"ResetSystem2", 0x80, PUSH_NONE}};
 size_t g_pei_services_table32_count =
     sizeof(g_pei_services_table32) / sizeof(service_info_32_t);
 

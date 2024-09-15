@@ -17,6 +17,7 @@
  *
  */
 
+#include "efi_global.h"
 #include "efi_deps.h"
 
 EfiDependencies g_deps;

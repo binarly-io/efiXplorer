@@ -30,7 +30,7 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "\\__/_//_/_/|_/ .__/_/\\___/_/  \\__/_/\n"
                                   "            /_/\n";
 
-// Default arguments
+// default arguments
 struct args g_args = {ModuleType::DxeSmm, 0, 0};
 
 #if IDA_SDK_VERSION < 760
@@ -49,15 +49,16 @@ static plugmod_t *idaapi init(void) {
 
   // Register action
   register_action(action_load_report);
-  attach_action_to_menu("File/Load file/", action_load_report.name, SETMENU_APP);
+  attach_action_to_menu("File/Load file/", action_load_report.name,
+                        SETMENU_APP);
 
   return PLUGIN_KEEP;
 }
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
-
-  if (arg >> 0 & 1) { // parse arg value:
+  if (arg >> 0 & 1) {
+    // parse arg value:
     // - arg = 0 (000): default (DXE)
     // - arg = 1 (001): default (PEI, 32-bit binaries only)
     // - arg = 2 (010): disable_ui (DXE)
@@ -65,7 +66,8 @@ bool idaapi run(size_t arg) {
     // - arg = 4 (100): disable_vuln_hunt (DXE)
     // - arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
     // - arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
-    // - arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries only)
+    // - arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries
+    // only)
     g_args.module_type = ModuleType::Pei;
   }
 
@@ -76,17 +78,17 @@ bool idaapi run(size_t arg) {
     g_args.disable_vuln_hunt = 1;
   }
 
-  msg("[%s] plugin run with argument %lu (sdk version: %d)\n", g_plugin_name, arg,
-      IDA_SDK_VERSION);
-  msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name, g_args.disable_ui,
-      g_args.disable_vuln_hunt);
+  msg("[%s] plugin run with argument %lu (sdk version: %d)\n", g_plugin_name,
+      arg, IDA_SDK_VERSION);
+  msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name,
+      g_args.disable_ui, g_args.disable_vuln_hunt);
 
   auto guids_path = get_guids_json_file();
   msg("[%s] guids.json exists: %s\n", g_plugin_name, BTOA(!guids_path.empty()));
 
   if (guids_path.empty()) {
-    std::string msg_text =
-        "guids.json file not found, copy \"guids\" directory to <IDA_DIR>/plugins";
+    std::string msg_text = "guids.json file not found, copy \"guids\" "
+                           "directory to <IDA_DIR>/plugins";
     msg("[%s] %s\n", g_plugin_name, msg_text.c_str());
     warning("%s: %s\n", g_plugin_name, msg_text.c_str());
     return false;

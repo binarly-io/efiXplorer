@@ -22,7 +22,7 @@
 #include "efi_ui.h"
 #include "efi_utils.h"
 
-using namespace efi_analysis;
+using efi_analysis::EfiAnalyserArm;
 
 ea_list_t image_handle_list_arm;
 ea_list_t st_list_arm;
@@ -72,8 +72,9 @@ ea_t get_table_addr(ea_t code_addr, uint64_t offset) {
   ea_t table = BADADDR;
   insn_t insn;
   decode_insn(&insn, code_addr);
-  if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg || insn.ops[1].type != o_displ ||
-      insn.ops[1].addr != offset || insn.ops[1].reg == REG_XSP) {
+  if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg ||
+      insn.ops[1].type != o_displ || insn.ops[1].addr != offset ||
+      insn.ops[1].reg == REG_XSP) {
     return table;
   }
   uint8_t table_reg = insn.ops[0].reg;
@@ -152,7 +153,8 @@ json getService(ea_t addr, uint8_t table_id) {
   json s;
   insn_t insn;
   decode_insn(&insn, addr);
-  if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg && insn.ops[1].type == o_displ) {
+  if (insn.itype == ARM_ldr && insn.ops[0].type == o_reg &&
+      insn.ops[1].type == o_displ) {
     ea_t ea = addr;
     uint8_t blr_reg = 0xff;
     uint8_t table_reg = insn.ops[0].reg;
@@ -165,8 +167,9 @@ json getService(ea_t addr, uint8_t table_id) {
         service_offset = insn.ops[1].addr;
         blr_reg = insn.ops[0].reg;
       }
-      if (blr_reg != 0xff && service_offset != BADADDR && insn.itype == ARM_blr &&
-          insn.ops[0].type == o_reg && insn.ops[0].reg == blr_reg) {
+      if (blr_reg != 0xff && service_offset != BADADDR &&
+          insn.itype == ARM_blr && insn.ops[0].type == o_reg &&
+          insn.ops[0].reg == blr_reg) {
         s["address"] = ea;
         if (table_id == 1) {
           s["service_name"] = lookup_boot_service_name(service_offset);
@@ -191,7 +194,8 @@ json getService(ea_t addr, uint8_t table_id) {
   // LDR    REG2, [REG1]
   // ...
   // LDR    REG3, [REG2,#0x28]
-  if (insn.itype == ARM_adr && insn.ops[0].type == o_reg && insn.ops[1].type == o_imm) {
+  if (insn.itype == ARM_adr && insn.ops[0].type == o_reg &&
+      insn.ops[1].type == o_imm) {
     uint8_t reg1 = insn.ops[0].reg;
     uint8_t reg2 = 0xff;
     ea_t ea = addr;
@@ -291,7 +295,6 @@ void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
 }
 
 void efi_analysis::EfiAnalyserArm::servicesDetection() {
-
 #ifdef HEX_RAYS
   for (auto func_addr : funcs) {
     json_list_t services = detect_services(get_func(func_addr));
@@ -350,19 +353,19 @@ bool efi_analysis::EfiAnalyserArm::getProtocol(ea_t address, uint32_t p_reg,
   while (true) {
     ea = prev_head(ea, 0);
     decode_insn(&insn, ea);
-    if (insn.itype == ARM_adrl && insn.ops[0].type == o_reg && insn.ops[0].reg == p_reg &&
-        insn.ops[1].type == o_imm) {
+    if (insn.itype == ARM_adrl && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == p_reg && insn.ops[1].type == o_imm) {
       guid_addr = insn.ops[1].value;
       code_addr = ea;
       break;
     }
-    if (insn.itype == ARM_add && insn.ops[0].type == o_reg && insn.ops[0].reg == p_reg &&
-        insn.ops[1].type == o_reg && insn.ops[1].reg == p_reg &&
-        insn.ops[2].type == o_imm) {
+    if (insn.itype == ARM_add && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == p_reg && insn.ops[1].type == o_reg &&
+        insn.ops[1].reg == p_reg && insn.ops[2].type == o_imm) {
       offset = insn.ops[2].value;
     }
-    if (insn.itype == ARM_adrp && insn.ops[0].type == o_reg && insn.ops[0].reg == p_reg &&
-        insn.ops[1].type == o_imm) {
+    if (insn.itype == ARM_adrp && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == p_reg && insn.ops[1].type == o_imm) {
       guid_addr = insn.ops[1].value + offset;
       code_addr = ea;
       break;
@@ -374,7 +377,8 @@ bool efi_analysis::EfiAnalyserArm::getProtocol(ea_t address, uint32_t p_reg,
   if (guid_addr == BADADDR || code_addr == BADADDR) {
     return false;
   }
-  msg("[efiXplorer] address: 0x%016llX, found new protocol\n", u64_addr(code_addr));
+  msg("[efiXplorer] address: 0x%016llX, found new protocol\n",
+      u64_addr(code_addr));
   return AddProtocol(service_name, guid_addr, code_addr, address);
 }
 
@@ -382,7 +386,8 @@ void efi_analysis::EfiAnalyserArm::protocolsDetection() {
   for (auto s : allServices) {
     std::string service_name = s["service_name"];
     for (auto i = 0; i < 13; i++) {
-      std::string current_name = static_cast<std::string>(bs_table_aarch64[i].name);
+      std::string current_name =
+          static_cast<std::string>(bs_table_aarch64[i].name);
       if (current_name != service_name) {
         continue;
       }
@@ -445,14 +450,13 @@ void showAllChoosers(efi_analysis::EfiAnalyserArm analyser) {
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
 bool efi_analysis::efiAnalyserMainArm() {
-
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::EfiAnalyserArm analyser;
 
   while (!auto_is_ok()) {
     auto_wait();
-  };
+  }
 
   // find .text and .data segments
   analyser.getSegments();
@@ -472,7 +476,8 @@ bool efi_analysis::efiAnalyserMainArm() {
     msg("[efiXplorer] input file is PEI module\n");
   }
 
-  // set the correct name for the entry point and automatically fix the prototype
+  // set the correct name for the entry point and automatically fix the
+  // prototype
   analyser.initialAnalysis();
 
   if (analyser.file_type == FfsFileType::DxeAndTheLike) {

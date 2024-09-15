@@ -21,13 +21,11 @@
 
 #include "efi_utils.h"
 
-//-------------------------------------------------------------------------
-// Vulns chooser
-class vulns_chooser_t : public chooser_t {
-protected:
-  static const int widths_vulns[];
-  static const char *const header_vulns[];
+#include <string>
 
+//-------------------------------------------------------------------------
+// vulns chooser
+class vulns_chooser_t : public chooser_t {
 public:
   eavec_t list;
   json chooser_vulns;
@@ -47,8 +45,8 @@ public:
   virtual size_t idaapi get_count() const { return list.size(); }
 
   // function that generates the list line
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   // function that is called when the user hits `Enter`
   virtual cbret_t idaapi enter(size_t n) {
@@ -58,6 +56,9 @@ public:
   }
 
 protected:
+  static const int widths_vulns[];
+  static const char *const header_vulns[];
+
   void build_list(bool ok, json_list_t vulns) {
     size_t n = 0;
     for (auto vuln : vulns) {
@@ -66,7 +67,7 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };
 
 //-------------------------------------------------------------------------
@@ -95,8 +96,8 @@ public:
   virtual size_t idaapi get_count() const { return list.size(); }
 
   // function that generates the list line
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   // function that is called when the user hits `Enter`
   virtual cbret_t idaapi enter(size_t n) {
@@ -114,7 +115,7 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };
 
 //-------------------------------------------------------------------------
@@ -145,8 +146,8 @@ public:
   virtual size_t idaapi get_count() const { return list.size(); }
 
   // function that generates the list line
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   // function that is called when the user hits `Enter`
   virtual cbret_t idaapi enter(size_t n) {
@@ -164,7 +165,7 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };
 
 //-------------------------------------------------------------------------
@@ -193,8 +194,8 @@ public:
   virtual size_t idaapi get_count() const { return list.size(); }
 
   // function that generates the list line
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   // function that is called when the user hits `Enter`
   virtual cbret_t idaapi enter(size_t n) {
@@ -212,7 +213,7 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };
 
 //-------------------------------------------------------------------------
@@ -241,8 +242,8 @@ public:
   virtual size_t idaapi get_count() const { return list.size(); }
 
   // function that generates the list line
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   // function that is called when the user hits `Enter`
   virtual cbret_t idaapi enter(size_t n) {
@@ -260,7 +261,7 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };
 
 extern action_desc_t action_load_report;

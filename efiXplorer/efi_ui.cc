@@ -97,21 +97,24 @@ const char *const nvram_chooser_t::header_nvram[] = {
     "Attributes"     // 4
 };
 
-inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok, json_list_t nvram)
-    : chooser_t(0, qnumber(widths_nvram), widths_nvram, header_nvram, title_), list() {
+inline nvram_chooser_t::nvram_chooser_t(const char *title_, bool ok,
+                                        json_list_t nvram)
+    : chooser_t(0, qnumber(widths_nvram), widths_nvram, header_nvram, title_),
+      list() {
   CASSERT(qnumber(widths_nvram) == qnumber(header_nvram));
   build_list(ok, nvram);
 }
 
-void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
-                                     size_t n) const {
+void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                     chooser_item_attrs_t *, size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_nvram[n];
   std::string name = static_cast<std::string>(item["VariableName"]);
   std::string guid = static_cast<std::string>(item["VendorGuid"]);
   std::string service = static_cast<std::string>(item["service"]);
-  std::string attributes = static_cast<std::string>(item["AttributesHumanReadable"]);
+  std::string attributes =
+      static_cast<std::string>(item["AttributesHumanReadable"]);
   cols[0].sprnt("%016llX", u64_addr(ea));
   cols[1].sprnt("%s", name.c_str());
   cols[2].sprnt("%s", guid.c_str());
@@ -120,14 +123,16 @@ void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
   CASSERT(qnumber(header_nvram) == 5);
 }
 
-inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok, json_list_t vulns)
-    : chooser_t(0, qnumber(widths_vulns), widths_vulns, header_vulns, title_), list() {
+inline vulns_chooser_t::vulns_chooser_t(const char *title_, bool ok,
+                                        json_list_t vulns)
+    : chooser_t(0, qnumber(widths_vulns), widths_vulns, header_vulns, title_),
+      list() {
   CASSERT(qnumber(widths_vulns) == qnumber(header_vulns));
   build_list(ok, vulns);
 }
 
-void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
-                                     size_t n) const {
+void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                     chooser_item_attrs_t *, size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_vulns[n];
@@ -137,14 +142,16 @@ void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
   CASSERT(qnumber(header_vulns) == 2);
 }
 
-inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok, json_list_t guids)
-    : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_), list() {
+inline guids_chooser_t::guids_chooser_t(const char *title_, bool ok,
+                                        json_list_t guids)
+    : chooser_t(0, qnumber(widths_guids), widths_guids, header_guids, title_),
+      list() {
   CASSERT(qnumber(widths_guids) == qnumber(header_guids));
   build_list(ok, guids);
 }
 
-void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
-                                     size_t n) const {
+void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                     chooser_item_attrs_t *, size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_guids[n];
@@ -159,14 +166,16 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs
 inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
                                                 json_list_t protocols,
                                                 std::string name_key_)
-    : chooser_t(0, qnumber(widths_protocols), widths_protocols, header_protocols, title_),
+    : chooser_t(0, qnumber(widths_protocols), widths_protocols,
+                header_protocols, title_),
       list() {
   CASSERT(qnumber(widths_protocols) == qnumber(header_protocols));
   name_key = name_key_;
   build_list(ok, protocols);
 }
 
-void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
+void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                         chooser_item_attrs_t *,
                                          size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
@@ -183,14 +192,15 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_a
   CASSERT(qnumber(header_protocols) == 5);
 }
 
-inline s_chooser_t::s_chooser_t(const char *title_, bool ok, json_list_t services)
+inline s_chooser_t::s_chooser_t(const char *title_, bool ok,
+                                json_list_t services)
     : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
   CASSERT(qnumber(widths_s) == qnumber(header_s));
   build_list(ok, services);
 }
 
-void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *, chooser_item_attrs_t *,
-                                 size_t n) const {
+void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                 chooser_item_attrs_t *, size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_s[n];
@@ -242,7 +252,8 @@ bool protocols_show(json_list_t protocols, qstring title) {
 bool ppis_show(json_list_t ppis, qstring title) {
   bool ok;
   // open the window
-  protocols_chooser_t *ch = new protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
+  protocols_chooser_t *ch =
+      new protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
   // default cursor position is 0 (first row)
   ch->choose();
   return true;
@@ -275,8 +286,8 @@ struct protocols_deps_handler_t : public action_handler_t {
     // print dependencies for current
     // protocol in output window
     std::string s = d.dump(2);
-    msg("[%s] dependencies for protocol with GUID %s: %s\n", g_plugin_name, guid.c_str(),
-        s.c_str());
+    msg("[%s] dependencies for protocol with GUID %s: %s\n", g_plugin_name,
+        guid.c_str(), s.c_str());
 
     return 0;
   }
@@ -319,9 +330,9 @@ struct modules_seq_handler_t : public action_handler_t {
 };
 
 static modules_seq_handler_t modules_seq_ah;
-action_desc_t modules_seq =
-    ACTION_DESC_LITERAL("efiXplorer:modulesSeq", "Show the sequence of modules execution",
-                        &modules_seq_ah, nullptr, nullptr, -1);
+action_desc_t modules_seq = ACTION_DESC_LITERAL(
+    "efiXplorer:modulesSeq", "Show the sequence of modules execution",
+    &modules_seq_ah, nullptr, nullptr, -1);
 
 void attachActionModulesSeq() {
   // Attach action in protocols chooser
@@ -345,7 +356,8 @@ struct action_handler_loadreport_t : public action_handler_t {
       return -1;
     }
     reportPath /= file;
-    msg("[%s] loading report from %s file\n", g_plugin_name, reportPath.c_str());
+    msg("[%s] loading report from %s file\n", g_plugin_name,
+        reportPath.c_str());
 
     json reportData;
     try {
@@ -435,6 +447,6 @@ static action_handler_loadreport_t load_report_handler;
 
 //-------------------------------------------------------------------------
 // Action to load efiXplorer analysis report
-action_desc_t action_load_report =
-    ACTION_DESC_LITERAL("efiXplorer:loadReport", "efiXplorer analysis report...",
-                        &load_report_handler, nullptr, nullptr, -1);
+action_desc_t action_load_report = ACTION_DESC_LITERAL(
+    "efiXplorer:loadReport", "efiXplorer analysis report...",
+    &load_report_handler, nullptr, nullptr, -1);

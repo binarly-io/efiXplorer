@@ -21,6 +21,11 @@
 
 #include "efi_utils.h"
 
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
 bool track_entry_params(func_t *f, uint8_t depth);
 json detect_vars(func_t *f);
@@ -30,9 +35,10 @@ bool detect_pei_services(func_t *f);
 bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
 bool apply_all_types_for_interfaces(json_list_t guids);
 bool apply_all_types_for_interfaces_smm(json_list_t guids);
-bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name);
-bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
-                                                std::string name);
+bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
+                          std::string name);
+bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
+                                                tinfo_t tif, std::string name);
 bool offset_of(tinfo_t tif, const char *name, unsigned int *offset);
 bool is_pod_array(tinfo_t tif, unsigned int ptrDepth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
@@ -87,7 +93,6 @@ protected:
   bool InitTargets(TargetFunctionPointer *targets, size_t num) {
     // Iterate through all targets
     for (int i = 0; i < num; ++i) {
-
       // Copy the target structure into our local vector
       TargetFunctionPointer &tgt = mTargets.emplace_back();
       tgt = targets[i];
@@ -103,16 +108,17 @@ protected:
 
 public:
   // Constructor does nothing
-  ServiceDescriptor() : mOrdinal(0), bInitialized(false) {};
+  ServiceDescriptor() : mOrdinal(0), bInitialized(false) {}
 
   // Accessor for ordinal
-  uint32 GetOrdinal() { return mOrdinal; };
+  uint32 GetOrdinal() { return mOrdinal; }
 
   // Accessor for name
-  const char *GetName() { return mName.c_str(); };
+  const char *GetName() { return mName.c_str(); }
 
   // Needs to be called before the object can be used
-  bool Initialize(const char *name, TargetFunctionPointer *targets, size_t num) {
+  bool Initialize(const char *name, TargetFunctionPointer *targets,
+                  size_t num) {
     if (bInitialized)
       return true;
     bInitialized = InitType(name) && InitTargets(targets, num);
@@ -155,7 +161,6 @@ public:
   // Add a new ServiceDescriptor to the map. I should change the argument
   // type to match whatever I change the value type of the map to.
   bool Register(ServiceDescriptor sd) {
-
     // Get the ordinal from the ServiceDescriptor
     uint32 ord = sd.GetOrdinal();
 
@@ -198,13 +203,13 @@ public:
 class GUIDRelatedVisitorBase : public ctree_visitor_t {
 public:
   // We need access to a ServiceDescriptorMap from above.
-  GUIDRelatedVisitorBase(ServiceDescriptorMap &m)
-      : ctree_visitor_t(CV_FAST), mDebug(true), mServices(m) {};
+  explicit GUIDRelatedVisitorBase(ServiceDescriptorMap &m)
+      : ctree_visitor_t(CV_FAST), mDebug(true), mServices(m) {}
 
   // We need the function ea when setting Hex-Rays variable types.
-  void SetFuncEa(ea_t ea) { mFuncEa = ea; };
-  void SetCodeEa(ea_t ea) { mCodeEa = ea; };
-  void SetProtocols(json_list_t protocols) { mProtocols = protocols; };
+  void SetFuncEa(ea_t ea) { mFuncEa = ea; }
+  void SetCodeEa(ea_t ea) { mCodeEa = ea; }
+  void SetProtocols(json_list_t protocols) { mProtocols = protocols; }
 
 protected:
   //
@@ -286,7 +291,7 @@ protected:
     mOutArg = nullptr;
     mGUIDArgRefTo = nullptr;
     mGUIDEa = BADADDR;
-  };
+  }
 
   // Debug print, if the instance debug variable says to
   void DebugPrint(const char *fmt, ...) {
@@ -294,7 +299,7 @@ protected:
     va_start(va, fmt);
     if (mDebug)
       vmsg(fmt, va);
-  };
+  }
 
   // This is the first function called every time the visitor visits an
   // expression. This function determines if the expression is a call to a
@@ -354,12 +359,11 @@ protected:
     // pointer contained in a structure, where the structure is being
     // accessed by a pointer.
     return true;
-  };
+  }
 
   // This is the second function called as part of indirect call validation.
   // Now we want to know: is it a call to something that we're tracking?
   bool ValidateICallDestination() {
-
     // Look up the structure ordinal and function offset; get the associated
     // ServiceDescriptor and TargetFunctionPointer (instance variables).
     if (!mServices.LookupOffset(mOrdinal, mOffset, &mpService, &mpTarget))
@@ -384,7 +388,7 @@ protected:
     // something that we're tracking, and that Hex-Rays decompiled the call
     // the way we expected it to.
     return true;
-  };
+  }
 
   // This is a helper function used to get the thing being referred to. What
   // does that mean?
@@ -395,7 +399,6 @@ protected:
   //   does not actually have a "&" when passed as a call argument. There's
   //   a bit of extra logic to check for that case.
   cexpr_t *GetReferent(cexpr_t *e, const char *desc, bool bAcceptVar) {
-
     // Eat casts
     cexpr_t *x = e;
     while (x->op == cot_cast)
@@ -425,7 +428,7 @@ protected:
 
     // If we get here, we know it's a reference. Return the referent.
     return x->x;
-  };
+  }
 
   // The third function in the validation logic. We already know the
   // expression is an indirect call to something that we're tracking, and
@@ -453,7 +456,7 @@ protected:
     // number of arguments; and that the GUID argument did in fact point to
     // a global variable, whose address we now have in an instance variable.
     return true;
-  };
+  }
 
   // Finally, this function combines all three checks above into one single
   // function. If you call this and it returns true, feel free to access the
@@ -479,8 +482,8 @@ protected:
 // we know about, and setting the types of the output variables accordingly.
 class GUIDRetyper : public GUIDRelatedVisitorBase {
 public:
-  GUIDRetyper(ServiceDescriptorMap &m) : GUIDRelatedVisitorBase(m), mNumApplied(0) {};
-
+  explicit GUIDRetyper(ServiceDescriptorMap &m)
+      : GUIDRelatedVisitorBase(m), mNumApplied(0) {}
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.
   int visit_expr(cexpr_t *e) {
@@ -571,16 +574,14 @@ protected:
       pi.obj_type.get_type_name(&type_name);
       // Handling all interface functions (to rename function arguments)
       op_stroff_for_global_interface(xrefs, type_name);
-    }
-
-    // For local variables
-    else if (outArg->op == cot_var) {
+    } else if (outArg->op == cot_var) { // For local variables
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
       auto name = type_to_name(static_cast<std::string>(tStr.c_str()));
       set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
-      if (set_hexrays_var_info_and_handle_interfaces(mFuncEa, destVar, ptrTif, name)) {
+      if (set_hexrays_var_info_and_handle_interfaces(mFuncEa, destVar, ptrTif,
+                                                     name)) {
         ++mNumApplied;
       }
     }
@@ -594,10 +595,7 @@ protected:
       // Rename global variable
       auto name = "g" + type_to_name(type_name);
       set_name(dest_ea, name.c_str(), SN_FORCE);
-    }
-
-    // For local variables
-    else if (outArg->op == cot_var) {
+    } else if (outArg->op == cot_var) { // For local variables
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
@@ -609,9 +607,9 @@ protected:
 
 class VariablesInfoExtractor : public ctree_visitor_t {
 public:
-  VariablesInfoExtractor(ea_t code_addr) : ctree_visitor_t(CV_FAST) {
+  explicit VariablesInfoExtractor(ea_t code_addr) : ctree_visitor_t(CV_FAST) {
     mCodeAddr = code_addr;
-  };
+  }
 
   uint8_t mAttributes = 0xff;
 
@@ -642,7 +640,8 @@ public:
     cexpr_t *attributes_arg = &args->at(2);
     if (attributes_arg->op == cot_num) {
       if (mDebug) {
-        msg("[I] Service call: %016llX, Attributes: %02X\n", u64_addr(mCodeAddr),
+        msg("[I] Service call: %016llX, Attributes: %02X\n",
+            u64_addr(mCodeAddr),
             static_cast<uint8_t>(attributes_arg->numval()));
       }
       attributes_arg->numval();
@@ -659,7 +658,7 @@ protected:
 
 class PrototypesFixer : public ctree_visitor_t {
 public:
-  PrototypesFixer() : ctree_visitor_t(CV_FAST) {};
+  PrototypesFixer() : ctree_visitor_t(CV_FAST) {}
   ea_list_t child_functions;
 
   // This is the callback function that Hex-Rays invokes for every expression
@@ -759,7 +758,7 @@ protected:
 
 class VariablesDetector : public ctree_visitor_t {
 public:
-  VariablesDetector() : ctree_visitor_t(CV_FAST) {};
+  VariablesDetector() : ctree_visitor_t(CV_FAST) {}
 
   ea_list_t child_functions;
 
@@ -768,7 +767,7 @@ public:
   ea_list_t bs_list;
   ea_list_t rt_list;
 
-  void SetFuncEa(ea_t ea) { mFuncEa = ea; };
+  void SetFuncEa(ea_t ea) { mFuncEa = ea; }
 
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.
@@ -887,7 +886,7 @@ protected:
 class ServicesDetector : public ctree_visitor_t {
   // detect all services (Boot services, Runtime services, etc)
 public:
-  ServicesDetector() : ctree_visitor_t(CV_FAST) {};
+  ServicesDetector() : ctree_visitor_t(CV_FAST) {}
 
   json_list_t services;
 
@@ -922,7 +921,8 @@ public:
       is_ptr = 0;
     }
 
-    auto service_name = type_to_name(static_cast<std::string>(type_name.c_str()));
+    auto service_name =
+        type_to_name(static_cast<std::string>(type_name.c_str()));
     if (service_name.rfind("Efi", 0) == 0) {
       service_name = service_name.substr(3);
       if (service_name == "RaiseTpl") {
@@ -956,7 +956,7 @@ protected:
 class PeiServicesDetector : public ctree_visitor_t {
   // detect and mark all PEI services
 public:
-  PeiServicesDetector() : ctree_visitor_t(CV_FAST) {};
+  PeiServicesDetector() : ctree_visitor_t(CV_FAST) {}
 
   bool make_shifted_ptr(tinfo_t outer, tinfo_t inner, int32 offset,
                         tinfo_t *shifted_tif) {
@@ -985,9 +985,10 @@ public:
     var_ref_t var_ref;
     if (e->op == cot_ptr && e->x->op == cot_cast && e->x->x->op == cot_add &&
         e->x->x->x->op == cot_ptr && e->x->x->x->x->op == cot_ptr &&
-        e->x->x->x->x->x->op == cot_cast && e->x->x->x->x->x->x->op == cot_sub &&
-        e->x->x->x->x->x->x->x->op == cot_var && e->x->x->x->x->x->x->y->op == cot_num &&
-        e->x->x->y->op == cot_num) {
+        e->x->x->x->x->x->op == cot_cast &&
+        e->x->x->x->x->x->x->op == cot_sub &&
+        e->x->x->x->x->x->x->x->op == cot_var &&
+        e->x->x->x->x->x->x->y->op == cot_num && e->x->x->y->op == cot_num) {
       // (*ADJ(v2)->PeiServices)->GetHobList(
       // (const EFI_PEI_SERVICES**)ADJ(v2)->PeiServices, HobList);
       service_offset = e->x->x->y->numval();
@@ -1005,7 +1006,8 @@ public:
       return 0;
     }
 
-    msg("[efiXplorer] address: 0x%08llX, PEI service detected\n", u64_addr(e->ea));
+    msg("[efiXplorer] address: 0x%08llX, PEI service detected\n",
+        u64_addr(e->ea));
     msg("[efiXplorer]   delta: %llx\n", u64_addr(pointer_offset));
     if (service_offset != BADADDR) {
       msg("[efiXplorer]   service offset: %llx\n", u64_addr(service_offset));
@@ -1049,15 +1051,15 @@ class PeiServicesDetectorArm : public ctree_visitor_t {
   // detect and mark all PEI services for ARM firmware
   // tested on Ampere firmware that contains small PEI stack
 public:
-  PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST) {};
+  PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST) {}
 
   json_list_t services;
 
   // This is the callback function that Hex-Rays invokes for every expression
   // in the CTREE.
   int visit_expr(cexpr_t *e) {
-    if (!(e->op == cot_call && e->x->op == cot_memptr && e->x->x->op == cot_ptr &&
-          e->x->x->x->op == cot_var)) {
+    if (!(e->op == cot_call && e->x->op == cot_memptr &&
+          e->x->x->op == cot_ptr && e->x->x->x->op == cot_var)) {
       return 0;
     }
     ea_t offset = e->x->m;

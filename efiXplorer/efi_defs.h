@@ -22,7 +22,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#define COPYRIGHT "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
+#define COPYRIGHT                                                              \
+  "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
 
 #define BTOA(x) ((x) ? "true" : "false")
 

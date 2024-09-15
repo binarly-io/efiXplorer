@@ -19,17 +19,19 @@
 
 #pragma once
 
-// 3rd party
-#include "json.hpp"
+#include "efi_defs.h"
+
+#include <format>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #include <allins.hpp>
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
 #include <entry.hpp>
-#include <format>
 #include <frame.hpp>
-#include <fstream>
 #include <graph.hpp>
 #include <ida.hpp>
 #include <idp.hpp>
@@ -37,19 +39,19 @@
 #include <lines.hpp>
 #include <loader.hpp>
 #include <name.hpp>
-#include <pro.h>
 #if IDA_SDK_VERSION < 900
 #include <struct.hpp>
 #endif
 #include <typeinf.hpp>
-
 #ifdef HEX_RAYS
 #include <hexrays.hpp>
 #endif
+#include <pro.h>
 
-#include "efi_defs.h"
+// 3rd party
+#include "json.hpp"
 
-using namespace nlohmann;
+using nlohmann::json;
 
 using ea_list_t = std::vector<ea_t>;
 using func_list_t = std::vector<func_t *>;
@@ -83,10 +85,10 @@ struct EfiGuid {
   }
 
   std::string to_string() const {
-    return std::format(
-        "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}", data1,
-        data2, data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5],
-        data4[6], data4[7]);
+    return std::format("{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:"
+                       "02X}{:02X}{:02X}",
+                       data1, data2, data3, data4[0], data4[1], data4[2],
+                       data4[3], data4[4], data4[5], data4[6], data4[7]);
   }
 };
 

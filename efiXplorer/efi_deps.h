@@ -21,10 +21,15 @@
 
 #include "efi_utils.h"
 
+#include <map>
+#include <set>
+#include <string>
+
 class EfiDependencies {
 public:
   EfiDependencies();
   ~EfiDependencies();
+
   json protocolsByGuids; // protocols sorted by GUIDs
   json protocolsChooser; // numbered json with protocols
   json uefitoolDeps;
@@ -38,8 +43,9 @@ public:
   void getProtocolsByGuids(json_list_t protocols);
   void getProtocolsChooser(json_list_t protocols);
   json getDeps(std::string protocol); // get dependencies for specific protocol
-  void getAdditionalInstallers();     // get installers by protocol GUIDs by searching in
-                                      // the firmware and analysing xrefs
+  void
+  getAdditionalInstallers(); // get installers by protocol GUIDs by searching in
+                             // the firmware and analysing xrefs
   bool buildModulesSequence();
   bool getImagesInfo();
 

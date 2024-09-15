@@ -21,12 +21,17 @@
 
 #include "efi_utils.h"
 
+#include <string>
+
 ea_list_t findSmstSwDispatch(ea_list_t bs_list);
 ea_list_t findSmstSmmBase(ea_list_t bs_list);
 func_list_t findSmiHandlers(ea_t address, std::string prefix);
 func_list_t findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix);
-func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids, std::string prefix);
-ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allServices);
-ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids,
+func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids,
+                                            std::string prefix);
+ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments,
+                                  json_list_t *allServices);
+ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids,
+                                   json_list_t dataGuids,
                                    json_list_t *allServices);
 ea_t markChildSwSmiHandler(ea_t ea);

@@ -28,7 +28,7 @@ EfiDependencies::EfiDependencies() {
   // Read images with GUIDs from
   // .images.json file if this file exists
   loadImagesWithGuids();
-};
+}
 
 EfiDependencies::~EfiDependencies() {
   imagesInfo.clear();
@@ -40,11 +40,12 @@ EfiDependencies::~EfiDependencies() {
   protocolsByGuids.clear();
   additionalInstallers.clear();
   protocolsWithoutInstallers.clear();
-};
+}
 
 json EfiDependencies::getDeps(std::string guid) {
   json res;
-  std::vector installers({"InstallProtocolInterface", "InstallMultipleProtocolInterfaces",
+  std::vector installers({"InstallProtocolInterface",
+                          "InstallMultipleProtocolInterfaces",
                           "SmmInstallProtocolInterface"});
   for (auto &it : protocolsChooser.items()) {
     auto p = it.value();
@@ -54,7 +55,8 @@ json EfiDependencies::getDeps(std::string guid) {
     p["ea"] = as_hex(u64_addr(p["ea"]));
     p["xref"] = as_hex(u64_addr(p["xref"]));
     p["address"] = as_hex(u64_addr(p["address"]));
-    if (find(installers.begin(), installers.end(), p["service"]) != installers.end()) {
+    if (find(installers.begin(), installers.end(), p["service"]) !=
+        installers.end()) {
       res["installed"].push_back(p);
     } else {
       res["used"].push_back(p);
@@ -155,7 +157,8 @@ void EfiDependencies::getInstallersModules() {
       for (auto ea : xrefs) {
         if (check_install_protocol(ea)) {
           auto module = get_module_name_loader(ea);
-          additionalInstallers[protocol] = static_cast<std::string>(module.c_str());
+          additionalInstallers[protocol] =
+              static_cast<std::string>(module.c_str());
           installerFound = true;
           break;
         }
@@ -182,7 +185,8 @@ void EfiDependencies::getAdditionalInstallers() {
 }
 
 void EfiDependencies::getImages() {
-  for (segment_t *s = get_first_seg(); s != nullptr; s = get_next_seg(s->start_ea)) {
+  for (segment_t *s = get_first_seg(); s != nullptr;
+       s = get_next_seg(s->start_ea)) {
     qstring seg_name;
     get_segm_name(&seg_name, s);
 
@@ -205,7 +209,8 @@ json EfiDependencies::getImageInfo(std::string image) {
   json info;
   string_list_t installedProtocols;
   json depsProtocols;
-  std::vector installers({"InstallProtocolInterface", "InstallMultipleProtocolInterfaces",
+  std::vector installers({"InstallProtocolInterface",
+                          "InstallMultipleProtocolInterfaces",
                           "SmmInstallProtocolInterface"});
 
   // Get installed protocols
@@ -227,7 +232,8 @@ json EfiDependencies::getImageInfo(std::string image) {
     if (image_name != image) {
       continue;
     }
-    if (find(installers.begin(), installers.end(), p["service"]) != installers.end()) {
+    if (find(installers.begin(), installers.end(), p["service"]) !=
+        installers.end()) {
       installedProtocols.push_back(p["guid"]);
     }
   }
@@ -276,7 +282,8 @@ std::string EfiDependencies::getInstaller(std::string protocol) {
   for (auto &e : imagesInfo.items()) {
     std::string image = e.key();
     string_list_t installers = imagesInfo[image]["installed_protocols"];
-    if (find(installers.begin(), installers.end(), protocol) != installers.end()) {
+    if (find(installers.begin(), installers.end(), protocol) !=
+        installers.end()) {
       return image;
     }
   }
@@ -291,8 +298,8 @@ bool EfiDependencies::buildModulesSequence() {
   std::set<std::string> modulesSeq;
   std::set<std::string> installed_protocols;
 
-  getProtocolsWithoutInstallers(); // hard to find installers for all protocols in
-                                   // statiс
+  getProtocolsWithoutInstallers(); // hard to find installers for all protocols
+                                   // in statiс
   getImagesInfo();
 
   size_t index = 0;
@@ -353,9 +360,10 @@ bool EfiDependencies::buildModulesSequence() {
       }
     }
 
-    if (!changed) { // we are in a loop, we need to load a module that installs the
-                    // most popular protocol
-      std::map<std::string, size_t> protocols_usage; // get the most popular protocol
+    if (!changed) { // we are in a loop, we need to load a module that installs
+                    // the most popular protocol
+      std::map<std::string, size_t>
+          protocols_usage; // get the most popular protocol
       for (auto &e : imagesInfo.items()) {
         std::string image = e.key();
 

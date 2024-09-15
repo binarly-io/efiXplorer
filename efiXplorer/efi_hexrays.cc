@@ -51,9 +51,10 @@ bool offset_of(tinfo_t tif, const char *name, unsigned int *offset) {
   return true;
 }
 
-// Utility function to set a Hex-Rays variable type and set types for the interfaces
-bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinfo_t tif,
-                                                std::string name) {
+// Utility function to set a Hex-Rays variable type and set types for the
+// interfaces
+bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
+                                                tinfo_t tif, std::string name) {
   lvar_saved_info_t lsi;
   lsi.ll = ll;
   lsi.type = tif;
@@ -65,14 +66,15 @@ bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll, tinf
     sval_t stkoff = ll.get_stkoff();
     struc_t *frame = get_frame(func_addr);
     set_member_name(frame, stkoff, name.c_str());
-#endif     // TODO: add support for idasdk90
+#endif     // TODO(yeggor): add support for idasdk90
   } else { // Modufy user lvar info
     lsi.name = static_cast<qstring>(name.c_str());
     modify_user_lvar_info(func_addr, MLI_NAME, lsi);
   }
 
   // Get xrefs to local variable
-  xreflist_t xrefs = xrefs_to_stack_var(func_addr, static_cast<qstring>(name.c_str()));
+  xreflist_t xrefs =
+      xrefs_to_stack_var(func_addr, static_cast<qstring>(name.c_str()));
   qstring type_name;
   ptr_type_data_t pi;
   tif.get_ptr_details(&pi);
@@ -98,7 +100,8 @@ bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
 }
 
 // Utility function to set a Hex-Rays variable type and name
-bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string name) {
+bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
+                          std::string name) {
   lvar_saved_info_t lsi;
   lsi.ll = ll;
   lsi.type = tif;
@@ -110,7 +113,7 @@ bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif, std::string n
     sval_t stkoff = ll.get_stkoff();
     struc_t *frame = get_frame(func_addr);
     set_member_name(frame, stkoff, name.c_str());
-#endif     // TODO: add support for idasdk90
+#endif     // TODO(yeggor): add support for idasdk90
   } else { // Modufy user lvar info
     lsi.name = static_cast<qstring>(name.c_str());
     modify_user_lvar_info(func_addr, MLI_NAME, lsi);
@@ -149,7 +152,6 @@ bool is_pod_array(tinfo_t tif, unsigned int ptrDepth = 0) {
 
   // Loop over the user-specified depth
   while (iDepth > 0) {
-
     // Use typeid last checks. I should clean this up; I'm sure I can get rid
     // of one of them.
     bool b1 = is_typeid_last(et.get_realtype());

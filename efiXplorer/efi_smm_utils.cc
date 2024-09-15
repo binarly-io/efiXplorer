@@ -20,6 +20,8 @@
 #include "efi_smm_utils.h"
 #include "efi_global.h"
 
+#include <algorithm>
+
 //--------------------------------------------------------------------------
 // Find and mark gSmst global variable via EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID
 ea_list_t findSmstSwDispatch(ea_list_t bs_list) {
@@ -70,8 +72,8 @@ ea_list_t findSmstSwDispatch(ea_list_t bs_list) {
         decode_insn(&insn, cur_addr);
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == smst_reg && insn.ops[1].type == o_mem) {
-          msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n", g_plugin_name,
-              u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
+          msg("[%s] found gSmst at 0x%016llX, address = 0x%016llX\n",
+              g_plugin_name, u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
           res_addr = insn.ops[1].addr;
           if (addr_in_vec(bs_list, res_addr)) {
             continue;
@@ -95,11 +97,11 @@ ea_list_t findSmstSwDispatch(ea_list_t bs_list) {
 // Find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
 ea_list_t findSmstSmmBase(ea_list_t bs_list) {
   ea_list_t smst_addrs;
-  EfiGuid guid = {
-      0xf4ccbfb7,
-      0xf6e0,
-      0x47fd,
-      {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
+  EfiGuid guid = {0xf4ccbfb7,
+                  0xf6e0,
+                  0x47fd,
+                  {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1,
+                   0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
   ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
   for (auto data_addr : data_addrs) {
     msg("[%s] EFI_SMM_BASE2_PROTOCOL_GUID: 0x%016llX\n", g_plugin_name,
@@ -148,8 +150,8 @@ ea_list_t findSmstSmmBase(ea_list_t bs_list) {
 // Find SmiHandler in reg_smi_func function (prefix: Sw, TrapIo, Sx, Gpi, Usb,
 // StandbyButton, PeriodicTimer, PowerButton)
 func_list_t findSmiHandlers(ea_t address, std::string prefix) {
-  msg("[%s] Analyse xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n", g_plugin_name,
-      prefix.c_str(), u64_addr(address));
+  msg("[%s] Analyse xref to gEfiSmm%sDispatch(2)Protocol: 0x%016llX\n",
+      g_plugin_name, prefix.c_str(), u64_addr(address));
 
   func_list_t smiHandlers;
   insn_t insn;
@@ -159,8 +161,8 @@ func_list_t findSmiHandlers(ea_t address, std::string prefix) {
   // Check instruction
   decode_insn(&insn, address);
   if (!(insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RCX)) {
-    msg("[%s] %sSmiHandler: wrong xref to dispatch(2) protocol\n", g_plugin_name,
-        prefix.c_str());
+    msg("[%s] %sSmiHandler: wrong xref to dispatch(2) protocol\n",
+        g_plugin_name, prefix.c_str());
     return smiHandlers;
   }
 
@@ -180,16 +182,16 @@ func_list_t findSmiHandlers(ea_t address, std::string prefix) {
       break;
     }
     // Interface in stack
-    if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_R8 &&
-        insn.ops[1].type == o_displ &&
+    if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_displ &&
         (insn.ops[1].reg == REG_RBP || insn.ops[1].reg == REG_RSP)) {
       if (dispatch_interface == BADADDR) {
         dispatch_interface = insn.ops[1].addr;
       }
     }
     // Interface in data
-    if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_R8 &&
-        insn.ops[1].type == o_mem) {
+    if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == REG_R8 && insn.ops[1].type == o_mem) {
       if (dispatch_interface == BADADDR) {
         dispatch_interface = insn.ops[1].addr;
       }
@@ -225,10 +227,10 @@ func_list_t findSmiHandlers(ea_t address, std::string prefix) {
     return smiHandlers;
   }
 
-  msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llX\n", g_plugin_name,
-      prefix.c_str(), dispatch_interface);
+  msg("[%s] Found EfiSmm%sDispatch(2)Protocol interface: 0x%016llX\n",
+      g_plugin_name, prefix.c_str(), dispatch_interface);
 
-  // TODO: handle xrefs for globals
+  // TODO(yeggor): handle xrefs for globals
   // (fw71.bin.out/SmmHddSecurity-316b1230-0500-4592-8c09-eaba0fb6b07f.smm)
 
   // Track interface stack variable
@@ -262,8 +264,8 @@ func_list_t findSmiHandlers(ea_t address, std::string prefix) {
     }
 
     // get DispatchFunction address
-    if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RDX &&
-        insn.ops[1].type == o_mem) {
+    if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
       dispatch_func = insn.ops[1].addr;
       continue;
     }
@@ -287,7 +289,8 @@ func_list_t findSmiHandlers(ea_t address, std::string prefix) {
       std::string name = prefix + "SmiHandler";
       set_name(dispatch_func, name.c_str(), SN_FORCE);
       std::string prefix_upper;
-      std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(), ::toupper);
+      std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(),
+                     ::toupper);
       std::string type = "EFI_SMM_" + prefix_upper + "_DISPATCH2_PROTOCOL";
       op_stroff_util(ea, type);
     }
@@ -330,8 +333,8 @@ func_list_t findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix) {
 //--------------------------------------------------------------------------
 // Find SwSmiHandler function inside SMM drivers in case where
 // EFI_SMM_SW_DISPATCH(2)_PROTOCOL_GUID is a local variable
-func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids, std::string prefix) {
-  // TODO: make it generic
+func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids,
+                                            std::string prefix) {
   func_list_t smiHandlers;
 
   for (auto guid : stackGuids) {
@@ -355,16 +358,17 @@ func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids, std::string 
 
 //--------------------------------------------------------------------------
 // Find gSmmVar->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
-ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allServices) {
+ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments,
+                                  json_list_t *allServices) {
   msg("[%s] gSmmVar->SmmGetVariable calls finding via "
       "EFI_SMM_VARIABLE_PROTOCOL_GUID\n",
       g_plugin_name);
   ea_list_t smmGetVariableCalls;
-  EfiGuid guid = {
-      0xed32d533,
-      0x99e6,
-      0x4209,
-      {0x9c, 0xc0, 0x2d, 0x72, 0xcd, 0xd9, 0x98, 0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
+  EfiGuid guid = {0xed32d533,
+                  0x99e6,
+                  0x4209,
+                  {0x9c, 0xc0, 0x2d, 0x72, 0xcd, 0xd9, 0x98,
+                   0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
 
   // Find all EFI_GUID EFI_SMM_VARIABLE_PROTOCOL_GUID addresses
   ea_list_t data_addrs = find_data(0, BADADDR, guid.uchar_data().data(), 16);
@@ -396,7 +400,8 @@ ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allS
           msg("[%s] gSmmVar address: 0x%016llX\n", g_plugin_name,
               u64_addr(insn.ops[1].addr));
           set_cmt(ea, "EFI_SMM_VARIABLE_PROTOCOL *gSmmVar", true);
-          set_ptr_type_and_name(insn.ops[1].addr, "gSmmVar", "EFI_SMM_VARIABLE_PROTOCOL");
+          set_ptr_type_and_name(insn.ops[1].addr, "gSmmVar",
+                                "EFI_SMM_VARIABLE_PROTOCOL");
           gSmmVarAddrs.push_back(insn.ops[1].addr);
           break;
         }
@@ -437,11 +442,11 @@ ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allS
 
           if (insn.itype == NN_callni && gSmmVarReg == insn.ops[0].reg &&
               insn.ops[0].addr == 0) {
-            msg("[%s] gSmmVar->SmmGetVariable found: 0x%016llX\n", g_plugin_name,
-                u64_addr(ea));
+            msg("[%s] gSmmVar->SmmGetVariable found: 0x%016llX\n",
+                g_plugin_name, u64_addr(ea));
 
-            if (find(smmGetVariableCalls.begin(), smmGetVariableCalls.end(), ea) ==
-                smmGetVariableCalls.end()) {
+            if (find(smmGetVariableCalls.begin(), smmGetVariableCalls.end(),
+                     ea) == smmGetVariableCalls.end()) {
               smmGetVariableCalls.push_back(ea);
             }
 
@@ -449,7 +454,8 @@ ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allS
             // for easier annotations and UI
 
             op_stroff_util(ea, "EFI_SMM_VARIABLE_PROTOCOL");
-            msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea), "SmmGetVariable");
+            msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea),
+                "SmmGetVariable");
             std::string smm_call = "gSmmVar->SmmGetVariable";
             json smm_item;
             smm_item["address"] = ea;
@@ -472,7 +478,8 @@ ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments, json_list_t *allS
   return smmGetVariableCalls;
 }
 
-ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids,
+ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids,
+                                   json_list_t dataGuids,
                                    json_list_t *allServices) {
   ea_list_t readSaveStateCalls;
   msg("[%s] Looking for EFI_SMM_CPU_PROTOCOL\n", g_plugin_name);
@@ -494,7 +501,8 @@ ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids
       continue;
 
     ea_t address = static_cast<ea_t>(guid["address"]);
-    msg("[%s] found EFI_SMM_CPU_PROTOCOL: 0x%016llX\n", g_plugin_name, u64_addr(address));
+    msg("[%s] found EFI_SMM_CPU_PROTOCOL: 0x%016llX\n", g_plugin_name,
+        u64_addr(address));
     ea_list_t guidXrefs = get_xrefs_util(address);
 
     for (auto guidXref : guidXrefs) {
@@ -522,7 +530,8 @@ ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids
         msg("[%s] gSmmCpu address: 0x%016llX\n", g_plugin_name,
             u64_addr(insn.ops[1].addr));
         set_cmt(ea, "EFI_SMM_CPU_PROTOCOL *gSmmCpu", true);
-        set_ptr_type_and_name(insn.ops[1].addr, "gSmmCpu", "EFI_SMM_CPU_PROTOCOL");
+        set_ptr_type_and_name(insn.ops[1].addr, "gSmmCpu",
+                              "EFI_SMM_CPU_PROTOCOL");
         gSmmCpuAddrs.push_back(insn.ops[1].addr);
         break;
       }
@@ -563,8 +572,8 @@ ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids
 
           if (insn.itype == NN_callni && gSmmCpuReg == insn.ops[0].reg &&
               insn.ops[0].addr == 0) {
-            if (find(readSaveStateCalls.begin(), readSaveStateCalls.end(), ea) ==
-                readSaveStateCalls.end()) {
+            if (find(readSaveStateCalls.begin(), readSaveStateCalls.end(),
+                     ea) == readSaveStateCalls.end()) {
               readSaveStateCalls.push_back(ea);
             }
 
@@ -575,7 +584,8 @@ ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids, json_list_t dataGuids
             json smm_item;
             smm_item["address"] = ea;
             smm_item["service_name"] = smm_call;
-            smm_item["table_name"] = static_cast<std::string>("EFI_SMM_CPU_PROTOCOL");
+            smm_item["table_name"] =
+                static_cast<std::string>("EFI_SMM_CPU_PROTOCOL");
             smm_item["offset"] = 0;
 
             if (find(allServices->begin(), allServices->end(), smm_item) ==
@@ -602,7 +612,8 @@ ea_t markChildSwSmiHandler(ea_t ea) {
     addr = prev_head(addr, 0);
 
     // check current instruction
-    if (insn.itype == NN_lea && insn.ops[0].type == o_reg && insn.ops[0].reg == REG_RCX) {
+    if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
+        insn.ops[0].reg == REG_RCX) {
       if (insn.ops[1].type != o_mem) {
         continue;
       }
