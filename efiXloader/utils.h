@@ -19,17 +19,18 @@
 
 #pragma once
 
-#include "ida_core.h"
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include "ida_core.h"
+
 namespace efiloader {
 
 class Utils {
 public:
-  Utils() { ; };
+  Utils() {}
   void show_hex(void *buffer, size_t length, const char *prefix);
   bool find_vol(bytevec_t &frm, std::string &sig, qoff64_t &vol_off);
   qoff64_t find_vol_new(linput_t *li, char *sig);

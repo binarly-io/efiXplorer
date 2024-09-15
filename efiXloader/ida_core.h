@@ -21,19 +21,20 @@
 
 #define USE_STANDARD_FILE_FUNCTIONS 1
 
+#include <fpro.h>
+#include <pro.h>
+
 #include <auto.hpp>
 #include <bytes.hpp>
 #include <diskio.hpp>
 #include <entry.hpp>
 #include <fixup.hpp>
-#include <fpro.h>
 #include <ida.hpp>
 #include <idp.hpp>
 #include <kernwin.hpp>
 #include <loader.hpp>
 #include <name.hpp>
 #include <offset.hpp>
-#include <pro.h>
 #include <segment.hpp>
 #include <segregs.hpp>
 
@@ -91,21 +92,25 @@ bool _validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
 // Validate a counter taken from the input file. If there are not enough bytes
 // in the input file, ask the user if we may continue and fix the counter.
 template <class T>
-void validate_array_count(linput_t *li, T *p_cnt, size_t elsize, const char *counter_name,
-                          int64 curoff = -1, int64 maxoff = -1) {
+void validate_array_count(linput_t *li, T *p_cnt, size_t elsize,
+                          const char *counter_name, int64 curoff = -1,
+                          int64 maxoff = -1) {
   T old = *p_cnt;
   if (!_validate_array_count(li, p_cnt, elsize, curoff, maxoff)) {
     static const char *const format =
         "AUTOHIDE SESSION\n"
         "HIDECANCEL\n"
-        "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64 "u%s";
+        "%s %" FMT_64 "u is incorrect, maximum possible value is %" FMT_64
+        "u%s";
 #ifndef __KERNEL__
-    if (ask_yn(ASKBTN_YES, format, counter_name, uint64(old), uint64(*p_cnt),
+    if (ask_yn(ASKBTN_YES, format, counter_name, static_cast<uint64>(old),
+               static_cast<uint64>(*p_cnt),
                ". Do you want to continue with the new value?") != ASKBTN_YES) {
       loader_failure(NULL);
     }
 #else
-    warning(format, counter_name, uint64(old), uint64(*p_cnt), "");
+    warning(format, counter_name, static_cast<uint64>(old),
+            static_cast<uint64>(*p_cnt), "");
 #endif
   }
 }
@@ -118,7 +123,8 @@ void validate_array_count_or_die(linput_t *li, T cnt, size_t elsize,
                                  const char *counter_name, int64 curoff = -1,
                                  int64 maxoff = -1) {
   if (!_validate_array_count(li, &cnt, elsize, curoff, maxoff)) {
-    static const char *const format = "%s is incorrect, maximum possible value is %u%s";
+    static const char *const format =
+        "%s is incorrect, maximum possible value is %u%s";
 #ifndef __KERNEL__
     loader_failure(format, counter_name, uint(cnt), "");
 #else

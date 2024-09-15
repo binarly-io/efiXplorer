@@ -19,13 +19,15 @@
 
 #pragma once
 
+#include <string>
+
 #include "ida_core.h"
 #include "pe.h"
 
 namespace efiloader {
 class PeManager {
 public:
-  PeManager(uint16_t mt) {
+  explicit PeManager(uint16_t mt) {
     inf_set_64bit();
     set_imagebase(0x0);
     if (mt == PECPU_ARM64) {
@@ -36,7 +38,7 @@ public:
     pe_base = 0;
     pe_sel_base = 0;
     machine_type = mt;
-  };
+  }
   void process(linput_t *li, std::basic_string<char> fname, int ord);
   uint16_t machine_type;
 

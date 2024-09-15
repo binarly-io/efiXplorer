@@ -19,6 +19,18 @@
 
 #pragma once
 
+#include <set>
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
+#include <codecvt>
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "3rd/uefitool/common/LZMA/LzmaCompress.h"
 #include "3rd/uefitool/common/LZMA/LzmaDecompress.h"
 #include "3rd/uefitool/common/Tiano/EfiTianoCompress.h"
@@ -41,14 +53,7 @@
 
 #include "ida_core.h"
 
-#include <set>
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <sys/stat.h>
-#endif
-
-using namespace nlohmann;
+using nlohmann::json;
 
 enum FILE_SECTION_TYPE {
   PE_DEPENDENCY_SECTION = 0,
@@ -65,7 +70,7 @@ public:
     qname.qclear();
     bytes.resize(size_in);
     memcpy(&bytes[0], data_in, size_in);
-  };
+  }
   void write() {
     qstring idb_path(get_path(PATH_TYPE_IDB));
     qstring images_path = idb_path + qstring(".efiloader");
@@ -100,7 +105,7 @@ public:
 
 class Uefitool {
 public:
-  Uefitool(bytevec_t &data) {
+  explicit Uefitool(bytevec_t &data) {
     buffer = (const char *)&data[0];
     buffer_size = data.size();
     UByteArray ubuffer(buffer, buffer_size);
@@ -110,17 +115,19 @@ public:
     }
     messages = ffs.getMessages();
   }
-  ~Uefitool() {};
+  ~Uefitool() {}
   void show_messages();
-  bool messages_occurs() { return !messages.empty(); };
+  bool messages_occurs() { return !messages.empty(); }
   void dump();
   void dump(const UModelIndex &index);
   void dump(const UModelIndex &index, uint8_t el_type, File *pe_file);
   void handle_raw_section(const UModelIndex &index);
-  bool is_pe_index(const UModelIndex &index) { return model.rowCount(index) == 4; };
+  bool is_pe_index(const UModelIndex &index) {
+    return model.rowCount(index) == 4;
+  }
   bool is_file_index(const UModelIndex &index) {
     return model.type(index) == Types::File;
-  };
+  }
   void get_unique_name(qstring &image_name);
   void get_image_guid(qstring &image_guid, UModelIndex index);
   std::vector<std::string> parseDepexSectionBody(const UModelIndex &index,
@@ -128,8 +135,9 @@ public:
   std::vector<std::string> parseAprioriRawSection(const UModelIndex &index);
   void get_deps(UModelIndex index, std::string key);
   void get_apriori(UModelIndex index, std::string key);
-  void dump_jsons(); // dump JSON with DEPEX and GUIDs information for each image
-  json all_deps;     // DEPEX information for each image
+  void
+  dump_jsons();  // dump JSON with DEPEX and GUIDs information for each image
+  json all_deps; // DEPEX information for each image
   json images_guids; // matching the modules to the parent's GUIDs
   TreeModel model;
   const char *buffer;

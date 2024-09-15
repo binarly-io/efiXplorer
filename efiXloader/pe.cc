@@ -20,11 +20,13 @@
 
 #include "pe.h"
 
+#include <pro.h>
+
+#include <map>
+
 #include <bytes.hpp>
 #include <fixup.hpp>
 #include <idp.hpp>
-#include <map>
-#include <pro.h>
 #include <segregs.hpp>
 
 #define DEBUG
@@ -212,8 +214,8 @@ void efiloader::PE::make_entry(ea_t ea) {
 // PE image pre-processing
 //
 
-inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name, const char *extra,
-                                             size_t count) {
+inline size_t efiloader::PE::make_named_word(ea_t ea, const char *name,
+                                             const char *extra, size_t count) {
   if (extra) {
     add_extra_cmt(ea, true, "%s", extra);
   }
@@ -262,7 +264,8 @@ segment_t *efiloader::PE::make_head_segment(ea_t start, ea_t end,
 }
 
 segment_t *efiloader::PE::make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
-                                               const char *section_name, uint32_t flags) {
+                                               const char *section_name,
+                                               uint32_t flags) {
   segment_t *generic_segm = new segment_t;
   generic_segm->sel = allocate_selector(0x0);
   generic_segm->start_ea = seg_ea;
@@ -336,10 +339,11 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
   size_t segm_name_len = get_max_strlit_length(next_ea, STRTYPE_C);
 
   if (segm_name_len) {
-    get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len, STRTYPE_C);
+    get_strlit_contents(&segm_names.push_back(), next_ea, segm_name_len,
+                        STRTYPE_C);
   } else {
-    // if the segm_name_len is 0, it will trigger a crash on segm_names.pop_back()
-    // later.
+    // if the segm_name_len is 0, it will trigger a crash on
+    // segm_names.pop_back() later.
     segm_names.push_back("UNKNOWN");
   }
 
@@ -392,8 +396,8 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
   ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
   msg("[efiXloader]\tprocessing: %s\n", segm_names[0].c_str());
 
-  segments.push_back(make_generic_segment(seg_ea, seg_ea_end, section_name.c_str(),
-                                          section_characteristics));
+  segments.push_back(make_generic_segment(
+      seg_ea, seg_ea_end, section_name.c_str(), section_characteristics));
   segm_names.pop_back();
   segm_sizes.pop_back();
   segm_raw_sizes.pop_back();
@@ -406,7 +410,8 @@ void efiloader::PE::setup_ds_selector() {
     msg("[efiXloader]\tsetting DS ( 0x%016llX ) for %s segment\n",
         static_cast<uint64_t>(data_segment_sel),
         secs_names[secs_names.size() - 1].c_str());
-    segment_t *seg = get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
+    segment_t *seg =
+        get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
     set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
   }
 }
@@ -427,7 +432,8 @@ void efiloader::PE::preprocess() {
   ea_t end = ea + qlsize(li);
   qsnprintf(seg_name, sizeof(seg_name), "%s_%08X", _image_name.c_str(),
             calc_file_crc32(li));
-  qsnprintf(seg_header_name, sizeof(seg_header_name), "%s_HEADER", _image_name.c_str());
+  qsnprintf(seg_header_name, sizeof(seg_header_name), "%s_HEADER",
+            _image_name.c_str());
   qsnprintf(image_base_name, sizeof(image_base_name), "%s_IMAGE_BASE",
             _image_name.c_str());
 
@@ -438,8 +444,8 @@ void efiloader::PE::preprocess() {
     return;
   }
   push_to_idb(start, end);
-  segments.push_back(
-      make_head_segment(image_base, image_base + headers_size, seg_header_name));
+  segments.push_back(make_head_segment(image_base, image_base + headers_size,
+                                       seg_header_name));
   secs_names.push_back(qstring(seg_header_name));
   create_word(ea, 2);
   set_cmt(ea, "PE magic number", 0);
@@ -500,7 +506,8 @@ void efiloader::PE::preprocess() {
   ea = ea + 0x3c;
   create_dword(ea, 4);
   if (is_loaded(ea) && get_dword(ea)) {
-    msg("[efiXloader] making relative offset: 0x%016llX\n", static_cast<uint64_t>(ea));
+    msg("[efiXloader] making relative offset: 0x%016llX\n",
+        static_cast<uint64_t>(ea));
     op_plain_offset(ea, 0, *pe_base);
   }
   set_cmt(ea, "File address of new exe header", 0);

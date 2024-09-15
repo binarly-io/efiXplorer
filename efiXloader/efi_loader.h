@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "ida_core.h"
 #include "pe.h"
 #include "pe_manager.h"
@@ -39,8 +41,6 @@ void idaapi clean_db(void);
 
 void idaapi efi_til_init();
 
-// UI
-
 class Ui {
 public:
   Ui() { ; }
@@ -57,7 +57,8 @@ public:
   qvector<qstring> drivers_names;
 
   /* this object must be allocated using `new` */
-  driver_chooser_t(const char *title, bool ok, std::vector<efiloader::File *> drivers);
+  driver_chooser_t(const char *title, bool ok,
+                   std::vector<efiloader::File *> drivers);
 
   /* function that is used to decide whether a new chooser should be opened or
    * we can use the existing one. The contents of the window are completely
@@ -71,8 +72,8 @@ public:
   virtual size_t idaapi get_count() const { return drivers_names.size(); }
 
   /* function that generates the list line */
-  virtual void idaapi get_row(qstrvec_t *cols, int *icon_, chooser_item_attrs_t *attrs,
-                              size_t n) const;
+  virtual void idaapi get_row(qstrvec_t *cols, int *icon_,
+                              chooser_item_attrs_t *attrs, size_t n) const;
 
   /* function that is called when the user hits Enter */
   virtual cbret_t idaapi enter(size_t n) {
@@ -90,5 +91,5 @@ protected:
       n++;
     }
     ok = true;
-  };
+  }
 };

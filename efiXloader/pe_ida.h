@@ -19,9 +19,10 @@
 
 #pragma once
 
-#include "ida_core.h"
 #include <stddef.h>
 #include <time.h>
+
+#include "ida_core.h"
 
 #pragma pack(push, 1)
 //-----------------------------------------------------------------------
@@ -39,7 +40,7 @@ template <class pointer_t> struct peheader_tpl {
 
 #define PEEXE_ID 0x4550    // 'PE' followed by two zeroes
 #define BPEEXE_ID 0x455042 // Borland's extenson for DPMI'host
-#define PLEXE_ID                                                                         \
+#define PLEXE_ID                                                               \
   0x4C50 // 'PL', PharLap TNT DOS-Extender Lite file that uses real mode APIs
 #define TEEXE_ID 0x5A56      // 'VZ', EFI Terse Executable
   uint16 machine;            // 04 This field specifies the type of CPU
@@ -92,21 +93,23 @@ template <class pointer_t> struct peheader_tpl {
 #define PECPU_TRICORE 0x0520 // TRICORE (Infineon)
 
   bool is_64bit_cpu(void) const {
-    return machine == PECPU_AMD64 || machine == PECPU_IA64 || machine == PECPU_ARM64;
+    return machine == PECPU_AMD64 || machine == PECPU_IA64 ||
+           machine == PECPU_ARM64;
   }
   bool is_pc(void) const {
-    return machine == PECPU_80386 || machine == PECPU_80486 || machine == PECPU_80586 ||
-           machine == PECPU_AMD64;
+    return machine == PECPU_80386 || machine == PECPU_80486 ||
+           machine == PECPU_80586 || machine == PECPU_AMD64;
   }
   bool is_mips(void) const {
-    return machine == PECPU_R3000 || machine == PECPU_R6000 || machine == PECPU_R4000 ||
-           machine == PECPU_R10000 || machine == PECPU_WCEMIPSV2 ||
-           machine == PECPU_MIPS16 || machine == PECPU_MIPSFPU ||
-           machine == PECPU_MIPSFPU16;
+    return machine == PECPU_R3000 || machine == PECPU_R6000 ||
+           machine == PECPU_R4000 || machine == PECPU_R10000 ||
+           machine == PECPU_WCEMIPSV2 || machine == PECPU_MIPS16 ||
+           machine == PECPU_MIPSFPU || machine == PECPU_MIPSFPU16;
   }
 
   bool is_arm(void) const {
-    return machine == PECPU_ARM || machine == PECPU_ARMI || machine == PECPU_ARMV7;
+    return machine == PECPU_ARM || machine == PECPU_ARMI ||
+           machine == PECPU_ARMV7;
   }
 
   bool has_code16_bit(void) const { return is_arm() || is_mips(); }
@@ -124,10 +127,10 @@ template <class pointer_t> struct peheader_tpl {
 #define PEF_UP 0x4000    // File should be run only on a UP machine
 #define PEF_DLL 0x2000   // Dynamic Link Library (DLL)
 #define PEF_SYS 0x1000   // System file
-#define PEF_NSWAP                                                                        \
+#define PEF_NSWAP                                                              \
   0x0800 // If the image is on network media, fully load it and copy it to the
          // swap file.
-#define PEF_SWAP                                                                         \
+#define PEF_SWAP                                                               \
   0x0400                 // If image is on removable media,
                          // copy and run from swap file
 #define PEF_NODEB 0x0200 // Debugging info stripped
@@ -181,17 +184,18 @@ template <class pointer_t> struct peheader_tpl {
   uint32 objalign; // 38 The alignment of the objects. This must be a power
   // of 2 between 512 and 256M inclusive. The default
   // is 64K.
-  uint32 filealign;   // 3C Alignment factor used to align image pages.
-                      // The alignment factor (in bytes) used to align the
-                      // base of the image pages and to determine the
-                      // granularity of per-object trailing zero pad.
-                      // Larger alignment factors will cost more file space;
-                      // smaller alignment factors will impact demand load
-                      // performance, perhaps significantly. Of the two,
-                      // wasting file space is preferable.  This value
-                      // should be a power of 2 between 512 and 64K inclusive.
-                      // Get the file position aligned:
-#define FILEALIGN 512 // IDA5.1: it seems that for standard object alignment (if 4096)
+  uint32 filealign; // 3C Alignment factor used to align image pages.
+                    // The alignment factor (in bytes) used to align the
+                    // base of the image pages and to determine the
+                    // granularity of per-object trailing zero pad.
+                    // Larger alignment factors will cost more file space;
+                    // smaller alignment factors will impact demand load
+                    // performance, perhaps significantly. Of the two,
+                    // wasting file space is preferable.  This value
+                    // should be a power of 2 between 512 and 64K inclusive.
+                    // Get the file position aligned:
+#define FILEALIGN                                                              \
+  512 // IDA5.1: it seems that for standard object alignment (if 4096)
   // the Windows kernel does not use filealign
   // (just checks that it is in the valid range) but uses 512
   uint32 get_align_mask(void) const {
@@ -213,7 +217,9 @@ template <class pointer_t> struct peheader_tpl {
   uint16 subsysmajor; // 48 Subsystem major version number.
   uint16 subsysminor; // 4A Subsystem minor version number.
 
-  uint32 subsystem_version(void) const { return (subsysmajor << 16) | subsysminor; }
+  uint32 subsystem_version(void) const {
+    return (subsysmajor << 16) | subsysminor;
+  }
 
   uint32 reserved;  // 4C
   uint32 imagesize; // 50 The virtual size (in bytes) of the image.
@@ -221,8 +227,8 @@ template <class pointer_t> struct peheader_tpl {
   // must be a multiple of Object Align.
   uint32 allhdrsize; // 54 Total header size. The combined size of the Dos
   // Header, PE Header and Object Table.
-  uint32 checksum;         // 58 Checksum for entire file.  Set to 0 by the linker.
-  uint16 subsys;           // 5C NT Subsystem required to run this image.
+  uint32 checksum; // 58 Checksum for entire file.  Set to 0 by the linker.
+  uint16 subsys;   // 5C NT Subsystem required to run this image.
 #define PES_UNKNOWN 0x0000 // Unknown
 #define PES_NATIVE 0x0001  // Native
 #define PES_WINGUI 0x0002  // Windows GUI
@@ -239,29 +245,31 @@ template <class pointer_t> struct peheader_tpl {
 #define PES_BOOTAPP 0x0010 // Windows Boot Application
 
   bool is_efi(void) const {
-    return subsys == PES_EFI_APP || subsys == PES_EFI_BDV || subsys == PES_EFI_RDV ||
-           subsys == PES_EFI_ROM;
+    return subsys == PES_EFI_APP || subsys == PES_EFI_BDV ||
+           subsys == PES_EFI_RDV || subsys == PES_EFI_ROM;
   }
   bool is_console_app(void) const {
-    return subsys == PES_WINCHAR || subsys == PES_OS2CHAR || subsys == PES_POSIX;
+    return subsys == PES_WINCHAR || subsys == PES_OS2CHAR ||
+           subsys == PES_POSIX;
   }
   bool is_userland(void) const {
-    return subsys == PES_WINGUI || subsys == PES_WINCHAR || subsys == PES_OS2CHAR ||
-           subsys == PES_POSIX || subsys == PES_WINCE;
+    return subsys == PES_WINGUI || subsys == PES_WINCHAR ||
+           subsys == PES_OS2CHAR || subsys == PES_POSIX || subsys == PES_WINCE;
   }
   uint16 dllflags;       // 5E Indicates special loader requirements.
 #define PEL_PINIT 0x0001 // Per-Process Library Initialization.
 #define PEL_PTERM 0x0002 // Per-Process Library Termination.
 #define PEL_TINIT 0x0004 // Per-Thread Library Initialization.
 #define PEL_TTERM 0x0008 // Per-Thread Library Termination.
-#define PEL_HIGH_ENT                                                                     \
+#define PEL_HIGH_ENT                                                           \
   0x0020 // Image can handle a high entropy 64-bit virtual address space.
 #define PEL_DYNAMIC_BASE 0x0040    // The DLL can be relocated at load time.
 #define PEL_FORCE_INTEGRITY 0x0080 // Code integrity checks are forced.
-#define PEF_NX 0x0100 // The image is compatible with data execution prevention (DEP).
-#define PEF_NO_ISOLATION                                                                 \
+#define PEF_NX                                                                 \
+  0x0100 // The image is compatible with data execution prevention (DEP).
+#define PEF_NO_ISOLATION                                                       \
   0x0200 // The image is isolation aware, but should not be isolated.
-#define PEF_NO_SEH                                                                       \
+#define PEF_NO_SEH                                                             \
   0x0400 // The image does not use structured exception handling (SEH). No
          // handlers can be called in this image.
 #define PEL_NO_BIND 0x0800      // Do not bind image
@@ -312,7 +320,8 @@ template <class pointer_t> struct peheader_tpl {
 typedef peheader_tpl<uint32> peheader_t;
 typedef peheader_tpl<uint64> peheader64_t;
 
-const size_t total_rvatab_size = sizeof(peheader_t) - offsetof(peheader_t, expdir);
+const size_t total_rvatab_size =
+    sizeof(peheader_t) - offsetof(peheader_t, expdir);
 const size_t total_rvatab_count = total_rvatab_size / sizeof(petab_t);
 
 //-----------------------------------------------------------------------
@@ -345,22 +354,25 @@ struct diheader_t {
 //      S E C T I O N S
 //
 struct pesection_t {
-  char s_name[8];              /* section name */
-  uint32 s_vsize;              /* virtual size */
-  uint32 s_vaddr;              /* virtual address */
-  uint32 s_psize;              /* physical size */
-  int32 s_scnptr;              /* file ptr to raw data for section */
-  int32 s_relptr;              /* file ptr to relocation */
-  int32 s_lnnoptr;             /* file ptr to line numbers */
-  uint16 s_nreloc;             /* number of relocation entries */
-  uint16 s_nlnno;              /* number of line number entries */
-  int32 s_flags;               /* flags */
-#define PEST_REG 0x00000000    // obsolete: regular: allocated, relocated, loaded
-#define PEST_DUMMY 0x00000001  // obsolete: dummy: not allocated, relocated, not loaded
-#define PEST_NOLOAD 0x00000002 // obsolete: noload: allocated, relocated, not loaded
-#define PEST_GROUP 0x00000004  // obsolete: grouped: formed of input sections
-#define PEST_PAD 0x00000008    // obsolete: padding: not allocated, not relocated, loaded
-#define PEST_COPY                                                                        \
+  char s_name[8];           /* section name */
+  uint32 s_vsize;           /* virtual size */
+  uint32 s_vaddr;           /* virtual address */
+  uint32 s_psize;           /* physical size */
+  int32 s_scnptr;           /* file ptr to raw data for section */
+  int32 s_relptr;           /* file ptr to relocation */
+  int32 s_lnnoptr;          /* file ptr to line numbers */
+  uint16 s_nreloc;          /* number of relocation entries */
+  uint16 s_nlnno;           /* number of line number entries */
+  int32 s_flags;            /* flags */
+#define PEST_REG 0x00000000 // obsolete: regular: allocated, relocated, loaded
+#define PEST_DUMMY                                                             \
+  0x00000001 // obsolete: dummy: not allocated, relocated, not loaded
+#define PEST_NOLOAD                                                            \
+  0x00000002 // obsolete: noload: allocated, relocated, not loaded
+#define PEST_GROUP 0x00000004 // obsolete: grouped: formed of input sections
+#define PEST_PAD                                                               \
+  0x00000008 // obsolete: padding: not allocated, not relocated, loaded
+#define PEST_COPY                                                              \
   0x00000010                    // obsolete: copy: for decision function used
                                 //    by field update; not
                                 //    allocated, not relocated,
@@ -370,16 +382,19 @@ struct pesection_t {
 #define PEST_DATA 0x00000040L   // section contains data only
 #define PEST_BSS 0x00000080L    // section contains bss only
 #define PEST_EXCEPT 0x00000100L // obsolete: Exception section
-#define PEST_INFO 0x00000200L   // Comment: not allocated, not relocated, not loaded
-#define PEST_OVER 0x00000400L   // obsolete: Overlay: not allocated, relocated, not loaded
-#define PEST_LIB 0x00000800L    // ".lib" section: treated like PEST_INFO
+#define PEST_INFO                                                              \
+  0x00000200L // Comment: not allocated, not relocated, not loaded
+#define PEST_OVER                                                              \
+  0x00000400L // obsolete: Overlay: not allocated, relocated, not loaded
+#define PEST_LIB 0x00000800L // ".lib" section: treated like PEST_INFO
 
 #define PEST_LOADER 0x00001000L // Loader section: COMDAT
 #define PEST_DEBUG 0x00002000L  // Debug section:
 #define PEST_TYPCHK 0x00004000L // Type check section:
-#define PEST_OVRFLO 0x00008000L // obsolete: RLD and line number overflow sec hdr
-#define PEST_F0000 0x000F0000L  // Unknown
-#define PEST_ALIGN 0x00F00000L  // Alignment 2^(x-1):
+#define PEST_OVRFLO                                                            \
+  0x00008000L                  // obsolete: RLD and line number overflow sec hdr
+#define PEST_F0000 0x000F0000L // Unknown
+#define PEST_ALIGN 0x00F00000L // Alignment 2^(x-1):
   uint32 get_sect_alignment(void) const {
     int align = ((s_flags >> 20) & 15);
     return align == 0 ? 0 : (1 << (align - 1));
@@ -389,7 +404,9 @@ struct pesection_t {
     return align_up(s_vsize ? s_vsize : s_psize, pe.objalign ? pe.objalign : 1);
   }
 
-  asize_t get_psize(const peheader_t &pe) const { return qmin(s_psize, get_vsize(pe)); }
+  asize_t get_psize(const peheader_t &pe) const {
+    return qmin(s_psize, get_vsize(pe));
+  }
 
 #define PEST_1000000 0x01000000L // Unknown
 #define PEST_DISCARD 0x02000000L // Discardable
@@ -452,8 +469,8 @@ struct peimpdir_t {
   peimpdir_t(void) { memset(this, 0, sizeof(peimpdir_t)); }
 };
 
-struct dimpdir_t // delayed load import table
-{
+// delayed load import table
+struct dimpdir_t {
   uint32 attrs;            // Attributes.
 #define DIMP_NOBASE 0x0001 // pe.imagebase was not added to addresses
   uint32 dllname;          // Relative virtual address of the name of the DLL
@@ -540,9 +557,9 @@ struct function_entry_armv7 {
   uint32 BeginAddress; // The RVA of the corresponding function
   uint32 UnwindInfo;   // The RVA of the unwind information, including function
                        // length.
-                       // If the low 2 bits are non-zero, then this word represents a
-                       // compacted inline form of the unwind information,
-                       // including function length.
+                       // If the low 2 bits are non-zero, then this word
+                       // represents a compacted inline form of the unwind
+                       // information, including function length.
 };
 
 // for MIPS and 32-bit Alpha
@@ -550,8 +567,8 @@ struct function_entry_alpha {
   uint32 BeginAddress;     // Virtual address of the corresponding function.
   uint32 EndAddress;       // Virtual address of the end of the function.
   uint32 ExceptionHandler; // Pointer to the exception handler to be executed.
-  uint32 HandlerData;      // Pointer to additional information to be passed to the
-                           // handler.
+  uint32 HandlerData; // Pointer to additional information to be passed to the
+                      // handler.
   uint32 PrologEndAddress; // Virtual address of the end of the function's
                            // prolog.
 };
@@ -564,11 +581,13 @@ typedef enum _UNWIND_OP_CODES {
   UWOP_SET_FPREG = 3,       // FP = RSP + UNWIND_INFO.FPRegOffset*16
   UWOP_SAVE_NONVOL = 4,     // info == register number, offset/8 in next slot
   UWOP_SAVE_NONVOL_FAR = 5, // info == register number, offset/8 in next 2 slots
-  UWOP_SAVE_XMM = 6,        // Version 1: info == XMM reg number, offset/8 in next slot
-  UWOP_EPILOG = 6,          // Version 2; code offset is epilog size;
-  UWOP_SAVE_XMM_FAR = 7,    // version 1:info == XMM reg number, offset/8 in next 2 slots
-  UWOP_SPARE_CODE = 7,  // unused ("previously 64-bit UWOP_SAVE_XMM_FAR"); skip 2 slots
-  UWOP_SAVE_XMM128 = 8, // info == XMM reg number, offset/16 in next slot
+  UWOP_SAVE_XMM = 6, // Version 1: info == XMM reg number, offset/8 in next slot
+  UWOP_EPILOG = 6,   // Version 2; code offset is epilog size;
+  UWOP_SAVE_XMM_FAR =
+      7, // version 1:info == XMM reg number, offset/8 in next 2 slots
+  UWOP_SPARE_CODE =
+      7, // unused ("previously 64-bit UWOP_SAVE_XMM_FAR"); skip 2 slots
+  UWOP_SAVE_XMM128 = 8,     // info == XMM reg number, offset/16 in next slot
   UWOP_SAVE_XMM128_FAR = 9, // info == XMM reg number, offset/16 in next 2 slots
   UWOP_PUSH_MACHFRAME = 10, // info == 0: no error-code, 1: with error code
 } UNWIND_CODE_OPS;
@@ -636,8 +655,10 @@ struct pefixup_t {
 
 #define PER_IA64_IMM64 0x9000
 
-#define PER_MIPS_JMPADDR 0x5000   // base relocation applies to a MIPS jump instruction.
-#define PER_MIPS_JMPADDR16 0x9000 // base relocation applies to a MIPS16 jump instruction.
+#define PER_MIPS_JMPADDR                                                       \
+  0x5000 // base relocation applies to a MIPS jump instruction.
+#define PER_MIPS_JMPADDR16                                                     \
+  0x9000 // base relocation applies to a MIPS16 jump instruction.
 
 #define PER_ARM_MOV32A 0x5000 // base relocation applies the difference to the
 // 32-bit value encoded in the immediate fields of
@@ -878,14 +899,15 @@ struct rsc_data_entry_t {
 #define PE_NODE "$ PE header" // netnode name for PE header
 // value()        -> peheader_t
 // altval(segnum) -> s->start_ea
-#define PE_ALT_DBG_FPOS nodeidx_t(-1) // altval() -> translated fpos of debuginfo
-#define PE_ALT_IMAGEBASE                                                                 \
+#define PE_ALT_DBG_FPOS                                                        \
+  nodeidx_t(-1) // altval() -> translated fpos of debuginfo
+#define PE_ALT_IMAGEBASE                                                       \
   nodeidx_t(-2) // altval() -> loading address (usually pe.imagebase)
 #define PE_ALT_PEHDR_OFF nodeidx_t(-3) // altval() -> offset of PE header
 #define PE_ALT_NEFLAGS nodeidx_t(-4)   // altval() -> neflags
-#define PE_ALT_TDS_LOADED                                                                \
+#define PE_ALT_TDS_LOADED                                                      \
   nodeidx_t(-5) // altval() -> tds already loaded(1) or invalid(-1)
-#define PE_ALT_PSXDLL                                                                    \
+#define PE_ALT_PSXDLL                                                          \
   nodeidx_t(-6) // altval() -> if POSIX(x86) imports from PSXDLL netnode
 #define PE_ALT_OVRVA nodeidx_t(-7)    // altval() -> overlay rva (if present)
 #define PE_ALT_OVRSZ nodeidx_t(-8)    // altval() -> overlay size (if present)
@@ -961,24 +983,24 @@ struct load_config64_t {
 };
 
 #ifndef IMAGE_GUARD_CF_INSTRUMENTED
-#define IMAGE_GUARD_CF_INSTRUMENTED                                                      \
+#define IMAGE_GUARD_CF_INSTRUMENTED                                            \
   0x000000100 // Module performs control flow integrity checks using
               // system-supplied support
-#define IMAGE_GUARD_CFW_INSTRUMENTED                                                     \
+#define IMAGE_GUARD_CFW_INSTRUMENTED                                           \
   0x000000200 // Module performs control flow and write integrity checks
-#define IMAGE_GUARD_CF_FUNCTION_TABLE_PRESENT                                            \
+#define IMAGE_GUARD_CF_FUNCTION_TABLE_PRESENT                                  \
   0x000000400 // Module contains valid control flow target metadata
-#define IMAGE_GUARD_SECURITY_COOKIE_UNUSED                                               \
+#define IMAGE_GUARD_SECURITY_COOKIE_UNUSED                                     \
   0x000000800 // Module does not make use of the /GS security cookie
-#define IMAGE_GUARD_PROTECT_DELAYLOAD_IAT                                                \
+#define IMAGE_GUARD_PROTECT_DELAYLOAD_IAT                                      \
   0x00001000 // Module supports read only delay load IAT
-#define IMAGE_GUARD_DELAYLOAD_IAT_IN_ITS_OWN_SECTION                                     \
+#define IMAGE_GUARD_DELAYLOAD_IAT_IN_ITS_OWN_SECTION                           \
   0x00002000 // Delayload import table in its own .didat section (with nothing
              // else in it) that can be freely reprotected
-#define IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_MASK                                          \
+#define IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_MASK                                \
   0xF0000000 // Stride of Guard CF function table encoded in these bits
              // (additional count of bytes per element)
-#define IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_SHIFT                                         \
+#define IMAGE_GUARD_CF_FUNCTION_TABLE_SIZE_SHIFT                               \
   28 // Shift to right-justify Guard CF function table stride
 #endif
 
@@ -1034,7 +1056,8 @@ struct teheader_t {
   uint16 machine;   // 02 same as in PE
 
   bool is_64bit_cpu(void) const {
-    return machine == PECPU_AMD64 || machine == PECPU_IA64 || machine == PECPU_ARM64;
+    return machine == PECPU_AMD64 || machine == PECPU_IA64 ||
+           machine == PECPU_ARM64;
   }
 
   uint8 nobjs;         // 04 number of sections
@@ -1042,7 +1065,9 @@ struct teheader_t {
   uint16 strippedsize; // 06 number of bytes removed from the base of the
                        // original image
 
-  int32 first_section_pos(int32 peoff) const { return peoff + sizeof(teheader_t); }
+  int32 first_section_pos(int32 peoff) const {
+    return peoff + sizeof(teheader_t);
+  }
 
   // value which should be added to the sections' file offsets and RVAs
   int32 te_adjust() const { return sizeof(teheader_t) - strippedsize; }

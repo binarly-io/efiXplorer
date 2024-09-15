@@ -19,14 +19,10 @@
 
 #pragma once
 
-//
-// IDA header
-//
+#include <string>
+
 #include "ida_core.h"
 #include "pe_ida.h"
-//
-// Utilities
-//
 #include "utils.h"
 
 #include <typeinf.hpp>
@@ -42,8 +38,8 @@ namespace efiloader {
 
 class PE {
 public:
-  PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base, ushort *sel_base, int ord,
-     uint16_t mt) {
+  PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base,
+     ushort *sel_base, int ord, uint16_t mt) {
     _image_name = fname.substr(fname.find_last_of("/\\") + 1);
     msg("[efiXloader] image name is %s\n", _image_name.c_str());
     pe_base = base;
@@ -74,8 +70,8 @@ public:
   uint32_t number_of_sections;
   uint32_t number_of_dirs;
   char *name;
-  bool is_reloc_dir(uint32_t i) { return i == 5; };
-  bool is_debug_dir(uint32_t i) { return i == 6; };
+  bool is_reloc_dir(uint32_t i) { return i == 5; }
+  bool is_debug_dir(uint32_t i) { return i == 6; }
   void set_64_bit_segm_and_rabase(ea_t ea) {
     segment_t *tmp_seg = getseg(ea);
     set_segm_addressing(tmp_seg, 2);
@@ -84,7 +80,7 @@ public:
   void set_64_bit(ea_t ea) {
     segment_t *tmp_seg = getseg(ea);
     set_segm_addressing(tmp_seg, 2);
-  };
+  }
   bool is_p32();
   bool is_p32_plus();
   bool is_pe();
@@ -92,15 +88,15 @@ public:
   bool process();
   uint16_t arch();
   // data processing
-  inline size_t make_named_byte(ea_t ea, const char *name, const char *extra = NULL,
-                                size_t count = 1);
-  inline size_t make_named_word(ea_t ea, const char *name, const char *extra = NULL,
-                                size_t count = 1);
-  inline size_t make_named_dword(ea_t ea, const char *name, const char *extra = NULL,
-                                 size_t count = 1);
-  inline size_t make_named_qword(ea_t ea, const char *name, const char *extra = NULL,
-                                 size_t count = 1);
-  inline ea_t skip(ea_t ea, qoff64_t off) { return ea + off; };
+  inline size_t make_named_byte(ea_t ea, const char *name,
+                                const char *extra = NULL, size_t count = 1);
+  inline size_t make_named_word(ea_t ea, const char *name,
+                                const char *extra = NULL, size_t count = 1);
+  inline size_t make_named_dword(ea_t ea, const char *name,
+                                 const char *extra = NULL, size_t count = 1);
+  inline size_t make_named_qword(ea_t ea, const char *name,
+                                 const char *extra = NULL, size_t count = 1);
+  inline ea_t skip(ea_t ea, qoff64_t off) { return ea + off; }
   // ida db processing
   void push_to_idb(ea_t start, ea_t end) {
     // Map header
@@ -111,7 +107,7 @@ public:
                 start + _sec_headers[i].s_vaddr + _sec_headers[i].s_psize,
                 FILEREG_PATCHABLE);
     }
-  };
+  }
 
 private:
   qvector<ea_t> segments_ea;
@@ -131,7 +127,7 @@ private:
   qvector<sel_t> data_selectors;
   qvector<qstring> ds_seg_names;
   qvector<qstring> cs_seg_names;
-  void reset() { qlseek(li, 0); };
+  void reset() { qlseek(li, 0); }
   const char *_machine_name();
   //
   // PE image preprocessing
@@ -170,8 +166,8 @@ private:
   qvector<qstring> segm_names;
   qvector<qstring> secs_names;
   ea_t process_section_entry(ea_t ea);
-  segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end, const char *section_name,
-                                  uint32_t flags);
+  segment_t *make_generic_segment(ea_t seg_ea, ea_t seg_ea_end,
+                                  const char *section_name, uint32_t flags);
   segment_t *make_head_segment(ea_t start, ea_t end, const char *name);
   void setup_ds_selector();
 };

@@ -19,8 +19,9 @@
 
 #include "utils.h"
 
-void efiloader::Utils::show_hex(void *buffer, size_t length, const char *prefix) {
-  uint8_t *buf = (uint8_t *)buffer;
+void efiloader::Utils::show_hex(void *buffer, size_t length,
+                                const char *prefix) {
+  uint8_t *buf = reinterpret_cast<uint8_t *>(buffer;
   msg("[efiXloader] %s = ", prefix);
   for (int i = 0; i < length; i++) {
     msg("%02x", buf[i]);
@@ -28,7 +29,8 @@ void efiloader::Utils::show_hex(void *buffer, size_t length, const char *prefix)
   msg("\n");
 }
 
-bool efiloader::Utils::find_vol(bytevec_t &frm, std::string &sig, qoff64_t &vol_off) {
+bool efiloader::Utils::find_vol(bytevec_t &frm, std::string &sig,
+                                qoff64_t &vol_off) {
   auto found = std::search(frm.begin(), frm.end(), sig.begin(), sig.end());
   if (found != frm.end()) {
     vol_off = std::distance(frm.begin(), found);
@@ -62,7 +64,8 @@ qoff64_t efiloader::Utils::find_vol_test(bytevec_t &data) {
   return res;
 }
 
-void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size, size_t count) {
+void efiloader::Utils::skip(memory_deserializer_t *ser, size_t size,
+                            size_t count) {
   switch (size) {
   case 1:
     for (int i = 0; i < count; i++) {

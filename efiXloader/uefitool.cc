@@ -18,15 +18,12 @@
  */
 
 #include "uefitool.h"
-#include <codecvt>
-#include <filesystem>
-#include <vector>
 
 void efiloader::File::print() {
   msg("[UEFITOOL PARSER] file ( %s )  \n", qname.c_str());
   for (int i = 0; i < 0x10; i++) {
     msg("%02X ", ubytes[i]);
-  };
+  }
   msg("\n");
 }
 
@@ -48,7 +45,8 @@ void efiloader::Uefitool::get_unique_name(qstring &name) {
   name = new_name;
 }
 
-void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index) {
+void efiloader::Uefitool::get_image_guid(qstring &image_guid,
+                                         UModelIndex index) {
   UString guid;
   UModelIndex guid_index;
   switch (model.subtype(model.parent(index))) {
@@ -66,7 +64,8 @@ void efiloader::Uefitool::get_image_guid(qstring &image_guid, UModelIndex index)
 }
 
 std::vector<std::string>
-efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &parsed) {
+efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index,
+                                           UString &parsed) {
   // Adopted from FfsParser::parseDepexSectionBody
   std::vector<std::string> res;
 
@@ -130,7 +129,8 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &pa
     }
     case EFI_DEP_PUSH:
       // Check that the rest of depex has correct size
-      if ((UINT32)body.size() - (UINT32)(current - (const UINT8 *)body.constData()) <=
+      if ((UINT32)body.size() -
+              (UINT32)(current - (const UINT8 *)body.constData()) <=
           EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
         parsed.clear();
         return res;
@@ -138,7 +138,8 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index, UString &pa
       guid = (const EFI_GUID *)(current + EFI_DEP_OPCODE_SIZE);
       parsed += UString("\nPUSH ") + guidToUString(readUnaligned(guid));
       // Add protocol GUID to result vector
-      res.push_back(reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
+      res.push_back(
+          reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
       current += EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID);
       break;
     case EFI_DEP_AND:
@@ -197,7 +198,8 @@ efiloader::Uefitool::parseAprioriRawSection(const UModelIndex &index) {
   if (count > 0) {
     for (UINT32 i = 0; i < count; i++) {
       const EFI_GUID *guid = (const EFI_GUID *)body.constData() + i;
-      res.push_back(reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
+      res.push_back(
+          reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
     }
   }
 
@@ -224,7 +226,8 @@ void efiloader::Uefitool::handle_raw_section(const UModelIndex &index) {
   if (!parent_file.isValid()) {
     return;
   }
-  UByteArray parent_file_guid(model.header(parent_file).constData(), sizeof(EFI_GUID));
+  UByteArray parent_file_guid(model.header(parent_file).constData(),
+                              sizeof(EFI_GUID));
   if (parent_file_guid == EFI_PEI_APRIORI_FILE_GUID) {
     msg("[efiXloader] PEI Apriori file found\n");
     get_apriori(index, "PEI_APRIORI_FILE");
@@ -259,11 +262,13 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
     file->has_ui = true;
     if (file->is_pe || file->is_te) {
       file->uname = model.body(index);
-      utf16_utf8(&module_name, reinterpret_cast<const wchar16_t *>(file->uname.data()));
+      utf16_utf8(&module_name,
+                 reinterpret_cast<const wchar16_t *>(file->uname.data()));
       if (module_name.size()) {
         // save image to the images_guids
         get_image_guid(guid, index);
-        if (images_guids[guid.c_str()].is_null()) { // check if GUID already exists
+        if (images_guids[guid.c_str()]
+                .is_null()) { // check if GUID already exists
           get_unique_name(module_name);
           images_guids[guid.c_str()] = module_name.c_str();
           file->qname.swap(module_name);
@@ -311,7 +316,8 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
 
 void efiloader::Uefitool::dump(const UModelIndex &index) {
   USTATUS err;
-  msg("[UEFITOOL PARSER] file (%s, %s)\n", itemTypeToUString(model.type(index)).data,
+  msg("[UEFITOOL PARSER] file (%s, %s)\n",
+      itemTypeToUString(model.type(index)).data,
       itemSubtypeToUString(model.type(index), model.subtype(index)).data);
   msg("[UEFITOOL PARSER] number of items: %#x\n", model.rowCount(index));
   if (is_file_index(index)) {
