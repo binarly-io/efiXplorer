@@ -57,7 +57,7 @@ file(
   "3rd/uefitool/uefidump.h")
 
 # efiLoader sources
-file(GLOB ${efiloader_src} "*.h" "*.c" "*.cpp" "*.cc")
+file(GLOB efiloader_src "*.h" "*.c" "*.cpp" "*.cc")
 
 add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cc)
 
