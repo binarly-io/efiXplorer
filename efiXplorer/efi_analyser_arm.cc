@@ -22,17 +22,17 @@
 #include "efi_ui.h"
 #include "efi_utils.h"
 
-using efi_analysis::EfiAnalyserArm;
+using efi_analysis::efi_analyser_arm_t;
 
 ea_list_t image_handle_list_arm;
 ea_list_t st_list_arm;
 ea_list_t bs_list_arm;
 ea_list_t rt_list_arm;
 
-void efi_analysis::EfiAnalyserArm::fixOffsets() {
+void efi_analysis::efi_analyser_arm_t::fix_offsets() {
   insn_t insn;
-  for (auto func_addr : funcs) {
-    func_t *f = get_func(func_addr);
+  for (auto faddr : m_funcs) {
+    func_t *f = get_func(faddr);
     if (f == nullptr) {
       continue;
     }
@@ -53,8 +53,8 @@ void efi_analysis::EfiAnalyserArm::fixOffsets() {
   }
 }
 
-void efi_analysis::EfiAnalyserArm::initialAnalysis() {
-  fixOffsets();
+void efi_analysis::efi_analyser_arm_t::initialAnalysis() {
+  fix_offsets();
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
     ea_t ep = get_entry(ord);
@@ -63,7 +63,7 @@ void efi_analysis::EfiAnalyserArm::initialAnalysis() {
     track_entry_params(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
-  if (file_type == FfsFileType::Pei) {
+  if (m_ftype == ffs_file_type_t::pei) {
     // set_entry_arg_to_pei_svc();
   }
 }
@@ -227,10 +227,10 @@ json getService(ea_t addr, uint8_t table_id) {
   return s;
 }
 
-void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
+void efi_analysis::efi_analyser_arm_t::initialGlobalVarsDetection() {
 #ifdef HEX_RAYS
   // analyse entry point with Hex-Rays
-  for (auto func_addr : funcs) {
+  for (auto func_addr : m_funcs) {
     json res = detect_vars(get_func(func_addr));
     if (res.contains("image_handle_list")) {
       for (auto addr : res["image_handle_list"]) {
@@ -264,7 +264,7 @@ void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
 #endif /* HEX_RAYS */
 
   // analysis of all functions and search for additional table initializations
-  for (auto func_addr : funcs) {
+  for (auto func_addr : m_funcs) {
     func_t *f = get_func(func_addr);
     if (f == nullptr) {
       continue;
@@ -294,12 +294,12 @@ void efi_analysis::EfiAnalyserArm::initialGlobalVarsDetection() {
   }
 }
 
-void efi_analysis::EfiAnalyserArm::servicesDetection() {
+void efi_analysis::efi_analyser_arm_t::servicesDetection() {
 #ifdef HEX_RAYS
-  for (auto func_addr : funcs) {
+  for (auto func_addr : m_funcs) {
     json_list_t services = detect_services(get_func(func_addr));
     for (auto service : services) {
-      allServices.push_back(service);
+      m_all_services.push_back(service);
     }
   }
 #endif /* HEX_RAYS */
@@ -316,10 +316,10 @@ void efi_analysis::EfiAnalyserArm::servicesDetection() {
       if (name == "Unknown") {
         continue;
       }
-      if (!json_in_vec(allServices, s)) {
+      if (!json_in_vec(m_all_services, s)) {
         msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n",
             u64_addr(ea));
-        allServices.push_back(s);
+        m_all_services.push_back(s);
       }
     }
   }
@@ -334,17 +334,17 @@ void efi_analysis::EfiAnalyserArm::servicesDetection() {
       if (name == "Unknown") {
         continue;
       }
-      if (!json_in_vec(allServices, s)) {
+      if (!json_in_vec(m_all_services, s)) {
         msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n",
             u64_addr(ea));
-        allServices.push_back(s);
+        m_all_services.push_back(s);
       }
     }
   }
 }
 
-bool efi_analysis::EfiAnalyserArm::getProtocol(ea_t address, uint32_t p_reg,
-                                               std::string service_name) {
+bool efi_analysis::efi_analyser_arm_t::getProtocol(ea_t address, uint32_t p_reg,
+                                                   std::string service_name) {
   ea_t ea = address;
   insn_t insn;
   ea_t offset = BADADDR;
@@ -379,11 +379,11 @@ bool efi_analysis::EfiAnalyserArm::getProtocol(ea_t address, uint32_t p_reg,
   }
   msg("[efiXplorer] address: 0x%016llX, found new protocol\n",
       u64_addr(code_addr));
-  return AddProtocol(service_name, guid_addr, code_addr, address);
+  return add_protocol(service_name, guid_addr, code_addr, address);
 }
 
-void efi_analysis::EfiAnalyserArm::protocolsDetection() {
-  for (auto s : allServices) {
+void efi_analysis::efi_analyser_arm_t::protocolsDetection() {
+  for (auto s : m_all_services) {
     std::string service_name = s["service_name"];
     for (auto i = 0; i < 13; i++) {
       std::string current_name =
@@ -397,9 +397,9 @@ void efi_analysis::EfiAnalyserArm::protocolsDetection() {
   }
 }
 
-void efi_analysis::EfiAnalyserArm::findPeiServicesFunction() {
+void efi_analysis::efi_analyser_arm_t::findPeiServicesFunction() {
   insn_t insn;
-  for (auto start_ea : funcs) {
+  for (auto start_ea : m_funcs) {
     decode_insn(&insn, start_ea);
     if (!(insn.itype == ARM_mrs && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == REG_X0 && insn.ops[1].type == o_imm &&
@@ -425,25 +425,25 @@ void efi_analysis::EfiAnalyserArm::findPeiServicesFunction() {
 
 //--------------------------------------------------------------------------
 // Show all non-empty choosers windows
-void showAllChoosers(efi_analysis::EfiAnalyserArm analyser) {
+void showAllChoosers(efi_analysis::efi_analyser_arm_t analyser) {
   qstring title;
 
   // open window with all services
-  if (analyser.allServices.size()) {
+  if (analyser.m_all_services.size()) {
     title = "efiXplorer: services";
-    services_show(analyser.allServices, title);
+    services_show(analyser.m_all_services, title);
   }
 
   // open window with data guids
-  if (analyser.allGuids.size()) {
+  if (analyser.m_all_guids.size()) {
     qstring title = "efiXplorer: GUIDs";
-    guids_show(analyser.allGuids, title);
+    guids_show(analyser.m_all_guids, title);
   }
 
   // open window with protocols
-  if (analyser.allProtocols.size()) {
+  if (analyser.m_all_protocols.size()) {
     title = "efiXplorer: protocols";
-    protocols_show(analyser.allProtocols, title);
+    protocols_show(analyser.m_all_protocols, title);
   }
 }
 
@@ -452,27 +452,27 @@ void showAllChoosers(efi_analysis::EfiAnalyserArm analyser) {
 bool efi_analysis::efiAnalyserMainArm() {
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
-  efi_analysis::EfiAnalyserArm analyser;
+  efi_analysis::efi_analyser_arm_t analyser;
 
   while (!auto_is_ok()) {
     auto_wait();
   }
 
   // find .text and .data segments
-  analyser.getSegments();
+  analyser.get_segments();
 
   // mark GUIDs
-  analyser.markDataGuids();
+  analyser.mark_data_guids();
 
   if (g_args.disable_ui) {
-    analyser.file_type = g_args.module_type == ModuleType::Pei
-                             ? analyser.file_type = FfsFileType::Pei
-                             : analyser.file_type = FfsFileType::DxeAndTheLike;
+    analyser.m_ftype = g_args.module_type == module_type_t::pei
+                           ? analyser.m_ftype = ffs_file_type_t::pei
+                           : analyser.m_ftype = ffs_file_type_t::dxe_smm;
   } else {
-    analyser.file_type = ask_file_type(&analyser.allGuids);
+    analyser.m_ftype = ask_file_type(&analyser.m_all_guids);
   }
 
-  if (analyser.file_type == FfsFileType::Pei) {
+  if (analyser.m_ftype == ffs_file_type_t::pei) {
     msg("[efiXplorer] input file is PEI module\n");
   }
 
@@ -480,7 +480,7 @@ bool efi_analysis::efiAnalyserMainArm() {
   // prototype
   analyser.initialAnalysis();
 
-  if (analyser.file_type == FfsFileType::DxeAndTheLike) {
+  if (analyser.m_ftype == ffs_file_type_t::dxe_smm) {
     analyser.initialGlobalVarsDetection();
 
     // detect services
@@ -488,22 +488,22 @@ bool efi_analysis::efiAnalyserMainArm() {
 
     // detect protocols
     analyser.protocolsDetection();
-  } else if (analyser.file_type == FfsFileType::Pei) {
+  } else if (analyser.m_ftype == ffs_file_type_t::pei) {
     analyser.findPeiServicesFunction();
   }
 
 #ifdef HEX_RAYS
-  for (auto addr : analyser.funcs) {
+  for (auto addr : analyser.m_funcs) {
     json_list_t services = detect_pei_services_arm(get_func(addr));
     for (auto service : services) {
-      analyser.allServices.push_back(service);
+      analyser.m_all_services.push_back(service);
     }
   }
-  apply_all_types_for_interfaces(analyser.allProtocols);
+  apply_all_types_for_interfaces(analyser.m_all_protocols);
 #endif /* HEX_RAYS */
   showAllChoosers(analyser);
 
-  analyser.dumpInfo();
+  analyser.dump_json();
 
   hide_wait_box();
 

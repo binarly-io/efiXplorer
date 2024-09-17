@@ -92,7 +92,7 @@ struct EfiGuid {
   }
 };
 
-ArchFileType input_file_type();
+arch_file_type_t input_file_type();
 
 bool add_struct_for_shifted_ptr();
 bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea);
@@ -115,7 +115,7 @@ ea_t find_unknown_bs_var_64(ea_t ea);
 EfiGuid get_global_guid(ea_t addr);
 EfiGuid get_local_guid(func_t *f, uint64_t offset);
 
-FfsFileType ask_file_type(json_list_t *all_guids);
+ffs_file_type_t ask_file_type(json_list_t *m_all_guids);
 
 json get_guid_by_address(ea_t addr);
 

@@ -22,7 +22,7 @@
 #include "efi_deps.h"
 
 typedef struct args {
-  ModuleType module_type;
+  module_type_t module_type;
   int disable_ui;
   int disable_vuln_hunt;
 } args_t;

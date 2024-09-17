@@ -30,8 +30,8 @@ func_list_t findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix);
 func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids,
                                             std::string prefix);
 ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments,
-                                  json_list_t *allServices);
+                                  json_list_t *m_all_services);
 ea_list_t resolveEfiSmmCpuProtocol(json_list_t stackGuids,
                                    json_list_t dataGuids,
-                                   json_list_t *allServices);
+                                   json_list_t *m_all_services);
 ea_t markChildSwSmiHandler(ea_t ea);

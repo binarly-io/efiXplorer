@@ -35,15 +35,17 @@
 #define RT_OFFSET_64 0x58
 #define RT_OFFSET_32 0x38
 
-enum class ModuleType { DxeSmm = 0, Pei = 1 };
+#define BADREG 0xffff
+#define OFFSET_NONE 0xffff
+#define PUSH_NONE 0xffff
 
-enum class ArchFileType { Unsupported, X8632, X8664, Uefi, Aarch64 };
+enum class arch_file_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
+enum class ffs_file_type_t { unsupported = 0, pei = 6, dxe_smm = 7 };
+enum class module_type_t { dxe_smm = 0, pei = 1 };
 
-enum class FfsFileType { Unsupported = 0, Pei = 6, DxeAndTheLike = 7 };
+enum machine_type_t { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
 
-enum MachineType { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
-
-enum RegsAmd32 {
+enum regs_x86_32_t {
   REG_EAX,
   REG_ECX,
   REG_EDX,
@@ -56,7 +58,7 @@ enum RegsAmd32 {
   REG_DL = 0x12
 };
 
-enum RegsI386 {
+enum regs_x86_64_t {
   REG_RAX,
   REG_RCX,
   REG_RDX,
@@ -74,7 +76,7 @@ enum RegsI386 {
   REG_R14,
 };
 
-enum RegsAarch4 {
+enum regs_aarch64_t {
   REG_C0 = 0,
   REG_C13 = 13,
   REG_X0 = 129,
@@ -113,30 +115,24 @@ enum RegsAarch4 {
   REG_XPC,
 };
 
-enum HelperValues {
-  OFFSET_NONE = 0xffff,
-  PUSH_NONE = 0xffff,
-  BAD_REG = 0xffff,
-};
-
-typedef struct service_info_64 {
+struct service_info_64_t {
   char name[64];
   uint32_t offset;
   uint32_t reg;
   uint16_t arg_index;
-} service_info_64_t;
+};
 
-typedef struct service_info_32 {
+struct service_info_32_t {
   char name[64];
   uint32_t offset;
   uint16_t push_number;
-} service_info_32_t;
+};
 
-typedef struct service {
+struct service_t {
   char name[64];
   uint32_t offset64;
   uint32_t offset32;
-} service_t;
+};
 
 enum BootServicesOffsets64 {
   RaiseTPLOffset64 = 0x18,

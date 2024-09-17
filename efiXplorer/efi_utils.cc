@@ -67,47 +67,48 @@ std::string file_format_name() {
 
 //--------------------------------------------------------------------------
 // get input file type (64-bit, 32-bit module or UEFI firmware)
-ArchFileType input_file_type() {
+arch_file_type_t input_file_type() {
   processor_t &ph = PH;
   auto filetype = inf_get_filetype();
   auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
 
   // check if the input file is a UEFI firmware image
   if (file_format_name().find("UEFI") != std::string::npos) {
-    return ArchFileType::Uefi;
+    return arch_file_type_t::uefi;
   }
 
   if (filetype == f_PE || filetype == f_ELF) {
     if (ph.id == PLFM_386) {
       if (bits == 64)
-        return ArchFileType::X8664;
+        return arch_file_type_t::x86_64;
       if (bits == 32)
-        return ArchFileType::X8632;
+        return arch_file_type_t::x86_32;
     }
     if (ph.id == PLFM_ARM) {
       if (bits == 64)
-        return ArchFileType::Aarch64;
+        return arch_file_type_t::aarch64;
     }
   }
-  return ArchFileType::Unsupported;
+  return arch_file_type_t::unsupported;
 }
 
 //--------------------------------------------------------------------------
 // get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-FfsFileType guess_file_type(ArchFileType arch, json_list_t *all_guids) {
-  if (arch == ArchFileType::Uefi) {
-    return FfsFileType::DxeAndTheLike;
+ffs_file_type_t guess_file_type(arch_file_type_t arch,
+                                json_list_t *m_all_guids) {
+  if (arch == arch_file_type_t::uefi) {
+    return ffs_file_type_t::dxe_smm;
   }
 
   segment_t *hdr_seg = get_segm_by_name("HEADER");
   if (hdr_seg == nullptr) {
-    return FfsFileType::DxeAndTheLike;
+    return ffs_file_type_t::dxe_smm;
   }
 
   uint64_t signature = get_wide_word(hdr_seg->start_ea);
   bool has_pei_guids = false;
-  for (auto guid = all_guids->begin(); guid != all_guids->end(); guid++) {
+  for (auto guid = m_all_guids->begin(); guid != m_all_guids->end(); guid++) {
     json guid_value = *guid;
 
     if (static_cast<std::string>(guid_value["name"]).find("PEI") !=
@@ -123,7 +124,7 @@ FfsFileType guess_file_type(ArchFileType arch, json_list_t *all_guids) {
   auto file_name_str = static_cast<std::string>(file_name);
   if ((file_name_str.find("Pei") != std::string::npos ||
        file_name_str.find("pei") != std::string::npos || signature == VZ) &&
-      arch == ArchFileType::X8664) {
+      arch == arch_file_type_t::x86_64) {
     has_pei_in_path = true;
   }
 
@@ -131,30 +132,30 @@ FfsFileType guess_file_type(ArchFileType arch, json_list_t *all_guids) {
     msg("[%s] parsing binary file as PEI, signature = %llx, has_pei_guids = "
         "%d\n",
         g_plugin_name, signature, has_pei_guids);
-    return FfsFileType::Pei;
+    return ffs_file_type_t::pei;
   }
 
   msg("[%s] parsing binary file as DXE/SMM, signature = %llx, has_pei_guids = "
       "%d\n",
       g_plugin_name, signature, has_pei_guids);
-  return FfsFileType::DxeAndTheLike;
+  return ffs_file_type_t::dxe_smm;
 }
 
-FfsFileType ask_file_type(json_list_t *all_guids) {
+ffs_file_type_t ask_file_type(json_list_t *m_all_guids) {
   auto arch = input_file_type();
-  if (arch == ArchFileType::Uefi || arch == ArchFileType::X8664) {
-    return FfsFileType::DxeAndTheLike;
+  if (arch == arch_file_type_t::uefi || arch == arch_file_type_t::x86_64) {
+    return ffs_file_type_t::dxe_smm;
   }
-  auto ftype = guess_file_type(arch, all_guids);
-  auto deflt = ftype == FfsFileType::DxeAndTheLike;
-  auto fmt_param = ftype == FfsFileType::DxeAndTheLike ? "DXE/SMM" : "PEI";
+  auto ftype = guess_file_type(arch, m_all_guids);
+  auto deflt = ftype == ffs_file_type_t::dxe_smm;
+  auto fmt_param = ftype == ffs_file_type_t::dxe_smm ? "DXE/SMM" : "PEI";
   auto btn_id =
       ask_buttons("DXE/SMM", "PEI", "", deflt, "Parse file as %s", fmt_param);
   if (btn_id == ASKBTN_YES) {
-    return FfsFileType::DxeAndTheLike;
+    return ffs_file_type_t::dxe_smm;
   }
 
-  return FfsFileType::Pei;
+  return ffs_file_type_t::pei;
 }
 
 //--------------------------------------------------------------------------

@@ -377,27 +377,27 @@ struct action_handler_loadreport_t : public action_handler_t {
     qstring title;
 
     try {
-      auto protocols = reportData["allProtocols"];
+      auto protocols = reportData["all_protocols"];
       if (!protocols.is_null()) { // show protocols
         title = "efiXplorer: protocols";
         protocols_show(protocols, title);
       }
-      auto ppis = reportData["allPPIs"];
+      auto ppis = reportData["all_ppis"];
       if (!ppis.is_null()) { // show PPIs
         title = "efiXplorer: PPIs";
         protocols_show(ppis, title);
       }
-      auto services = reportData["allServices"];
+      auto services = reportData["all_services"];
       if (!services.is_null()) { // show services
         title = "efiXplorer: services";
         services_show(services, title);
       }
-      auto guids = reportData["allGuids"];
+      auto guids = reportData["all_guids"];
       if (!guids.is_null()) { // show GUIDs
         title = "efiXplorer: GUIDs";
         guids_show(guids, title);
       }
-      auto nvram = reportData["nvramVariables"];
+      auto nvram = reportData["m_nvram_variables"];
       if (!nvram.is_null()) { // show NVRAM
         title = "efiXplorer: NVRAM";
         nvram_show(nvram, title);
