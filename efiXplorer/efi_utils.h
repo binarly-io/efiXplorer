@@ -79,6 +79,8 @@ void set_ptr_type_and_name(ea_t ea, std::string name, std::string type);
 void set_type_and_name(ea_t ea, std::string name, std::string type);
 
 xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring var_name);
+
+int log(const char *fmt, ...);
 } // namespace efi_utils
 
 uint16_t get_machine_type();

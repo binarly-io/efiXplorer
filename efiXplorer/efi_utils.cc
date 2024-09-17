@@ -62,9 +62,11 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
   }
 
   bool has_pei_in_path = false;
-  char file_name[0x1000] = {0};
+
+  char file_name[256] = {0};
   get_input_file_path(file_name, sizeof(file_name));
   auto file_name_str = static_cast<std::string>(file_name);
+
   if ((file_name_str.find("Pei") != std::string::npos ||
        file_name_str.find("pei") != std::string::npos || signature == VZ) &&
       arch == arch_file_type_t::x86_64) {
@@ -72,15 +74,12 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
   }
 
   if (signature == VZ || has_pei_guids) {
-    msg("[%s] parsing binary file as PEI, signature = %llx, has_pei_guids = "
-        "%d\n",
-        g_plugin_name, signature, has_pei_guids);
+    efi_utils::log("analysing binary file as PEI, signature: %llx\n",
+                   signature);
     return ffs_file_type_t::pei;
   }
 
-  msg("[%s] parsing binary file as DXE/SMM, signature = %llx, has_pei_guids = "
-      "%d\n",
-      g_plugin_name, signature, has_pei_guids);
+  efi_utils::log("analysing binary file as DXE/SMM\n");
   return ffs_file_type_t::dxe_smm;
 }
 
@@ -134,8 +133,8 @@ bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
     if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
         insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
       var_copy = insn.ops[0].addr;
-      msg("[efiXplorer] found copy for global variable: 0x%016llX\n",
-          u64_addr(ea));
+      efi_utils::log("found copy for global variable: 0x%016llX\n",
+                     u64_addr(ea));
       break;
     }
   }
@@ -160,6 +159,20 @@ bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
   }
 
   return true;
+}
+
+//--------------------------------------------------------------------------
+// msg wrapper
+int efi_utils::log(const char *fmt, ...) {
+  auto nbytes = msg("[%s] ", g_plugin_name);
+
+  va_list va;
+  va_start(va, fmt);
+
+  nbytes += vmsg(fmt, va);
+
+  va_end(va);
+  return nbytes;
 }
 
 //--------------------------------------------------------------------------
@@ -227,7 +240,7 @@ ffs_file_type_t efi_utils::ask_file_type(json_list_t *m_all_guids) {
   auto deflt = ftype == ffs_file_type_t::dxe_smm;
   auto fmt_param = ftype == ffs_file_type_t::dxe_smm ? "DXE/SMM" : "PEI";
   auto btn_id =
-      ask_buttons("DXE/SMM", "PEI", "", deflt, "Parse file as %s", fmt_param);
+      ask_buttons("DXE/SMM", "PEI", "", deflt, "Analyse file as %s", fmt_param);
   if (btn_id == ASKBTN_YES) {
     return ffs_file_type_t::dxe_smm;
   }
@@ -399,22 +412,17 @@ void efi_utils::set_entry_arg_to_pei_svc() {
     ea_t start_ea = get_entry(ord);
     tinfo_t tif_ea;
     if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
-      msg("[%s] guess_tinfo failed, start_ea = 0x%016llX, idx=%d\n",
-          g_plugin_name, u64_addr(start_ea), idx);
       continue;
     }
 
     func_type_data_t funcdata;
     if (!tif_ea.get_func_details(&funcdata)) {
-      msg("[%s] get_func_details failed, %d\n", g_plugin_name, idx);
       continue;
     }
 
     tinfo_t tif_pei;
     bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
     if (!res) {
-      msg("[%s] get_named_type failed, res = %d, idx=%d\n", g_plugin_name, res,
-          idx);
       continue;
     }
 
@@ -427,13 +435,12 @@ void efi_utils::set_entry_arg_to_pei_svc() {
     if (funcdata.size() == 2) {
       funcdata[1].type = pp_tinfo;
       funcdata[1].name = "PeiServices";
-      tinfo_t func_tinfo;
-      if (!func_tinfo.create_func(funcdata)) {
-        msg("[%s] create_func failed, idx=%d\n", g_plugin_name, idx);
+      tinfo_t f_tinfo;
+      if (!f_tinfo.create_func(funcdata)) {
         continue;
       }
-      if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-        msg("[%s] apply_tinfo failed, idx=%d\n", g_plugin_name, idx);
+
+      if (!apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE)) {
         continue;
       }
     }
@@ -443,20 +450,14 @@ void efi_utils::set_entry_arg_to_pei_svc() {
 bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
   tinfo_t tif_ea;
   if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
-    msg("[%s] guess_tinfo failed, function = 0x%016llX", g_plugin_name,
-        u64_addr(start_ea));
     return false;
   }
   func_type_data_t fi;
   if (!tif_ea.get_func_details(&fi)) {
-    msg("[%s] get_func_details failed, function = 0x%016llX", g_plugin_name,
-        u64_addr(start_ea));
     return false;
   }
   tinfo_t tif_pei;
-  bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
-  if (!res) {
-    msg("[%s] get_named_type failed, res = %d\n", g_plugin_name, res);
+  if (!tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES")) {
     return false;
   }
   tinfo_t p_tinfo;
@@ -466,17 +467,15 @@ bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
 
   fi.rettype = pp_tinfo;
 
-  tinfo_t func_tinfo;
-  if (!func_tinfo.create_func(fi)) {
-    msg("[%s] create_func failed, function = 0x%016llX", g_plugin_name,
-        u64_addr(start_ea));
+  tinfo_t f_tinfo;
+  if (!f_tinfo.create_func(fi)) {
     return false;
   }
-  if (!apply_tinfo(start_ea, func_tinfo, TINFO_DEFINITE)) {
-    msg("[%s] apply_tinfo failed, function = 0x%016llX", g_plugin_name,
-        u64_addr(start_ea));
+
+  if (!apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE)) {
     return false;
   }
+
   return true;
 }
 
@@ -625,7 +624,7 @@ ea_list_t efi_utils::search_protocol(std::string protocol) {
 
 bool efi_utils::check_install_protocol(ea_t ea) {
   insn_t insn;
-  // search for `call [REG + offset]` insn
+  // search for `call [R + offset]` insn
   // offset in [0x80, 0xA8, 0x148]
   ea_t addr = ea;
   for (auto i = 0; i < 16; i++) {
@@ -651,11 +650,11 @@ std::string efi_utils::as_hex(uint64_t value) {
 }
 
 //--------------------------------------------------------------------------
-// make sure the first argument looks like a protocol
+// make sure that the first argument looks like a protocol
 bool efi_utils::check_boot_service_protocol(ea_t call_addr) {
   bool valid = false;
-  insn_t insn;
   auto addr = prev_head(call_addr, 0);
+  insn_t insn;
   decode_insn(&insn, addr);
   while (!is_basic_block_end(insn, false)) {
     // for next iteration
@@ -766,8 +765,9 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
         (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
         insn.ops[0].reg == R_RAX) {
       efi_utils::op_stroff(ea, static_cast<std::string>(type_name.c_str()));
-      msg("[%s] mark arguments at address 0x%016llX (interface type: %s)\n",
-          g_plugin_name, u64_addr(ea), type_name.c_str());
+      efi_utils::log(
+          "mark arguments at address 0x%016llX (interface type: %s)\n",
+          u64_addr(ea), type_name.c_str());
 
       // check for EfiSmmBase2Protocol->GetSmstLocation
       if (type_name == "EFI_SMM_BASE2_PROTOCOL" &&
@@ -792,6 +792,7 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
       }
       break;
     }
+
     // if the RAX value is overridden
     if (insn.ops[0].reg == R_RAX) {
       break;
@@ -879,7 +880,7 @@ std::string efi_utils::get_wide_string(ea_t addr) {
   while (get_wide_word(addr + index)) {
     auto byte = get_wide_byte(addr + index);
     if (byte < 0x20 || byte > 0x7e) {
-      return "INVALID_STRING";
+      return "invalid string";
     }
     res.push_back(byte);
     index += 2;
@@ -965,7 +966,7 @@ std::string efi_utils::get_table_name(std::string service_name) {
     }
   }
 
-  return "Unknown";
+  return "unknown";
 }
 
 std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
@@ -975,7 +976,7 @@ std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
     }
   }
 
-  return "Unknown";
+  return "unknown";
 }
 
 std::string efi_utils::lookup_runtime_service_name(uint64_t offset) {
@@ -985,7 +986,7 @@ std::string efi_utils::lookup_runtime_service_name(uint64_t offset) {
     }
   }
 
-  return "Unknown";
+  return "unknown";
 }
 
 uint16_t get_machine_type() {

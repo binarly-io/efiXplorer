@@ -47,7 +47,7 @@ static plugmod_t *idaapi init(void) {
   msg(welcome_msg);
   msg("%s\n\n", COPYRIGHT);
 
-  // Register action
+  // register action
   register_action(action_load_report);
   attach_action_to_menu("File/Load file/", action_load_report.name,
                         SETMENU_APP);
@@ -77,46 +77,39 @@ bool idaapi run(size_t arg) {
     g_args.disable_vuln_hunt = 1;
   }
 
-  msg("[%s] plugin run with argument %lu (sdk version: %d)\n", g_plugin_name,
-      arg, IDA_SDK_VERSION);
-  msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name,
-      g_args.disable_ui, g_args.disable_vuln_hunt);
+  efi_utils::log("plugin run with argument %lu (sdk version: %d)\n", arg,
+                 IDA_SDK_VERSION);
 
   auto guids_path = efi_utils::get_guids_json_file();
-  msg("[%s] guids.json exists: %s\n", g_plugin_name, BTOA(!guids_path.empty()));
-
   if (guids_path.empty()) {
-    std::string msg_text = "guids.json file not found, copy \"guids\" "
-                           "directory to <IDA_DIR>/plugins";
-    msg("[%s] %s\n", g_plugin_name, msg_text.c_str());
-    warning("%s: %s\n", g_plugin_name, msg_text.c_str());
+    warning("%s: %s\n", g_plugin_name,
+            "guids.json file not found, copy guids.json to plugins");
     return false;
   }
 
   arch_file_type_t arch = efi_utils::input_file_type();
   if (arch == arch_file_type_t::x86_64) {
-    msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
+    efi_utils::log("input file is x86 64-bit module\n");
     efi_analysis::efi_analyse_main_x86_64();
   } else if (arch == arch_file_type_t::x86_32) {
-    msg("[%s] input file is 32-bit module (x86)\n", g_plugin_name);
+    efi_utils::log("input file is x86 32-bit module\n");
     efi_analysis::efi_analyse_main_x86_32();
   } else if (arch == arch_file_type_t::uefi) {
-    msg("[%s] input file is UEFI firmware\n", g_plugin_name);
-    warning("%s: analysis may take some time, please wait for it to complete\n",
+    warning("%s: input file is UEFI firmware, analysis can be time consuming\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
-      msg("[%s] analyse AARCH64 modules\n", g_plugin_name);
+      efi_utils::log("[%s] analyse ARM64 modules\n");
       efi_analysis::efi_analyse_main_aarch64();
     } else {
-      msg("[%s] analyse AMD64 modules\n", g_plugin_name);
+      efi_utils::log("[%s] analyse AMD64 modules\n", g_plugin_name);
       efi_analysis::efi_analyse_main_x86_64();
     }
   } else if (arch == arch_file_type_t::aarch64) {
-    msg("[%s] input file is 64-bit module (ARM)\n", g_plugin_name);
+    efi_utils::log("[%s] input file is ARM 64-bit module\n");
     efi_analysis::efi_analyse_main_aarch64();
   }
 
-  // Reset arguments
+  // reset arguments
   g_args = {module_type_t::dxe_smm, 0, 0};
 
   return true;
