@@ -53,7 +53,7 @@ void efi_analysis::efi_analyser_arm_t::fix_offsets() {
   }
 }
 
-void efi_analysis::efi_analyser_arm_t::initialAnalysis() {
+void efi_analysis::efi_analyser_arm_t::initial_analysis() {
   fix_offsets();
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
@@ -227,7 +227,7 @@ json getService(ea_t addr, uint8_t table_id) {
   return s;
 }
 
-void efi_analysis::efi_analyser_arm_t::initialGlobalVarsDetection() {
+void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
 #ifdef HEX_RAYS
   // analyse entry point with Hex-Rays
   for (auto func_addr : m_funcs) {
@@ -294,7 +294,7 @@ void efi_analysis::efi_analyser_arm_t::initialGlobalVarsDetection() {
   }
 }
 
-void efi_analysis::efi_analyser_arm_t::servicesDetection() {
+void efi_analysis::efi_analyser_arm_t::detect_services_all() {
 #ifdef HEX_RAYS
   for (auto func_addr : m_funcs) {
     json_list_t services = detect_services(get_func(func_addr));
@@ -343,8 +343,9 @@ void efi_analysis::efi_analyser_arm_t::servicesDetection() {
   }
 }
 
-bool efi_analysis::efi_analyser_arm_t::getProtocol(ea_t address, uint32_t p_reg,
-                                                   std::string service_name) {
+bool efi_analysis::efi_analyser_arm_t::get_protocol(ea_t address,
+                                                    uint32_t p_reg,
+                                                    std::string service_name) {
   ea_t ea = address;
   insn_t insn;
   ea_t offset = BADADDR;
@@ -382,7 +383,7 @@ bool efi_analysis::efi_analyser_arm_t::getProtocol(ea_t address, uint32_t p_reg,
   return add_protocol(service_name, guid_addr, code_addr, address);
 }
 
-void efi_analysis::efi_analyser_arm_t::protocolsDetection() {
+void efi_analysis::efi_analyser_arm_t::detect_protocols_all() {
   for (auto s : m_all_services) {
     std::string service_name = s["service_name"];
     for (auto i = 0; i < 13; i++) {
@@ -391,13 +392,13 @@ void efi_analysis::efi_analyser_arm_t::protocolsDetection() {
       if (current_name != service_name) {
         continue;
       }
-      getProtocol(s["address"], bs_table_aarch64[i].reg, service_name);
+      get_protocol(s["address"], bs_table_aarch64[i].reg, service_name);
       break;
     }
   }
 }
 
-void efi_analysis::efi_analyser_arm_t::findPeiServicesFunction() {
+void efi_analysis::efi_analyser_arm_t::find_pei_services_function() {
   insn_t insn;
   for (auto start_ea : m_funcs) {
     decode_insn(&insn, start_ea);
@@ -478,18 +479,18 @@ bool efi_analysis::efi_analyse_main_aarch64() {
 
   // set the correct name for the entry point and automatically fix the
   // prototype
-  analyser.initialAnalysis();
+  analyser.initial_analysis();
 
   if (analyser.m_ftype == ffs_file_type_t::dxe_smm) {
-    analyser.initialGlobalVarsDetection();
+    analyser.initial_gvars_detection();
 
     // detect services
-    analyser.servicesDetection();
+    analyser.detect_services_all();
 
     // detect protocols
-    analyser.protocolsDetection();
+    analyser.detect_protocols_all();
   } else if (analyser.m_ftype == ffs_file_type_t::pei) {
-    analyser.findPeiServicesFunction();
+    analyser.find_pei_services_function();
   }
 
 #ifdef HEX_RAYS

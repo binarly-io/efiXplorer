@@ -343,33 +343,29 @@ public:
 #endif
   }
 
+  bool find_boot_services_tables();
+  bool find_image_handle64();
+  bool find_runtime_services_tables();
+  bool find_smst_postproc64();
+  bool find_smst64();
+  bool find_system_table64();
+  void find_other_boot_services_tables64();
+  void get_boot_services_all();
+  void get_bs_prot_names32();
+  void get_bs_prot_names64();
+  void get_pei_services_all32();
+  void get_ppi_names32();
+  void get_prot_boot_services32();
+  void get_prot_boot_services64();
+  void get_runtime_services_all();
+  void get_smm_prot_names64();
+  void get_smm_services_all64();
+  void get_variable_ppi_calls_all32();
+  void mark_local_guids64();
   void show_all_choosers();
-  bool findImageHandleX64();
-  bool findSystemTableX64();
-  bool findBootServicesTables();
-  bool findRuntimeServicesTables();
-  bool findSmstX64();
-  bool findSmstPostProcX64();
-  void findOtherBsTablesX64();
-
-  void getProtBootServicesX64();
-  void getProtBootServicesX86();
-  void getAllBootServices();
-  void getAllRuntimeServices();
-  void getAllSmmServicesX64();
-
-  void getBsProtNamesX64();
-  void getBsProtNamesX86();
-  void getSmmProtNamesX64();
-
-  void getAllPeiServicesX86();
-  void getPpiNamesX86();
-  void getAllVariablePPICallsX86();
-
-  void markLocalGuidsX64();
 
 private:
-  bool InstallMultipleProtocolInterfacesHandler();
+  bool install_multiple_prot_interfaces_analyser();
 };
 
 class efi_analyser_arm_t : public efi_analyser_t {
@@ -387,13 +383,13 @@ public:
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
   }
 
-  void findBootServicesTables();
-  void findPeiServicesFunction();
+  void find_boot_services_tables();
+  void find_pei_services_function();
   void fix_offsets();
-  void initialAnalysis();
-  void initialGlobalVarsDetection();
-  void protocolsDetection();
-  void servicesDetection();
+  void initial_analysis();
+  void initial_gvars_detection();
+  void detect_protocols_all();
+  void detect_services_all();
   void show_all_choosers();
 
 private:
@@ -419,7 +415,7 @@ private:
       {"InstallMultipleProtocolInterfaces", 0x148, REG_X1, 1},
       {"UninstallMultipleProtocolInterfaces", 0x150, REG_X1, 1}};
 
-  bool getProtocol(ea_t address, uint32_t p_reg, std::string service_name);
+  bool get_protocol(ea_t address, uint32_t p_reg, std::string service_name);
 };
 
 bool efi_analyse_main_x86_64();
