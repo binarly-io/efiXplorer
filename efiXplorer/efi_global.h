@@ -21,11 +21,11 @@
 
 #include "efi_deps.h"
 
-typedef struct args {
+struct args_t {
   module_type_t module_type;
   int disable_ui;
   int disable_vuln_hunt;
-} args_t;
+};
 
 extern args_t g_args;
 extern EfiDependencies g_deps;

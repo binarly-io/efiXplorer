@@ -20,13 +20,12 @@
 #pragma once
 
 #include "efi_utils.h"
-
 #include <string>
 
 ea_list_t findSmstSwDispatch(ea_list_t bs_list);
 ea_list_t findSmstSmmBase(ea_list_t bs_list);
 func_list_t findSmiHandlers(ea_t address, std::string prefix);
-func_list_t findSmiHandlersSmmDispatch(EfiGuid guid, std::string prefix);
+func_list_t findSmiHandlersSmmDispatch(efi_guid_t guid, std::string prefix);
 func_list_t findSmiHandlersSmmDispatchStack(json_list_t stackGuids,
                                             std::string prefix);
 ea_list_t findSmmGetVariableCalls(segment_list_t dataSegments,

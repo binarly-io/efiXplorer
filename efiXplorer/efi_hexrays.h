@@ -20,7 +20,6 @@
 #pragma once
 
 #include "efi_utils.h"
-
 #include <map>
 #include <string>
 #include <utility>

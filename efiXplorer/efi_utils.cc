@@ -18,9 +18,8 @@
  */
 
 #include "efi_utils.h"
-#include "efi_defs.h"
-#include "efi_global.h"
 
+#include "efi_global.h"
 #include <algorithm>
 
 // can be used after Hex-Rays based analysis
@@ -168,7 +167,7 @@ ea_t find_unknown_bs_var_64(ea_t ea) {
   for (int i = 0; i < 10; i++) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
-        insn.ops[0].reg == REG_RAX && insn.ops[1].type == o_mem) {
+        insn.ops[0].reg == R_RAX && insn.ops[1].type == o_mem) {
       res = insn.ops[1].addr;
       break;
     }
@@ -622,7 +621,7 @@ bool check_boot_service_protocol(ea_t call_addr) {
 
     // check current instruction
     if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-        insn.ops[0].reg == REG_RCX) {
+        insn.ops[0].reg == R_RCX) {
       if (insn.ops[1].type == o_mem) {
         // will still be a false positive if the Handle in
         // SmmInstallProtocolInterface is a global variable)
@@ -641,7 +640,7 @@ bool check_boot_service_protocol_xrefs(ea_t call_addr) {
   for (auto xref : get_xrefs_util(call_addr)) {
     decode_insn(&insn, xref);
     if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-        insn.ops[0].reg == REG_R8) {
+        insn.ops[0].reg == R_R8) {
       // load interface instruction
       return false;
     }
@@ -781,7 +780,7 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
     if ((insn.itype == NN_call || insn.itype == NN_callfi ||
          insn.itype == NN_callni) &&
         (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
-        insn.ops[0].reg == REG_RAX) {
+        insn.ops[0].reg == R_RAX) {
       op_stroff_util(ea, static_cast<std::string>(type_name.c_str()));
       msg("[%s] mark arguments at address 0x%016llX (interface type: %s)\n",
           g_plugin_name, u64_addr(ea), type_name.c_str());
@@ -810,7 +809,7 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
       break;
     }
     // if the RAX value is overridden
-    if (insn.ops[0].reg == REG_RAX) {
+    if (insn.ops[0].reg == R_RAX) {
       break;
     }
   }
@@ -823,7 +822,7 @@ void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name) {
   insn_t insn;
   for (auto xref : local_xrefs) {
     decode_insn(&insn, xref.ea);
-    if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
+    if (insn.itype == NN_mov && insn.ops[0].reg == R_RAX) {
       op_stroff_for_addr(xref.ea, type_name);
     }
   }
@@ -836,7 +835,7 @@ void op_stroff_for_global_interface(ea_list_t xrefs, qstring type_name) {
   insn_t insn;
   for (auto ea : xrefs) {
     decode_insn(&insn, ea);
-    if (insn.itype == NN_mov && insn.ops[0].reg == REG_RAX) {
+    if (insn.itype == NN_mov && insn.ops[0].reg == R_RAX) {
       op_stroff_for_addr(ea, type_name);
     }
   }
@@ -900,9 +899,9 @@ std::string get_wide_string(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// get EfiGuid by address
-EfiGuid get_global_guid(ea_t addr) {
-  EfiGuid guid;
+// get efi_guid_t by address
+efi_guid_t get_global_guid(ea_t addr) {
+  efi_guid_t guid;
   guid.data1 = get_wide_dword(addr);
   guid.data2 = get_wide_word(addr + 4);
   guid.data3 = get_wide_word(addr + 6);
@@ -913,9 +912,9 @@ EfiGuid get_global_guid(ea_t addr) {
 }
 
 //--------------------------------------------------------------------------
-// get EfiGuid by stack offset
-EfiGuid get_local_guid(func_t *f, uint64_t offset) {
-  EfiGuid guid;
+// get efi_guid_t by stack offset
+efi_guid_t get_local_guid(func_t *f, uint64_t offset) {
+  efi_guid_t guid;
   insn_t insn;
   auto ea = f->start_ea;
   int counter = 0;
@@ -926,7 +925,7 @@ EfiGuid get_local_guid(func_t *f, uint64_t offset) {
     ea = next_head(ea, BADADDR);
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-        (insn.ops[0].reg == REG_RSP || insn.ops[0].reg == REG_RBP) &&
+        (insn.ops[0].reg == R_RSP || insn.ops[0].reg == R_RBP) &&
         insn.ops[1].type == o_imm) {
       if (insn.ops[0].addr == offset) {
         guid.data1 = insn.ops[1].value;

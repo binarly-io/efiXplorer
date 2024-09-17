@@ -74,7 +74,7 @@ ea_t get_table_addr(ea_t code_addr, uint64_t offset) {
   decode_insn(&insn, code_addr);
   if (insn.itype != ARM_ldr || insn.ops[0].type != o_reg ||
       insn.ops[1].type != o_displ || insn.ops[1].addr != offset ||
-      insn.ops[1].reg == REG_XSP) {
+      insn.ops[1].reg == R_XSP) {
     return table;
   }
   uint8_t table_reg = insn.ops[0].reg;
@@ -403,10 +403,10 @@ void efi_analysis::efi_analyser_arm_t::find_pei_services_function() {
   for (auto start_ea : m_funcs) {
     decode_insn(&insn, start_ea);
     if (!(insn.itype == ARM_mrs && insn.ops[0].type == o_reg &&
-          insn.ops[0].reg == REG_X0 && insn.ops[1].type == o_imm &&
+          insn.ops[0].reg == R_X0 && insn.ops[1].type == o_imm &&
           insn.ops[1].value == 0x3 && insn.ops[2].type == o_idpspec3 &&
-          insn.ops[2].reg == REG_C13 && insn.ops[3].type == o_idpspec3 &&
-          insn.ops[3].reg == REG_C0 && insn.ops[4].type == o_imm &&
+          insn.ops[2].reg == R_C13 && insn.ops[3].type == o_idpspec3 &&
+          insn.ops[3].reg == R_C0 && insn.ops[4].type == o_imm &&
           insn.ops[4].value == 0x2)) {
       continue;
     }

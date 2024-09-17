@@ -31,7 +31,7 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "            /_/\n";
 
 // default arguments
-struct args g_args = {module_type_t::dxe_smm, 0, 0};
+args_t g_args = {module_type_t::dxe_smm, 0, 0};
 
 #if IDA_SDK_VERSION < 760
 hexdsp_t *hexdsp = nullptr;

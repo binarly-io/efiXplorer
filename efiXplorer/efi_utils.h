@@ -20,77 +20,7 @@
 #pragma once
 
 #include "efi_defs.h"
-
-#include <format>
-#include <fstream>
 #include <string>
-#include <vector>
-
-#include <allins.hpp>
-#include <auto.hpp>
-#include <bytes.hpp>
-#include <diskio.hpp>
-#include <entry.hpp>
-#include <frame.hpp>
-#include <graph.hpp>
-#include <ida.hpp>
-#include <idp.hpp>
-#include <kernwin.hpp>
-#include <lines.hpp>
-#include <loader.hpp>
-#include <name.hpp>
-#if IDA_SDK_VERSION < 900
-#include <struct.hpp>
-#endif
-#include <typeinf.hpp>
-#ifdef HEX_RAYS
-#include <hexrays.hpp>
-#endif
-#include <pro.h>
-
-// 3rd party
-#include "json.hpp"
-
-using nlohmann::json;
-
-using ea_list_t = std::vector<ea_t>;
-using func_list_t = std::vector<func_t *>;
-using json_list_t = std::vector<json>;
-using segment_list_t = std::vector<segment_t *>;
-using string_list_t = std::vector<std::string>;
-using uchar_list_t = std::vector<uchar>;
-using uint64_list_t = std::vector<uint64_t>;
-using uint8_list_t = std::vector<uint8_t>;
-
-struct EfiGuid {
-  uint32_t data1;
-  uint16_t data2;
-  uint16_t data3;
-  uint8_t data4[8];
-
-  uchar_list_t uchar_data() {
-    uchar_list_t res;
-    res.push_back(data1 & 0xff);
-    res.push_back(data1 >> 8 & 0xff);
-    res.push_back(data1 >> 16 & 0xff);
-    res.push_back(data1 >> 24 & 0xff);
-    res.push_back(data2 & 0xff);
-    res.push_back(data2 >> 8 & 0xff);
-    res.push_back(data3 & 0xff);
-    res.push_back(data3 >> 8 & 0xff);
-    for (auto i = 0; i < 8; i++) {
-      res.push_back(data4[i]);
-    }
-    return res;
-  }
-
-  std::string to_string() const {
-    return std::format("{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:"
-                       "02X}{:02X}{:02X}",
-                       data1, data2, data3, data4[0], data4[1], data4[2],
-                       data4[3], data4[4], data4[5], data4[6], data4[7]);
-  }
-};
 
 arch_file_type_t input_file_type();
 
@@ -112,8 +42,8 @@ bool valid_guid(json guid);
 
 ea_t find_unknown_bs_var_64(ea_t ea);
 
-EfiGuid get_global_guid(ea_t addr);
-EfiGuid get_local_guid(func_t *f, uint64_t offset);
+efi_guid_t get_global_guid(ea_t addr);
+efi_guid_t get_local_guid(func_t *f, uint64_t offset);
 
 ffs_file_type_t ask_file_type(json_list_t *m_all_guids);
 

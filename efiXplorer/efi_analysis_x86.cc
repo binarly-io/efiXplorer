@@ -21,7 +21,6 @@
 #include "efi_global.h"
 #include "efi_ui.h"
 #include "efi_utils.h"
-
 #ifdef HEX_RAYS
 #include "efi_hexrays.h"
 #endif
@@ -218,7 +217,7 @@ bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
     for (auto i = 0; i < 8; i++) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
-          insn.ops[1].reg == REG_RCX && insn.ops[0].type == o_mem) {
+          insn.ops[1].reg == R_RCX && insn.ops[0].type == o_mem) {
         msg("[%s] found ImageHandle at 0x%016llX, address = 0x%016llX\n",
             g_plugin_name, u64_addr(ea), u64_addr(insn.ops[0].addr));
 
@@ -247,7 +246,7 @@ bool efi_analysis::efi_analyser_x86_t::find_system_table64() {
     for (int i = 0; i < 16; i++) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
-          insn.ops[1].reg == REG_RDX && insn.ops[0].type == o_mem) {
+          insn.ops[1].reg == R_RDX && insn.ops[0].type == o_mem) {
         set_ptr_type_and_name(insn.ops[0].addr, "gST", "EFI_SYSTEM_TABLE");
         st_list.push_back(insn.ops[0].addr);
         return true;
@@ -295,10 +294,10 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
       decode_insn(&insn, addr);
 
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-          insn.ops[0].reg == REG_RDX) {
+          insn.ops[0].reg == R_RDX) {
         switch (insn.ops[1].type) {
         case o_displ:
-          if (insn.ops[1].reg == REG_RSP || insn.ops[1].reg == REG_RBP) {
+          if (insn.ops[1].reg == R_RSP || insn.ops[1].reg == R_RBP) {
             smst_addr = insn.ops[1].addr;
             smst_stack["addr"] = smst_addr;
             smst_stack["reg"] = insn.ops[1].reg;
@@ -333,14 +332,14 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
     }
 
     if (!smst_stack.is_null()) {
-      auto reg = smst_stack["reg"] == REG_RSP ? "RSP" : "RBP";
+      auto reg = smst_stack["reg"] == R_RSP ? "RSP" : "RBP";
       msg("[%s]   Smst: 0x%016llX, reg = %s\n", g_plugin_name,
           u64_addr(smst_addr), reg);
 
       // try to extract ChildSwSmiHandler
       auto counter = 0;
       ea_t ea = static_cast<ea_t>(smst_stack["start"]);
-      uint16_t smst_reg = BADREG;
+      uint16_t smst_reg = NONE_REG;
       uint64_t rcx_last = BADADDR;
       while (ea < static_cast<ea_t>(smst_stack["end"])) {
         counter += 1;
@@ -355,13 +354,13 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
             insn.ops[1].type == o_displ &&
             smst_stack["addr"] == insn.ops[1].addr) {
           switch (insn.ops[1].reg) {
-          case REG_RSP:
-            if (smst_stack["reg"] == REG_RSP) {
+          case R_RSP:
+            if (smst_stack["reg"] == R_RSP) {
               smst_reg = insn.ops[0].reg;
             }
             break;
-          case REG_RBP:
-            if (smst_stack["reg"] == REG_RBP) {
+          case R_RBP:
+            if (smst_stack["reg"] == R_RBP) {
               smst_reg = insn.ops[0].reg;
             }
           default:
@@ -371,17 +370,16 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 
         // Save potencial ChildSwSmiHandler address
         if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-            insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+            insn.ops[0].reg == R_RCX && insn.ops[1].type == o_mem) {
           rcx_last = insn.ops[1].addr;
         }
 
-        if (rcx_last == BADADDR || smst_reg == BADREG) {
+        if (rcx_last == BADADDR || smst_reg == NONE_REG) {
           continue;
         }
 
         if (insn.itype == NN_callni && insn.ops[0].type == o_displ &&
-            insn.ops[0].reg == smst_reg &&
-            insn.ops[0].addr == SmiHandlerRegisterOffset64) {
+            insn.ops[0].reg == smst_reg && insn.ops[0].addr == 0xe0) {
           op_stroff_util(ea, "_EFI_SMM_SYSTEM_TABLE2");
           // save child SW SMI handler
           func_t *handler_func = get_func(rcx_last);
@@ -403,11 +401,11 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
   // init architecture-specific constants
   auto BS_OFFSET = BS_OFFSET_64;
-  uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
+  uint16_t R_SP = static_cast<uint16_t>(R_RSP);
 
   if (m_arch == arch_file_type_t::x86_32) {
     BS_OFFSET = BS_OFFSET_32;
-    REG_SP = static_cast<uint16_t>(REG_ESP);
+    R_SP = static_cast<uint16_t>(R_ESP);
   }
 
   insn_t insn;
@@ -423,7 +421,7 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
       ea = next_head(ea, m_end_addr);
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
-          insn.ops[1].phrase != REG_SP) {
+          insn.ops[1].phrase != R_SP) {
         if (insn.ops[0].type == o_reg && insn.ops[1].addr == BS_OFFSET) {
           auto bsFound = false;
           auto stFound = false;
@@ -516,11 +514,11 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
 bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
   // init architecture-specific constants
   auto RT_OFFSET = RT_OFFSET_64;
-  uint16_t REG_SP = static_cast<uint16_t>(REG_RSP);
+  uint16_t R_SP = static_cast<uint16_t>(R_RSP);
 
   if (m_arch == arch_file_type_t::x86_32) {
     RT_OFFSET = RT_OFFSET_32;
-    REG_SP = static_cast<uint16_t>(REG_ESP);
+    R_SP = static_cast<uint16_t>(R_ESP);
   }
 
   insn_t insn;
@@ -536,7 +534,7 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
       ea = next_head(ea, m_end_addr);
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_displ &&
-          insn.ops[1].phrase != REG_SP) {
+          insn.ops[1].phrase != R_SP) {
         if (insn.ops[0].type == o_reg && insn.ops[1].addr == RT_OFFSET) {
           rtRegister = insn.ops[0].reg;
           stRegister = insn.ops[1].phrase;
@@ -680,7 +678,7 @@ void efi_analysis::efi_analyser_x86_t::get_boot_services_all() {
               // additional check for gBS->RegisterProtocolNotify
               // (can be confused with
               // gSmst->SmmInstallProtocolInterface)
-              if (u32_addr(offset) == RegisterProtocolNotifyOffset64) {
+              if (u32_addr(offset) == 0xa8) {
                 if (!check_boot_service_protocol(addr)) {
                   break;
                 }
@@ -847,8 +845,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
           for (int j = 0; j < g_smm_services_table_all_count; j++) {
             if (insn.ops[0].addr ==
                 u32_addr(g_smm_services_table_all[j].offset64)) {
-              if (u32_addr(g_smm_services_table_all[j].offset64) ==
-                  SmiHandlerRegisterOffset64) {
+              if (u32_addr(g_smm_services_table_all[j].offset64) == 0xe0) {
                 // set name for Handler argument
                 auto smiHandlerAddr = markChildSwSmiHandler(addr);
                 // save SMI handler
@@ -914,8 +911,8 @@ void efi_analysis::efi_analyser_x86_t::get_pei_services_all32() {
     ea = next_head(ea, BADADDR);
     decode_insn(&insn, ea);
     if (insn.itype == NN_callni &&
-        (insn.ops[0].reg == REG_EAX || insn.ops[0].reg == REG_ECX ||
-         insn.ops[0].reg == REG_EDX)) {
+        (insn.ops[0].reg == R_EAX || insn.ops[0].reg == R_ECX ||
+         insn.ops[0].reg == R_EDX)) {
       for (int j = 0; j < g_pei_services_table32_count; j++) {
         if (insn.ops[0].addr == u32_addr(g_pei_services_table32[j].offset)) {
           bool found_src_reg = false;
@@ -1060,7 +1057,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
     start = seg_info->start_ea;
   }
   for (int i = 0; i < g_pei_services_table32_count; i++) {
-    if (g_pei_services_table32[i].push_number == PUSH_NONE ||
+    if (g_pei_services_table32[i].push_number == NONE_PUSH ||
         !m_pei_services_all.contains(g_pei_services_table_all[i].name)) {
       continue;
     }
@@ -1167,7 +1164,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
     while (ea <= s->end_ea) {
       ea = next_head(ea, m_end_addr);
       decode_insn(&insn, ea);
-      if (insn.itype != NN_callni || insn.ops[0].reg != REG_RAX) {
+      if (insn.itype != NN_callni || insn.ops[0].reg != R_RAX) {
         continue;
       }
       for (auto i = 0; i < g_boot_services_table64_count; i++) {
@@ -1177,8 +1174,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
 
         // additional check for gBS->RegisterProtocolNotify
         // (can be confused with gSmst->SmmInstallProtocolInterface)
-        if (u32_addr(g_boot_services_table64[i].offset) ==
-            RegisterProtocolNotifyOffset64) {
+        if (u32_addr(g_boot_services_table64[i].offset) == 0xa8) {
           if (!check_boot_service_protocol(ea)) {
             break;
           }
@@ -1232,7 +1228,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
   while (ea <= m_end_addr) {
     ea = next_head(ea, m_end_addr);
     decode_insn(&insn, ea);
-    if (insn.itype == NN_callni && insn.ops[0].reg == REG_EAX) {
+    if (insn.itype == NN_callni && insn.ops[0].reg == R_EAX) {
       for (auto i = 0; i < g_boot_services_table32_count; i++) {
         if (insn.ops[0].addr == u32_addr(g_boot_services_table32[i].offset)) {
           op_stroff_util(ea, "EFI_BOOT_SERVICES");
@@ -1365,10 +1361,10 @@ bool efi_analysis::efi_analyser_x86_t::
 
       // Get handle stack/data parameter
       if (handle_arg == BADADDR && insn.itype == NN_lea &&
-          insn.ops[0].reg == REG_RCX) {
+          insn.ops[0].reg == R_RCX) {
         switch (insn.ops[1].type) {
         case o_displ:
-          if (insn.ops[1].reg == REG_RSP || insn.ops[1].reg == REG_RBP) {
+          if (insn.ops[1].reg == R_RSP || insn.ops[1].reg == R_RBP) {
             handle_arg = insn.ops[1].addr;
           }
           break;
@@ -1379,13 +1375,13 @@ bool efi_analysis::efi_analyser_x86_t::
       }
 
       // Exit from loop if found last argument
-      if (insn.itype == NN_xor && insn.ops[0].reg == REG_R9 &&
-          insn.ops[1].reg == REG_R9) {
+      if (insn.itype == NN_xor && insn.ops[0].reg == R_R9 &&
+          insn.ops[1].reg == R_R9) {
         check_stack = false;
       }
 
       if (insn.itype == NN_and && insn.ops[0].type == o_displ &&
-          (insn.ops[0].reg == REG_RSP || insn.ops[0].reg == REG_RBP) &&
+          (insn.ops[0].reg == R_RSP || insn.ops[0].reg == R_RBP) &&
           insn.ops[0].addr != handle_arg && insn.ops[1].type == o_imm &&
           insn.ops[1].value == 0) {
         check_stack = false;
@@ -1395,13 +1391,13 @@ bool efi_analysis::efi_analyser_x86_t::
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[1].type == o_mem) {
         switch (insn.ops[0].reg) {
-        case REG_RDX:
-        case REG_R9:
+        case R_RDX:
+        case R_R9:
           add_protocol("InstallMultipleProtocolInterfaces", insn.ops[1].addr,
                        address, ea);
           found = true;
           break;
-        case REG_RAX:
+        case R_RAX:
           stack_params.insert(std::make_pair(address, insn.ops[1].addr));
           break;
         }
@@ -1434,8 +1430,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
 
   install_multiple_prot_interfaces_analyser();
   for (int i = 0; i < g_boot_services_table64_count; i++) {
-    if (g_boot_services_table64[i].offset ==
-        InstallMultipleProtocolInterfacesOffset64) {
+    if (g_boot_services_table64[i].offset == 0x148) {
       // Handle InstallMultipleProtocolInterfaces separately
       continue;
     }
@@ -1525,7 +1520,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
       uint16_t pushNumber = g_boot_services_table32[i].push_number;
 
       // if service is not currently being processed
-      if (pushNumber == PUSH_NONE) {
+      if (pushNumber == NONE_PUSH) {
         break;
       }
 
@@ -1842,7 +1837,7 @@ void findCalloutRec(func_t *func) {
           decode_insn(&next_insn, addr);
           if ((next_insn.itype == NN_jmpni || next_insn.itype == NN_callni) &&
               next_insn.ops[0].type == o_displ && next_insn.ops[0].reg == reg &&
-              next_insn.ops[0].addr == FreePoolOffset64) {
+              next_insn.ops[0].addr == 0x48) {
             fp = true;
             break;
           }
@@ -1875,7 +1870,7 @@ void findCalloutRec(func_t *func) {
         // chcek if it looks like interface
         decode_insn(&insn_xref, xref);
         if (insn_xref.itype != NN_lea || insn_xref.ops[0].type != o_reg ||
-            insn_xref.ops[0].reg != REG_R8) {
+            insn_xref.ops[0].reg != R_R8) {
           continue;
         }
 
@@ -1888,9 +1883,9 @@ void findCalloutRec(func_t *func) {
 
           if (next_insn.itype == NN_callni &&
               next_insn.ops[0].type == o_displ &&
-              next_insn.ops[0].reg == REG_RAX) {
-            if (next_insn.ops[0].addr == LocateProtocolOffset64 ||
-                next_insn.ops[0].addr == AllocatePoolOffset64) {
+              next_insn.ops[0].reg == R_RAX) {
+            if (next_insn.ops[0].addr == 0x140 ||
+                next_insn.ops[0].addr == 0x40) {
               // found callout
               msg("[%s] SMM callout found (usage of memory controlled by "
                   "the attacker inside SMI handler): 0x%016llX\n",
@@ -1916,7 +1911,7 @@ void findCalloutRec(func_t *func) {
 //--------------------------------------------------------------------------
 // find SmiHandler functions in SMM modules
 void efi_analysis::efi_analyser_t::find_smi_handlers() {
-  std::map<EfiGuid *, std::string> types = {
+  std::map<efi_guid_t *, std::string> types = {
       {&m_sw_guid2, "Sw"},
       {&m_sw_guid, "Sw"},
       {&m_sx_guid2, "Sx"},
@@ -2187,7 +2182,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-          insn.ops[0].reg == REG_R9) {
+          insn.ops[0].reg == R_R9) {
         dataSizeStackAddr = insn.ops[1].addr;
         dataSizeOpReg = insn.ops[1].phrase;
         break;
@@ -2237,7 +2232,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
       decode_insn(&insn, prev_head(curr_addr, 0));
       if (!wrong_detection &&
           !(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-            (insn.ops[0].phrase == REG_RSP || insn.ops[0].phrase == REG_RBP) &&
+            (insn.ops[0].phrase == R_RSP || insn.ops[0].phrase == R_RBP) &&
             (insn.ops[0].addr == dataSizeStackAddr))) {
         init_ok = true;
       }
@@ -2253,7 +2248,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
         }
         uint16 stack_base_reg = 0xFF;
         decode_insn(&insn, func_start->start_ea);
-        if (insn.itype == NN_mov && insn.ops[1].is_reg(REG_RSP) &&
+        if (insn.itype == NN_mov && insn.ops[1].is_reg(R_RSP) &&
             insn.ops[0].type == o_reg) {
           stack_base_reg = insn.ops[0].reg;
         }
@@ -2263,7 +2258,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
           if (insn.itype == NN_call)
             break;
           if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-              insn.ops[0].reg == REG_R9) {
+              insn.ops[0].reg == R_R9) {
             ea_t stack_addr = insn.ops[1].addr;
             sval_t sval = get_spd(func_start, ea) * -1;
 
@@ -2310,7 +2305,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-          insn.ops[0].reg == REG_R9) {
+          insn.ops[0].reg == R_R9) {
         dataSizeStackAddr = insn.ops[1].addr;
         break;
       }
@@ -2336,7 +2331,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
       bool init_ok = false;
       decode_insn(&insn, prev_head(curr_addr, 0));
       if (!(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-            (insn.ops[0].phrase == REG_RSP || insn.ops[0].phrase == REG_RBP))) {
+            (insn.ops[0].phrase == R_RSP || insn.ops[0].phrase == R_RBP))) {
         init_ok = true;
       }
 
@@ -2347,7 +2342,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
         for (auto i = 0; i < 10; ++i) {
           decode_insn(&insn, ea);
           if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-              insn.ops[0].reg == REG_R9) {
+              insn.ops[0].reg == R_R9) {
             if (dataSizeStackAddr == insn.ops[1].addr) {
               smmGetVariableOverflow.push_back(curr_addr);
               msg("[%s] \toverflow can occur here: 0x%016llX\n", g_plugin_name,
@@ -2389,7 +2384,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
   auto addr = args[0]; // Get VariableName
   decode_insn(&insn, addr);
   if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-      insn.ops[0].reg == REG_RCX && insn.ops[1].type == o_mem) {
+      insn.ops[0].reg == R_RCX && insn.ops[1].type == o_mem) {
     msg("[%s]  VariableName address: 0x%016llX\n", g_plugin_name,
         u64_addr(insn.ops[1].addr));
     std::string var_name = get_wide_string(insn.ops[1].addr);
@@ -2406,30 +2401,30 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
   decode_insn(&insn, addr);
   // If GUID is global variable
   if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-      insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_mem) {
+      insn.ops[0].reg == R_RDX && insn.ops[1].type == o_mem) {
     msg("[%s]  VendorGuid address (global): 0x%016llX\n", g_plugin_name,
         u64_addr(insn.ops[1].addr));
-    EfiGuid guid = get_global_guid(insn.ops[1].addr);
+    efi_guid_t guid = get_global_guid(insn.ops[1].addr);
     msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
     item["VendorGuid"] = guid.to_string();
     guid_found = true;
   }
   // If GUID is local variable
   if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
-      insn.ops[0].reg == REG_RDX && insn.ops[1].type == o_displ) {
+      insn.ops[0].reg == R_RDX && insn.ops[1].type == o_displ) {
     switch (insn.ops[1].reg) {
-    case REG_RBP: {
+    case R_RBP: {
       msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
           g_plugin_name, u64_addr(insn.ops[1].addr));
-      EfiGuid guid = get_local_guid(f, insn.ops[1].addr);
+      efi_guid_t guid = get_local_guid(f, insn.ops[1].addr);
       msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
       item["VendorGuid"] = guid.to_string();
       guid_found = true;
     }
-    case REG_RSP: {
+    case R_RSP: {
       msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
           g_plugin_name, u64_addr(insn.ops[1].addr));
-      EfiGuid guid = get_local_guid(f, insn.ops[1].addr);
+      efi_guid_t guid = get_local_guid(f, insn.ops[1].addr);
       msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
       item["VendorGuid"] = guid.to_string();
       guid_found = true;
@@ -2448,7 +2443,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
   decode_insn(&insn, addr);
   if (insn.itype == NN_xor && insn.ops[0].type == o_reg &&
       insn.ops[1].type == o_reg && insn.ops[0].reg == insn.ops[1].reg &&
-      insn.ops[0].reg == REG_R8) {
+      insn.ops[0].reg == R_R8) {
     item["Attributes"] = 0;
     std::string attributes_hr = "No attributes";
     item["AttributesHumanReadable"] = attributes_hr;
