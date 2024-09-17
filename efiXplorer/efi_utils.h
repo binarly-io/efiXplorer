@@ -22,23 +22,29 @@
 #include "efi_defs.h"
 #include <string>
 
+namespace efi_utils {
 arch_file_type_t input_file_type();
 
 bool add_struct_for_shifted_ptr();
-bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea);
 bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_list_t t3, ea_t ea);
+bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea);
 bool addr_in_vec(ea_list_t vec, ea_t addr);
 bool check_boot_service_protocol_xrefs(ea_t call_addr);
 bool check_boot_service_protocol(ea_t call_addr);
 bool check_install_protocol(ea_t ea);
 bool json_in_vec(json_list_t vec, json item);
 bool mark_copies_for_gvars(ea_list_t gvars, std::string type);
-bool op_stroff_util(ea_t addr, std::string type);
+bool op_stroff(ea_t addr, std::string type);
 bool set_ptr_type(ea_t addr, std::string type);
 bool set_ret_to_pei_svc(ea_t start_ea);
 bool summary_json_exists();
 bool uint64_in_vec(uint64_list_t vec, uint64_t value);
 bool valid_guid(json guid);
+
+ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+ea_list_t get_xrefs_to_array(ea_t addr);
+ea_list_t get_xrefs(ea_t addr);
+ea_list_t search_protocol(std::string protocol);
 
 ea_t find_unknown_bs_var_64(ea_t ea);
 
@@ -62,18 +68,7 @@ std::string lookup_boot_service_name(uint64_t offset);
 std::string lookup_runtime_service_name(uint64_t offset);
 std::string type_to_name(std::string type);
 
-ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
-ea_list_t get_xrefs_to_array(ea_t addr);
-ea_list_t get_xrefs_util(ea_t addr);
-ea_list_t search_protocol(std::string protocol);
-
-uint16_t get_machine_type();
-uint32_t u32_addr(ea_t addr);
-uint64_t u64_addr(ea_t addr);
-
 uint8_list_t unpack_guid(std::string guid);
-
-uval_t trunc_imm_to_dtype(uval_t value, op_dtype_t dtype);
 
 void op_stroff_for_global_interface(ea_list_t xrefs, qstring type_name);
 void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name);
@@ -84,6 +79,11 @@ void set_ptr_type_and_name(ea_t ea, std::string name, std::string type);
 void set_type_and_name(ea_t ea, std::string name, std::string type);
 
 xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring var_name);
+} // namespace efi_utils
+
+uint16_t get_machine_type();
+uint32_t u32_addr(ea_t addr);
+uint64_t u64_addr(ea_t addr);
 
 #if IDA_SDK_VERSION >= 900
 tid_t import_type(const til_t *til, int _idx, const char *name);

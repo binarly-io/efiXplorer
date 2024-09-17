@@ -562,22 +562,24 @@ protected:
       ++mNumApplied;
 
       // Rename global variable
-      auto name = "g" + type_to_name(static_cast<std::string>(tStr.c_str()));
+      auto name =
+          "g" + efi_utils::type_to_name(static_cast<std::string>(tStr.c_str()));
       set_name(dest_ea, name.c_str(), SN_FORCE);
 
       // Get xrefs to global variable
-      auto xrefs = get_xrefs_util(dest_ea);
+      auto xrefs = efi_utils::get_xrefs(dest_ea);
       qstring type_name;
       ptr_type_data_t pi;
       ptrTif.get_ptr_details(&pi);
       pi.obj_type.get_type_name(&type_name);
       // Handling all interface functions (to rename function arguments)
-      op_stroff_for_global_interface(xrefs, type_name);
+      efi_utils::op_stroff_for_global_interface(xrefs, type_name);
     } else if (outArg->op == cot_var) { // For local variables
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
-      auto name = type_to_name(static_cast<std::string>(tStr.c_str()));
+      auto name =
+          efi_utils::type_to_name(static_cast<std::string>(tStr.c_str()));
       set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
       if (set_hexrays_var_info_and_handle_interfaces(mFuncEa, destVar, ptrTif,
                                                      name)) {
@@ -592,13 +594,13 @@ protected:
     // For global variables
     if (outArg->op == cot_obj) {
       // Rename global variable
-      auto name = "g" + type_to_name(type_name);
+      auto name = "g" + efi_utils::type_to_name(type_name);
       set_name(dest_ea, name.c_str(), SN_FORCE);
     } else if (outArg->op == cot_var) { // For local variables
       var_ref_t varRef = outArg->v;
       lvar_t &destVar = varRef.mba->vars[varRef.idx];
       // Set the Hex-Rays variable type
-      auto name = type_to_name(type_name);
+      auto name = efi_utils::type_to_name(type_name);
       set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
     }
   }
@@ -729,7 +731,7 @@ public:
 
         if (type_name == qstring("EFI_HANDLE") ||
             type_name == qstring("EFI_SYSTEM_TABLE")) {
-          if (!addr_in_vec(child_functions, func_addr)) {
+          if (!efi_utils::addr_in_vec(child_functions, func_addr)) {
             child_functions.push_back(func_addr);
           }
           // set argument type and name
@@ -773,7 +775,7 @@ public:
   int visit_expr(cexpr_t *e) {
     if (e->op == cot_asg) {
       // saving a child function for recursive analysis
-      if (!addr_in_vec(child_functions, e->ea)) {
+      if (!efi_utils::addr_in_vec(child_functions, e->ea)) {
         child_functions.push_back(e->x->obj_ea);
       }
     }
@@ -835,26 +837,26 @@ public:
       ea_t g_addr = e->x->obj_ea;
       std::string type_name_str = static_cast<std::string>(type_name.c_str());
       if (type_name == qstring("EFI_HANDLE")) {
-        set_type_and_name(g_addr, "gImageHandle", type_name_str);
-        if (!addr_in_vec(image_handle_list, g_addr)) {
+        efi_utils::set_type_and_name(g_addr, "gImageHandle", type_name_str);
+        if (!efi_utils::addr_in_vec(image_handle_list, g_addr)) {
           image_handle_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_SYSTEM_TABLE")) {
-        set_ptr_type_and_name(g_addr, "gST", type_name_str);
-        if (!addr_in_vec(st_list, g_addr)) {
+        efi_utils::set_ptr_type_and_name(g_addr, "gST", type_name_str);
+        if (!efi_utils::addr_in_vec(st_list, g_addr)) {
           st_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_BOOT_SERVICES")) {
-        set_ptr_type_and_name(g_addr, "gBS", type_name_str);
-        if (!addr_in_vec(bs_list, g_addr)) {
+        efi_utils::set_ptr_type_and_name(g_addr, "gBS", type_name_str);
+        if (!efi_utils::addr_in_vec(bs_list, g_addr)) {
           bs_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
-        set_ptr_type_and_name(g_addr, "gRT", type_name_str);
-        if (!addr_in_vec(rt_list, g_addr)) {
+        efi_utils::set_ptr_type_and_name(g_addr, "gRT", type_name_str);
+        if (!efi_utils::addr_in_vec(rt_list, g_addr)) {
           rt_list.push_back(g_addr);
         }
       }
@@ -870,7 +872,8 @@ public:
       }
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
       // Set the Hex-Rays variable type
-      auto name = type_to_name(static_cast<std::string>(type_name.c_str()));
+      auto name =
+          efi_utils::type_to_name(static_cast<std::string>(type_name.c_str()));
       // set_hexrays_var_info(mFuncEa, dest_var, var_type, name);
     }
 
@@ -921,7 +924,7 @@ public:
     }
 
     auto service_name =
-        type_to_name(static_cast<std::string>(type_name.c_str()));
+        efi_utils::type_to_name(static_cast<std::string>(type_name.c_str()));
     if (service_name.rfind("Efi", 0) == 0) {
       service_name = service_name.substr(3);
       if (service_name == "RaiseTpl") {
@@ -939,9 +942,9 @@ public:
     json s;
     s["address"] = e->ea;
     s["service_name"] = service_name;
-    s["table_name"] = get_table_name(service_name);
+    s["table_name"] = efi_utils::get_table_name(service_name);
 
-    if (!json_in_vec(services, s)) {
+    if (!efi_utils::json_in_vec(services, s)) {
       services.push_back(s);
     }
 
@@ -1036,7 +1039,7 @@ public:
     }
 
     if (call) {
-      op_stroff_util(e->ea, "EFI_PEI_SERVICES");
+      efi_utils::op_stroff(e->ea, "EFI_PEI_SERVICES");
     }
 
     return 0;
@@ -1085,7 +1088,7 @@ public:
       if (func_type.substr(0, prefix.length()) == prefix) {
         func_type.erase(0, prefix.length());
       }
-      service_name = type_to_name(func_type);
+      service_name = efi_utils::type_to_name(func_type);
     } else {
       auto s = mPeiServices.find(offset);
       if (s == mPeiServices.end()) {
@@ -1104,7 +1107,7 @@ public:
     s["service_name"] = service_name;
     s["table_name"] = table_type_name.c_str();
 
-    if (!json_in_vec(services, s)) {
+    if (!efi_utils::json_in_vec(services, s)) {
       services.push_back(s);
     }
 

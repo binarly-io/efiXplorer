@@ -39,7 +39,7 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-  arch_file_type_t file_type = input_file_type();
+  arch_file_type_t file_type = efi_utils::input_file_type();
   if (file_type == arch_file_type_t::unsupported) {
     return PLUGIN_SKIP;
   }
@@ -82,7 +82,7 @@ bool idaapi run(size_t arg) {
   msg("[%s] disable_ui = %d, disable_vuln_hunt = %d\n", g_plugin_name,
       g_args.disable_ui, g_args.disable_vuln_hunt);
 
-  auto guids_path = get_guids_json_file();
+  auto guids_path = efi_utils::get_guids_json_file();
   msg("[%s] guids.json exists: %s\n", g_plugin_name, BTOA(!guids_path.empty()));
 
   if (guids_path.empty()) {
@@ -93,7 +93,7 @@ bool idaapi run(size_t arg) {
     return false;
   }
 
-  arch_file_type_t arch = input_file_type();
+  arch_file_type_t arch = efi_utils::input_file_type();
   if (arch == arch_file_type_t::x86_64) {
     msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
     efi_analysis::efi_analyse_main_x86_64();

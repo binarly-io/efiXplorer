@@ -22,8 +22,6 @@
 #include "efi_ui.h"
 #include "efi_utils.h"
 
-using efi_analysis::efi_analyser_arm_t;
-
 ea_list_t image_handle_list_arm;
 ea_list_t st_list_arm;
 ea_list_t bs_list_arm;
@@ -64,7 +62,7 @@ void efi_analysis::efi_analyser_arm_t::initial_analysis() {
 #endif /* HEX_RAYS */
   }
   if (m_ftype == ffs_file_type_t::pei) {
-    // set_entry_arg_to_pei_svc();
+    // efi_utils::set_entry_arg_to_pei_svc();
   }
 }
 
@@ -172,10 +170,12 @@ json getService(ea_t addr, uint8_t table_id) {
           insn.ops[0].reg == blr_reg) {
         s["address"] = ea;
         if (table_id == 1) {
-          s["service_name"] = lookup_boot_service_name(service_offset);
+          s["service_name"] =
+              efi_utils::lookup_boot_service_name(service_offset);
           s["table_name"] = "EFI_BOOT_SERVICES";
         } else if (table_id == 2) {
-          s["service_name"] = lookup_runtime_service_name(service_offset);
+          s["service_name"] =
+              efi_utils::lookup_runtime_service_name(service_offset);
           s["table_name"] = "EFI_RUNTIME_SERVICES";
         } else {
           s["table_name"] = "OTHER";
@@ -211,10 +211,12 @@ json getService(ea_t addr, uint8_t table_id) {
           insn.ops[1].type == o_displ && insn.ops[1].reg == reg2) {
         s["address"] = ea;
         if (table_id == 1) {
-          s["service_name"] = lookup_boot_service_name(insn.ops[1].addr);
+          s["service_name"] =
+              efi_utils::lookup_boot_service_name(insn.ops[1].addr);
           s["table_name"] = "EFI_BOOT_SERVICES";
         } else if (table_id == 2) {
-          s["service_name"] = lookup_runtime_service_name(insn.ops[1].addr);
+          s["service_name"] =
+              efi_utils::lookup_runtime_service_name(insn.ops[1].addr);
           s["table_name"] = "EFI_RUNTIME_SERVICES";
         } else {
           s["table_name"] = "OTHER";
@@ -234,28 +236,28 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
     json res = detect_vars(get_func(func_addr));
     if (res.contains("image_handle_list")) {
       for (auto addr : res["image_handle_list"]) {
-        if (!addr_in_vec(image_handle_list_arm, addr)) {
+        if (!efi_utils::addr_in_vec(image_handle_list_arm, addr)) {
           image_handle_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("st_list")) {
       for (auto addr : res["st_list"]) {
-        if (!addr_in_vec(st_list_arm, addr)) {
+        if (!efi_utils::addr_in_vec(st_list_arm, addr)) {
           st_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("bs_list")) {
       for (auto addr : res["bs_list"]) {
-        if (!addr_in_vec(bs_list_arm, addr)) {
+        if (!efi_utils::addr_in_vec(bs_list_arm, addr)) {
           bs_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("rt_list")) {
       for (auto addr : res["rt_list"]) {
-        if (!addr_in_vec(rt_list_arm, addr)) {
+        if (!efi_utils::addr_in_vec(rt_list_arm, addr)) {
           rt_list_arm.push_back(addr);
         }
       }
@@ -275,8 +277,8 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       ea_t bs = get_table_addr(ea, 0x60);
       if (bs != BADADDR) {
         msg("[efiXplorer] gBS = 0x%016llX\n", u64_addr(ea));
-        set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
-        if (!addr_in_vec(bs_list_arm, bs)) {
+        efi_utils::set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
+        if (!efi_utils::addr_in_vec(bs_list_arm, bs)) {
           bs_list_arm.push_back(bs);
         }
         continue;
@@ -284,8 +286,8 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       ea_t rt = get_table_addr(ea, 0x58);
       if (rt != BADADDR) {
         msg("[efiXplorer] gRT = 0x%016llX\n", u64_addr(ea));
-        set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
-        if (!addr_in_vec(rt_list_arm, rt)) {
+        efi_utils::set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
+        if (!efi_utils::addr_in_vec(rt_list_arm, rt)) {
           rt_list_arm.push_back(rt);
         }
         continue;
@@ -306,7 +308,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
 
   // analyse xrefs to gBS, gRT
   for (auto bs : bs_list_arm) {
-    auto xrefs = get_xrefs_util(bs);
+    auto xrefs = efi_utils::get_xrefs(bs);
     for (auto ea : xrefs) {
       auto s = getService(ea, 1);
       if (!s.contains("address")) {
@@ -316,7 +318,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
       if (name == "Unknown") {
         continue;
       }
-      if (!json_in_vec(m_all_services, s)) {
+      if (!efi_utils::json_in_vec(m_all_services, s)) {
         msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n",
             u64_addr(ea));
         m_all_services.push_back(s);
@@ -324,7 +326,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
     }
   }
   for (auto rt : rt_list_arm) {
-    auto xrefs = get_xrefs_util(rt);
+    auto xrefs = efi_utils::get_xrefs(rt);
     for (auto ea : xrefs) {
       auto s = getService(ea, 2);
       if (!s.contains("address")) {
@@ -334,7 +336,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
       if (name == "Unknown") {
         continue;
       }
-      if (!json_in_vec(m_all_services, s)) {
+      if (!efi_utils::json_in_vec(m_all_services, s)) {
         msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n",
             u64_addr(ea));
         m_all_services.push_back(s);
@@ -419,7 +421,7 @@ void efi_analysis::efi_analyser_arm_t::find_pei_services_function() {
       msg("[efiXplorer] found GetPeiServices() function: 0x%016llX\n",
           u64_addr(start_ea));
       set_name(start_ea, "GetPeiServices", SN_FORCE);
-      set_ret_to_pei_svc(start_ea);
+      efi_utils::set_ret_to_pei_svc(start_ea);
     }
   }
 }
@@ -470,7 +472,7 @@ bool efi_analysis::efi_analyse_main_aarch64() {
                            ? analyser.m_ftype = ffs_file_type_t::pei
                            : analyser.m_ftype = ffs_file_type_t::dxe_smm;
   } else {
-    analyser.m_ftype = ask_file_type(&analyser.m_all_guids);
+    analyser.m_ftype = efi_utils::ask_file_type(&analyser.m_all_guids);
   }
 
   if (analyser.m_ftype == ffs_file_type_t::pei) {

@@ -73,14 +73,14 @@ bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
   }
 
   // Get xrefs to local variable
-  xreflist_t xrefs =
-      xrefs_to_stack_var(func_addr, static_cast<qstring>(name.c_str()));
+  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(
+      func_addr, static_cast<qstring>(name.c_str()));
   qstring type_name;
   ptr_type_data_t pi;
   tif.get_ptr_details(&pi);
   pi.obj_type.get_type_name(&type_name);
   // Handling all interface functions (to rename function arguments)
-  op_stroff_for_interface(xrefs, type_name);
+  efi_utils::op_stroff_for_interface(xrefs, type_name);
 
   return true;
 }

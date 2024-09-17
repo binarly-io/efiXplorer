@@ -52,9 +52,9 @@ json EfiDependencies::getDeps(std::string guid) {
     if (p["guid"] != guid) {
       continue;
     }
-    p["ea"] = as_hex(u64_addr(p["ea"]));
-    p["xref"] = as_hex(u64_addr(p["xref"]));
-    p["address"] = as_hex(u64_addr(p["address"]));
+    p["ea"] = efi_utils::as_hex(u64_addr(p["ea"]));
+    p["xref"] = efi_utils::as_hex(u64_addr(p["xref"]));
+    p["address"] = efi_utils::as_hex(u64_addr(p["address"]));
     if (find(installers.begin(), installers.end(), p["service"]) !=
         installers.end()) {
       res["installed"].push_back(p);
@@ -141,22 +141,22 @@ void EfiDependencies::getProtocolsWithoutInstallers() {
 void EfiDependencies::getInstallersModules() {
   // search for this protocols in binary
   for (auto &protocol : protocolsWithoutInstallers) {
-    auto addrs = search_protocol(protocol);
+    auto addrs = efi_utils::search_protocol(protocol);
     bool installerFound = false;
     for (auto addr : addrs) {
-      auto xrefs = get_xrefs_util(addr);
+      auto xrefs = efi_utils::get_xrefs(addr);
       if (!xrefs.size()) {
         continue;
       }
       if (xrefs.size() == 1) {
         func_t *func = get_func(xrefs.at(0));
         if (func == nullptr) {
-          xrefs = get_xrefs_to_array(xrefs.at(0));
+          xrefs = efi_utils::get_xrefs_to_array(xrefs.at(0));
         }
       }
       for (auto ea : xrefs) {
-        if (check_install_protocol(ea)) {
-          auto module = get_module_name_loader(ea);
+        if (efi_utils::check_install_protocol(ea)) {
+          auto module = efi_utils::get_module_name_loader(ea);
           additionalInstallers[protocol] =
               static_cast<std::string>(module.c_str());
           installerFound = true;
