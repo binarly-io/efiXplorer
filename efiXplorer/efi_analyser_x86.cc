@@ -2598,40 +2598,39 @@ void efi_analysis::efi_analyser_t::dump_json() {
 }
 
 //--------------------------------------------------------------------------
-// Show all non-empty choosers windows
-void showAllChoosers(efi_analysis::efi_analyser_x86_t analyser) {
+// show all non-empty choosers windows (services, protocols, nvram, etc)
+void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
   qstring title;
 
   // open window with all services
-  if (analyser.m_all_services.size()) {
+  if (m_all_services.size()) {
     title = "efiXplorer: services";
-    services_show(analyser.m_all_services, title);
+    services_show(m_all_services, title);
   }
 
   // open window with protocols
-  if (analyser.m_ftype == ffs_file_type_t::pei) {
-    if (analyser.m_all_ppis.size()) {
+  if (m_ftype == ffs_file_type_t::pei) {
+    if (m_all_ppis.size()) {
       title = "efiXplorer: PPIs";
-      ppis_show(analyser.m_all_ppis, title);
+      ppis_show(m_all_ppis, title);
     }
-
   } else { // ffs_file_type_t::dxe_smm
-    if (analyser.m_all_protocols.size()) {
+    if (m_all_protocols.size()) {
       title = "efiXplorer: protocols";
-      protocols_show(analyser.m_all_protocols, title);
+      protocols_show(m_all_protocols, title);
     }
   }
 
   // open window with data guids
-  if (analyser.m_all_guids.size()) {
+  if (m_all_guids.size()) {
     qstring title = "efiXplorer: GUIDs";
-    guids_show(analyser.m_all_guids, title);
+    guids_show(m_all_guids, title);
   }
 
   // open window with NVRAM variables
-  if (analyser.m_nvram_variables.size()) {
+  if (m_nvram_variables.size()) {
     qstring title = "efiXplorer: NVRAM";
-    nvram_show(analyser.m_nvram_variables, title);
+    nvram_show(m_nvram_variables, title);
   }
 
   // open window with vulnerabilities
@@ -2643,6 +2642,7 @@ void showAllChoosers(efi_analysis::efi_analyser_x86_t analyser) {
         {"PeiGetVariableOverflow", peiGetVariableOverflow},
         {"DxeGetVariableOverflow", getVariableOverflow},
         {"SmmGetVariableOverflow", smmGetVariableOverflow}};
+
     for (const auto &[type, addrs] : vulns_map) {
       for (auto addr : addrs) {
         json item;
@@ -2651,14 +2651,15 @@ void showAllChoosers(efi_analysis::efi_analyser_x86_t analyser) {
         vulns.push_back(item);
       }
     }
+
     qstring title = "efiXplorer: vulns";
     vulns_show(vulns, title);
   }
 }
 
 //--------------------------------------------------------------------------
-// Main function for X64 modules
-bool efi_analysis::efiAnalyserMainX64() {
+// main function for x86 64-bit modules
+bool efi_analysis::efi_analyse_main_x86_64() {
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::efi_analyser_x86_t analyser;
@@ -2763,7 +2764,7 @@ bool efi_analysis::efiAnalyserMainX64() {
 
   // show all choosers windows
   if (!g_args.disable_ui) {
-    showAllChoosers(analyser);
+    analyser.show_all_choosers();
   }
 
   if (analyser.m_arch == arch_file_type_t::uefi) {
@@ -2782,8 +2783,8 @@ bool efi_analysis::efiAnalyserMainX64() {
 }
 
 //--------------------------------------------------------------------------
-// Main function for X86 modules
-bool efi_analysis::efiAnalyserMainX86() {
+// main function for x86 32-bit modules
+bool efi_analysis::efi_analyse_main_x86_32() {
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::efi_analyser_x86_t analyser;
@@ -2826,7 +2827,6 @@ bool efi_analysis::efiAnalyserMainX86() {
     apply_all_types_for_interfaces(analyser.m_all_protocols);
     apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
 #endif
-
   } else if (analyser.m_ftype == ffs_file_type_t::pei) {
     set_entry_arg_to_pei_svc();
     add_struct_for_shifted_ptr();
@@ -2851,7 +2851,7 @@ bool efi_analysis::efiAnalyserMainX86() {
 
   // show all choosers windows
   if (!g_args.disable_ui) {
-    showAllChoosers(analyser);
+    analyser.show_all_choosers();
   }
 
   hide_wait_box();

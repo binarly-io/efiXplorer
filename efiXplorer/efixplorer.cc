@@ -65,9 +65,8 @@ bool idaapi run(size_t arg) {
     // - arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
     // - arg = 4 (100): disable_vuln_hunt (DXE)
     // - arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
-    // - arg = 6 (110): disable_ui & disable_vuln_hunt (DXE)
-    // - arg = 7 (111): disable_ui & disable_vuln_hunt (PEI, 32-bit binaries
-    // only)
+    // - arg = 6 (110): disable_ui & disable_vuln_hunt for DXE
+    // - arg = 7 (111): disable_ui & disable_vuln_hunt for PEI
     g_args.module_type = module_type_t::pei;
   }
 
@@ -97,24 +96,24 @@ bool idaapi run(size_t arg) {
   arch_file_type_t arch = input_file_type();
   if (arch == arch_file_type_t::x86_64) {
     msg("[%s] input file is 64-bit module (x86)\n", g_plugin_name);
-    efi_analysis::efiAnalyserMainX64();
+    efi_analysis::efi_analyse_main_x86_64();
   } else if (arch == arch_file_type_t::x86_32) {
     msg("[%s] input file is 32-bit module (x86)\n", g_plugin_name);
-    efi_analysis::efiAnalyserMainX86();
+    efi_analysis::efi_analyse_main_x86_32();
   } else if (arch == arch_file_type_t::uefi) {
     msg("[%s] input file is UEFI firmware\n", g_plugin_name);
     warning("%s: analysis may take some time, please wait for it to complete\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
       msg("[%s] analyse AARCH64 modules\n", g_plugin_name);
-      efi_analysis::efiAnalyserMainArm();
+      efi_analysis::efi_analyse_main_aarch64();
     } else {
       msg("[%s] analyse AMD64 modules\n", g_plugin_name);
-      efi_analysis::efiAnalyserMainX64();
+      efi_analysis::efi_analyse_main_x86_64();
     }
   } else if (arch == arch_file_type_t::aarch64) {
     msg("[%s] input file is 64-bit module (ARM)\n", g_plugin_name);
-    efi_analysis::efiAnalyserMainArm();
+    efi_analysis::efi_analyse_main_aarch64();
   }
 
   // Reset arguments

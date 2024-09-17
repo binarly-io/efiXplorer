@@ -424,32 +424,32 @@ void efi_analysis::efi_analyser_arm_t::findPeiServicesFunction() {
 }
 
 //--------------------------------------------------------------------------
-// Show all non-empty choosers windows
-void showAllChoosers(efi_analysis::efi_analyser_arm_t analyser) {
+// show all non-empty choosers windows (services, protocols, etc)
+void efi_analysis::efi_analyser_arm_t::show_all_choosers() {
   qstring title;
 
   // open window with all services
-  if (analyser.m_all_services.size()) {
+  if (m_all_services.size()) {
     title = "efiXplorer: services";
-    services_show(analyser.m_all_services, title);
+    services_show(m_all_services, title);
   }
 
   // open window with data guids
-  if (analyser.m_all_guids.size()) {
+  if (m_all_guids.size()) {
     qstring title = "efiXplorer: GUIDs";
-    guids_show(analyser.m_all_guids, title);
+    guids_show(m_all_guids, title);
   }
 
   // open window with protocols
-  if (analyser.m_all_protocols.size()) {
+  if (m_all_protocols.size()) {
     title = "efiXplorer: protocols";
-    protocols_show(analyser.m_all_protocols, title);
+    protocols_show(m_all_protocols, title);
   }
 }
 
 //--------------------------------------------------------------------------
 // Main function for AARCH64 modules
-bool efi_analysis::efiAnalyserMainArm() {
+bool efi_analysis::efi_analyse_main_aarch64() {
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 
   efi_analysis::efi_analyser_arm_t analyser;
@@ -501,8 +501,8 @@ bool efi_analysis::efiAnalyserMainArm() {
   }
   apply_all_types_for_interfaces(analyser.m_all_protocols);
 #endif /* HEX_RAYS */
-  showAllChoosers(analyser);
 
+  analyser.show_all_choosers();
   analyser.dump_json();
 
   hide_wait_box();

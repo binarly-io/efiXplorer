@@ -342,6 +342,8 @@ public:
     }
 #endif
   }
+
+  void show_all_choosers();
   bool findImageHandleX64();
   bool findSystemTableX64();
   bool findBootServicesTables();
@@ -384,16 +386,17 @@ public:
     import_type(idati, -1, "EFI_BOOT_SERVICES");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
   }
+
+  void findBootServicesTables();
+  void findPeiServicesFunction();
   void fix_offsets();
   void initialAnalysis();
-  void findBootServicesTables();
   void initialGlobalVarsDetection();
-  void servicesDetection();
   void protocolsDetection();
-  void findPeiServicesFunction();
+  void servicesDetection();
+  void show_all_choosers();
 
 private:
-  bool getProtocol(ea_t address, uint32_t p_reg, std::string service_name);
   struct service_info_64bit {
     char name[64];
     uint32_t offset;
@@ -415,11 +418,11 @@ private:
       {"LocateProtocol", 0x140, REG_X0, 1},
       {"InstallMultipleProtocolInterfaces", 0x148, REG_X1, 1},
       {"UninstallMultipleProtocolInterfaces", 0x150, REG_X1, 1}};
+
+  bool getProtocol(ea_t address, uint32_t p_reg, std::string service_name);
 };
 
-bool efiAnalyserMainX64();
-bool efiAnalyserMainX86();
-bool efiAnalyserMainArm();
+bool efi_analyse_main_x86_64();
+bool efi_analyse_main_x86_32();
+bool efi_analyse_main_aarch64();
 }; // namespace efi_analysis
-
-void showAllChoosers(efi_analysis::efi_analyser_t analyser);
