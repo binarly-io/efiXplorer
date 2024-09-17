@@ -393,14 +393,7 @@ public:
   void show_all_choosers();
 
 private:
-  struct service_info_64bit {
-    char name[64];
-    uint32_t offset;
-    uint32_t reg;
-    uint16_t arg_index;
-  };
-
-  struct service_info_64bit bs_table_aarch64[13] = {
+  service_info_64_t bs_table_aarch64[13] = {
       {"InstallProtocolInterface", 0x80, REG_X1, 1},
       {"ReinstallProtocolInterface", 0x88, REG_X1, 1},
       {"UninstallProtocolInterface", 0x90, REG_X1, 1},

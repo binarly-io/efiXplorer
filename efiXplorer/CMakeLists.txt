@@ -29,9 +29,9 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 set(efiXplorer_src
     "efi_defs.h"
     "efi_defs.cc"
-    "efi_analyser.h"
-    "efi_analyser_arm.cc"
-    "efi_analyser_X86.cc"
+    "efi_analysis.h"
+    "efi_analysis_arm.cc"
+    "efi_analysis_x86.cc"
     "efi_deps.cc"
     "efi_deps.h"
     "efi_global.cc"

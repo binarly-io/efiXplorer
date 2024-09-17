@@ -17,7 +17,7 @@
  *
  */
 
-#include "efi_analyser.h"
+#include "efi_analysis.h"
 #include "efi_global.h"
 #include "efi_ui.h"
 #include "efi_utils.h"
