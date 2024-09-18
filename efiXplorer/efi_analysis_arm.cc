@@ -147,7 +147,7 @@ ea_t get_table_addr(ea_t code_addr, uint64_t offset) {
   return table;
 }
 
-json getService(ea_t addr, uint8_t table_id) {
+json get_service(ea_t addr, uint8_t table_id) {
   json s;
   insn_t insn;
   decode_insn(&insn, addr);
@@ -219,7 +219,7 @@ json getService(ea_t addr, uint8_t table_id) {
               efi_utils::lookup_runtime_service_name(insn.ops[1].addr);
           s["table_name"] = "EFI_RUNTIME_SERVICES";
         } else {
-          s["table_name"] = "unknown";
+          s["table_name"] = "Unknown";
         }
         return s;
       }
@@ -265,7 +265,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
   }
 #endif /* HEX_RAYS */
 
-  // analysis of all functions and search for additional table initializations
+  // analysis of all functions and search for additional table initialisations
   for (auto func_addr : m_funcs) {
     func_t *f = get_func(func_addr);
     if (f == nullptr) {
@@ -276,7 +276,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       ea = next_head(ea, BADADDR);
       ea_t bs = get_table_addr(ea, 0x60);
       if (bs != BADADDR) {
-        msg("[efiXplorer] gBS = 0x%016llX\n", u64_addr(ea));
+        efi_utils::log("gBS: 0x%016llX\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
         if (!efi_utils::addr_in_vec(bs_list_arm, bs)) {
           bs_list_arm.push_back(bs);
@@ -285,7 +285,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       }
       ea_t rt = get_table_addr(ea, 0x58);
       if (rt != BADADDR) {
-        msg("[efiXplorer] gRT = 0x%016llX\n", u64_addr(ea));
+        efi_utils::log("gRT: 0x%016llX\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
         if (!efi_utils::addr_in_vec(rt_list_arm, rt)) {
           rt_list_arm.push_back(rt);
@@ -310,7 +310,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
   for (auto bs : bs_list_arm) {
     auto xrefs = efi_utils::get_xrefs(bs);
     for (auto ea : xrefs) {
-      auto s = getService(ea, 1);
+      auto s = get_service(ea, 1);
       if (!s.contains("address")) {
         continue;
       }
@@ -319,8 +319,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
         continue;
       }
       if (!efi_utils::json_in_vec(m_all_services, s)) {
-        msg("[efiXplorer] gBS xref address: 0x%016llX, found new service\n",
-            u64_addr(ea));
+        efi_utils::log("found new boot service at 0x%016llX\n", u64_addr(ea));
         m_all_services.push_back(s);
       }
     }
@@ -328,7 +327,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
   for (auto rt : rt_list_arm) {
     auto xrefs = efi_utils::get_xrefs(rt);
     for (auto ea : xrefs) {
-      auto s = getService(ea, 2);
+      auto s = get_service(ea, 2);
       if (!s.contains("address")) {
         continue;
       }
@@ -337,8 +336,8 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
         continue;
       }
       if (!efi_utils::json_in_vec(m_all_services, s)) {
-        msg("[efiXplorer] gRT xref address: 0x%016llX, found new service\n",
-            u64_addr(ea));
+        efi_utils::log("found new runtime service at 0x%016llX\n",
+                       u64_addr(ea));
         m_all_services.push_back(s);
       }
     }
@@ -380,8 +379,7 @@ bool efi_analysis::efi_analyser_arm_t::get_protocol(ea_t address,
   if (guid_addr == BADADDR || code_addr == BADADDR) {
     return false;
   }
-  msg("[efiXplorer] address: 0x%016llX, found new protocol\n",
-      u64_addr(code_addr));
+  efi_utils::log("found new protocol at 0x%016llX\n", u64_addr(code_addr));
   return add_protocol(service_name, guid_addr, code_addr, address);
 }
 
@@ -419,8 +417,8 @@ void efi_analysis::efi_analyser_arm_t::find_pei_services_function() {
     }
     decode_insn(&insn, end_ea);
     if (insn.itype == ARM_ret) {
-      msg("[efiXplorer] found GetPeiServices() function: 0x%016llX\n",
-          u64_addr(start_ea));
+      efi_utils::log("found GetPeiServices() function at 0x%016llX\n",
+                     u64_addr(start_ea));
       set_name(start_ea, "GetPeiServices", SN_FORCE);
       efi_utils::set_ret_to_pei_svc(start_ea);
     }
@@ -434,19 +432,19 @@ void efi_analysis::efi_analyser_arm_t::show_all_choosers() {
 
   // open window with all services
   if (m_all_services.size()) {
-    title = "efiXplorer: services";
+    title = "efi: services";
     services_show(m_all_services, title);
   }
 
   // open window with data guids
   if (m_all_guids.size()) {
-    qstring title = "efiXplorer: GUIDs";
+    qstring title = "efi: GUIDs";
     guids_show(m_all_guids, title);
   }
 
   // open window with protocols
   if (m_all_protocols.size()) {
-    title = "efiXplorer: protocols";
+    title = "efi: protocols";
     protocols_show(m_all_protocols, title);
   }
 }
@@ -477,7 +475,7 @@ bool efi_analysis::efi_analyse_main_aarch64() {
   }
 
   if (analyser.m_ftype == ffs_file_type_t::pei) {
-    msg("[efiXplorer] input file is PEI module\n");
+    efi_utils::log("input file is PEI module\n");
   }
 
   // set the correct name for the entry point and automatically fix the

@@ -737,7 +737,7 @@ xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring var_name) {
 #if IDA_SDK_VERSION < 900
   struc_t *frame = get_frame(func_addr);
   func_t *func = get_func(func_addr);
-  member_t member; // Get member by name
+  member_t member; // get member by name
   for (int i = 0; i < frame->memqty; i++) {
     member = frame->members[i];
     qstring name;
@@ -966,7 +966,7 @@ std::string efi_utils::get_table_name(std::string service_name) {
     }
   }
 
-  return "unknown";
+  return "Unknown";
 }
 
 std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
@@ -976,7 +976,7 @@ std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
     }
   }
 
-  return "unknown";
+  return "Unknown";
 }
 
 std::string efi_utils::lookup_runtime_service_name(uint64_t offset) {
@@ -986,7 +986,7 @@ std::string efi_utils::lookup_runtime_service_name(uint64_t offset) {
     }
   }
 
-  return "unknown";
+  return "Unknown";
 }
 
 uint16_t get_machine_type() {

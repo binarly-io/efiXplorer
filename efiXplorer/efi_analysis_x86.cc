@@ -37,23 +37,23 @@ ea_list_t smst_list;             // gSmst list (SMM system table addresses)
 ea_list_t image_handle_list;     // gImageHandle list (image handle addresses)
 ea_list_t runtime_services_list; // runtime services list
 
-json_list_t stackGuids;
-json_list_t dataGuids;
+json_list_t data_guids;
+json_list_t stack_guids;
 
 // all .text and .data segments for compatibility with the efiLoader
-segment_list_t textSegments;
-segment_list_t dataSegments;
+segment_list_t code_segs;
+segment_list_t data_segs;
 
 // for smm callouts finding
-ea_list_t calloutAddrs;
-func_list_t excFunctions;
-func_list_t childSmiHandlers;
-ea_list_t readSaveStateCalls;
+ea_list_t callout_addrs;
+ea_list_t read_save_state_calls;
+func_list_t child_smi_handlers;
+func_list_t exc_funcs;
 
 // for GetVariable stack overflow finding
-ea_list_t peiGetVariableOverflow;
-ea_list_t getVariableOverflow;
-ea_list_t smmGetVariableOverflow;
+ea_list_t double_get_variable_pei;
+ea_list_t double_get_variable_smm;
+ea_list_t double_get_variable;
 
 efi_analysis::efi_analyser_t::efi_analyser_t() {
   // 32-bit, 64-bit, ARM or UEFI (in loader instance)
@@ -121,21 +121,21 @@ efi_analysis::efi_analyser_t::~efi_analyser_t() {
   image_handle_list.clear();
   runtime_services_list.clear();
 
-  stackGuids.clear();
-  dataGuids.clear();
+  stack_guids.clear();
+  data_guids.clear();
 
-  textSegments.clear();
-  dataSegments.clear();
+  code_segs.clear();
+  data_segs.clear();
 
-  calloutAddrs.clear();
-  excFunctions.clear();
-  readSaveStateCalls.clear();
+  callout_addrs.clear();
+  exc_funcs.clear();
+  read_save_state_calls.clear();
   m_smi_handlers.clear();
-  childSmiHandlers.clear();
+  child_smi_handlers.clear();
 
-  peiGetVariableOverflow.clear();
-  getVariableOverflow.clear();
-  smmGetVariableOverflow.clear();
+  double_get_variable_pei.clear();
+  double_get_variable.clear();
+  double_get_variable_smm.clear();
 
   g_get_smst_location_calls.clear();
   g_smm_get_variable_calls.clear();
@@ -175,26 +175,26 @@ void efi_analysis::efi_analyser_t::get_segments() {
         // in order for decompilation to work properly
         s->perm = (SEGPERM_READ | SEGPERM_WRITE | SEGPERM_EXEC);
         set_segm_class(s, "DATA");
-        textSegments.push_back(s);
+        code_segs.push_back(s);
         continue;
       }
     }
 
     auto index = seg_name.find(".data");
     if (index != std::string::npos) {
-      dataSegments.push_back(s);
+      data_segs.push_back(s);
       continue;
     }
   }
 
   // print all .text and .code segments addresses
-  for (auto seg : textSegments) {
+  for (auto seg : code_segs) {
     segment_t *s = seg;
     msg("[%s] code segment: 0x%016llX\n", g_plugin_name, u64_addr(s->start_ea));
   }
 
   // print all .data segments addresses
-  for (auto seg : dataSegments) {
+  for (auto seg : data_segs) {
     segment_t *s = seg;
     msg("[%s] data segment: 0x%016llX\n", g_plugin_name, u64_addr(s->start_ea));
   }
@@ -260,8 +260,8 @@ bool efi_analysis::efi_analyser_x86_t::find_system_table64() {
 // Find and mark gSmst global variable address for X64 module
 bool efi_analysis::efi_analyser_x86_t::find_smst64() {
   msg("[%s] gSmst finding\n", g_plugin_name);
-  ea_list_t smst_listSmmBase = findSmstSmmBase(bs_list);
-  ea_list_t smst_listSwDispatch = findSmstSwDispatch(bs_list);
+  ea_list_t smst_listSmmBase = efi_smm_utils::find_smst_smm_base(bs_list);
+  ea_list_t smst_listSwDispatch = efi_smm_utils::find_smst_sw_dispatch(bs_list);
   smst_list.insert(smst_list.end(), smst_listSwDispatch.begin(),
                    smst_listSwDispatch.end());
   smst_list.insert(smst_list.end(), smst_listSmmBase.begin(),
@@ -384,7 +384,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
           // save child SW SMI handler
           func_t *handler_func = get_func(rcx_last);
           if (handler_func != nullptr) {
-            childSmiHandlers.push_back(handler_func);
+            child_smi_handlers.push_back(handler_func);
             set_name(rcx_last, "ChildSwSmiHandler", SN_FORCE);
             break;
           }
@@ -409,7 +409,7 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
   }
 
   insn_t insn;
-  for (auto seg : textSegments) {
+  for (auto seg : code_segs) {
     segment_t *s = seg;
     msg("[%s] gEfiBootServices finding from 0x%016llX to 0x%016llX\n",
         g_plugin_name, u64_addr(s->start_ea), u64_addr(s->end_ea));
@@ -528,7 +528,7 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
   }
 
   insn_t insn;
-  for (auto seg : textSegments) {
+  for (auto seg : code_segs) {
     segment_t *s = seg;
     msg("[%s] gEfiRuntimeServices finding from 0x%016llX to 0x%016llX\n",
         g_plugin_name, u64_addr(s->start_ea), u64_addr(s->end_ea));
@@ -704,10 +704,8 @@ void efi_analysis::efi_analyser_x86_t::get_boot_services_all() {
               // add item to allBootServices
               json bsItem;
               bsItem["address"] = addr;
-              bsItem["service_name"] =
-                  static_cast<std::string>(g_boot_services_table_all[j].name);
-              bsItem["table_name"] =
-                  static_cast<std::string>("EFI_BOOT_SERVICES");
+              bsItem["service_name"] = g_boot_services_table_all[j].name;
+              bsItem["table_name"] = "EFI_BOOT_SERVICES";
               bsItem["offset"] = offset;
 
               // add code addresses for arguments
@@ -792,10 +790,8 @@ void efi_analysis::efi_analyser_x86_t::get_runtime_services_all() {
               // add item to allRuntimeServices
               json rtItem;
               rtItem["address"] = addr;
-              rtItem["service_name"] = static_cast<std::string>(
-                  g_runtime_services_table_all[j].name);
-              rtItem["table_name"] =
-                  static_cast<std::string>("EFI_RUNTIME_SERVICES");
+              rtItem["service_name"] = g_runtime_services_table_all[j].name;
+              rtItem["table_name"] = "EFI_RUNTIME_SERVICES";
               rtItem["offset"] = offset;
 
               // add code addresses for arguments
@@ -856,11 +852,12 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
                 u32_addr(g_smm_services_table_all[j].offset64)) {
               if (u32_addr(g_smm_services_table_all[j].offset64) == 0xe0) {
                 // set name for Handler argument
-                auto smiHandlerAddr = markChildSwSmiHandler(addr);
+                auto smiHandlerAddr =
+                    efi_smm_utils::mark_child_sw_smi_handlers(addr);
                 // save SMI handler
                 func_t *childSmiHandler = get_func(smiHandlerAddr);
                 if (childSmiHandler != nullptr) {
-                  childSmiHandlers.push_back(childSmiHandler);
+                  child_smi_handlers.push_back(childSmiHandler);
                 }
               }
 
@@ -882,10 +879,8 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
               // add item to allSmmServices
               json smmsItem;
               smmsItem["address"] = addr;
-              smmsItem["service_name"] =
-                  static_cast<std::string>(g_smm_services_table_all[j].name);
-              smmsItem["table_name"] =
-                  static_cast<std::string>("_EFI_SMM_SYSTEM_TABLE2");
+              smmsItem["service_name"] = g_smm_services_table_all[j].name;
+              smmsItem["table_name"] = "_EFI_SMM_SYSTEM_TABLE2";
               smmsItem["offset"] = g_smm_services_table_all[j].offset64;
 
               // add code addresses for arguments
@@ -972,9 +967,8 @@ void efi_analysis::efi_analyser_x86_t::get_pei_services_all32() {
                 .push_back(ea);
             json psItem;
             psItem["address"] = ea;
-            psItem["service_name"] =
-                static_cast<std::string>(g_pei_services_table32[j].name);
-            psItem["table_name"] = static_cast<std::string>("EFI_PEI_SERVICES");
+            psItem["service_name"] = g_pei_services_table32[j].name;
+            psItem["table_name"] = "EFI_PEI_SERVICES";
             psItem["offset"] = g_pei_services_table32[j].offset;
 
             // add code addresses for arguments
@@ -1036,8 +1030,7 @@ void efi_analysis::efi_analyser_x86_t::get_variable_ppi_calls_all32() {
             json ppiItem;
             ppiItem["address"] = ea;
             ppiItem["service_name"] = ppi_call;
-            ppiItem["table_name"] =
-                static_cast<std::string>("EFI_PEI_READ_ONLY_VARIABLE2_PPI");
+            ppiItem["table_name"] = "EFI_PEI_READ_ONLY_VARIABLE2_PPI";
             ppiItem["offset"] = g_variable_ppi_table_all[j].offset32;
 
             // add code addresses for arguments
@@ -1165,7 +1158,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
 // Get boot services by protocols for X64 modules
 void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
   insn_t insn;
-  for (auto s : textSegments) {
+  for (auto s : code_segs) {
     msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
         g_plugin_name, u64_addr(s->start_ea), u64_addr(s->end_ea));
     ea_t ea = s->start_ea;
@@ -1207,9 +1200,8 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
         // add item to allBootServices
         json bsItem;
         bsItem["address"] = ea;
-        bsItem["service_name"] =
-            static_cast<std::string>(g_boot_services_table64[i].name);
-        bsItem["table_name"] = static_cast<std::string>("EFI_BOOT_SERVICES");
+        bsItem["service_name"] = g_boot_services_table64[i].name;
+        bsItem["table_name"] = "EFI_BOOT_SERVICES";
         bsItem["offset"] = g_boot_services_table64[i].offset;
 
         // add code addresses for arguments
@@ -1250,9 +1242,8 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
           // add item to allBootServices
           json bsItem;
           bsItem["address"] = ea;
-          bsItem["service_name"] =
-              static_cast<std::string>(g_boot_services_table32[i].name);
-          bsItem["table_name"] = static_cast<std::string>("EFI_BOOT_SERVICES");
+          bsItem["service_name"] = g_boot_services_table32[i].name;
+          bsItem["table_name"] = "EFI_BOOT_SERVICES";
           bsItem["offset"] = g_boot_services_table32[i].offset;
 
           // add code addresses for arguments
@@ -1431,10 +1422,10 @@ bool efi_analysis::efi_analyser_x86_t::
 //--------------------------------------------------------------------------
 // Get boot services protocols names for X64 modules
 void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
-  if (!textSegments.size()) {
+  if (!code_segs.size()) {
     return;
   }
-  segment_t *s = textSegments.at(0);
+  segment_t *s = code_segs.at(0);
   ea_t start = s->start_ea;
   msg("[%s] protocols finding (boot services, start address = 0x%016llX)\n",
       g_plugin_name, u64_addr(start));
@@ -1583,10 +1574,10 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
 //--------------------------------------------------------------------------
 // Get smm services protocols names for X64 modules
 void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
-  if (!textSegments.size()) {
+  if (!code_segs.size()) {
     return;
   }
-  segment_t *s = textSegments.at(0);
+  segment_t *s = code_segs.at(0);
   ea_t start = s->start_ea;
   msg("[%s] protocols finding (smm services, start address = 0x%016llX)\n",
       g_plugin_name, u64_addr(start));
@@ -1677,12 +1668,12 @@ void efi_analysis::efi_analyser_t::mark_interfaces() {
 // Mark GUIDs found in the .text and .data segment
 void efi_analysis::efi_analyser_t::mark_data_guids() {
   ea_t ptrSize = inf_is_64bit() ? 8 : 4;
-  auto guids_segments = textSegments;
+  auto guids_segments = code_segs;
   // find GUIDs in .text and .data segments
   // TODO(yeggor): scan only the areas between the beginning of the .text
   // segment and the first function address (?)
-  guids_segments.insert(guids_segments.end(), dataSegments.begin(),
-                        dataSegments.end());
+  guids_segments.insert(guids_segments.end(), data_segs.begin(),
+                        data_segs.end());
   for (auto s : guids_segments) {
     msg("[%s] marking GUIDs from 0x%016llX to 0x%016llX\n", g_plugin_name,
         u64_addr(s->start_ea), u64_addr(s->end_ea));
@@ -1734,7 +1725,7 @@ void efi_analysis::efi_analyser_t::mark_data_guids() {
         guid_item["name"] = guidName;
         guid_item["guid"] = efi_utils::guid_to_string(guid);
         m_all_guids.push_back(guid_item);
-        dataGuids.push_back(guid_item);
+        data_guids.push_back(guid_item);
       }
       ea += 1;
     }
@@ -1744,7 +1735,7 @@ void efi_analysis::efi_analyser_t::mark_data_guids() {
 //--------------------------------------------------------------------------
 // Mark GUIDs found in local variables for X64 modules
 void efi_analysis::efi_analyser_x86_t::mark_local_guids64() {
-  for (auto seg : textSegments) {
+  for (auto seg : code_segs) {
     segment_t *s = seg;
     ea_t ea = s->start_ea;
     insn_t insn;
@@ -1800,7 +1791,7 @@ void efi_analysis::efi_analyser_x86_t::mark_local_guids64() {
               guid_item["name"] = dbItem.key();
               guid_item["guid"] = efi_utils::guid_to_string(guid);
               m_all_guids.push_back(guid_item);
-              stackGuids.push_back(guid_item);
+              stack_guids.push_back(guid_item);
               exit = true;
               break;
             }
@@ -1825,9 +1816,9 @@ void findCalloutRec(func_t *func) {
       ea_t nextFuncAddr = insn.ops[0].addr;
       func_t *nextFunc = get_func(nextFuncAddr);
       if (nextFunc) {
-        auto it = std::find(excFunctions.begin(), excFunctions.end(), nextFunc);
-        if (it == excFunctions.end()) {
-          excFunctions.push_back(nextFunc);
+        auto it = std::find(exc_funcs.begin(), exc_funcs.end(), nextFunc);
+        if (it == exc_funcs.end()) {
+          exc_funcs.push_back(nextFunc);
           findCalloutRec(nextFunc);
         }
       }
@@ -1859,7 +1850,7 @@ void findCalloutRec(func_t *func) {
         if (!fp) {
           msg("[%s] SMM callout found (gBS): 0x%016llX\n", g_plugin_name,
               u64_addr(ea));
-          calloutAddrs.push_back(ea);
+          callout_addrs.push_back(ea);
           continue;
         }
       }
@@ -1868,7 +1859,7 @@ void findCalloutRec(func_t *func) {
       if (efi_utils::addr_in_vec(rt_list, insn.ops[1].addr)) {
         msg("[%s] SMM callout found (gRT): 0x%016llX\n", g_plugin_name,
             u64_addr(ea));
-        calloutAddrs.push_back(ea);
+        callout_addrs.push_back(ea);
         continue;
       }
 
@@ -1901,7 +1892,7 @@ void findCalloutRec(func_t *func) {
               msg("[%s] SMM callout found (usage of memory controlled by "
                   "the attacker inside SMI handler): 0x%016llX\n",
                   g_plugin_name, u64_addr(ea));
-              calloutAddrs.push_back(ea);
+              callout_addrs.push_back(ea);
               interface_callout_found = true;
             } // else: FP
             break;
@@ -1961,7 +1952,7 @@ void efi_analysis::efi_analyser_t::find_smi_handlers() {
       {&m_fch_apu_ras_guid, "ApuRas"},
   };
   for (auto &[guid, prefix] : types) {
-    auto res = findSmiHandlersSmmDispatch(*guid, prefix);
+    auto res = efi_smm_utils::find_smi_handlers_dispatch(*guid, prefix);
     m_smi_handlers.insert(m_smi_handlers.end(), res.begin(), res.end());
   }
 }
@@ -1975,14 +1966,14 @@ bool efi_analysis::efi_analyser_t::find_smm_callout() {
   if (!bs_list.size() && !rt_list.size()) {
     return false;
   }
-  if (!m_smi_handlers.size() && !childSmiHandlers.size()) {
+  if (!m_smi_handlers.size() && !child_smi_handlers.size()) {
     msg("[%s] can't find a SwSmiHandler functions\n", g_plugin_name);
     return false;
   }
   for (auto func : m_smi_handlers) {
     findCalloutRec(func);
   }
-  for (auto func : childSmiHandlers) {
+  for (auto func : child_smi_handlers) {
     findCalloutRec(func);
   }
   return true;
@@ -2063,7 +2054,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
       }
 
       if (same_datasize) {
-        peiGetVariableOverflow.push_back(curr_addr);
+        double_get_variable_pei.push_back(curr_addr);
         msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
             u64_addr(curr_addr));
         continue;
@@ -2087,7 +2078,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
       if (!datasize_addr_found) {
         // if datasize wasn't found, just let the pattern
         // trigger - for manual review
-        peiGetVariableOverflow.push_back(curr_addr);
+        double_get_variable_pei.push_back(curr_addr);
         msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
             u64_addr(curr_addr));
         continue;
@@ -2117,7 +2108,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
       }
 
       if (same_datasize) {
-        peiGetVariableOverflow.push_back(curr_addr);
+        double_get_variable_pei.push_back(curr_addr);
         msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
             u64_addr(curr_addr));
         continue;
@@ -2141,11 +2132,11 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
           (prev_datasize_addr == curr_datasize_addr));
 
       if (!datasize_addr_found) {
-        peiGetVariableOverflow.push_back(curr_addr);
+        double_get_variable_pei.push_back(curr_addr);
         msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
             u64_addr(curr_addr));
       } else if (prev_datasize_addr == curr_datasize_addr) {
-        peiGetVariableOverflow.push_back(curr_addr);
+        double_get_variable_pei.push_back(curr_addr);
         msg("[%s] overflow can occur here: 0x%016llX "
             "(prev_datasize_addr == "
             "curr_datasize_addr)\n",
@@ -2154,7 +2145,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
     }
     prev_addr = curr_addr;
   }
-  return (peiGetVariableOverflow.size() > 0);
+  return (double_get_variable_pei.size() > 0);
 }
 
 //--------------------------------------------------------------------------
@@ -2255,7 +2246,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
         // for (auto i = 0; i < 10; ++i) {
         func_t *func_start = get_func(ea);
         if (func_start == nullptr) {
-          return (getVariableOverflow.size() > 0);
+          return (double_get_variable.size() > 0);
         }
         uint16 stack_base_reg = 0xFF;
         decode_insn(&insn, func_start->start_ea);
@@ -2276,7 +2267,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
             if ((insn.ops[1].phrase == stack_base_reg &&
                  (sval + stack_addr) == dataSizeStackAddr) ||
                 (dataSizeStackAddr == insn.ops[1].addr)) {
-              getVariableOverflow.push_back(curr_addr);
+              double_get_variable.push_back(curr_addr);
               msg("[%s] \toverflow can occur here: 0x%016llX\n", g_plugin_name,
                   u64_addr(curr_addr));
               break;
@@ -2288,25 +2279,25 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
     }
     prev_addr = curr_addr;
   }
-  return (getVariableOverflow.size() > 0);
+  return (double_get_variable.size() > 0);
 }
 
 //--------------------------------------------------------------------------
 // Find potential stack/heap overflow with double SmmGetVariable calls
 bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
   msg("[%s] Looking for SmmGetVariable stack/heap overflow\n", g_plugin_name);
-  ea_list_t smmGetVariableCalls =
-      findSmmGetVariableCalls(dataSegments, &m_all_services);
-  sort(smmGetVariableCalls.begin(), smmGetVariableCalls.end());
-  if (smmGetVariableCalls.size() < 2) {
+  ea_list_t smm_get_variable_calls =
+      efi_smm_utils::find_smm_get_variable_calls(data_segs, &m_all_services);
+  sort(smm_get_variable_calls.begin(), smm_get_variable_calls.end());
+  if (smm_get_variable_calls.size() < 2) {
     msg("[%s] less than 2 GetVariable calls found\n", g_plugin_name);
     return false;
   }
-  ea_t prev_addr = smmGetVariableCalls.at(0);
+  ea_t prev_addr = smm_get_variable_calls.at(0);
   ea_t ea;
   insn_t insn;
-  for (auto i = 1; i < smmGetVariableCalls.size(); ++i) {
-    ea_t curr_addr = smmGetVariableCalls.at(i);
+  for (auto i = 1; i < smm_get_variable_calls.size(); ++i) {
+    ea_t curr_addr = smm_get_variable_calls.at(i);
     msg("[%s] SmmGetVariable_1: 0x%016llX, SmmGetVariable_2: 0x%016llX\n",
         g_plugin_name, u64_addr(prev_addr), u64_addr(curr_addr));
 
@@ -2355,7 +2346,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
           if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
               insn.ops[0].reg == R_R9) {
             if (dataSizeStackAddr == insn.ops[1].addr) {
-              smmGetVariableOverflow.push_back(curr_addr);
+              double_get_variable_smm.push_back(curr_addr);
               msg("[%s] \toverflow can occur here: 0x%016llX\n", g_plugin_name,
                   u64_addr(curr_addr));
               break;
@@ -2370,7 +2361,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
     }
     prev_addr = curr_addr;
   }
-  return (smmGetVariableOverflow.size() > 0);
+  return (double_get_variable_smm.size() > 0);
 }
 
 bool efi_analysis::efi_analyser_t::analyse_variable_service(
@@ -2529,8 +2520,8 @@ bool efi_analysis::efi_analyser_t::analyse_nvram_variables() {
 //--------------------------------------------------------------------------
 // Resolve EFI_SMM_CPU_PROTOCOL
 bool efi_analysis::efi_analyser_t::smm_cpu_protocol_resolver() {
-  readSaveStateCalls =
-      resolveEfiSmmCpuProtocol(stackGuids, dataGuids, &m_all_services);
+  read_save_state_calls = efi_smm_utils::resolve_efi_smm_cpu_protocol(
+      stack_guids, data_guids, &m_all_services);
   return true;
 }
 
@@ -2568,20 +2559,20 @@ void efi_analysis::efi_analyser_t::dump_json() {
   if (m_nvram_variables.size()) {
     info["m_nvram_variables"] = m_nvram_variables;
   }
-  if (readSaveStateCalls.size()) {
-    info["readSaveStateCalls"] = readSaveStateCalls;
+  if (read_save_state_calls.size()) {
+    info["read_save_state_calls"] = read_save_state_calls;
   }
-  if (calloutAddrs.size()) {
-    info["vulns"]["smm_callout"] = calloutAddrs;
+  if (callout_addrs.size()) {
+    info["vulns"]["smm_callout"] = callout_addrs;
   }
-  if (peiGetVariableOverflow.size()) {
-    info["vulns"]["pei_get_variable_buffer_overflow"] = peiGetVariableOverflow;
+  if (double_get_variable_pei.size()) {
+    info["vulns"]["pei_get_variable_buffer_overflow"] = double_get_variable_pei;
   }
-  if (getVariableOverflow.size()) {
-    info["vulns"]["get_variable_buffer_overflow"] = getVariableOverflow;
+  if (double_get_variable.size()) {
+    info["vulns"]["get_variable_buffer_overflow"] = double_get_variable;
   }
-  if (smmGetVariableOverflow.size()) {
-    info["vulns"]["smm_get_variable_buffer_overflow"] = smmGetVariableOverflow;
+  if (double_get_variable_smm.size()) {
+    info["vulns"]["smm_get_variable_buffer_overflow"] = double_get_variable_smm;
   }
 
   json_list_t m_smi_handlersAddrs;
@@ -2640,14 +2631,14 @@ void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
   }
 
   // open window with vulnerabilities
-  if (calloutAddrs.size() || peiGetVariableOverflow.size() ||
-      getVariableOverflow.size() || smmGetVariableOverflow.size()) {
+  if (callout_addrs.size() || double_get_variable_pei.size() ||
+      double_get_variable.size() || double_get_variable_smm.size()) {
     json_list_t vulns;
     std::map<std::string, ea_list_t> vulns_map = {
-        {"SmmCallout", calloutAddrs},
-        {"PeiGetVariableOverflow", peiGetVariableOverflow},
-        {"DxeGetVariableOverflow", getVariableOverflow},
-        {"SmmGetVariableOverflow", smmGetVariableOverflow}};
+        {"SmmCallout", callout_addrs},
+        {"PeiGetVariableOverflow", double_get_variable_pei},
+        {"DxeGetVariableOverflow", double_get_variable},
+        {"SmmGetVariableOverflow", double_get_variable_smm}};
 
     for (const auto &[type, addrs] : vulns_map) {
       for (auto addr : addrs) {
@@ -2683,9 +2674,9 @@ bool efi_analysis::efi_analyse_main_x86_64() {
     res =
         ask_yn(1, "Want to further analyse all drivers with auto_mark_range?");
   }
-  if (res == ASKBTN_YES && textSegments.size() && dataSegments.size()) {
-    segment_t *start_seg = textSegments.at(0);
-    segment_t *end_seg = dataSegments.at(dataSegments.size() - 1);
+  if (res == ASKBTN_YES && code_segs.size() && data_segs.size()) {
+    segment_t *start_seg = code_segs.at(0);
+    segment_t *end_seg = data_segs.at(data_segs.size() - 1);
     ea_t start_ea = start_seg->start_ea;
     ea_t end_ea = end_seg->end_ea;
     auto_mark_range(start_ea, end_ea, AU_USED);

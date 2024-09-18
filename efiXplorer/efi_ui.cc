@@ -204,8 +204,8 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_s[n];
-  std::string service_name = static_cast<std::string>(item["service_name"]);
-  std::string table_name = static_cast<std::string>(item["table_name"]);
+  std::string service_name = item["service_name"];
+  std::string table_name = item["table_name"];
   cols[0].sprnt("%016llX", u64_addr(ea));
   cols[1].sprnt("%s", service_name.c_str());
   cols[2].sprnt("%s", table_name.c_str());
