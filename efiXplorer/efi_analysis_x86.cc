@@ -1113,7 +1113,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
             u64_addr(guidCodeAddress));
         auto guid = efi_utils::get_guid_by_address(guidDataAddress);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] Incorrect GUID at 0x%016llX\n", g_plugin_name,
+          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
               u64_addr(guidCodeAddress));
           continue;
         }
@@ -1486,7 +1486,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
             g_plugin_name, u64_addr(guidCodeAddress));
         auto guid = efi_utils::get_guid_by_address(guidDataAddress);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] Incorrect GUID at 0x%016llX\n", g_plugin_name,
+          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
               u64_addr(guidCodeAddress));
           continue;
         }
@@ -1559,7 +1559,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
             g_plugin_name, u64_addr(guidCodeAddress));
         auto guid = efi_utils::get_guid_by_address(guidDataAddress);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] Incorrect GUID at 0x%016llX\n", g_plugin_name,
+          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
               u64_addr(guidCodeAddress));
           continue;
         }
@@ -1621,7 +1621,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
             g_plugin_name, u64_addr(guidCodeAddress));
         auto guid = efi_utils::get_guid_by_address(guidDataAddress);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] Incorrect GUID at 0x%016llX\n", g_plugin_name,
+          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
               u64_addr(guidCodeAddress));
           continue;
         }

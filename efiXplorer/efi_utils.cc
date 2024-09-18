@@ -545,7 +545,8 @@ bool efi_utils::valid_guid(json guid) {
   auto data0 = static_cast<uint32_t>(guid[0]);
   auto data1 = static_cast<uint16_t>(guid[1]);
 
-  return (!data0 && !data1) || (data0 == 0xffffffff && data1 == 0xffff);
+  auto invalid = (!data0 && !data1) || (data0 == 0xffffffff && data1 == 0xffff);
+  return !invalid;
 }
 
 //--------------------------------------------------------------------------
