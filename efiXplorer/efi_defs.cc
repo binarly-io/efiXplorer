@@ -21,6 +21,23 @@
 
 const char *g_plugin_name = "efiXplorer";
 
+service_info_64_t g_boot_services_table_aarch64[] = {
+    {"InstallProtocolInterface", 0x80, R_X1, 1},
+    {"ReinstallProtocolInterface", 0x88, R_X1, 1},
+    {"UninstallProtocolInterface", 0x90, R_X1, 1},
+    {"HandleProtocol", 0x98, R_X1, 1},
+    {"RegisterProtocolNotify", 0xA8, R_X0, 0},
+    {"OpenProtocol", 0x118, R_X1, 1},
+    {"CloseProtocol", 0x120, R_X1, 1},
+    {"ProtocolsPerHandle", 0x128, R_X1, 1},
+    {"OpenProtocolInformation", 0x130, R_X1, 1},
+    {"LocateHandleBuffer", 0x138, R_X1, 1},
+    {"LocateProtocol", 0x140, R_X0, 1},
+    {"InstallMultipleProtocolInterfaces", 0x148, R_X1, 1},
+    {"UninstallMultipleProtocolInterfaces", 0x150, R_X1, 1}};
+size_t g_boot_services_table_aarch64_count =
+    sizeof(g_boot_services_table_aarch64) / sizeof(service_info_64_t);
+
 service_info_64_t g_boot_services_table64[] = {
     {"InstallProtocolInterface", 0x80, R_RDX, 1},
     {"ReinstallProtocolInterface", 0x88, R_RDX, 1},

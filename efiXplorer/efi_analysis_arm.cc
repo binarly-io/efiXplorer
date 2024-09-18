@@ -219,7 +219,7 @@ json getService(ea_t addr, uint8_t table_id) {
               efi_utils::lookup_runtime_service_name(insn.ops[1].addr);
           s["table_name"] = "EFI_RUNTIME_SERVICES";
         } else {
-          s["table_name"] = "OTHER";
+          s["table_name"] = "unknown";
         }
         return s;
       }
@@ -388,13 +388,14 @@ bool efi_analysis::efi_analyser_arm_t::get_protocol(ea_t address,
 void efi_analysis::efi_analyser_arm_t::detect_protocols_all() {
   for (auto s : m_all_services) {
     std::string service_name = s["service_name"];
-    for (auto i = 0; i < 13; i++) {
+    for (auto i = 0; i < g_boot_services_table_aarch64_count; i++) {
       std::string current_name =
-          static_cast<std::string>(bs_table_aarch64[i].name);
+          static_cast<std::string>(g_boot_services_table_aarch64[i].name);
       if (current_name != service_name) {
         continue;
       }
-      get_protocol(s["address"], bs_table_aarch64[i].reg, service_name);
+      get_protocol(s["address"], g_boot_services_table_aarch64[i].reg,
+                   service_name);
       break;
     }
   }

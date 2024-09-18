@@ -203,6 +203,9 @@ struct efi_guid_t {
   }
 };
 
+extern service_info_64_t g_boot_services_table_aarch64[];
+extern size_t g_boot_services_table_aarch64_count;
+
 extern service_info_64_t g_boot_services_table64[];
 extern size_t g_boot_services_table64_count;
 
