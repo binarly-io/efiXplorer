@@ -432,19 +432,19 @@ void efi_analysis::efi_analyser_arm_t::show_all_choosers() {
 
   // open window with all services
   if (m_all_services.size()) {
-    title = "efi: services";
+    title = "efiXplorer: services";
     services_show(m_all_services, title);
   }
 
   // open window with data guids
   if (m_all_guids.size()) {
-    qstring title = "efi: GUIDs";
+    qstring title = "efiXplorer: GUIDs";
     guids_show(m_all_guids, title);
   }
 
   // open window with protocols
   if (m_all_protocols.size()) {
-    title = "efi: protocols";
+    title = "efiXplorer: protocols";
     protocols_show(m_all_protocols, title);
   }
 }
