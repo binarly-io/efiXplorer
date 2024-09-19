@@ -2602,32 +2602,32 @@ void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
   // open window with all services
   if (m_all_services.size()) {
     title = "efiXplorer: services";
-    services_show(m_all_services, title);
+    show_services(m_all_services, title);
   }
 
   // open window with protocols
   if (m_ftype == ffs_file_type_t::pei) {
     if (m_all_ppis.size()) {
       title = "efiXplorer: PPIs";
-      ppis_show(m_all_ppis, title);
+      show_ppis(m_all_ppis, title);
     }
   } else { // ffs_file_type_t::dxe_smm
     if (m_all_protocols.size()) {
       title = "efiXplorer: protocols";
-      protocols_show(m_all_protocols, title);
+      show_protocols(m_all_protocols, title);
     }
   }
 
   // open window with data guids
   if (m_all_guids.size()) {
     qstring title = "efiXplorer: GUIDs";
-    guids_show(m_all_guids, title);
+    show_guids(m_all_guids, title);
   }
 
   // open window with NVRAM variables
   if (m_nvram_variables.size()) {
     qstring title = "efiXplorer: NVRAM";
-    nvram_show(m_nvram_variables, title);
+    show_nvram(m_nvram_variables, title);
   }
 
   // open window with vulnerabilities
@@ -2650,7 +2650,7 @@ void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
     }
 
     qstring title = "efiXplorer: vulns";
-    vulns_show(vulns, title);
+    show_vulns(vulns, title);
   }
 }
 
@@ -2766,12 +2766,12 @@ bool efi_analysis::efi_analyse_main_x86_64() {
 
   if (analyser.m_arch == arch_file_type_t::uefi) {
     // Init public EdiDependencies members
-    g_deps.getProtocolsChooser(analyser.m_all_protocols);
-    g_deps.getProtocolsByGuids(analyser.m_all_protocols);
+    g_deps.get_protocols_chooser(analyser.m_all_protocols);
+    g_deps.get_protocols_by_guids(analyser.m_all_protocols);
 
     // Save all protocols information to build dependencies
-    attachActionProtocolsDeps();
-    attachActionModulesSeq();
+    attach_action_protocols_deps();
+    attach_action_modules_seq();
   }
 
   hide_wait_box();

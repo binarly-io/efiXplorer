@@ -19,35 +19,35 @@
 
 #include "efi_deps.h"
 
-EfiDependencies::EfiDependencies() {
-  // Read DEPEX (for protocols) from
+efi_deps_t::efi_deps_t() {
+  // read DEPEX (for protocols) from
   // .deps.json file if this file exists
-  loadDepsFromUefiTool();
-  // Get images names from IDB
-  getImages();
-  // Read images with GUIDs from
+  load_deps_from_uefitool();
+  // get modules names from IDB
+  get_modules();
+  // read modules with GUIDs from
   // .images.json file if this file exists
-  loadImagesWithGuids();
+  load_modules_with_guids();
 }
 
-EfiDependencies::~EfiDependencies() {
-  imagesInfo.clear();
-  imagesGuids.clear();
-  imagesFromIdb.clear();
-  uefitoolDeps.clear();
-  modulesSequence.clear();
-  protocolsChooser.clear();
-  protocolsByGuids.clear();
-  additionalInstallers.clear();
-  protocolsWithoutInstallers.clear();
+efi_deps_t::~efi_deps_t() {
+  m_modules_info.clear();
+  m_modules_guids.clear();
+  m_modules_from_idb.clear();
+  m_uefitool_deps.clear();
+  m_modules_sequence.clear();
+  m_protocols_chooser.clear();
+  m_protocols_by_guids.clear();
+  m_additional_installers.clear();
+  m_protocols_without_installers.clear();
 }
 
-json EfiDependencies::getDeps(std::string guid) {
+json efi_deps_t::get_deps_for(std::string guid) {
   json res;
   std::vector installers({"InstallProtocolInterface",
                           "InstallMultipleProtocolInterfaces",
                           "SmmInstallProtocolInterface"});
-  for (auto &it : protocolsChooser.items()) {
+  for (auto &it : m_protocols_chooser.items()) {
     auto p = it.value();
     if (p["guid"] != guid) {
       continue;
@@ -66,26 +66,26 @@ json EfiDependencies::getDeps(std::string guid) {
   return res;
 }
 
-void EfiDependencies::getProtocolsByGuids(json_list_t protocols) {
+void efi_deps_t::get_protocols_by_guids(json_list_t protocols) {
   for (auto p : protocols) {
     // check if entry for GUID already exist
     std::string guid = p["guid"];
-    auto deps = protocolsByGuids[guid];
+    auto deps = m_protocols_by_guids[guid];
     if (deps.is_null()) {
-      protocolsByGuids[guid] = getDeps(guid);
+      m_protocols_by_guids[guid] = get_deps_for(guid);
     }
   }
 }
 
-void EfiDependencies::getProtocolsChooser(json_list_t protocols) {
+void efi_deps_t::get_protocols_chooser(json_list_t protocols) {
   auto i = 0;
   for (auto p : protocols) {
-    protocolsChooser[i] = p;
+    m_protocols_chooser[i] = p;
     ++i;
   }
 }
 
-bool EfiDependencies::loadDepsFromUefiTool() {
+bool efi_deps_t::load_deps_from_uefitool() {
   std::filesystem::path deps_json;
   deps_json /= get_path(PATH_TYPE_IDB);
   deps_json.replace_extension(".deps.json");
@@ -93,11 +93,11 @@ bool EfiDependencies::loadDepsFromUefiTool() {
     return false;
   }
   std::ifstream file(deps_json);
-  file >> uefitoolDeps;
+  file >> m_uefitool_deps;
   return true;
 }
 
-bool EfiDependencies::loadImagesWithGuids() {
+bool efi_deps_t::load_modules_with_guids() {
   std::filesystem::path images_json;
   images_json /= get_path(PATH_TYPE_IDB);
   images_json.replace_extension(".images.json");
@@ -105,44 +105,41 @@ bool EfiDependencies::loadImagesWithGuids() {
     return false;
   }
   std::ifstream file(images_json);
-  file >> imagesGuids;
+  file >> m_modules_guids;
   return true;
 }
 
-bool EfiDependencies::installerFound(std::string protocol) {
-  auto deps_prot = protocolsByGuids[protocol];
+bool efi_deps_t::installer_found(std::string protocol) {
+  auto deps_prot = m_protocols_by_guids[protocol];
   if (deps_prot.is_null()) {
     return false;
   }
   auto installers = deps_prot["installed"];
-  if (installers.is_null()) {
-    return false;
-  }
-  return true;
+  return installers.is_null();
 }
 
-void EfiDependencies::getProtocolsWithoutInstallers() {
-  // Check DXE_DEPEX and MM_DEPEX
+void efi_deps_t::get_protocols_without_installers() {
+  // check DXE_DEPEX and MM_DEPEX
   string_list_t sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
   for (auto section : sections) {
-    auto images = uefitoolDeps[section];
+    auto images = m_uefitool_deps[section];
     for (auto &element : images.items()) {
       auto protocols = element.value();
       for (auto p : protocols) {
         std::string ps = static_cast<std::string>(p);
-        if (!installerFound(ps)) {
-          protocolsWithoutInstallers.insert(ps);
+        if (!installer_found(ps)) {
+          m_protocols_without_installers.insert(ps);
         }
       }
     }
   }
 }
 
-void EfiDependencies::getInstallersModules() {
+void efi_deps_t::get_installers_modules() {
   // search for this protocols in binary
-  for (auto &protocol : protocolsWithoutInstallers) {
+  for (auto &protocol : m_protocols_without_installers) {
     auto addrs = efi_utils::search_protocol(protocol);
-    bool installerFound = false;
+    bool installer_found = false;
     for (auto addr : addrs) {
       auto xrefs = efi_utils::get_xrefs(addr);
       if (!xrefs.size()) {
@@ -157,41 +154,40 @@ void EfiDependencies::getInstallersModules() {
       for (auto ea : xrefs) {
         if (efi_utils::check_install_protocol(ea)) {
           auto module = efi_utils::get_module_name_loader(ea);
-          additionalInstallers[protocol] =
+          m_additional_installers[protocol] =
               static_cast<std::string>(module.c_str());
-          installerFound = true;
+          installer_found = true;
           break;
         }
       }
-      if (installerFound) {
+      if (installer_found) {
         break;
       }
     }
-    if (!installerFound) {
-      untrackedProtocols.insert(protocol);
+    if (!installer_found) {
+      m_untracked_protocols.insert(protocol);
     }
   }
 }
 
-void EfiDependencies::getAdditionalInstallers() {
-  getProtocolsWithoutInstallers();
-  getInstallersModules();
-  std::string installers = additionalInstallers.dump(2);
-  msg("Additional installers: %s\n", installers.c_str());
-  msg("Untracked protocols:\n");
-  for (auto &protocol : untrackedProtocols) {
-    msg("%s\n", protocol.c_str());
+void efi_deps_t::get_additional_installers() {
+  get_protocols_without_installers();
+  get_installers_modules();
+  std::string installers = m_additional_installers.dump(2);
+  efi_utils::log("additional installers: %s\n", installers.c_str());
+  for (auto &protocol : m_untracked_protocols) {
+    efi_utils::log("untracked protocol: %s\n", protocol.c_str());
   }
 }
 
-void EfiDependencies::getImages() {
+void efi_deps_t::get_modules() {
   for (segment_t *s = get_first_seg(); s != nullptr;
        s = get_next_seg(s->start_ea)) {
     qstring seg_name;
     get_segm_name(&seg_name, s);
 
-    string_list_t codeSegNames{"_.text", "_.code"};
-    for (auto name : codeSegNames) {
+    string_list_t cseg_names{"_.text", "_.code"};
+    for (auto name : cseg_names) {
       auto index = seg_name.find(name.c_str());
       if (index != std::string::npos) {
         std::string image_name =
@@ -199,31 +195,32 @@ void EfiDependencies::getImages() {
         if (!image_name.rfind("_", 0)) {
           image_name = image_name.erase(0, 1);
         }
-        imagesFromIdb.push_back(image_name);
+        m_modules_from_idb.push_back(image_name);
       }
     }
   }
 }
 
-json EfiDependencies::getImageInfo(std::string image) {
+json efi_deps_t::get_module_info(std::string image) {
   json info;
-  string_list_t installedProtocols;
-  json depsProtocols;
+  json deps_protocols;
+  string_list_t installed_protocols;
   std::vector installers({"InstallProtocolInterface",
                           "InstallMultipleProtocolInterfaces",
                           "SmmInstallProtocolInterface"});
 
-  // Get installed protocols
-  for (auto &p : additionalInstallers.items()) { // check additional installers
-    std::string adInstImage = p.value();
-    std::string adInstProtocol = p.key();
-    if (adInstImage == image) {
-      installedProtocols.push_back(adInstProtocol);
+  // get installed protocols
+  for (auto &p :
+       m_additional_installers.items()) { // check additional installers
+    std::string ad_installer_image = p.value();
+    std::string ad_installer_protocol = p.key();
+    if (ad_installer_image == image) {
+      installed_protocols.push_back(ad_installer_protocol);
       break;
     }
   }
 
-  for (auto &element : protocolsChooser.items()) { // check efiXplorer report
+  for (auto &element : m_protocols_chooser.items()) { // check efiXplorer report
     json p = element.value();
     std::string image_name = p["module"];
     if (!image_name.rfind("_", 0)) {
@@ -234,24 +231,24 @@ json EfiDependencies::getImageInfo(std::string image) {
     }
     if (find(installers.begin(), installers.end(), p["service"]) !=
         installers.end()) {
-      installedProtocols.push_back(p["guid"]);
+      installed_protocols.push_back(p["guid"]);
     }
   }
 
-  // Get deps
+  // get dependencies
   bool found = false;
   string_list_t sections{"EFI_SECTION_DXE_DEPEX", "EFI_SECTION_MM_DEPEX"};
   for (auto section : sections) {
-    json deps_images = uefitoolDeps[section];
+    json deps_images = m_uefitool_deps[section];
     for (auto &element : deps_images.items()) {
       std::string dimage_guid = element.key();
-      if (imagesGuids[dimage_guid].is_null()) {
-        // Can not get name for image
+      if (m_modules_guids[dimage_guid].is_null()) {
+        // can not get name for image
         continue;
       }
-      std::string dimage_name = imagesGuids[dimage_guid];
+      std::string dimage_name = m_modules_guids[dimage_guid];
       if (dimage_name == image) {
-        depsProtocols = element.value();
+        deps_protocols = element.value();
         found = true;
         break;
       }
@@ -261,27 +258,27 @@ json EfiDependencies::getImageInfo(std::string image) {
     }
   }
 
-  info["installed_protocols"] = installedProtocols;
-  info["deps_protocols"] = depsProtocols;
+  info["installed_protocols"] = installed_protocols;
+  info["deps_protocols"] = deps_protocols;
 
   return info;
 }
 
-bool EfiDependencies::getImagesInfo() {
-  if (imagesInfo.size()) {
+bool efi_deps_t::get_modules_info() {
+  if (m_modules_info.size()) {
     return true;
   }
-  for (auto image : imagesFromIdb) {
-    imagesInfo[image] = getImageInfo(image);
+  for (auto image : m_modules_from_idb) {
+    m_modules_info[image] = get_module_info(image);
   }
   return true;
 }
 
-std::string EfiDependencies::getInstaller(std::string protocol) {
+std::string efi_deps_t::get_installer(std::string protocol) {
   std::string res;
-  for (auto &e : imagesInfo.items()) {
+  for (auto &e : m_modules_info.items()) {
     std::string image = e.key();
-    string_list_t installers = imagesInfo[image]["installed_protocols"];
+    string_list_t installers = m_modules_info[image]["installed_protocols"];
     if (find(installers.begin(), installers.end(), protocol) !=
         installers.end()) {
       return image;
@@ -290,53 +287,53 @@ std::string EfiDependencies::getInstaller(std::string protocol) {
   return res;
 }
 
-bool EfiDependencies::buildModulesSequence() {
-  if (modulesSequence.size()) {
+bool efi_deps_t::build_modules_sequence() {
+  if (m_modules_sequence.size()) {
     return true;
   }
 
-  std::set<std::string> modulesSeq;
-  std::set<std::string> installed_protocols;
+  string_set_t module_seq;
+  string_set_t installed_protocols;
 
-  getProtocolsWithoutInstallers(); // hard to find installers for all protocols
-                                   // in statiс
-  getImagesInfo();
+  get_protocols_without_installers(); // hard to find installers for all
+                                      // protocols in statiс
+  get_modules_info();
 
   size_t index = 0;
-  while (modulesSeq.size() != imagesInfo.size()) {
+  while (module_seq.size() != m_modules_info.size()) {
     bool changed = false;
-    for (auto &e : imagesInfo.items()) {
+    for (auto &e : m_modules_info.items()) {
       std::string image = e.key(); // current module
 
       // check if the image is already loaded
-      if (modulesSeq.find(image) != modulesSeq.end()) {
+      if (module_seq.find(image) != module_seq.end()) {
         continue;
       }
 
-      string_list_t installers = imagesInfo[image]["installed_protocols"];
+      string_list_t installers = m_modules_info[image]["installed_protocols"];
 
       // if there are no dependencies
-      if (imagesInfo[image]["deps_protocols"].is_null()) {
+      if (m_modules_info[image]["deps_protocols"].is_null()) {
         for (auto protocol : installers) {
           installed_protocols.insert(protocol);
         }
-        modulesSeq.insert(image);
+        module_seq.insert(image);
         json info;
         info["module"] = image;
-        modulesSequence[index++] = info;
+        m_modules_sequence[index++] = info;
         changed = true;
         continue;
       }
 
-      string_list_t deps = imagesInfo[image]["deps_protocols"];
+      string_list_t deps = m_modules_info[image]["deps_protocols"];
       string_list_t unresolved_deps;
       bool load = true;
       for (auto protocol : deps) {
         if (installed_protocols.find(protocol) != installed_protocols.end()) {
           continue;
         }
-        if (protocolsWithoutInstallers.find(protocol) !=
-            protocolsWithoutInstallers.end()) {
+        if (m_protocols_without_installers.find(protocol) !=
+            m_protocols_without_installers.end()) {
           unresolved_deps.push_back(protocol);
           continue;
         }
@@ -348,14 +345,14 @@ bool EfiDependencies::buildModulesSequence() {
         for (auto protocol : installers) {
           installed_protocols.insert(protocol);
         }
-        modulesSeq.insert(image);
+        module_seq.insert(image);
         json info;
         info["image"] = image;
         info["deps"] = deps;
         if (unresolved_deps.size()) {
           info["unresolved_deps"] = unresolved_deps;
         }
-        modulesSequence[index++] = info;
+        m_modules_sequence[index++] = info;
         changed = true;
       }
     }
@@ -364,25 +361,25 @@ bool EfiDependencies::buildModulesSequence() {
                     // the most popular protocol
       std::map<std::string, size_t>
           protocols_usage; // get the most popular protocol
-      for (auto &e : imagesInfo.items()) {
+      for (auto &e : m_modules_info.items()) {
         std::string image = e.key();
 
         // check if the image is already loaded
-        if (modulesSeq.find(image) != modulesSeq.end()) {
+        if (module_seq.find(image) != module_seq.end()) {
           continue;
         }
 
-        if (imagesInfo[image]["deps_protocols"].is_null()) {
+        if (m_modules_info[image]["deps_protocols"].is_null()) {
           continue;
         }
 
-        string_list_t deps_protocols = imagesInfo[image]["deps_protocols"];
+        string_list_t deps_protocols = m_modules_info[image]["deps_protocols"];
         for (auto protocol : deps_protocols) {
           if (installed_protocols.find(protocol) != installed_protocols.end()) {
             continue;
           }
-          if (protocolsWithoutInstallers.find(protocol) !=
-              protocolsWithoutInstallers.end()) {
+          if (m_protocols_without_installers.find(protocol) !=
+              m_protocols_without_installers.end()) {
             continue;
           }
           if (protocols_usage.find(protocol) == protocols_usage.end()) {
@@ -392,6 +389,7 @@ bool EfiDependencies::buildModulesSequence() {
           }
         }
       }
+
       std::string mprotocol;
       size_t mnum = 0;
       for (auto const &[prot, counter] : protocols_usage) {
@@ -400,26 +398,30 @@ bool EfiDependencies::buildModulesSequence() {
           mprotocol = static_cast<std::string>(prot);
         }
       }
+
       if (!mnum) {
         break; // the most popular protocol was not found
       }
+
       // find installer module for mprotocol
-      std::string installer_image = getInstaller(mprotocol);
+      std::string installer_image = get_installer(mprotocol);
       if (!installer_image.size()) {
-        msg("Can not find installer for protocol %s\n", mprotocol.c_str());
-        break; // something went wrong, extra mitigation for an infinite loop
+        efi_utils::log("can not find installer for protocol %s\n",
+                       mprotocol.c_str());
+        break;
       }
-      // load installer_image
+
+      // load installer module
       string_list_t current_installers =
-          imagesInfo[installer_image]["installed_protocols"];
+          m_modules_info[installer_image]["installed_protocols"];
       for (auto protocol : current_installers) {
         installed_protocols.insert(protocol);
       }
-      modulesSeq.insert(installer_image);
+      module_seq.insert(installer_image);
       json info;
       info["image"] = installer_image;
-      info["deps"] = imagesInfo[installer_image]["deps_protocols"];
-      modulesSequence[index++] = info;
+      info["deps"] = m_modules_info[installer_image]["deps_protocols"];
+      m_modules_sequence[index++] = info;
     }
   }
 

@@ -48,7 +48,7 @@ const char *const guids_chooser_t::header_guids[] = {
 };
 
 // protocols column widths
-const int protocols_chooser_t::widths_protocols[] = {
+const int m_protocols_chooser_t::widths_protocols[] = {
     16, // Address
     32, // GUID
     32, // Name
@@ -57,7 +57,7 @@ const int protocols_chooser_t::widths_protocols[] = {
 };
 
 // protocols column headers
-const char *const protocols_chooser_t::header_protocols[] = {
+const char *const m_protocols_chooser_t::header_protocols[] = {
     "Address", // 0
     "GUID",    // 1
     "Name",    // 2
@@ -66,14 +66,14 @@ const char *const protocols_chooser_t::header_protocols[] = {
 };
 
 // services column widths
-const int s_chooser_t::widths_s[] = {
+const int services_chooser_t::widths_s[] = {
     16, // Address
     32, // Service name
     32, // Table name
 };
 
 // services column headers
-const char *const s_chooser_t::header_s[] = {
+const char *const services_chooser_t::header_s[] = {
     "Address",      // 0
     "Service name", // 1
     "Table name"    // 2
@@ -163,9 +163,9 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
   CASSERT(qnumber(header_guids) == 3);
 }
 
-inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
-                                                json_list_t protocols,
-                                                std::string name_key_)
+inline m_protocols_chooser_t::m_protocols_chooser_t(const char *title_, bool ok,
+                                                    json_list_t protocols,
+                                                    std::string name_key_)
     : chooser_t(0, qnumber(widths_protocols), widths_protocols,
                 header_protocols, title_),
       list() {
@@ -174,9 +174,9 @@ inline protocols_chooser_t::protocols_chooser_t(const char *title_, bool ok,
   build_list(ok, protocols);
 }
 
-void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                         chooser_item_attrs_t *,
-                                         size_t n) const {
+void idaapi m_protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                           chooser_item_attrs_t *,
+                                           size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_protocols[n];
@@ -192,15 +192,16 @@ void idaapi protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
   CASSERT(qnumber(header_protocols) == 5);
 }
 
-inline s_chooser_t::s_chooser_t(const char *title_, bool ok,
-                                json_list_t services)
+inline services_chooser_t::services_chooser_t(const char *title_, bool ok,
+                                              json_list_t services)
     : chooser_t(0, qnumber(widths_s), widths_s, header_s, title_), list() {
   CASSERT(qnumber(widths_s) == qnumber(header_s));
   build_list(ok, services);
 }
 
-void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
-                                 chooser_item_attrs_t *, size_t n) const {
+void idaapi services_chooser_t::get_row(qstrvec_t *cols_, int *,
+                                        chooser_item_attrs_t *,
+                                        size_t n) const {
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_s[n];
@@ -212,7 +213,7 @@ void idaapi s_chooser_t::get_row(qstrvec_t *cols_, int *,
   CASSERT(qnumber(header_s) == 3);
 }
 
-bool nvram_show(json_list_t nvram, qstring title) {
+bool show_nvram(json_list_t nvram, qstring title) {
   bool ok;
   // open the window
   nvram_chooser_t *ch = new nvram_chooser_t(title.c_str(), ok, nvram);
@@ -221,7 +222,7 @@ bool nvram_show(json_list_t nvram, qstring title) {
   return true;
 }
 
-bool vulns_show(json_list_t vulns, qstring title) {
+bool show_vulns(json_list_t vulns, qstring title) {
   bool ok;
   // open the window
   vulns_chooser_t *ch = new vulns_chooser_t(title.c_str(), ok, vulns);
@@ -230,7 +231,7 @@ bool vulns_show(json_list_t vulns, qstring title) {
   return true;
 }
 
-bool guids_show(json_list_t guids, qstring title) {
+bool show_guids(json_list_t guids, qstring title) {
   bool ok;
   // open the window
   guids_chooser_t *ch = new guids_chooser_t(title.c_str(), ok, guids);
@@ -239,41 +240,41 @@ bool guids_show(json_list_t guids, qstring title) {
   return true;
 }
 
-bool protocols_show(json_list_t protocols, qstring title) {
+bool show_protocols(json_list_t protocols, qstring title) {
   bool ok;
   // open the window
-  protocols_chooser_t *ch =
-      new protocols_chooser_t(title.c_str(), ok, protocols, "prot_name");
+  m_protocols_chooser_t *ch =
+      new m_protocols_chooser_t(title.c_str(), ok, protocols, "prot_name");
   // default cursor position is 0 (first row)
   ch->choose();
   return true;
 }
 
-bool ppis_show(json_list_t ppis, qstring title) {
+bool show_ppis(json_list_t ppis, qstring title) {
   bool ok;
   // open the window
-  protocols_chooser_t *ch =
-      new protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
+  m_protocols_chooser_t *ch =
+      new m_protocols_chooser_t(title.c_str(), ok, ppis, "ppi_name");
   // default cursor position is 0 (first row)
   ch->choose();
   return true;
 }
 
-bool services_show(json_list_t services, qstring title) {
+bool show_services(json_list_t services, qstring title) {
   bool ok;
   // open the window
-  s_chooser_t *ch = new s_chooser_t(title.c_str(), ok, services);
+  services_chooser_t *ch = new services_chooser_t(title.c_str(), ok, services);
   // default cursor position is 0 (first row)
   ch->choose();
   return true;
 }
 
 //-------------------------------------------------------------------------
-// Action handler for protocols dependencies
+// action handler for protocols dependencies
 struct protocols_deps_handler_t : public action_handler_t {
   virtual int idaapi activate(action_activation_ctx_t *ctx) {
     auto n = ctx->chooser_selection.at(0);
-    json info = g_deps.protocolsChooser[n];
+    json info = g_deps.m_protocols_chooser[n];
 
     if (info.is_null()) {
       return -1; // protocol not found
@@ -281,13 +282,12 @@ struct protocols_deps_handler_t : public action_handler_t {
 
     // get dependencies for protocol
     std::string guid = info["guid"];
-    json d = g_deps.protocolsByGuids[guid];
+    json d = g_deps.m_protocols_by_guids[guid];
 
-    // print dependencies for current
-    // protocol in output window
+    // print dependencies for current protocol in output window
     std::string s = d.dump(2);
-    msg("[%s] dependencies for protocol with GUID %s: %s\n", g_plugin_name,
-        guid.c_str(), s.c_str());
+    efi_utils::log("dependencies for protocol with GUID %s: %s\n", guid.c_str(),
+                   s.c_str());
 
     return 0;
   }
@@ -299,14 +299,14 @@ struct protocols_deps_handler_t : public action_handler_t {
 
 static protocols_deps_handler_t protocols_deps_ah;
 action_desc_t protocols_deps =
-    ACTION_DESC_LITERAL("efiXplorer:protocolsDeps", "Show dependencies",
+    ACTION_DESC_LITERAL("efiXplorer:dependencies", "Show dependencies",
                         &protocols_deps_ah, nullptr, nullptr, -1);
 
-void attachActionProtocolsDeps() {
-  // Attach action in protocols chooser
+void attach_action_protocols_deps() {
+  // attach action in protocols chooser
   TWidget *widget = find_widget("efiXplorer: protocols");
   if (widget == nullptr) {
-    msg("[%s] can not find efiXplorer: protocols chooser", g_plugin_name);
+    efi_utils::log("can not find protocols chooser");
     return;
   }
   register_action(protocols_deps);
@@ -314,12 +314,12 @@ void attachActionProtocolsDeps() {
 }
 
 //-------------------------------------------------------------------------
-// Action handler for showing the sequence of modules execution
+// action handler for showing the sequence of modules execution
 struct modules_seq_handler_t : public action_handler_t {
   virtual int idaapi activate(action_activation_ctx_t *ctx) {
-    g_deps.buildModulesSequence();
-    std::string s = g_deps.modulesSequence.dump(2);
-    msg("[%s] sequence of modules execution: %s\n", g_plugin_name, s.c_str());
+    g_deps.build_modules_sequence();
+    std::string s = g_deps.m_modules_sequence.dump(2);
+    efi_utils::log("sequence of modules execution: %s\n", s.c_str());
 
     return 0;
   }
@@ -331,14 +331,14 @@ struct modules_seq_handler_t : public action_handler_t {
 
 static modules_seq_handler_t modules_seq_ah;
 action_desc_t modules_seq = ACTION_DESC_LITERAL(
-    "efiXplorer:modulesSeq", "Show the sequence of modules execution",
+    "efiXplorer:modules", "Show the sequence of modules execution",
     &modules_seq_ah, nullptr, nullptr, -1);
 
-void attachActionModulesSeq() {
-  // Attach action in protocols chooser
+void attach_action_modules_seq() {
+  // attach action in protocols chooser
   TWidget *widget = find_widget("efiXplorer: protocols");
   if (widget == nullptr) {
-    msg("[%s] can not find efiXplorer: protocols chooser", g_plugin_name);
+    efi_utils::log("can not find protocols chooser");
     return;
   }
   register_action(modules_seq);
@@ -349,90 +349,87 @@ void attachActionModulesSeq() {
 // Action handler (load efiXplorer analysis report)
 struct action_handler_loadreport_t : public action_handler_t {
   virtual int idaapi activate(action_activation_ctx_t *ctx) {
-    std::filesystem::path reportPath;
+    std::filesystem::path summary_path;
     char *file = ask_file(false, "*.json", "Load efiXplorer analysis report");
     if (file == nullptr) {
-      msg("[%s] report file not specified\n", g_plugin_name);
+      efi_utils::log("analysis report file is not specified\n");
       return -1;
     }
-    reportPath /= file;
-    msg("[%s] loading report from %s file\n", g_plugin_name,
-        reportPath.c_str());
+    summary_path /= file;
+    efi_utils::log("loading report from %s file\n", summary_path.c_str());
 
-    json reportData;
+    json summary;
     try {
-      std::ifstream in(reportPath);
-      in >> reportData;
+      std::ifstream in(summary_path);
+      in >> summary;
     } catch (std::exception &e) {
-      msg("[%s] report file is invalid, check its contents\n", g_plugin_name);
+      efi_utils::log("report file is invalid\n");
       return -1;
     }
 
-    // Initialize vuln types list
-    string_list_t vulnTypes{"smm_callout", "pei_get_variable_buffer_overflow",
-                            "get_variable_buffer_overflow",
-                            "smm_get_variable_buffer_overflow"};
+    // initialise vuln types list
+    string_list_t vuln_types{"smm_callout", "pei_get_variable_buffer_overflow",
+                             "get_variable_buffer_overflow",
+                             "smm_get_variable_buffer_overflow"};
 
-    // Show all choosers with data from report
+    // show all choosers with data from report
     qstring title;
 
     try {
-      auto protocols = reportData["all_protocols"];
+      auto protocols = summary["all_protocols"];
       if (!protocols.is_null()) { // show protocols
         title = "efiXplorer: protocols";
-        protocols_show(protocols, title);
+        show_protocols(protocols, title);
       }
-      auto ppis = reportData["all_ppis"];
+      auto ppis = summary["all_ppis"];
       if (!ppis.is_null()) { // show PPIs
         title = "efiXplorer: PPIs";
-        protocols_show(ppis, title);
+        show_protocols(ppis, title);
       }
-      auto services = reportData["all_services"];
+      auto services = summary["all_services"];
       if (!services.is_null()) { // show services
         title = "efiXplorer: services";
-        services_show(services, title);
+        show_services(services, title);
       }
-      auto guids = reportData["all_guids"];
+      auto guids = summary["all_guids"];
       if (!guids.is_null()) { // show GUIDs
         title = "efiXplorer: GUIDs";
-        guids_show(guids, title);
+        show_guids(guids, title);
       }
-      auto nvram = reportData["m_nvram_variables"];
+      auto nvram = summary["m_nvram_variables"];
       if (!nvram.is_null()) { // show NVRAM
         title = "efiXplorer: NVRAM";
-        nvram_show(nvram, title);
+        show_nvram(nvram, title);
       }
-      auto vulns = reportData["vulns"];
+      auto vulns = summary["vulns"];
       if (!vulns.is_null()) { // show vulns
-        json_list_t vulnsRes;
-        for (auto vulnType : vulnTypes) {
-          // For each vuln type add list of vulns in `vulnsRes`
-          auto vulnAddrs = vulns[vulnType];
-          if (vulnAddrs.is_null()) {
+        json_list_t vulns_res;
+        for (auto vuln_type : vuln_types) {
+          auto vuln_addr = vulns[vuln_type];
+          if (vuln_addr.is_null()) {
             continue;
           }
-          for (auto addr : vulnAddrs) {
-            json item;
-            item["type"] = vulnType;
-            item["address"] = addr;
-            vulnsRes.push_back(item);
+          for (auto addr : vuln_addr) {
+            json vuln;
+            vuln["type"] = vuln_type;
+            vuln["address"] = addr;
+            vulns_res.push_back(vuln);
           }
         }
-        if (vulnsRes.size()) {
+        if (vulns_res.size()) {
           title = "efiXplorer: vulns";
-          vulns_show(vulnsRes, title);
+          show_vulns(vulns_res, title);
         }
       }
 
-      // Init public EdiDependencies members
-      g_deps.getProtocolsChooser(protocols);
-      g_deps.getProtocolsByGuids(protocols);
+      g_deps.get_protocols_chooser(protocols);
+      g_deps.get_protocols_by_guids(protocols);
 
-      // Save all protocols information to build dependencies
-      attachActionProtocolsDeps();
-      attachActionModulesSeq();
+      // save all protocols information to build dependencies
+      attach_action_protocols_deps();
+      attach_action_modules_seq();
     } catch (std::exception &e) {
-      msg("[%s] report file is invalid, check its contents\n", g_plugin_name);
+      efi_utils::log("report file is invalid\n");
       return -1;
     }
 
@@ -446,7 +443,7 @@ struct action_handler_loadreport_t : public action_handler_t {
 static action_handler_loadreport_t load_report_handler;
 
 //-------------------------------------------------------------------------
-// Action to load efiXplorer analysis report
-action_desc_t action_load_report = ACTION_DESC_LITERAL(
-    "efiXplorer:loadReport", "efiXplorer analysis report...",
-    &load_report_handler, nullptr, nullptr, -1);
+// action to load efiXplorer analysis report
+action_desc_t action_load_report =
+    ACTION_DESC_LITERAL("efiXplorer:report", "efiXplorer analysis report...",
+                        &load_report_handler, nullptr, nullptr, -1);

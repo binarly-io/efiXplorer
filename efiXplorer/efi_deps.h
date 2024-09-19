@@ -21,41 +21,43 @@
 
 #include "efi_utils.h"
 #include <map>
-#include <set>
 #include <string>
 
-class EfiDependencies {
+class efi_deps_t {
 public:
-  EfiDependencies();
-  ~EfiDependencies();
+  efi_deps_t();
+  ~efi_deps_t();
 
-  json protocolsByGuids; // protocols sorted by GUIDs
-  json protocolsChooser; // numbered json with protocols
-  json uefitoolDeps;
-  json imagesGuids;
-  json additionalInstallers; // getAdditionalInstallers result
-  json imagesInfo;           // getImagesInfo result
-  json modulesSequence;      // buildModulesSequence result
-  string_list_t imagesFromIdb;
-  std::set<std::string> untrackedProtocols;
-  // Input: protocols from report
-  void getProtocolsByGuids(json_list_t protocols);
-  void getProtocolsChooser(json_list_t protocols);
-  json getDeps(std::string protocol); // get dependencies for specific protocol
-  void
-  getAdditionalInstallers(); // get installers by protocol GUIDs by searching in
-                             // the firmware and analysing xrefs
-  bool buildModulesSequence();
-  bool getImagesInfo();
+  json m_additional_installers;
+  json m_modules_guids;
+  json m_modules_info;
+  json m_modules_sequence;
+  json m_protocols_by_guids;
+  json m_protocols_chooser;
+  json m_uefitool_deps;
+  string_list_t m_modules_from_idb;
+  string_set_t m_untracked_protocols;
+
+  // input: protocols from report
+  void get_protocols_by_guids(json_list_t protocols);
+  void get_protocols_chooser(json_list_t protocols);
+  // get dependencies for specific protocol
+  json get_deps_for(std::string protocol);
+  // get installers by protocol GUIDs by searching
+  // in the firmware and analysing xrefs
+  void get_additional_installers();
+  bool build_modules_sequence();
+  bool get_modules_info();
 
 private:
-  void getImages();
-  std::set<std::string> protocolsWithoutInstallers;
-  void getProtocolsWithoutInstallers();
-  void getInstallersModules();
-  bool loadDepsFromUefiTool();
-  bool loadImagesWithGuids();
-  bool installerFound(std::string protocol);
-  json getImageInfo(std::string image);
-  std::string getInstaller(std::string protocol);
+  string_set_t m_protocols_without_installers;
+
+  void get_modules();
+  void get_protocols_without_installers();
+  void get_installers_modules();
+  bool load_deps_from_uefitool();
+  bool load_modules_with_guids();
+  bool installer_found(std::string protocol);
+  json get_module_info(std::string image);
+  std::string get_installer(std::string protocol);
 };

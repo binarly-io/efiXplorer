@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <format>
 #include <fstream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -169,6 +170,7 @@ using func_list_t = std::vector<func_t *>;
 using json_list_t = std::vector<json>;
 using segment_list_t = std::vector<segment_t *>;
 using string_list_t = std::vector<std::string>;
+using string_set_t = std::set<std::string>;
 using uchar_list_t = std::vector<uchar>;
 using uint64_list_t = std::vector<uint64_t>;
 using uint8_list_t = std::vector<uint8_t>;

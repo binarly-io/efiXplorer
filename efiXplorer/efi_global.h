@@ -28,4 +28,4 @@ struct args_t {
 };
 
 extern args_t g_args;
-extern EfiDependencies g_deps;
+extern efi_deps_t g_deps;

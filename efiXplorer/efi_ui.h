@@ -118,8 +118,8 @@ protected:
 };
 
 //-------------------------------------------------------------------------
-// Protocols chooser
-class protocols_chooser_t : public chooser_t {
+// protocols chooser
+class m_protocols_chooser_t : public chooser_t {
 protected:
   static const int widths_protocols[];
   static const char *const header_protocols[];
@@ -130,8 +130,8 @@ public:
   std::string name_key;
 
   // this object must be allocated using `new`
-  protocols_chooser_t(const char *title, bool ok, json_list_t interfaces,
-                      std::string name_key);
+  m_protocols_chooser_t(const char *title, bool ok, json_list_t interfaces,
+                        std::string name_key);
 
   // function that is used to decide whether a new chooser should be opened or
   // we can use the existing one. The contents of the window are completely
@@ -168,8 +168,8 @@ protected:
 };
 
 //-------------------------------------------------------------------------
-// Service chooser (address : service_name)
-class s_chooser_t : public chooser_t {
+// service chooser (address : service_name)
+class services_chooser_t : public chooser_t {
 protected:
   static const int widths_s[];
   static const char *const header_s[];
@@ -179,7 +179,7 @@ public:
   json chooser_s;
 
   // this object must be allocated using `new`
-  s_chooser_t(const char *title, bool ok, json_list_t services);
+  services_chooser_t(const char *title, bool ok, json_list_t services);
 
   // function that is used to decide whether a new chooser should be opened or
   // we can use the existing one. The contents of the window are completely
@@ -265,11 +265,11 @@ protected:
 
 extern action_desc_t action_load_report;
 
-bool nvram_show(json_list_t nvram, qstring title);
-bool vulns_show(json_list_t vulns, qstring title);
-bool guids_show(json_list_t guid, qstring title);
-bool protocols_show(json_list_t protocols, qstring title);
-bool ppis_show(json_list_t protocols, qstring title);
-bool services_show(json_list_t services, qstring title);
-void attachActionProtocolsDeps();
-void attachActionModulesSeq();
+bool show_nvram(json_list_t nvram, qstring title);
+bool show_vulns(json_list_t vulns, qstring title);
+bool show_guids(json_list_t guid, qstring title);
+bool show_protocols(json_list_t protocols, qstring title);
+bool show_ppis(json_list_t protocols, qstring title);
+bool show_services(json_list_t services, qstring title);
+void attach_action_protocols_deps();
+void attach_action_modules_seq();
