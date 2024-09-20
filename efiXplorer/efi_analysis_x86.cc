@@ -849,7 +849,6 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
                                      g_smm_services_table_all[j].name)]
                   .push_back(addr);
 
-              // add item to allSmmServices
               json s;
               s["address"] = addr;
               s["service_name"] = g_smm_services_table_all[j].name;
@@ -1088,7 +1087,6 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
           std::string name = it->second;
           s["ppi_name"] = name;
 
-          // check if item already exists
           if (!efi_utils::json_in_vec(m_all_ppis, s)) {
             m_all_ppis.push_back(s);
           }
@@ -1099,7 +1097,6 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
         if (s["ppi_name"].is_null()) {
           s["ppi_name"] = "UNKNOWN_PPI";
 
-          // check if item already exists
           if (!efi_utils::json_in_vec(m_all_ppis, s)) {
             m_all_ppis.push_back(s);
           }
@@ -1695,7 +1692,7 @@ void efi_analysis::efi_analyser_x86_t::find_local_guids64() {
           for (const auto &[name, guid] : m_guiddb.items()) {
             if (data1 == static_cast<uint32_t>(guid[0]) &&
                 data2 == static_cast<uint16_t>(guid[1])) {
-              auto name_str = static_cast<std::string>(name);
+              std::string name_str = name;
               set_cmt(ea, name.c_str(), true);
               efi_utils::log("found local GUID %s at 0x%016llX\n", name.c_str(),
                              u64_addr(ea));
@@ -1871,7 +1868,6 @@ void efi_analysis::efi_analyser_t::find_smi_handlers() {
 //--------------------------------------------------------------------------
 // find callouts inside SwSmiHandler functions
 bool efi_analysis::efi_analyser_t::find_smm_callout() {
-  efi_utils::log("search for SMM callouts\n");
   if (bs_list.empty() && rt_list.empty()) {
     return false;
   }
@@ -1887,41 +1883,36 @@ bool efi_analysis::efi_analyser_t::find_smm_callout() {
   return true;
 }
 
+//--------------------------------------------------------------------------
+// find potential double GetVariable patterns in PEI modules
 bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
-  msg("[%s] Looking for PPI GetVariable buffer overflow, "
-      "m_all_services.size() = %lu\n",
-      g_plugin_name, m_all_services.size());
-  ea_list_t getVariableServicesCalls;
-  std::string getVariableStr("VariablePPI.GetVariable");
+  ea_list_t get_variable_services_calls;
+  std::string get_variable_str("VariablePPI.GetVariable");
+
   for (auto j_service : m_all_services) {
     json service = j_service;
-    std::string service_name =
-        static_cast<std::string>(service["service_name"]);
-    std::string table_name = static_cast<std::string>(service["table_name"]);
+    std::string service_name = service["service_name"];
+    std::string table_name = service["table_name"];
     ea_t addr = static_cast<ea_t>(service["address"]);
-    if (service_name.compare(getVariableStr) == 0) {
-      getVariableServicesCalls.push_back(addr);
+    if (service_name.compare(get_variable_str) == 0) {
+      get_variable_services_calls.push_back(addr);
     }
   }
-  msg("[%s] Finished iterating over m_all_services, "
-      "getVariableServicesCalls.size() = "
-      "%lu\n",
-      g_plugin_name, getVariableServicesCalls.size());
-  sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
-  if (getVariableServicesCalls.size() < 2) {
-    msg("[%s] less than 2 VariablePPI.GetVariable calls found\n",
-        g_plugin_name);
+
+  sort(get_variable_services_calls.begin(), get_variable_services_calls.end());
+  if (get_variable_services_calls.size() < 2) {
     return false;
   }
-  ea_t prev_addr = getVariableServicesCalls.at(0);
-  for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
-    ea_t curr_addr = getVariableServicesCalls.at(i);
-    msg("[%s] VariablePPI.GetVariable_1: 0x%016llX, "
-        "VariablePPI.GetVariable_2: "
-        "0x%016llX\n",
-        g_plugin_name, u64_addr(prev_addr), u64_addr(curr_addr));
 
-    // check code from GetVariable_1 to GetVariable_2
+  ea_t prev_addr = get_variable_services_calls.at(0);
+  for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
+    ea_t curr_addr = get_variable_services_calls.at(i);
+    efi_utils::log("first call to VariablePPI.GetVariable: 0x%016llX\n",
+                   u64_addr(prev_addr));
+    efi_utils::log("second call to VariablePPI.GetVariable: 0x%016llX\n",
+                   u64_addr(curr_addr));
+
+    // check code from first call to second call
     ea_t ea = next_head(prev_addr, BADADDR);
     bool ok = true;
     insn_t insn;
@@ -1935,11 +1926,12 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
       }
       ea = next_head(ea, BADADDR);
     }
+
     if (ok) {
       bool same_datasize = false;
       uint16_t push_number = 5;
       uint16_t push_counter = 0;
-      uint16_t arg5_reg = 0xffff;
+      uint16_t arg5_reg = NONE_REG;
       ea_t curr_datasize_addr = 0xffff;
       bool datasize_addr_found = false;
       ea_t address = curr_addr;
@@ -1952,7 +1944,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
             if (insn.ops[0].type == o_reg) {
               arg5_reg = insn.ops[0].reg;
             } else {
-              // if it's not push <reg>, just let the pattern
+              // if it's not `push {reg}`, just let the pattern
               // trigger - for manual review
               same_datasize = true;
             }
@@ -1963,8 +1955,8 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
 
       if (same_datasize) {
         double_get_variable_pei.push_back(curr_addr);
-        msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
-            u64_addr(curr_addr));
+        efi_utils::log("overflow may occur here: 0x%016llX\n",
+                       u64_addr(curr_addr));
         continue;
       }
 
@@ -1979,21 +1971,17 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
         }
       }
 
-      msg("[%s] curr_datasize_addr = 0x%016llX, datasize_addr_found = "
-          "%d\n",
-          g_plugin_name, u64_addr(curr_datasize_addr), datasize_addr_found);
-
       if (!datasize_addr_found) {
         // if datasize wasn't found, just let the pattern
         // trigger - for manual review
         double_get_variable_pei.push_back(curr_addr);
-        msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
-            u64_addr(curr_addr));
+        efi_utils::log("overflow may occur here: 0x%016llX\n",
+                       u64_addr(curr_addr));
         continue;
       }
 
       push_counter = 0;
-      arg5_reg = 0xffff;
+      arg5_reg = NONE_REG;
       ea_t prev_datasize_addr = 0xffff;
       datasize_addr_found = false;
       address = prev_addr;
@@ -2006,7 +1994,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
             if (insn.ops[0].type == o_reg) {
               arg5_reg = insn.ops[0].reg;
             } else {
-              // if it's not push <reg>, just let the pattern
+              // if it's not `push {reg}`, just let the pattern
               // trigger - for manual review
               same_datasize = true;
             }
@@ -2017,8 +2005,8 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
 
       if (same_datasize) {
         double_get_variable_pei.push_back(curr_addr);
-        msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
-            u64_addr(curr_addr));
+        efi_utils::log("overflow may occur here: 0x%016llX\n",
+                       u64_addr(curr_addr));
         continue;
       }
 
@@ -2033,93 +2021,88 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
         }
       }
 
-      msg("[%s] prev_datasize_addr = 0x%016llX, datasize_addr_found = "
-          "%d, "
-          "(prev_datasize_addr == curr_datasize_addr) = %d\n",
-          g_plugin_name, u64_addr(prev_datasize_addr), datasize_addr_found,
-          (prev_datasize_addr == curr_datasize_addr));
-
       if (!datasize_addr_found) {
         double_get_variable_pei.push_back(curr_addr);
-        msg("[%s] overflow can occur here: 0x%016llX\n", g_plugin_name,
-            u64_addr(curr_addr));
+        efi_utils::log("overflow may occur here: 0x%016llX\n",
+                       u64_addr(curr_addr));
       } else if (prev_datasize_addr == curr_datasize_addr) {
         double_get_variable_pei.push_back(curr_addr);
-        msg("[%s] overflow can occur here: 0x%016llX "
-            "(prev_datasize_addr == "
-            "curr_datasize_addr)\n",
-            g_plugin_name, u64_addr(curr_addr));
+        efi_utils::log("overflow may occur here: 0x%016llX\n",
+                       u64_addr(curr_addr));
       }
     }
     prev_addr = curr_addr;
   }
-  return (double_get_variable_pei.size() > 0);
+  return !double_get_variable_pei.empty();
 }
 
 //--------------------------------------------------------------------------
-// Find potential stack/heap overflow with double GetVariable calls
+// find potential double GetVariable patterns
 bool efi_analysis::efi_analyser_t::find_double_get_variable(
     json_list_t m_all_services) {
-  msg("[%s] Looking for GetVariable stack/heap overflow\n", g_plugin_name);
-  ea_list_t getVariableServicesCalls;
-  std::string getVariableStr("GetVariable");
+  ea_list_t get_variable_services_calls;
+  std::string get_variable_str("GetVariable");
+
   for (auto j_service : m_all_services) {
     json service = j_service;
     std::string service_name =
         static_cast<std::string>(service["service_name"]);
     ea_t addr = static_cast<ea_t>(service["address"]);
-    if (service_name.compare(getVariableStr) == 0) {
-      getVariableServicesCalls.push_back(addr);
+    if (service_name.compare(get_variable_str) == 0) {
+      get_variable_services_calls.push_back(addr);
     }
   }
-  sort(getVariableServicesCalls.begin(), getVariableServicesCalls.end());
-  if (getVariableServicesCalls.size() < 2) {
-    msg("[%s] less than 2 GetVariable calls found\n", g_plugin_name);
+
+  sort(get_variable_services_calls.begin(), get_variable_services_calls.end());
+  if (get_variable_services_calls.size() < 2) {
     return false;
   }
-  ea_t prev_addr = getVariableServicesCalls.at(0);
+
   ea_t ea;
   insn_t insn;
-  for (auto i = 1; i < getVariableServicesCalls.size(); ++i) {
-    ea_t curr_addr = getVariableServicesCalls.at(i);
-    msg("[%s] GetVariable_1: 0x%016llX, GetVariable_2: 0x%016llX\n",
-        g_plugin_name, u64_addr(prev_addr), u64_addr(curr_addr));
+  ea_t prev_addr = get_variable_services_calls.at(0);
+  for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
+    ea_t curr_addr = get_variable_services_calls.at(i);
+    efi_utils::log("first call to GetVariable: 0x%016llX\n",
+                   u64_addr(prev_addr));
+    efi_utils::log("second call to GetVariable: 0x%016llX\n",
+                   u64_addr(curr_addr));
 
-    // get dataSizeStackAddr
-    int dataSizeStackAddr = 0;
-    uint16 dataSizeOpReg = 0xFF;
+    int datasize_stack_addr = 0;
+    uint16 datasize_op_reg = 0xFF;
     ea = prev_head(curr_addr, 0);
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == R_R9) {
-        dataSizeStackAddr = insn.ops[1].addr;
-        dataSizeOpReg = insn.ops[1].phrase;
+        datasize_stack_addr = insn.ops[1].addr;
+        datasize_op_reg = insn.ops[1].phrase;
         break;
       }
       ea = prev_head(ea, 0);
     }
 
-    // check code from GetVariable_1 to GetVariable_2
+    // check code from first call to second call
     ea = next_head(prev_addr, BADADDR);
     bool ok = true;
-    size_t dataSizeUseCounter = 0;
+    size_t datasize_user_count = 0;
     while (ea < curr_addr) {
       decode_insn(&insn, ea);
-      if (((dataSizeStackAddr == insn.ops[0].addr) &&
-           (dataSizeOpReg == insn.ops[0].phrase)) ||
-          ((dataSizeStackAddr == insn.ops[1].addr) &&
-           (dataSizeOpReg == insn.ops[1].phrase))) {
-        dataSizeUseCounter++;
+      if (((datasize_stack_addr == insn.ops[0].addr) &&
+           (datasize_op_reg == insn.ops[0].phrase)) ||
+          ((datasize_stack_addr == insn.ops[1].addr) &&
+           (datasize_op_reg == insn.ops[1].phrase))) {
+        datasize_user_count++;
       }
       if ((insn.itype == NN_callni && insn.ops[0].addr == 0x48) ||
           insn.itype == NN_retn || insn.itype == NN_jmp ||
-          insn.itype == NN_jmpni || dataSizeUseCounter > 1) {
+          insn.itype == NN_jmpni || datasize_user_count > 1) {
         ok = false;
         break;
       }
       ea = next_head(ea, BADADDR);
     }
+
     if (ok) {
       // check for wrong GetVariable detection
       bool wrong_detection = false;
@@ -2137,26 +2120,25 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
         ea = prev_head(ea, 0);
       }
 
-      // check DataSize initialization
+      // check DataSize initialisation
       bool init_ok = false;
       decode_insn(&insn, prev_head(curr_addr, 0));
       if (!wrong_detection &&
           !(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
             (insn.ops[0].phrase == R_RSP || insn.ops[0].phrase == R_RBP) &&
-            (insn.ops[0].addr == dataSizeStackAddr))) {
+            (insn.ops[0].addr == datasize_stack_addr))) {
         init_ok = true;
       }
 
-      // check that the DataSize argument variable is the same for two
-      // calls
+      // check that the DataSize argument variable is the same for two calls
       if (init_ok) {
         ea = prev_head(prev_addr, 0);
-        // for (auto i = 0; i < 10; ++i) {
         func_t *func_start = get_func(ea);
         if (func_start == nullptr) {
           return (double_get_variable.size() > 0);
         }
-        uint16 stack_base_reg = 0xFF;
+
+        uint16 stack_base_reg = 0xff;
         decode_insn(&insn, func_start->start_ea);
         if (insn.itype == NN_mov && insn.ops[1].is_reg(R_RSP) &&
             insn.ops[0].type == o_reg) {
@@ -2173,11 +2155,11 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
             sval_t sval = get_spd(func_start, ea) * -1;
 
             if ((insn.ops[1].phrase == stack_base_reg &&
-                 (sval + stack_addr) == dataSizeStackAddr) ||
-                (dataSizeStackAddr == insn.ops[1].addr)) {
+                 (sval + stack_addr) == datasize_stack_addr) ||
+                (datasize_stack_addr == insn.ops[1].addr)) {
               double_get_variable.push_back(curr_addr);
-              msg("[%s] \toverflow can occur here: 0x%016llX\n", g_plugin_name,
-                  u64_addr(curr_addr));
+              efi_utils::log("overflow may occur here: 0x%016llX\n",
+                             u64_addr(curr_addr));
               break;
             }
           }
@@ -2187,45 +2169,45 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
     }
     prev_addr = curr_addr;
   }
-  return (double_get_variable.size() > 0);
+  return !double_get_variable.empty();
 }
 
 //--------------------------------------------------------------------------
-// Find potential stack/heap overflow with double SmmGetVariable calls
+// find potential double GetVariable patterns in SMM modules
 bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
-  msg("[%s] Looking for SmmGetVariable stack/heap overflow\n", g_plugin_name);
   ea_list_t smm_get_variable_calls =
       efi_smm_utils::find_smm_get_variable_calls(data_segs, &m_all_services);
   sort(smm_get_variable_calls.begin(), smm_get_variable_calls.end());
+
   if (smm_get_variable_calls.size() < 2) {
-    msg("[%s] less than 2 GetVariable calls found\n", g_plugin_name);
     return false;
   }
+
   ea_t prev_addr = smm_get_variable_calls.at(0);
   ea_t ea;
   insn_t insn;
   for (auto i = 1; i < smm_get_variable_calls.size(); ++i) {
     ea_t curr_addr = smm_get_variable_calls.at(i);
-    msg("[%s] SmmGetVariable_1: 0x%016llX, SmmGetVariable_2: 0x%016llX\n",
-        g_plugin_name, u64_addr(prev_addr), u64_addr(curr_addr));
+    efi_utils::log("first call to SmmGetVariable: 0x%016llX\n",
+                   u64_addr(prev_addr));
+    efi_utils::log("second call to SmmGetVariable: 0x%016llX\n",
+                   u64_addr(curr_addr));
 
-    // get dataSizeStackAddr
-    uint32_t dataSizeStackAddr = 0xffffffff;
+    uint32_t datasize_stack_addr = 0xffffffff;
     ea = prev_head(curr_addr, 0);
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == R_R9) {
-        dataSizeStackAddr = insn.ops[1].addr;
+        datasize_stack_addr = insn.ops[1].addr;
         break;
       }
       ea = prev_head(ea, 0);
     }
 
-    // check code from SmmGetVariable_1 to SmmGetVariable_2
+    // check code from first call to second call
     ea = next_head(prev_addr, BADADDR);
     bool ok = true;
-    size_t dataSizeUseCounter = 0;
     while (ea < curr_addr) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_callni || insn.itype == NN_retn ||
@@ -2237,7 +2219,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
     }
 
     if (ok) {
-      // check DataSize initialization
+      // check DataSize initialisation
       bool init_ok = false;
       decode_insn(&insn, prev_head(curr_addr, 0));
       if (!(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
@@ -2245,23 +2227,19 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
         init_ok = true;
       }
 
-      // check that the DataSize argument variable is the same for two
-      // calls
+      // check that the DataSize argument variable is the same for two calls
       if (init_ok) {
         ea = prev_head(prev_addr, 0);
         for (auto i = 0; i < 10; ++i) {
           decode_insn(&insn, ea);
           if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
               insn.ops[0].reg == R_R9) {
-            if (dataSizeStackAddr == insn.ops[1].addr) {
+            if (datasize_stack_addr == insn.ops[1].addr) {
               double_get_variable_smm.push_back(curr_addr);
-              msg("[%s] \toverflow can occur here: 0x%016llX\n", g_plugin_name,
-                  u64_addr(curr_addr));
+              efi_utils::log("overflow may occur here: 0x%016llX\n",
+                             u64_addr(curr_addr));
               break;
             }
-            msg("[%s] \tDataSize argument variable is not the "
-                "same: 0x%016llX\n",
-                g_plugin_name, u64_addr(curr_addr));
           }
           ea = prev_head(ea, 0);
         }
@@ -2269,74 +2247,84 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
     }
     prev_addr = curr_addr;
   }
-  return (double_get_variable_smm.size() > 0);
+  return !double_get_variable_smm.empty();
 }
 
+//--------------------------------------------------------------------------
+// analyse calls to GetVariable/SetVariable to extract variables information
 bool efi_analysis::efi_analyser_t::analyse_variable_service(
     ea_t ea, std::string service_str) {
-  msg("[%s] %s call: 0x%016llX\n", g_plugin_name, service_str.c_str(),
-      u64_addr(ea));
-  json item;
-  item["addr"] = ea;
-  insn_t insn;
-  bool name_found = false;
-  bool guid_found = false;
   func_t *f = get_func(ea);
   if (f == nullptr) {
     return false;
   }
+
+  efi_utils::log("analysing %s call at 0x%016llX\n", service_str.c_str(),
+                 u64_addr(ea));
+
   eavec_t args;
   get_arg_addrs(&args, ea);
   if (args.size() < 3) {
     return false;
   }
 
-  auto addr = args[0]; // Get VariableName
+  json v;
+  v["addr"] = ea;
+
+  insn_t insn;
+  bool name_found = false;
+  bool guid_found = false;
+
+  // variable name argument
+  auto addr = args[0];
   decode_insn(&insn, addr);
+
   if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
       insn.ops[0].reg == R_RCX && insn.ops[1].type == o_mem) {
-    msg("[%s]  VariableName address: 0x%016llX\n", g_plugin_name,
-        u64_addr(insn.ops[1].addr));
     std::string var_name = efi_utils::get_wide_string(insn.ops[1].addr);
 
     // retype CHAR16 to const CHAR16 to improve pseudocode quality
     efi_utils::set_const_char16_type(insn.ops[1].addr);
+    efi_utils::log("  VariableName: %s (at 0x%016llX)\n", var_name.c_str(),
+                   u64_addr(insn.ops[1].addr));
 
-    msg("[%s]  VariableName: %s\n", g_plugin_name, var_name.c_str());
-    item["VariableName"] = var_name;
+    v["VariableName"] = var_name;
     name_found = true;
   }
 
-  addr = args[1]; // Get VendorGuid
+  // vendor GUID argument
+  addr = args[1];
   decode_insn(&insn, addr);
-  // If GUID is global variable
+
+  // if GUID is a global variable
   if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
       insn.ops[0].reg == R_RDX && insn.ops[1].type == o_mem) {
-    msg("[%s]  VendorGuid address (global): 0x%016llX\n", g_plugin_name,
-        u64_addr(insn.ops[1].addr));
     efi_guid_t guid = efi_utils::get_global_guid(insn.ops[1].addr);
-    msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
-    item["VendorGuid"] = guid.to_string();
+    efi_utils::log("  VendorGuid: %s (at 0x%016llX)\n",
+                   guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
+
+    v["VendorGuid"] = guid.to_string();
     guid_found = true;
   }
-  // If GUID is local variable
+
+  // if GUID is local variable
   if (!guid_found && insn.itype == NN_lea && insn.ops[0].type == o_reg &&
       insn.ops[0].reg == R_RDX && insn.ops[1].type == o_displ) {
     switch (insn.ops[1].reg) {
     case R_RBP: {
-      msg("[%s]  VendorGuid address (regarding to RBP): 0x%016llX\n",
-          g_plugin_name, u64_addr(insn.ops[1].addr));
       efi_guid_t guid = efi_utils::get_local_guid(f, insn.ops[1].addr);
-      msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
-      item["VendorGuid"] = guid.to_string();
+      efi_utils::log("  VendorGuid: %s, RBP offset: 0x%016llX\n",
+                     guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
+
+      v["VendorGuid"] = guid.to_string();
       guid_found = true;
     }
     case R_RSP: {
-      msg("[%s]  VendorGuid address (regarding to RSP): 0x%016llX\n",
-          g_plugin_name, u64_addr(insn.ops[1].addr));
       efi_guid_t guid = efi_utils::get_local_guid(f, insn.ops[1].addr);
-      msg("[%s]  GUID: %s\n", g_plugin_name, guid.to_string().c_str());
-      item["VendorGuid"] = guid.to_string();
+      efi_utils::log("  VendorGuid: %s, RSP offset: 0x%016llX\n",
+                     guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
+
+      v["VendorGuid"] = guid.to_string();
       guid_found = true;
     }
     }
@@ -2349,23 +2337,24 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
       {0x00000008, "HARDWARE_ERROR_RECORD"},
       {0x00000010, "AUTHENTICATED_WRITE_ACCESS"}};
 
-  addr = args[2]; // Get Attributes
+  addr = args[2]; // attributes argument
   decode_insn(&insn, addr);
+
   if (insn.itype == NN_xor && insn.ops[0].type == o_reg &&
       insn.ops[1].type == o_reg && insn.ops[0].reg == insn.ops[1].reg &&
       insn.ops[0].reg == R_R8) {
-    item["Attributes"] = 0;
     std::string attributes_hr = "No attributes";
-    item["AttributesHumanReadable"] = attributes_hr;
-    msg("[%s]  Attributes: %d (%s)\n", g_plugin_name, 0, attributes_hr.c_str());
+    v["Attributes"] = 0;
+    v["AttributesHumanReadable"] = attributes_hr;
+    efi_utils::log("  Attributes: %s\n", attributes_hr.c_str());
   } else {
 #ifdef HEX_RAYS
-    // Extract attributes with Hex-Rays SDK
+    // extract attributes with Hex-Rays SDK
     auto res = efi_hexrays::variables_info_extract_all(f, ea);
-    item["Attributes"] = res;
-    std::string attributes_hr = std::string();
+    v["Attributes"] = res;
+    std::string attributes_hr;
     if (res == 0xff) {
-      attributes_hr = "Unknown attributes";
+      attributes_hr = "Unknown";
     } else {
       for (auto &[attr, attr_def] : attributes_defs) {
         if (res & attr & 0x0f) {
@@ -2376,20 +2365,19 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
         attributes_hr = attributes_hr.substr(0, attributes_hr.size() - 3);
       }
     }
-    item["AttributesHumanReadable"] = attributes_hr;
-    msg("[%s]  Attributes: %d (%s)\n", g_plugin_name, res,
-        attributes_hr.c_str());
+    v["AttributesHumanReadable"] = attributes_hr;
+    efi_utils::log("  Attributes: %s (%d)\n", attributes_hr.c_str(), res);
 #else
-    // If Hex-Rays analysis is not used, this feature does not work
-    item["Attributes"] = 0xff;
-    item["AttributesHumanReadable"] = "Unknown attributes";
+    // use stubs when hex-rays analysis is disabled
+    v["Attributes"] = 0xff;
+    v["AttributesHumanReadable"] = "Unknown";
 #endif
   }
 
-  if (name_found && guid_found) { // if only name or only GUID found, it will
-                                  // now saved (check the logs)
-    item["service"] = service_str;
-    m_nvram_variables.push_back(item);
+  // if only the name or GUID is found, it will not be saved
+  if (name_found && guid_found) {
+    v["service"] = service_str;
+    m_nvram_variables.push_back(v);
   }
 
   return true;
