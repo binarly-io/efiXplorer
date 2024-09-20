@@ -368,7 +368,7 @@ public:
   void get_smm_prot_names64();
   void get_smm_services_all64();
   void get_variable_ppi_calls_all32();
-  void mark_local_guids64();
+  void find_local_guids64();
   void show_all_choosers();
 
 private:

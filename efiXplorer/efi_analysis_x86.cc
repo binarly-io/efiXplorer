@@ -1038,12 +1038,8 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
-      auto found = false;
-
       uint16_t push_counter = 0;
-      efi_utils::log(
-          "search for PPIs in the 0x%016llX area (push number: %d)\n",
-          u64_addr(address), g_pei_services_table32[i].push_number);
+      auto found = false;
 
       // check current basic block
       while (true) {
@@ -1397,8 +1393,6 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
     ea_list_t addrs = m_boot_services[g_boot_services_table64[i].name];
     for (auto ea : addrs) {
       ea_t address = ea;
-      efi_utils::log("search for protocols in the 0x%016llX area\n",
-                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
@@ -1466,8 +1460,6 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
     // for each boot service
     for (auto ea : addrs) {
       ea_t address = ea;
-      efi_utils::log("search for protocols in the 0x%016llX area\n",
-                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
@@ -1536,8 +1528,6 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
     // for each SMM service
     for (auto ea : addrs) {
       ea_t address = ea;
-      efi_utils::log("search for protocols in the 0x%016llX area\n",
-                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
@@ -1661,28 +1651,26 @@ void efi_analysis::efi_analyser_t::annotate_data_guids() {
 }
 
 //--------------------------------------------------------------------------
-// Mark GUIDs found in local variables for X64 modules
-void efi_analysis::efi_analyser_x86_t::mark_local_guids64() {
+// find GUIDs stored in local variables for 64-bit modules
+void efi_analysis::efi_analyser_x86_t::find_local_guids64() {
   for (auto seg : code_segs) {
     segment_t *s = seg;
     ea_t ea = s->start_ea;
     insn_t insn;
     insn_t insn_next;
-    msg("[%s] local GUIDs finding from 0x%016llX to 0x%016llX\n", g_plugin_name,
-        u64_addr(s->start_ea), u64_addr(s->end_ea));
     while (ea <= s->end_ea) {
       ea = next_head(ea, BADADDR);
       decode_insn(&insn, ea);
 
-      // check if insn like mov dword ptr [...], data1
+      // check if insn like `mov dword ptr [...], data1`
       if (!(insn.itype == NN_mov && insn.ops[0].type == o_displ &&
             insn.ops[1].type == o_imm)) {
         continue;
       }
 
-      // get guid->Data1 value
+      // get guid->data1 value
       uint32_t data1 = u32_addr(insn.ops[1].value);
-      if (data1 == 0x00000000 || data1 == 0xffffffff) {
+      if (!data1 || data1 == 0xffffffff) {
         ea = next_head(ea, BADADDR);
         continue;
       }
@@ -1692,31 +1680,29 @@ void efi_analysis::efi_analyser_x86_t::mark_local_guids64() {
       for (auto i = 0; i < 4; i++) {
         auto ea_next = next_head(ea, BADADDR);
         decode_insn(&insn_next, ea_next);
-        // check if insn like mov dword ptr [...], data2
+        // check if insn like `mov dword ptr [...], data2`
         if (insn_next.itype == NN_mov && insn_next.ops[0].type == o_displ &&
             insn_next.ops[1].type == o_imm) {
-          // get guid->Data2 value
+          // get guid->data2 value
           uint16_t data2 = static_cast<uint16_t>(insn_next.ops[1].value);
-          if (data2 == 0x0000 || data2 == 0xffff) {
+          if (!data2 || data2 == 0xffff) {
             ea = next_head(ea, BADADDR);
             continue;
           }
 
-          // found guid->Data1 and guid->Data2 values, try to get
-          // guid name
-          for (auto dbItem = m_guiddb.begin(); dbItem != m_guiddb.end();
-               ++dbItem) {
-            auto guid = dbItem.value();
+          // found guid->data1 and guid->data2 values
+          // try to get GUID name
+          for (const auto &[name, guid] : m_guiddb.items()) {
             if (data1 == static_cast<uint32_t>(guid[0]) &&
                 data2 == static_cast<uint16_t>(guid[1])) {
-              // mark local GUID
-              std::string comment = "EFI_GUID " + dbItem.key();
-              msg("[%s] address: 0x%016llX, comment: %s\n", g_plugin_name,
-                  u64_addr(ea), comment.c_str());
+              auto name_str = static_cast<std::string>(name);
+              set_cmt(ea, name.c_str(), true);
+              efi_utils::log("found local GUID %s at 0x%016llX\n", name.c_str(),
+                             u64_addr(ea));
 
               json g;
               g["address"] = ea;
-              g["name"] = dbItem.key();
+              g["name"] = name;
               g["guid"] = efi_utils::guid_to_string(guid);
               m_all_guids.push_back(g);
               stack_guids.push_back(g);
@@ -1741,13 +1727,13 @@ void find_callout_rec(func_t *func) {
        ea = next_head(ea, BADADDR)) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_call) {
-      ea_t nextFuncAddr = insn.ops[0].addr;
-      func_t *nextFunc = get_func(nextFuncAddr);
-      if (nextFunc) {
-        auto it = std::find(exc_funcs.begin(), exc_funcs.end(), nextFunc);
+      ea_t next_func_addr = insn.ops[0].addr;
+      func_t *next_func = get_func(next_func_addr);
+      if (next_func) {
+        auto it = std::find(exc_funcs.begin(), exc_funcs.end(), next_func);
         if (it == exc_funcs.end()) {
-          exc_funcs.push_back(nextFunc);
-          find_callout_rec(nextFunc);
+          exc_funcs.push_back(next_func);
+          find_callout_rec(next_func);
         }
       }
     }
@@ -1756,7 +1742,6 @@ void find_callout_rec(func_t *func) {
         insn.ops[1].type == o_mem) {
       // search for callouts with gBS
       if (efi_utils::addr_in_vec(bs_list, insn.ops[1].addr)) {
-        msg("[%s] SMM callout found: 0x%016llX\n", g_plugin_name, u64_addr(ea));
         // filter FP
         auto reg = insn.ops[0].reg;
         auto addr = ea;
@@ -1776,8 +1761,8 @@ void find_callout_rec(func_t *func) {
           }
         }
         if (!fp) {
-          msg("[%s] SMM callout found (gBS): 0x%016llX\n", g_plugin_name,
-              u64_addr(ea));
+          efi_utils::log("found SMM callout via boot services at 0x%016llX\n",
+                         u64_addr(ea));
           callout_addrs.push_back(ea);
           continue;
         }
@@ -1785,8 +1770,8 @@ void find_callout_rec(func_t *func) {
 
       // search for callouts with gRT
       if (efi_utils::addr_in_vec(rt_list, insn.ops[1].addr)) {
-        msg("[%s] SMM callout found (gRT): 0x%016llX\n", g_plugin_name,
-            u64_addr(ea));
+        efi_utils::log("found SMM callout via runtime services at 0x%016llX\n",
+                       u64_addr(ea));
         callout_addrs.push_back(ea);
         continue;
       }
@@ -1794,7 +1779,7 @@ void find_callout_rec(func_t *func) {
       // search for usage of interfaces installed with gBS->LocateProtocol()
       auto g_addr = insn.ops[1].addr;
       insn_t insn_xref;
-      bool interface_callout_found = false;
+      bool found = false;
       // check all xrefs for found global variable
       for (auto xref : efi_utils::get_xrefs(g_addr)) {
         // chcek if it looks like interface
@@ -1816,12 +1801,10 @@ void find_callout_rec(func_t *func) {
               next_insn.ops[0].reg == R_RAX) {
             if (next_insn.ops[0].addr == 0x140 ||
                 next_insn.ops[0].addr == 0x40) {
-              // found callout
-              msg("[%s] SMM callout found (usage of memory controlled by "
-                  "the attacker inside SMI handler): 0x%016llX\n",
-                  g_plugin_name, u64_addr(ea));
+              efi_utils::log("found SMM callout via interface at 0x%016llX\n",
+                             u64_addr(ea));
               callout_addrs.push_back(ea);
-              interface_callout_found = true;
+              found = true;
             } // else: FP
             break;
           }
@@ -1830,7 +1813,7 @@ void find_callout_rec(func_t *func) {
             break;
           }
         }
-        if (interface_callout_found) {
+        if (found) {
           break;
         }
       }
@@ -2611,7 +2594,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
 
   // mark GUIDs
   analyser.annotate_data_guids();
-  analyser.mark_local_guids64();
+  analyser.find_local_guids64();
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei
