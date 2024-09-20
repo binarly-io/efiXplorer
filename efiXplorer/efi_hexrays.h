@@ -903,7 +903,6 @@ public:
     bool is_ptr = false;
     if (!func_type.get_type_name(&type_name)) {
       if (!func_type_no_ptr.get_type_name(&type_name)) {
-        // msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
         return 0;
       }
       is_ptr = 0;
@@ -920,8 +919,10 @@ public:
         service_name = "RestoreTPL";
       }
     }
-    msg("[efiXplorer] address: 0x%016llX, service type: %s, service name: %s\n",
-        u64_addr(e->ea), type_name.c_str(), service_name.c_str());
+    if (m_debug) {
+      efi_utils::log("address: 0x%016llX, service type: %s, service name: %s\n",
+                     u64_addr(e->ea), type_name.c_str(), service_name.c_str());
+    }
 
     json s;
     s["address"] = e->ea;
