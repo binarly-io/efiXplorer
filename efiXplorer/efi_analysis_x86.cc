@@ -2453,7 +2453,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
   } else {
 #ifdef HEX_RAYS
     // Extract attributes with Hex-Rays SDK
-    auto res = variables_info_extract_all(f, ea);
+    auto res = efi_hexrays::variables_info_extract_all(f, ea);
     item["Attributes"] = res;
     std::string attributes_hr = std::string();
     if (res == 0xff) {
@@ -2715,7 +2715,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
     analyser.get_bs_prot_names64();
 
 #ifdef HEX_RAYS
-    apply_all_types_for_interfaces(analyser.m_all_protocols);
+    efi_hexrays::apply_all_types_for_interfaces(analyser.m_all_protocols);
     analyser.find_smst_postproc64();
 #endif
 
@@ -2746,7 +2746,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
     }
 
 #ifdef HEX_RAYS
-    apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
+    efi_hexrays::apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
 #endif
 
     analyser.analyse_nvram_variables();
@@ -2821,15 +2821,15 @@ bool efi_analysis::efi_analyse_main_x86_32() {
     analyser.mark_interfaces();
 
 #ifdef HEX_RAYS
-    apply_all_types_for_interfaces(analyser.m_all_protocols);
-    apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
+    efi_hexrays::apply_all_types_for_interfaces(analyser.m_all_protocols);
+    efi_hexrays::apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
 #endif
   } else if (analyser.m_ftype == ffs_file_type_t::pei) {
     efi_utils::set_entry_arg_to_pei_svc();
     efi_utils::add_struct_for_shifted_ptr();
 #ifdef HEX_RAYS
     for (auto addr : analyser.m_funcs) {
-      detect_pei_services(get_func(addr));
+      efi_hexrays::detect_pei_services(get_func(addr));
     }
 #endif
     analyser.get_pei_services_all32();

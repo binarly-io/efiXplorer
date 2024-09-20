@@ -58,7 +58,7 @@ void efi_analysis::efi_analyser_arm_t::initial_analysis() {
     ea_t ep = get_entry(ord);
     set_name(ep, "_ModuleEntryPoint", SN_FORCE);
 #ifdef HEX_RAYS
-    track_entry_params(get_func(ep), 0);
+    efi_hexrays::track_entry_params(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
   if (m_ftype == ffs_file_type_t::pei) {
@@ -233,7 +233,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
 #ifdef HEX_RAYS
   // analyse entry point with Hex-Rays
   for (auto func_addr : m_funcs) {
-    json res = detect_vars(get_func(func_addr));
+    json res = efi_hexrays::detect_vars(get_func(func_addr));
     if (res.contains("image_handle_list")) {
       for (auto addr : res["image_handle_list"]) {
         if (!efi_utils::addr_in_vec(image_handle_list_arm, addr)) {
@@ -299,7 +299,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
 void efi_analysis::efi_analyser_arm_t::detect_services_all() {
 #ifdef HEX_RAYS
   for (auto func_addr : m_funcs) {
-    json_list_t services = detect_services(get_func(func_addr));
+    json_list_t services = efi_hexrays::detect_services(get_func(func_addr));
     for (auto service : services) {
       m_all_services.push_back(service);
     }
@@ -496,12 +496,12 @@ bool efi_analysis::efi_analyse_main_aarch64() {
 
 #ifdef HEX_RAYS
   for (auto addr : analyser.m_funcs) {
-    json_list_t services = detect_pei_services_arm(get_func(addr));
+    json_list_t services = efi_hexrays::detect_pei_services_arm(get_func(addr));
     for (auto service : services) {
       analyser.m_all_services.push_back(service);
     }
   }
-  apply_all_types_for_interfaces(analyser.m_all_protocols);
+  efi_hexrays::apply_all_types_for_interfaces(analyser.m_all_protocols);
 #endif /* HEX_RAYS */
 
   analyser.show_all_choosers();

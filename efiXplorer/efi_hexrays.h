@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+namespace efi_hexrays {
 uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
 bool track_entry_params(func_t *f, uint8_t depth);
 json detect_vars(func_t *f);
@@ -39,66 +40,66 @@ bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
 bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
                                                 tinfo_t tif, std::string name);
 bool offset_of(tinfo_t tif, const char *name, unsigned int *offset);
-bool is_pod_array(tinfo_t tif, unsigned int ptrDepth);
+bool is_pod_array(tinfo_t tif, unsigned int ptr_depth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
 
-// Description of a function pointer within a structure. Ultimately, this
+// description of a function pointer within a structure. Ultimately, this
 // plugin is looking for calls to specific UEFI functions. This structure
 // describes basic information about those functions:
-struct TargetFunctionPointer {
-  const char *name;      // Name of function pointer in structure
-  int offset;            // Offset of function pointer (filled in later)
-  unsigned int nArgs;    // Number of expected arguments
-  unsigned int nGUIDArg; // Which argument has the EFI_GUID *
-  unsigned int nOutArg;  // Which argument retrieves the output
+struct target_funcptr_t {
+  const char *name;      // name of function pointer in structure
+  int offset;            // offset of function pointer (filled in later)
+  unsigned int args;     // number of expected arguments
+  unsigned int guid_arg; // which argument has the EFI_GUID *
+  unsigned int out_arg;  // which argument retrieves the output
 };
 
-// This class holds all function pointer descriptors for one structure, as well
-// as providing a utility to look up function pointers by offset.
-class ServiceDescriptor {
-  // Instance data
+// this class holds all function pointer descriptors for one structure, as well
+// as providing a utility to look up function pointers by offset
+class service_descriptor_t {
+  // instance data
 protected:
-  // The type of the containing structure (e.g. EFI_BOOT_SERVICES)
-  tinfo_t mType;
+  // the type of the containing structure (e.g. EFI_BOOT_SERVICES)
+  tinfo_t m_type;
 
-  // The name of the type (e.g. "EFI_BOOT_SERVICES")
-  qstring mName;
+  // the name of the type (e.g. "EFI_BOOT_SERVICES")
+  qstring m_name;
 
-  // The ordinal of the type (e.g. 4)
-  uint32 mOrdinal;
+  // the ordinal of the type (e.g. 4)
+  uint32 m_ordinal;
 
-  // A vector of the structures above, copied, and with the offsets filled in
-  std::vector<TargetFunctionPointer> mTargets;
+  // a vector of the structures above, copied, and with the offsets filled in
+  std::vector<target_funcptr_t> m_targets;
 
-  bool bInitialized;
+  bool b_initialised;
 
-  // Ensure we can look up the type that this instance describes
-  bool InitType(const char *name) {
-    // Import type
+  // ensure we can look up the type that this instance describes
+  bool init_type(const char *name) {
+    // import type
     import_type(get_idati(), -1, name);
 
-    // Get type by name
-    if (!mType.get_named_type(get_idati(), name))
+    // get type by name
+    if (!m_type.get_named_type(get_idati(), name))
       return false;
 
-    // Save ordinal and name
-    mOrdinal = mType.get_ordinal();
-    mName = name;
+    // save ordinal and name
+    m_ordinal = m_type.get_ordinal();
+    m_name = name;
     return true;
   }
 
-  // Look up the offsets for all function pointer targets; save the results
-  // in the vector. Return false if offset lookup fails.
-  bool InitTargets(TargetFunctionPointer *targets, size_t num) {
-    // Iterate through all targets
+  // look up the offsets for all function pointer targets; save the results
+  // in the vector; return false if offset lookup fails
+  bool init_targets(target_funcptr_t *targets, size_t num) {
+    // iterate through all targets
     for (int i = 0; i < num; ++i) {
-      // Copy the target structure into our local vector
-      TargetFunctionPointer &tgt = mTargets.emplace_back();
+      // copy the target structure into our local vector
+      target_funcptr_t &tgt = m_targets.emplace_back();
       tgt = targets[i];
 
-      // Retrieve the offsets of each named function pointer
+      // retrieve the offsets of each named function pointer
       unsigned int offset;
-      if (!offset_of(mType, targets[i].name, &offset)) {
+      if (!offset_of(m_type, targets[i].name, &offset)) {
         return false;
       }
     }
@@ -106,522 +107,501 @@ protected:
   }
 
 public:
-  // Constructor does nothing
-  ServiceDescriptor() : mOrdinal(0), bInitialized(false) {}
+  // constructor does nothing
+  service_descriptor_t() : m_ordinal(0), b_initialised(false) {}
 
-  // Accessor for ordinal
-  uint32 GetOrdinal() { return mOrdinal; }
+  // accessor for ordinal
+  uint32 get_ordinal() { return m_ordinal; }
 
-  // Accessor for name
-  const char *GetName() { return mName.c_str(); }
+  // accessor for name
+  const char *get_name() { return m_name.c_str(); }
 
-  // Needs to be called before the object can be used
-  bool Initialize(const char *name, TargetFunctionPointer *targets,
-                  size_t num) {
-    if (bInitialized)
+  // needs to be called before the object can be used
+  bool initialise(const char *name, target_funcptr_t *targets, size_t num) {
+    if (b_initialised)
       return true;
-    bInitialized = InitType(name) && InitTargets(targets, num);
-    return bInitialized;
+    b_initialised = init_type(name) && init_targets(targets, num);
+    return b_initialised;
   }
 
-  // After initialization, look up a target by offset
-  bool LookupOffset(unsigned int offset, TargetFunctionPointer **tgt) {
-    // Iterating through a vector generally is inefficient compared to a map,
-    // but there are at most 3 function pointers so far, so it outweighs the
-    // overhead of the associative containers.
-    for (auto &it : mTargets) {
+  // after initialisation, look up a target by offset
+  bool lookup_offset(unsigned int offset, target_funcptr_t **tgt) {
+    // iterating through a vector generally is inefficient compared
+    // to a map, but there are at most 3 function pointers so far, so it
+    // outweighs the overhead of the associative containers.
+    for (auto &it : m_targets) {
       // Match by offset
       if (it.offset == offset) {
         *tgt = &it;
         return true;
       }
     }
-    // If we don't find it, it's not necessarily "bad" from the point of view
-    // of the plugin's logic. After all, we're looking at every access to the
-    // selected structures, and so, quite rightly, we'll want to ignore the
-    // function pointers that we're not tracking.
+    // if we don't find it, it's not necessarily "bad" from the
+    // point of view of the plugin's logic. After all, we're looking at every
+    // access to the selected structures, and so, quite rightly, we'll want to
+    // ignore the function pointers that we're not tracking.
     return false;
   }
 };
 
-// This class manages multiple instances of the class above. Each such
-// structure is associated with the ordinal of its containing structure type.
-// Then, when the Hex-Rays visitor needs to look up a function pointer access
-// into a structure, it just passes the structure ordinal and offset. This
-// class looks up the ServiceDescriptor in a map by ordinal, and then looks up
-// the offset if that succeeded.
-class ServiceDescriptorMap {
+// this class manages multiple instances of the class above. Each
+// such structure is associated with the ordinal of its containing structure
+// type. Then, when the Hex-Rays visitor needs to look up a function pointer
+// access into a structure, it just passes the structure ordinal and offset.
+// This class looks up the service_descriptor_t in a map by ordinal, and then
+// looks up the offset if that succeeded.
+class service_descriptor_map_t {
 protected:
-  // Our map for looking up ServiceDescriptor structures. I should probably
-  // change the value type to a pointer.
-  std::map<uint32, ServiceDescriptor> mServices;
+  // our map for looking up service_descriptor_t structures. I
+  // should probably change the value type to a pointer.
+  std::map<uint32, service_descriptor_t> m_services;
 
 public:
-  // Add a new ServiceDescriptor to the map. I should change the argument
-  // type to match whatever I change the value type of the map to.
-  bool Register(ServiceDescriptor sd) {
-    // Get the ordinal from the ServiceDescriptor
-    uint32 ord = sd.GetOrdinal();
+  // add a new service_descriptor_t to the map. I should change the
+  // argument type to match whatever I change the value type of the map to.
+  bool register_sd(service_descriptor_t sd) {
+    // get the ordinal from the service_descriptor_t
+    uint32 ord = sd.get_ordinal();
 
-    // Are we already tracking this structure?
-    if (mServices.find(ord) != mServices.end()) {
+    // are we already tracking this structure?
+    if (m_services.find(ord) != m_services.end()) {
       return false;
     }
-    // If not, register it. Get rid of std::move
-    mServices[ord] = std::move(sd);
+    // if not, register it. Get rid of std::move
+    m_services[ord] = std::move(sd);
     return true;
   }
 
-  // This function could be protected, but whatever. Given an ordinal, get
-  // the tracked ServiceDescriptor, if applicable.
-  bool LookupOrdinal(uint32 ord, ServiceDescriptor **sd) {
-    auto it = mServices.find(ord);
-    if (it == mServices.end()) {
+  // this function could be protected, but whatever. Given an ordinal, get
+  // the tracked service_descriptor_t, if applicable
+  bool lookup_ordinal(uint32 ord, service_descriptor_t **sd) {
+    auto it = m_services.find(ord);
+    if (it == m_services.end()) {
       return false;
     }
     *sd = &it->second;
     return true;
   }
 
-  // This is the high-level function that clients call. Given a structure
+  // this is the high-level function that clients call. Given a structure
   // ordinal and offset of a function pointer, see if it's something we're
   // tracking. If so, get pointers to the tracked objects and return true.
-  bool LookupOffset(uint32 ord, unsigned int offset, ServiceDescriptor **sd,
-                    TargetFunctionPointer **tgt) {
-    if (!LookupOrdinal(ord, sd))
+  bool lookup_offset(uint32 ord, unsigned int offset, service_descriptor_t **sd,
+                     target_funcptr_t **tgt) {
+    if (!lookup_ordinal(ord, sd))
       return false;
-    if (!(*sd)->LookupOffset(offset, tgt))
+    if (!(*sd)->lookup_offset(offset, tgt))
       return false;
     return true;
   }
 };
 
-// Base class for two visitors that require similar functionality. Here we
+// base class for two visitors that require similar functionality. Here we
 // collect all of the common data and functionality that will be used by both
 // of those visitors. This allows the derivatives to be very succinct.
-class GUIDRelatedVisitorBase : public ctree_visitor_t {
+class guid_related_visitor_base_t : public ctree_visitor_t {
 public:
-  // We need access to a ServiceDescriptorMap from above.
-  explicit GUIDRelatedVisitorBase(ServiceDescriptorMap &m)
-      : ctree_visitor_t(CV_FAST), mDebug(true), mServices(m) {}
+  // we need access to a service_descriptor_map_t from above
+  explicit guid_related_visitor_base_t(service_descriptor_map_t &m)
+      : ctree_visitor_t(CV_FAST), m_debug(true), m_services(m) {}
 
-  // We need the function ea when setting Hex-Rays variable types.
-  void SetFuncEa(ea_t ea) { mFuncEa = ea; }
-  void SetCodeEa(ea_t ea) { mCodeEa = ea; }
-  void SetProtocols(json_list_t protocols) { mProtocols = protocols; }
+  // we need the function ea when setting Hex-Rays variable types
+  void set_func_ea(ea_t ea) { m_func_ea = ea; }
+  void set_code_ea(ea_t ea) { m_code_ea = ea; }
+  void set_protocols(json_list_t protocols) { m_protocols = protocols; }
 
 protected:
-  //
-  // Persistent variables
-  //
+  ea_t m_func_ea;
+  ea_t m_code_ea;
+  json_list_t m_protocols;
+  bool m_debug = false;
 
-  // Function address
-  ea_t mFuncEa;
-  ea_t mCodeEa;
-
-  // Protocols
-  json_list_t mProtocols;
-
-  // Print debug messages?
-  bool mDebug = false;
-
-  // Used for looking up calls to function pointers in structures
-  ServiceDescriptorMap &mServices;
+  // used for looking up calls to function pointers in structures
+  service_descriptor_map_t &m_services;
 
   //
-  // State variables, cleared on every iteration. I debated with myself
+  // state variables, cleared on every iteration. I debated with myself
   // whether this was a nasty design decision. I think it's fine. These
   // variables are only valid to access after the client has called
-  // ValidateCallAndGUID, and it returned true. If you called that and it
+  // validate_call_and_guid, and it returned true. If you called that and it
   // returned false, these will be in an inconsistent state. Don't touch them
   // if that's the case.
   //
 
-  // Address of the indirect function call
-  ea_t mEa;
+  // address of the indirect function call
+  ea_t m_ea;
 
-  // The pointer type that's being accessed (that of the structure)
-  tinfo_t mTif;
+  // the pointer type that's being accessed (that of the structure)
+  tinfo_t m_tif;
 
-  // The structure type, with the pointer indirection removed
-  tinfo_t mTifNoPtr;
+  // the structure type, with the pointer indirection removed
+  tinfo_t m_tif_noptr;
 
-  // The ServiceDescriptor for the containing structure
-  ServiceDescriptor *mpService;
+  // the service_descriptor_t for the containing structure
+  service_descriptor_t *m_service;
 
-  // The ordinal of the structure type
-  uint32 mOrdinal;
+  // the ordinal of the structure type
+  uint32 m_ordinal;
 
-  // The offset of the function pointer in the structure
-  unsigned int mOffset;
+  // the offset of the function pointer in the structure
+  unsigned int m_offset;
 
-  // Details about the target of the indirect call (e.g. name)
-  TargetFunctionPointer *mpTarget;
+  // details about the target of the indirect call (e.g. name)
+  target_funcptr_t *m_target;
 
-  // The list of arguments for the indirect call
-  carglist_t *mArgs;
+  // the list of arguments for the indirect call
+  carglist_t *m_args;
 
-  // The argument that specifies the GUID for the indirect call
-  cexpr_t *mGUIDArg;
+  // the argument that specifies the GUID for the indirect call
+  cexpr_t *m_guid_arg;
 
-  // The argument that gets the output for the indirect call
-  cexpr_t *mOutArg;
+  // the argument that gets the output for the indirect call
+  cexpr_t *m_out_arg;
 
-  // The GUID argument will be &x; this is x
-  cexpr_t *mGUIDArgRefTo;
+  // the GUID argument will be &x; this is x
+  cexpr_t *m_guid_arg_ref_to;
 
-  // The address of the GUID being passed to the indirect call
-  ea_t mGUIDEa;
+  // the address of the GUID being passed to the indirect call
+  ea_t m_guid_ea;
 
-  // This function clears all the state variables above. Technically, it
-  // doesn't need to exist, since the flow of logic in the functions below
-  // always write to them before reading to them. But, it seems like good
-  // programming practice not to have stale values, anyway.
-  void Clear() {
-    mEa = BADADDR;
-    mTif.clear();
-    mTifNoPtr.clear();
-    mpService = nullptr;
-    mOrdinal = 0;
-    mOffset = -1;
-    mpTarget = nullptr;
-    mArgs = nullptr;
-    mGUIDArg = nullptr;
-    mOutArg = nullptr;
-    mGUIDArgRefTo = nullptr;
-    mGUIDEa = BADADDR;
+  void clear() {
+    m_ea = BADADDR;
+    m_tif.clear();
+    m_tif_noptr.clear();
+    m_service = nullptr;
+    m_ordinal = 0;
+    m_offset = -1;
+    m_target = nullptr;
+    m_args = nullptr;
+    m_guid_arg = nullptr;
+    m_out_arg = nullptr;
+    m_guid_arg_ref_to = nullptr;
+    m_guid_ea = BADADDR;
   }
 
-  // Debug print, if the instance debug variable says to
-  void DebugPrint(const char *fmt, ...) {
-    va_list va;
-    va_start(va, fmt);
-    if (mDebug)
-      vmsg(fmt, va);
-  }
-
-  // This is the first function called every time the visitor visits an
+  // this is the first function called every time the visitor visits an
   // expression. This function determines if the expression is a call to a
-  // function pointer contained in a structure.
-  bool GetICallOrdAndOffset(cexpr_t *e) {
-    // Set instance variable for call address
-    mEa = e->ea;
+  // function pointer contained in a structure
+  bool get_call_ord_and_offset(cexpr_t *e) {
+    // set instance variable for call address
+    m_ea = e->ea;
 
-    if (mEa != mCodeEa) {
+    if (m_ea != m_code_ea) {
       return false;
     }
 
-    // If it's not a call, we're done.
+    // if it's not a call, we're done
     if (e->op != cot_call)
       return false;
 
-    // Set instance variable with call arguments
-    mArgs = e->a;
+    // set instance variable with call arguments
+    m_args = e->a;
 
-    // If it's a direct call, we're done.
-    cexpr_t *callDest = e->x;
-    if (callDest->op == cot_obj)
+    // if it's a direct call, we're done
+    cexpr_t *call_dest = e->x;
+    if (call_dest->op == cot_obj)
       return false;
 
-    // Eat any casts on the type of what's being called
-    while (callDest->op == cot_cast)
-      callDest = callDest->x;
+    // eat any casts on the type of what's being called
+    while (call_dest->op == cot_cast)
+      call_dest = call_dest->x;
 
-    // If the destination is not a member of a structure, we're done.
-    if (callDest->op != cot_memptr)
+    // if the destination is not a member of a structure, we're done
+    if (call_dest->op != cot_memptr)
       return false;
 
-    // Set instance variable with type of structure containing pointer
-    mTif = callDest->x->type;
+    // set instance variable with type of structure containing pointer
+    m_tif = call_dest->x->type;
 
-    // Ensure that the structure is being accessed via pointer, and not as a
+    // ensure that the structure is being accessed via pointer, and not as a
     // reference (i.e., through a structure held on the stack as a local
-    // variable).
-    if (!mTif.is_ptr()) {
+    // variable)
+    if (!m_tif.is_ptr()) {
       return false;
     }
 
-    // Remove pointer from containing structure type, set instance variable
-    mTifNoPtr = remove_pointer(mTif);
+    // remove pointer from containing structure type, set instance variable
+    m_tif_noptr = remove_pointer(m_tif);
 
-    // Get the ordinal of the structure
-    mOrdinal = mTifNoPtr.get_ordinal();
+    // get the ordinal of the structure
+    m_ordinal = m_tif_noptr.get_ordinal();
 
-    // If we can't get a type for the structure, that's bad
-    if (mOrdinal == 0)
+    // if we can't get a type for the structure, that's bad
+    if (m_ordinal == 0)
       return false;
 
-    // Get the offset of the function pointer in the structure
-    mOffset = callDest->m;
+    // get the offset of the function pointer in the structure
+    m_offset = call_dest->m;
 
-    // Okay: now we know we're dealing with an indirect call to a function
+    // now we know we're dealing with an indirect call to a function
     // pointer contained in a structure, where the structure is being
-    // accessed by a pointer.
+    // accessed by a pointer
     return true;
   }
 
-  // This is the second function called as part of indirect call validation.
+  // this is the second function called as part of indirect call validation.
   // Now we want to know: is it a call to something that we're tracking?
-  bool ValidateICallDestination() {
-    // Look up the structure ordinal and function offset; get the associated
-    // ServiceDescriptor and TargetFunctionPointer (instance variables).
-    if (!mServices.LookupOffset(mOrdinal, mOffset, &mpService, &mpTarget))
+  bool validate_call_destination() {
+    // look up the structure ordinal and function offset; get the associated
+    // service_descriptor_t and target_funcptr_t (instance variables)
+    if (!m_services.lookup_offset(m_ordinal, m_offset, &m_service, &m_target))
       return false;
 
-    // Great, it was something that we were tracking. Now, sanity-check the
+    // it was something that we were tracking. Now, sanity-check the
     // number of arguments on the function call. (Hex-Rays might have gotten
-    // this wrong. The user can fix it via "set call type".)
-    size_t mArgsSize = mArgs->size();
-    size_t nArgs = mpTarget->nArgs;
-    if (mArgsSize != nArgs) {
+    // this wrong. The user can fix it via "set call type")
+    size_t args_size = m_args->size();
+    size_t args = m_target->args;
+    if (args_size != args) {
       return false;
     }
 
-    // The TargetFunctionPointer tells us which argument takes an EFI_GUID *,
+    // the target_funcptr_t tells us which argument takes an EFI_GUID *,
     // and which one retrieves the output. Get those arguments, and save them
-    // as instance variables.
-    mGUIDArg = &mArgs->at(mpTarget->nGUIDArg);
-    mOutArg = &mArgs->at(mpTarget->nOutArg);
+    // as instance variables
+    m_guid_arg = &m_args->at(m_target->guid_arg);
+    m_out_arg = &m_args->at(m_target->out_arg);
 
-    // Great; now we know that the expression is an indirect call to
+    // now we know that the expression is an indirect call to
     // something that we're tracking, and that Hex-Rays decompiled the call
-    // the way we expected it to.
+    // the way we expected it to
     return true;
   }
 
-  // This is a helper function used to get the thing being referred to. What
-  // does that mean?
+  // this is a helper function used to get the thing being referred to. What
+  // does that m_ean?
   //
-  // * For GUID arguments, we'll usually have &globvar. Return globvar.
-  // * For output arguments, we'll usually have &globvar or &locvar. Due to
+  // * for GUID arguments, we'll usually have &globvar. Return globvar
+  // * for output arguments, we'll usually have &globvar or &locvar. Due to
   //   Hex-Rays internal heuristics, we might end up with "locarray", which
   //   does not actually have a "&" when passed as a call argument. There's
-  //   a bit of extra logic to check for that case.
-  cexpr_t *GetReferent(cexpr_t *e, const char *desc, bool bAcceptVar) {
+  //   a bit of extra logic to check for that case
+  cexpr_t *get_referent(cexpr_t *e, const char *desc, bool b_accept_var) {
     // Eat casts
     cexpr_t *x = e;
     while (x->op == cot_cast)
       x = x->x;
 
     qstring estr;
-    // If we're accepting local variables, and this is a variable (note: not
+    // if we're accepting local variables, and this is a variable (note: not
     // a *reference* to a variable)
-    if (bAcceptVar && x->op == cot_var) {
-      // Get the variable details
-      var_ref_t varRef = x->v;
-      lvar_t destVar = varRef.mba->vars[varRef.idx];
+    if (b_accept_var && x->op == cot_var) {
+      // get the variable details
+      var_ref_t var_ref = x->v;
+      lvar_t dest_var = var_ref.mba->vars[var_ref.idx];
 
-      // Ensure that it's an array of POD types, or pointers to them
-      bool bis_pod_array = is_pod_array(destVar.tif, 1);
+      // ensure that it's an array of POD types, or pointers to them
+      bool bis_pod_array = is_pod_array(dest_var.tif, 1);
 
-      // If it is a POD array, good, we'll take it.
+      // if it is a POD array, good, we'll take it
       return bis_pod_array ? x : nullptr;
     }
 
-    // For everything else, we really want it to be a reference: either to a
+    // for everything else, we really want it to be a reference: either to a
     // global or local variable. If it's not a reference, we can't get the
-    // referent, so fail.
+    // referent, so fail
     if (x->op != cot_ref) {
       return nullptr;
     }
 
-    // If we get here, we know it's a reference. Return the referent.
+    // if we get here, we know it's a reference. Return the referent.
     return x->x;
   }
 
-  // The third function in the validation logic. We already know the
+  // the third function in the validation logic. We already know the
   // expression is an indirect call to something that we're tracking, and
   // that Hex-Rays' decompilation matches on the number of arguments. Now,
   // we validate that the GUID argument does in fact point to a global
-  // variable.
-  bool ValidateGUIDArgument() {
-    // Does the GUID argument point to a local variable?
-    mGUIDArgRefTo = GetReferent(mGUIDArg, "GUID", false);
-    if (!mGUIDArgRefTo)
+  // variable
+  bool validate_guid_arg() {
+    // does the GUID argument point to a local variable?
+    m_guid_arg_ref_to = get_referent(m_guid_arg, "GUID", false);
+    if (!m_guid_arg_ref_to)
       return false;
 
-    // If we get here, we know it was a reference to *something*. Ensure that
-    // something is a global variable.
-    if (mGUIDArgRefTo->op != cot_obj) {
+    // if we get here, we know it was a reference to *something*. Ensure that
+    // something is a global variable
+    if (m_guid_arg_ref_to->op != cot_obj) {
       return false;
     }
 
-    // Save the address of the global variable to which the GUID argument is
-    // pointing.
-    mGUIDEa = mGUIDArgRefTo->obj_ea;
+    // save the address of the global variable to which the GUID argument is
+    // pointing
+    m_guid_ea = m_guid_arg_ref_to->obj_ea;
 
-    // Great; now we know we're dealing with an indirect call to something
+    // now we know we're dealing with an indirect call to something
     // we're tracking; that Hex-Rays decompiled the call with the proper
     // number of arguments; and that the GUID argument did in fact point to
     // a global variable, whose address we now have in an instance variable.
     return true;
   }
 
-  // Finally, this function combines all three checks above into one single
+  // finally, this function combines all three checks above into one single
   // function. If you call this and it returns true, feel free to access the
   // instance variables, as they are guaranteed to be valid. If it returns
-  // false, they aren't, so don't touch them.
-  bool ValidateCallAndGUID(cexpr_t *e) {
+  // false, they aren't, so don't touch them
+  bool validate_call_and_guid(cexpr_t *e) {
     // Reset all instance variables. Not strictly necessary; call it
     // "defensive programming".
-    Clear();
+    clear();
 
-    // Validate according to the logic above.
-    if (!GetICallOrdAndOffset(e) || !ValidateICallDestination() ||
-        !ValidateGUIDArgument())
-      return false;
-
-    // Good, all checks passed
-    return true;
+    // validate according to the logic above
+    return (get_call_ord_and_offset(e) && validate_call_destination() &&
+            validate_guid_arg());
   }
 };
 
-// Now that we've implemented all that validation logic, this class is pretty
+// now that we've implemented all that validation logic, this class is pretty
 // simple. This one is responsible for ensuring that the GUID is something that
-// we know about, and setting the types of the output variables accordingly.
-class GUIDRetyper : public GUIDRelatedVisitorBase {
+// we know about, and setting the types of the output variables accordingly
+class guid_retyper_t : public guid_related_visitor_base_t {
 public:
-  explicit GUIDRetyper(ServiceDescriptorMap &m)
-      : GUIDRelatedVisitorBase(m), mNumApplied(0) {}
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  explicit guid_retyper_t(service_descriptor_map_t &m)
+      : guid_related_visitor_base_t(m), m_num_applied(0) {}
+
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
-    // Perform the checks from GUIDRelatedVisitorBase. If they fail, we're
-    // not equipped to deal with this expression, so bail out.
-    if (!ValidateCallAndGUID(e))
+    // perform the checks from guid_related_visitor_base_t. If they fail, we're
+    // not equipped to deal with this expression, so bail out
+    if (!validate_call_and_guid(e))
       return 0;
 
-    mGUIDArgRefTo = GetReferent(mGUIDArg, "GUID", false);
-    if (mGUIDArgRefTo == nullptr)
+    m_guid_arg_ref_to = get_referent(m_guid_arg, "GUID", false);
+    if (m_guid_arg_ref_to == nullptr)
       return 0;
-    ea_t guidAddr = mGUIDArgRefTo->obj_ea;
+    ea_t guidAddr = m_guid_arg_ref_to->obj_ea;
 
-    // Get interface type name
-    std::string GUIDName;
-    for (auto g : mProtocols) {
+    // get interface type name
+    std::string guid_name;
+    for (auto g : m_protocols) {
       if (guidAddr == g["address"]) {
-        GUIDName = g["prot_name"];
+        guid_name = g["prot_name"];
         break;
       }
     }
-    if (GUIDName.empty()) {
+    if (guid_name.empty()) {
       return 0;
     }
 
-    std::string interfaceTypeName = GUIDName.substr(0, GUIDName.find("_GUID"));
-    if (!interfaceTypeName.find("FCH_")) {
+    std::string interface_type_name =
+        guid_name.substr(0, guid_name.find("_GUID"));
+    if (!interface_type_name.find("FCH_")) {
       // convert FCH_SMM_* dispatcher type to EFI_SMM_* dispatcher type
-      interfaceTypeName.replace(0, 4, "EFI_");
+      interface_type_name.replace(0, 4, "EFI_");
     }
 
-    // Need to get the type for the interface variable here
+    // need to get the type for the interface variable here
     tinfo_t tif;
-    import_type(get_idati(), -1, interfaceTypeName.c_str());
-    if (!tif.get_named_type(get_idati(), interfaceTypeName.c_str())) {
-      // Get the referent for the interface argument.
-      cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);
-      if (outArgReferent == nullptr)
+    import_type(get_idati(), -1, interface_type_name.c_str());
+    if (!tif.get_named_type(get_idati(), interface_type_name.c_str())) {
+      // get the referent for the interface argument
+      cexpr_t *out_arg_referent = get_referent(m_out_arg, "ptr", true);
+      if (out_arg_referent == nullptr)
         return 0;
-      ApplyName(outArgReferent, interfaceTypeName);
+      apply_name(out_arg_referent, interface_type_name);
       return 0;
     }
 
-    qstring tStr;
-    if (!tif.get_type_name(&tStr)) {
+    qstring tstr;
+    if (!tif.get_type_name(&tstr)) {
       return 0;
     }
 
-    tinfo_t tifGuidPtr;
-    if (!tifGuidPtr.create_ptr(tif)) {
+    tinfo_t tif_guid_ptr;
+    if (!tif_guid_ptr.create_ptr(tif)) {
       return 0;
     }
 
-    // Get the referent for the interface argument.
-    cexpr_t *outArgReferent = GetReferent(mOutArg, "ptr", true);
-    if (outArgReferent == nullptr)
+    // get the referent for the interface argument
+    cexpr_t *out_arg_referent = get_referent(m_out_arg, "ptr", true);
+    if (out_arg_referent == nullptr)
       return 0;
 
-    // Apply the type to the output referent.
-    ApplyType(outArgReferent, tifGuidPtr, tStr);
+    // apply the type to the output referent
+    apply_type(out_arg_referent, tif_guid_ptr, tstr);
     return 1;
   }
 
 protected:
-  unsigned int mNumApplied;
+  unsigned int m_num_applied;
 
-  // Given an expression (either a local or global variable) and a type to
+  // given an expression (either a local or global variable) and a type to
   // apply, apply the type. This is just a bit of IDA/Hex-Rays type system
-  // skullduggery.
-  void ApplyType(cexpr_t *outArg, tinfo_t ptrTif, qstring tStr) {
+  // skullduggery
+  void apply_type(cexpr_t *outArg, tinfo_t ptrTif, qstring tstr) {
     ea_t dest_ea = outArg->obj_ea;
 
-    // For global variables
+    // for global variables
     if (outArg->op == cot_obj) {
-      // Just apply the type information to the address
+      // just apply the type information to the address
       apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
-      ++mNumApplied;
+      ++m_num_applied;
 
-      // Rename global variable
+      // rename global variable
       auto name =
-          "g" + efi_utils::type_to_name(static_cast<std::string>(tStr.c_str()));
+          "g" + efi_utils::type_to_name(static_cast<std::string>(tstr.c_str()));
       set_name(dest_ea, name.c_str(), SN_FORCE);
 
-      // Get xrefs to global variable
+      // get xrefs to global variable
       auto xrefs = efi_utils::get_xrefs(dest_ea);
       qstring type_name;
       ptr_type_data_t pi;
       ptrTif.get_ptr_details(&pi);
       pi.obj_type.get_type_name(&type_name);
-      // Handling all interface functions (to rename function arguments)
+
+      // handling all interface functions (to rename function arguments)
       efi_utils::op_stroff_for_global_interface(xrefs, type_name);
-    } else if (outArg->op == cot_var) { // For local variables
-      var_ref_t varRef = outArg->v;
-      lvar_t &destVar = varRef.mba->vars[varRef.idx];
-      // Set the Hex-Rays variable type
+    } else if (outArg->op == cot_var) { // for local variables
+      var_ref_t var_ref = outArg->v;
+      lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
+
+      // set the Hex-Rays variable type
       auto name =
-          efi_utils::type_to_name(static_cast<std::string>(tStr.c_str()));
-      set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
-      if (set_hexrays_var_info_and_handle_interfaces(mFuncEa, destVar, ptrTif,
-                                                     name)) {
-        ++mNumApplied;
+          efi_utils::type_to_name(static_cast<std::string>(tstr.c_str()));
+      set_lvar_name(static_cast<qstring>(name.c_str()), dest_var, m_func_ea);
+      if (set_hexrays_var_info_and_handle_interfaces(m_func_ea, dest_var,
+                                                     ptrTif, name)) {
+        ++m_num_applied;
       }
     }
   }
 
-  void ApplyName(cexpr_t *outArg, std::string type_name) {
+  void apply_name(cexpr_t *outArg, std::string type_name) {
     ea_t dest_ea = outArg->obj_ea;
 
-    // For global variables
+    // for global variables
     if (outArg->op == cot_obj) {
-      // Rename global variable
+      // rename global variable
       auto name = "g" + efi_utils::type_to_name(type_name);
       set_name(dest_ea, name.c_str(), SN_FORCE);
-    } else if (outArg->op == cot_var) { // For local variables
-      var_ref_t varRef = outArg->v;
-      lvar_t &destVar = varRef.mba->vars[varRef.idx];
-      // Set the Hex-Rays variable type
+    } else if (outArg->op == cot_var) { // for local variables
+      var_ref_t var_ref = outArg->v;
+      lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
+      // set the Hex-Rays variable type
       auto name = efi_utils::type_to_name(type_name);
-      set_lvar_name(static_cast<qstring>(name.c_str()), destVar, mFuncEa);
+      set_lvar_name(static_cast<qstring>(name.c_str()), dest_var, m_func_ea);
     }
   }
 };
 
-class VariablesInfoExtractor : public ctree_visitor_t {
+class variables_info_extractor_t : public ctree_visitor_t {
 public:
-  explicit VariablesInfoExtractor(ea_t code_addr) : ctree_visitor_t(CV_FAST) {
-    mCodeAddr = code_addr;
+  explicit variables_info_extractor_t(ea_t code_addr)
+      : ctree_visitor_t(CV_FAST) {
+    m_code_addr = code_addr;
   }
 
-  uint8_t mAttributes = 0xff;
+  uint8_t m_attributes = 0xff;
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
-    if (mCodeAddr == BADADDR) {
+    if (m_code_addr == BADADDR) {
       return 0;
     }
 
-    if (e->ea != mCodeAddr) {
+    if (e->ea != m_code_addr) {
       return 0;
     }
 
@@ -640,30 +620,30 @@ public:
 
     cexpr_t *attributes_arg = &args->at(2);
     if (attributes_arg->op == cot_num) {
-      if (mDebug) {
-        msg("[I] Service call: %016llX, Attributes: %02X\n",
-            u64_addr(mCodeAddr),
-            static_cast<uint8_t>(attributes_arg->numval()));
+      if (m_debug) {
+        efi_utils::log("service call: %016llX, attributes: %02X\n",
+                       u64_addr(m_code_addr),
+                       static_cast<uint8_t>(attributes_arg->numval()));
       }
       attributes_arg->numval();
-      mAttributes = static_cast<uint8_t>(attributes_arg->numval());
+      m_attributes = static_cast<uint8_t>(attributes_arg->numval());
     }
 
     return 0;
   }
 
 protected:
-  ea_t mCodeAddr = BADADDR;
-  bool mDebug = false;
+  ea_t m_code_addr = BADADDR;
+  bool m_debug = false;
 };
 
-class PrototypesFixer : public ctree_visitor_t {
+class prototypes_fixer_t : public ctree_visitor_t {
 public:
-  PrototypesFixer() : ctree_visitor_t(CV_FAST) {}
-  ea_list_t child_functions;
+  prototypes_fixer_t() : ctree_visitor_t(CV_FAST) {}
+  ea_list_t m_child_functions;
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
     if (e->op != cot_call)
       return 0;
@@ -672,8 +652,9 @@ public:
     if (e->x->op != cot_obj) {
       return 0;
     }
-    if (mDebug) {
-      msg("[I] Child function address: %016llX\n", u64_addr(e->x->obj_ea));
+    if (m_debug) {
+      efi_utils::log("child function address: %016llX\n",
+                     u64_addr(e->x->obj_ea));
     }
 
     carglist_t *args = e->a;
@@ -694,7 +675,9 @@ public:
       return 0;
     }
 
-    msg("[I] Call address: 0x%016llX\n", u64_addr(e->ea));
+    if (m_debug) {
+      efi_utils::log("call address: 0x%016llX\n", u64_addr(e->ea));
+    }
     for (auto i = 0; i < args->size(); i++) {
       cexpr_t *arg = &args->at(i);
       if (arg->op == cot_cast || arg->op == cot_var) {
@@ -717,27 +700,28 @@ public:
         bool is_ptr = false;
         if (!arg_type.get_type_name(&type_name)) {
           if (!arg_type_no_ptr.get_type_name(&type_name)) {
-            // msg("[E] Can not get type name: 0x%016llX\n", u64_addr(e->ea));
             continue;
           }
           is_ptr = true;
         }
 
         if (is_ptr) {
-          msg("[I]  Arg #%d, type =  %s *\n", i, type_name.c_str());
+          efi_utils::log("arg #%d, type = %s *\n", i, type_name.c_str());
         } else {
-          msg("[I]  Arg #%d, type =  %s\n", i, type_name.c_str());
+          efi_utils::log("arg #%d, type = %s\n", i, type_name.c_str());
         }
 
         if (type_name == qstring("EFI_HANDLE") ||
             type_name == qstring("EFI_SYSTEM_TABLE")) {
-          if (!efi_utils::addr_in_vec(child_functions, func_addr)) {
-            child_functions.push_back(func_addr);
+          if (!efi_utils::addr_in_vec(m_child_functions, func_addr)) {
+            m_child_functions.push_back(func_addr);
           }
+
           // set argument type and name
           if (cf->argidx.size() <= i) {
             return 0;
           }
+
           auto argid = cf->argidx[i];
           lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
           if (type_name == qstring("EFI_HANDLE")) {
@@ -754,29 +738,29 @@ public:
   }
 
 protected:
-  bool mDebug = true;
+  bool m_debug = true;
 };
 
-class VariablesDetector : public ctree_visitor_t {
+class variables_detector_t : public ctree_visitor_t {
 public:
-  VariablesDetector() : ctree_visitor_t(CV_FAST) {}
+  variables_detector_t() : ctree_visitor_t(CV_FAST) {}
 
-  ea_list_t child_functions;
+  ea_list_t m_child_functions;
 
-  ea_list_t image_handle_list;
-  ea_list_t st_list;
-  ea_list_t bs_list;
-  ea_list_t rt_list;
+  ea_list_t m_image_handle_list;
+  ea_list_t m_st_list;
+  ea_list_t m_bs_list;
+  ea_list_t m_rt_list;
 
-  void SetFuncEa(ea_t ea) { mFuncEa = ea; }
+  void set_func_ea(ea_t ea) { m_func_ea = ea; }
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
     if (e->op == cot_asg) {
       // saving a child function for recursive analysis
-      if (!efi_utils::addr_in_vec(child_functions, e->ea)) {
-        child_functions.push_back(e->x->obj_ea);
+      if (!efi_utils::addr_in_vec(m_child_functions, e->ea)) {
+        m_child_functions.push_back(e->x->obj_ea);
       }
     }
 
@@ -821,15 +805,14 @@ public:
     bool is_ptr = false;
     if (!var_type.get_type_name(&type_name)) {
       if (!var_type_no_ptr.get_type_name(&type_name)) {
-        // msg("[E] can not get type name: 0x%016llX\n", u64_addr(e->ea));
         return 0;
       }
       is_ptr = true;
     }
 
-    if (mDebug) {
-      msg("[I] code address: 0x%016llX, type name: %s\n", u64_addr(e->ea),
-          type_name.c_str());
+    if (m_debug) {
+      efi_utils::log("code address: 0x%016llX, type name: %s\n",
+                     u64_addr(e->ea), type_name.c_str());
     }
 
     if (global_var) {
@@ -838,26 +821,26 @@ public:
       std::string type_name_str = static_cast<std::string>(type_name.c_str());
       if (type_name == qstring("EFI_HANDLE")) {
         efi_utils::set_type_and_name(g_addr, "gImageHandle", type_name_str);
-        if (!efi_utils::addr_in_vec(image_handle_list, g_addr)) {
-          image_handle_list.push_back(g_addr);
+        if (!efi_utils::addr_in_vec(m_image_handle_list, g_addr)) {
+          m_image_handle_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_SYSTEM_TABLE")) {
         efi_utils::set_ptr_type_and_name(g_addr, "gST", type_name_str);
-        if (!efi_utils::addr_in_vec(st_list, g_addr)) {
-          st_list.push_back(g_addr);
+        if (!efi_utils::addr_in_vec(m_st_list, g_addr)) {
+          m_st_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_BOOT_SERVICES")) {
         efi_utils::set_ptr_type_and_name(g_addr, "gBS", type_name_str);
-        if (!efi_utils::addr_in_vec(bs_list, g_addr)) {
-          bs_list.push_back(g_addr);
+        if (!efi_utils::addr_in_vec(m_bs_list, g_addr)) {
+          m_bs_list.push_back(g_addr);
         }
       }
       if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
         efi_utils::set_ptr_type_and_name(g_addr, "gRT", type_name_str);
-        if (!efi_utils::addr_in_vec(rt_list, g_addr)) {
-          rt_list.push_back(g_addr);
+        if (!efi_utils::addr_in_vec(m_rt_list, g_addr)) {
+          m_rt_list.push_back(g_addr);
         }
       }
     }
@@ -870,30 +853,32 @@ public:
       if (e->y->op == cot_cast) {
         var_ref = e->y->x->v;
       }
+
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
-      // Set the Hex-Rays variable type
+
+      // set the Hex-Rays variable type
       auto name =
           efi_utils::type_to_name(static_cast<std::string>(type_name.c_str()));
-      // set_hexrays_var_info(mFuncEa, dest_var, var_type, name);
+      // set_hexrays_var_info(m_func_ea, dest_var, var_type, name);
     }
 
     return 0;
   }
 
 protected:
-  bool mDebug = true;
-  ea_t mFuncEa = BADADDR;
+  bool m_debug = true;
+  ea_t m_func_ea = BADADDR;
 };
 
-class ServicesDetector : public ctree_visitor_t {
+class services_detector_t : public ctree_visitor_t {
   // detect all services (Boot services, Runtime services, etc)
 public:
-  ServicesDetector() : ctree_visitor_t(CV_FAST) {}
+  services_detector_t() : ctree_visitor_t(CV_FAST) {}
 
-  json_list_t services;
+  json_list_t m_services;
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
     if (e->op != cot_call) {
       return 0;
@@ -907,6 +892,7 @@ public:
     auto e_func = e->x->x;
     tinfo_t func_type;
     tinfo_t func_type_no_ptr;
+
     func_type = e_func->type;
 
     if (func_type.is_ptr()) {
@@ -937,28 +923,26 @@ public:
     msg("[efiXplorer] address: 0x%016llX, service type: %s, service name: %s\n",
         u64_addr(e->ea), type_name.c_str(), service_name.c_str());
 
-    // append service
-    // add item to allBootServices
     json s;
     s["address"] = e->ea;
     s["service_name"] = service_name;
     s["table_name"] = efi_utils::get_table_name(service_name);
 
-    if (!efi_utils::json_in_vec(services, s)) {
-      services.push_back(s);
+    if (!efi_utils::json_in_vec(m_services, s)) {
+      m_services.push_back(s);
     }
 
     return 0;
   }
 
 protected:
-  bool mDebug = true;
+  bool m_debug = true;
 };
 
-class PeiServicesDetector : public ctree_visitor_t {
+class pei_services_detector_t : public ctree_visitor_t {
   // detect and mark all PEI services
 public:
-  PeiServicesDetector() : ctree_visitor_t(CV_FAST) {}
+  pei_services_detector_t() : ctree_visitor_t(CV_FAST) {}
 
   bool make_shifted_ptr(tinfo_t outer, tinfo_t inner, int32 offset,
                         tinfo_t *shifted_tif) {
@@ -978,8 +962,8 @@ public:
     return modify_user_lvar_info(func_ea, MLI_TYPE, lsi);
   }
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
     auto pointer_offset = BADADDR;
     auto service_offset = BADADDR;
@@ -1008,16 +992,11 @@ public:
       return 0;
     }
 
-    msg("[efiXplorer] address: 0x%08llX, PEI service detected\n",
-        u64_addr(e->ea));
-    msg("[efiXplorer]   delta: %llx\n", u64_addr(pointer_offset));
-    if (service_offset != BADADDR) {
-      msg("[efiXplorer]   service offset: %llx\n", u64_addr(service_offset));
-    }
-
     if (pointer_offset != 4) {
       return 0;
     }
+
+    efi_utils::log("PEI service detected at 0x%08llX\n", u64_addr(e->ea));
 
     tinfo_t outer;
     if (!outer.get_named_type(get_idati(), "EFI_PEI_SERVICES_4", BTF_STRUCT)) {
@@ -1035,7 +1014,7 @@ public:
       return 0;
     }
     if (set_var_type(func->start_ea, dest_var, shifted_tif)) {
-      msg("[efiXplorer] shifted pointer applied (0x%08llX)\n", u64_addr(e->ea));
+      efi_utils::log("shifted pointer applied at 0x%08llX\n", u64_addr(e->ea));
     }
 
     if (call) {
@@ -1046,19 +1025,19 @@ public:
   }
 
 protected:
-  bool mDebug = true;
+  bool m_debug = true;
 };
 
-class PeiServicesDetectorArm : public ctree_visitor_t {
+class pei_services_detector_arm_t : public ctree_visitor_t {
   // detect and mark all PEI services for ARM firmware
   // tested on Ampere firmware that contains small PEI stack
 public:
-  PeiServicesDetectorArm() : ctree_visitor_t(CV_FAST) {}
+  pei_services_detector_arm_t() : ctree_visitor_t(CV_FAST) {}
 
-  json_list_t services;
+  json_list_t m_services;
 
-  // This is the callback function that Hex-Rays invokes for every expression
-  // in the CTREE.
+  // this is the callback function that Hex-Rays invokes for every expression
+  // in the CTREE
   int visit_expr(cexpr_t *e) {
     if (!(e->op == cot_call && e->x->op == cot_memptr &&
           e->x->x->op == cot_ptr && e->x->x->x->op == cot_var)) {
@@ -1090,16 +1069,16 @@ public:
       }
       service_name = efi_utils::type_to_name(func_type);
     } else {
-      auto s = mPeiServices.find(offset);
-      if (s == mPeiServices.end()) {
+      auto s = m_pei_services.find(offset);
+      if (s == m_pei_services.end()) {
         return 0;
       }
       service_name = s->second;
     }
-    if (mDebug) {
-      msg("[efiXplorer] 0x%08llX: %s service detected (offset: %d): %s\n",
-          u64_addr(e->ea), table_type_name.c_str(), u32_addr(offset),
-          service_name.c_str());
+    if (m_debug) {
+      efi_utils::log("0x%08llX: %s service detected (offset: %d): %s\n",
+                     u64_addr(e->ea), table_type_name.c_str(), u32_addr(offset),
+                     service_name.c_str());
     }
 
     json s;
@@ -1107,16 +1086,16 @@ public:
     s["service_name"] = service_name;
     s["table_name"] = table_type_name.c_str();
 
-    if (!efi_utils::json_in_vec(services, s)) {
-      services.push_back(s);
+    if (!efi_utils::json_in_vec(m_services, s)) {
+      m_services.push_back(s);
     }
 
     return 0;
   }
 
 protected:
-  bool mDebug = true;
-  std::map<ea_t, std::string> mPeiServices = {
+  bool m_debug = true;
+  std::map<ea_t, std::string> m_pei_services = {
       {0x18, "InstallPpi"},
       {0x20, "ReInstallPpi"},
       {0x28, "LocatePpi"},
@@ -1146,3 +1125,4 @@ protected:
       {0xE8, "ResetSystem3"},
   };
 };
+} // namespace efi_hexrays
