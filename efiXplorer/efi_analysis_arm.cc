@@ -464,7 +464,7 @@ bool efi_analysis::efi_analyse_main_aarch64() {
   analyser.get_segments();
 
   // mark GUIDs
-  analyser.mark_data_guids();
+  analyser.annotate_data_guids();
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei

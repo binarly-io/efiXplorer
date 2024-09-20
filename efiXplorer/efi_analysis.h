@@ -49,8 +49,8 @@ public:
   void dump_json();
   void get_segments();
   void set_pvalues();
-  void mark_interfaces();
-  void mark_data_guids();
+  void annotate_protocol_guids();
+  void annotate_data_guids();
   bool smm_cpu_protocol_resolver();
   void find_smi_handlers();
   bool find_double_get_variable(json_list_t m_all_services);
@@ -67,7 +67,7 @@ protected:
   std::map<json, std::string> m_guiddb_map;
   json m_guiddb;
 
-  ea_list_t m_marked_interfaces;
+  ea_list_t m_annotated_protocols;
   json m_boot_services;
   json m_pei_services_all;
   json m_ppi_calls_all;

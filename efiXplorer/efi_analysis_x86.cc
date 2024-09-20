@@ -1072,7 +1072,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
       }
 
       if (found) {
-        efi_utils::log("[%s] found PPI GUID parameter at 0x%016llX\n",
+        efi_utils::log("found PPI GUID parameter at 0x%016llX\n",
                        u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
@@ -1453,9 +1453,8 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
 }
 
 //--------------------------------------------------------------------------
-// Get boot services protocols names for X86 modules
+// get boot services protocols names for 32-bit modules
 void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
-  msg("[%s] protocols finding (boot services)\n", g_plugin_name);
   ea_t start = m_start_addr;
   segment_t *seg_info = get_segm_by_name(".text");
   if (seg_info != nullptr) {
@@ -1467,16 +1466,16 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
     // for each boot service
     for (auto ea : addrs) {
       ea_t address = ea;
-      msg("[%s] search for protocols in the 0x%016llX area\n", g_plugin_name,
-          u64_addr(address));
+      efi_utils::log("search for protocols in the 0x%016llX area\n",
+                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
       auto found = false;
-      uint16_t pushNumber = g_boot_services_table32[i].push_number;
+      uint16_t push_number = g_boot_services_table32[i].push_number;
 
       // if service is not currently being processed
-      if (pushNumber == NONE_PUSH) {
+      if (push_number == NONE_PUSH) {
         break;
       }
 
@@ -1493,10 +1492,10 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
 
         if (insn.itype == NN_push) {
           push_counter += 1;
-          if (push_counter > pushNumber) {
+          if (push_counter > push_number) {
             break;
           }
-          if (push_counter == pushNumber) {
+          if (push_counter == push_number) {
             guid_code_address = address;
             guid_data_address = insn.ops[0].value;
             if (insn.ops[0].value > start && insn.ops[0].value != BADADDR) {
@@ -1508,13 +1507,10 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
       }
 
       if (found) {
-        msg("[%s] get_bs_prot_names32: found protocol GUID parameter at "
-            "0x%016llX\n",
-            g_plugin_name, u64_addr(guid_code_address));
+        efi_utils::log("found protocol GUID at 0x%016llX\n",
+                       u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
-              u64_addr(guid_code_address));
           continue;
         }
 
@@ -1526,7 +1522,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
 }
 
 //--------------------------------------------------------------------------
-// Get smm services protocols names for X64 modules
+// get SMM services protocols names for 64-bit modules
 void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
   if (code_segs.empty()) {
     return;
@@ -1534,16 +1530,14 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
 
   segment_t *s = code_segs.at(0);
   ea_t start = s->start_ea;
-  msg("[%s] protocols finding (smm services, start address = 0x%016llX)\n",
-      g_plugin_name, u64_addr(start));
   for (int i = 0; i < g_smm_services_prot64_count; i++) {
     auto addrs = m_smm_services[g_smm_services_prot64[i].name];
 
     // for each SMM service
     for (auto ea : addrs) {
       ea_t address = ea;
-      msg("[%s] search for protocols in the 0x%016llX area\n", g_plugin_name,
-          u64_addr(address));
+      efi_utils::log("search for protocols in the 0x%016llX area\n",
+                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
@@ -1571,13 +1565,10 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
       }
 
       if (found) {
-        msg("[%s] get_smm_prot_names64: found protocol GUID parameter at "
-            "0x%016llX\n",
-            g_plugin_name, u64_addr(guid_code_address));
+        efi_utils::log("found protocol GUID at 0x%016llX\n",
+                       u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
-              u64_addr(guid_code_address));
           continue;
         }
 
@@ -1589,49 +1580,29 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
 }
 
 //--------------------------------------------------------------------------
-// Mark protocols
-void efi_analysis::efi_analyser_t::mark_interfaces() {
-  msg("[%s] %s marking\n", g_plugin_name, m_pname.c_str());
-  for (auto ifItemIt = m_ptable->begin(); ifItemIt != m_ptable->end();
-       ++ifItemIt) {
-    json ifItem = *ifItemIt;
-    ea_t address = static_cast<ea_t>(ifItem["address"]);
-
-    // check if guid on this address already marked
-    bool marked = false;
-    for (auto markedAddress = m_marked_interfaces.begin();
-         markedAddress != m_marked_interfaces.end(); ++markedAddress) {
-      if (*markedAddress == address) {
-        marked = true;
-        break;
-      }
+// annotate protocol GUIDs
+void efi_analysis::efi_analyser_t::annotate_protocol_guids() {
+  for (const auto &prot : *m_ptable) {
+    ea_t addr = static_cast<ea_t>(prot["address"]);
+    if (efi_utils::addr_in_vec(m_annotated_protocols, addr)) {
+      continue;
     }
 
-    if (!marked) {
-      std::string svcName = static_cast<std::string>(ifItem[m_pkey]);
-      set_name(address, svcName.c_str(), SN_FORCE);
-      efi_utils::set_guid_type(address);
-      std::string comment = "EFI_GUID " + svcName;
-      m_marked_interfaces.push_back(address);
-      msg("[%s] address: 0x%016llX, comment: %s\n", g_plugin_name,
-          u64_addr(address), comment.c_str());
-    }
+    std::string name = static_cast<std::string>(prot[m_pkey]);
+    set_name(addr, name.c_str(), SN_FORCE);
+    efi_utils::set_guid_type(addr);
+    m_annotated_protocols.push_back(addr);
   }
 }
 
 //--------------------------------------------------------------------------
-// Mark GUIDs found in the .text and .data segment
-void efi_analysis::efi_analyser_t::mark_data_guids() {
-  ea_t ptrSize = inf_is_64bit() ? 8 : 4;
+// annotate GUIDs found in the .text and .data segment
+void efi_analysis::efi_analyser_t::annotate_data_guids() {
+  ea_t ptrsize = inf_is_64bit() ? 8 : 4;
   auto guids_segments = code_segs;
-  // find GUIDs in .text and .data segments
-  // TODO(yeggor): scan only the areas between the beginning of the .text
-  // segment and the first function address (?)
   guids_segments.insert(guids_segments.end(), data_segs.begin(),
                         data_segs.end());
   for (auto s : guids_segments) {
-    msg("[%s] marking GUIDs from 0x%016llX to 0x%016llX\n", g_plugin_name,
-        u64_addr(s->start_ea), u64_addr(s->end_ea));
     ea_t ea = s->start_ea;
     while (ea != BADADDR && ea <= s->end_ea - 15) {
       if (get_wide_dword(ea) == 0x00000000 ||
@@ -1644,44 +1615,46 @@ void efi_analysis::efi_analyser_t::mark_data_guids() {
       // find GUID name
       auto it = m_guiddb_map.find(guid);
       if (it != m_guiddb_map.end()) {
-        std::string guidName = it->second;
-        set_name(ea, guidName.c_str(), SN_FORCE);
+        std::string guid_name = it->second;
+        set_name(ea, guid_name.c_str(), SN_FORCE);
         efi_utils::set_guid_type(ea);
 
         // rename PPI
-        if (guidName.length() > 9 &&
-            guidName.rfind("_PPI_GUID") == guidName.length() - 9) {
+        if (guid_name.length() > 9 &&
+            guid_name.rfind("_PPI_GUID") == guid_name.length() - 9) {
           auto xrefs = efi_utils::get_xrefs(ea);
           for (auto addr : xrefs) {
-            std::string ppiName = "g" + efi_utils::type_to_name(guidName.substr(
-                                            0, guidName.length() - 5));
-            ea_t ppiEa = addr - ptrSize;
+            std::string type_name = guid_name.substr(0, guid_name.length() - 5);
+            std::string ppi_name =
+                std::format("g{}", efi_utils::type_to_name(type_name));
+
+            ea_t ppi_ea = addr - ptrsize;
+
             // check flags
-            if (ptrSize == 8 && get_wide_dword(ppiEa + 4)) {
+            if (ptrsize == 8 && get_wide_dword(ppi_ea + 4)) {
               // 4 high bytes must be 0
               continue;
             }
-            uint64_t flags = static_cast<uint64_t>(get_wide_dword(ppiEa));
+
+            uint64_t flags = static_cast<uint64_t>(get_wide_dword(ppi_ea));
             if (!efi_utils::uint64_in_vec(m_ppi_flags, flags)) {
               continue;
             }
-            msg("[%s] address: 0x%016llX, PPI: %s\n", g_plugin_name,
-                u64_addr(ppiEa), ppiName.c_str());
-            set_name(ppiEa, ppiName.c_str(), SN_FORCE);
+
+            efi_utils::log("found %s PPI at 0x%016llX\n", ppi_name.c_str(),
+                           u64_addr(ppi_ea));
+            set_name(ppi_ea, ppi_name.c_str(), SN_FORCE);
           }
         }
 
-        std::string comment = "EFI_GUID " + guidName;
-        msg("[%s] address: 0x%016llX, comment: %s\n", g_plugin_name,
-            u64_addr(ea), comment.c_str());
-
-        json guid_item;
-        guid_item["address"] = ea;
-        guid_item["name"] = guidName;
-        guid_item["guid"] = efi_utils::guid_to_string(guid);
-        m_all_guids.push_back(guid_item);
-        data_guids.push_back(guid_item);
+        json g;
+        g["address"] = ea;
+        g["name"] = guid_name;
+        g["guid"] = efi_utils::guid_to_string(guid);
+        m_all_guids.push_back(g);
+        data_guids.push_back(g);
       }
+
       ea += 1;
     }
   }
@@ -1741,12 +1714,12 @@ void efi_analysis::efi_analyser_x86_t::mark_local_guids64() {
               msg("[%s] address: 0x%016llX, comment: %s\n", g_plugin_name,
                   u64_addr(ea), comment.c_str());
 
-              json guid_item;
-              guid_item["address"] = ea;
-              guid_item["name"] = dbItem.key();
-              guid_item["guid"] = efi_utils::guid_to_string(guid);
-              m_all_guids.push_back(guid_item);
-              stack_guids.push_back(guid_item);
+              json g;
+              g["address"] = ea;
+              g["name"] = dbItem.key();
+              g["guid"] = efi_utils::guid_to_string(guid);
+              m_all_guids.push_back(g);
+              stack_guids.push_back(g);
               exit = true;
               break;
             }
@@ -1981,7 +1954,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
     }
     if (ok) {
       bool same_datasize = false;
-      uint16_t pushNumber = 5;
+      uint16_t push_number = 5;
       uint16_t push_counter = 0;
       uint16_t arg5_reg = 0xffff;
       ea_t curr_datasize_addr = 0xffff;
@@ -1992,7 +1965,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
         decode_insn(&insn, address);
         if (insn.itype == NN_push) {
           push_counter += 1;
-          if (push_counter == pushNumber) {
+          if (push_counter == push_number) {
             if (insn.ops[0].type == o_reg) {
               arg5_reg = insn.ops[0].reg;
             } else {
@@ -2046,7 +2019,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
         decode_insn(&insn, address);
         if (insn.itype == NN_push) {
           push_counter += 1;
-          if (push_counter == pushNumber) {
+          if (push_counter == push_number) {
             if (insn.ops[0].type == o_reg) {
               arg5_reg = insn.ops[0].reg;
             } else {
@@ -2637,7 +2610,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
   }
 
   // mark GUIDs
-  analyser.mark_data_guids();
+  analyser.annotate_data_guids();
   analyser.mark_local_guids64();
 
   if (g_args.disable_ui) {
@@ -2677,7 +2650,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
     analyser.get_smm_prot_names64();
 
     // mark protocols
-    analyser.mark_interfaces();
+    analyser.annotate_protocol_guids();
 
     // search for copies of global variables
     efi_utils::mark_copies_for_gvars(smst_list, "gSmst");
@@ -2746,7 +2719,7 @@ bool efi_analysis::efi_analyse_main_x86_32() {
   analyser.get_segments();
 
   // mark GUIDs
-  analyser.mark_data_guids();
+  analyser.annotate_data_guids();
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei
@@ -2770,7 +2743,7 @@ bool efi_analysis::efi_analyse_main_x86_32() {
 
     // print and mark protocols
     analyser.get_bs_prot_names32();
-    analyser.mark_interfaces();
+    analyser.annotate_protocol_guids();
 
 #ifdef HEX_RAYS
     efi_hexrays::apply_all_types_for_interfaces(analyser.m_all_protocols);
@@ -2787,7 +2760,7 @@ bool efi_analysis::efi_analyse_main_x86_32() {
     analyser.get_pei_services_all32();
     analyser.get_ppi_names32();
     analyser.get_variable_ppi_calls_all32();
-    analyser.mark_interfaces();
+    analyser.annotate_protocol_guids();
 
     // search for vulnerabilities
     if (!g_args.disable_vuln_hunt) {
