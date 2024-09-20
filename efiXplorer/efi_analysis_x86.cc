@@ -922,7 +922,7 @@ void efi_analysis::efi_analyser_x86_t::get_pei_services_all32() {
           if (found_src_reg && found_push) {
             eavec_t args;
             get_arg_addrs(&args, ea);
-            if (!args.size()) {
+            if (args.empty()) {
               // looks like a FP
               break;
             }
@@ -1042,7 +1042,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
 
       uint16_t push_counter = 0;
       efi_utils::log(
-          "looking for PPIs in the 0x%016llX area (push number: %d)\n",
+          "search for PPIs in the 0x%016llX area (push number: %d)\n",
           u64_addr(address), g_pei_services_table32[i].push_number);
 
       // check current basic block
@@ -1115,12 +1115,10 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
 }
 
 //--------------------------------------------------------------------------
-// Get boot services by protocols for X64 modules
+// get boot services by protocols for 64-bit modules
 void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
   insn_t insn;
   for (auto s : code_segs) {
-    msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
-        g_plugin_name, u64_addr(s->start_ea), u64_addr(s->end_ea));
     ea_t ea = s->start_ea;
     uint16_t bs_reg = 0;
     while (ea <= s->end_ea) {
@@ -1144,20 +1142,20 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
 
         // check that address does not belong to the protocol interface
         // (gBS != gInterface)
-        auto bs_addr = efi_utils::find_unknown_bs_var_64(ea);
+        auto bs_addr = efi_utils::find_unknown_bs_var64(ea);
         if (efi_utils::addr_in_vec(rt_list, bs_addr) ||
             !efi_utils::check_boot_service_protocol_xrefs(bs_addr)) {
           break;
         }
 
         efi_utils::op_stroff(ea, "EFI_BOOT_SERVICES");
-        msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea),
-            static_cast<char *>(g_boot_services_table64[i].name));
+        efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+                       g_boot_services_table64[i].name);
+
         m_boot_services[static_cast<std::string>(
                             g_boot_services_table64[i].name)]
             .push_back(ea);
 
-        // add item to allBootServices
         json s;
         s["address"] = ea;
         s["service_name"] = g_boot_services_table64[i].name;
@@ -1179,10 +1177,8 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
 }
 
 //--------------------------------------------------------------------------
-// Get boot services by protocols for X86 modules
+// get boot services by protocols for 64-bit modules
 void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
-  msg("[%s] BootServices finding from 0x%016llX to 0x%016llX (protocols)\n",
-      g_plugin_name, u64_addr(m_start_addr), u64_addr(m_end_addr));
   ea_t ea = m_start_addr;
   insn_t insn;
   uint16_t bs_reg = 0;
@@ -1193,13 +1189,13 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
       for (auto i = 0; i < g_boot_services_table32_count; i++) {
         if (insn.ops[0].addr == u32_addr(g_boot_services_table32[i].offset)) {
           efi_utils::op_stroff(ea, "EFI_BOOT_SERVICES");
-          msg("[%s] 0x%016llX : %s\n", g_plugin_name, u64_addr(ea),
-              static_cast<char *>(g_boot_services_table32[i].name));
+          efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+                         g_boot_services_table32[i].name);
+
           m_boot_services[static_cast<std::string>(
                               g_boot_services_table32[i].name)]
               .push_back(ea);
 
-          // add item to allBootServices
           json s;
           s["address"] = ea;
           s["service_name"] = g_boot_services_table32[i].name;
@@ -1222,9 +1218,8 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
 }
 
 //--------------------------------------------------------------------------
-// find other addresses of gBS variables for X86-64 modules
+// find other addresses of gBS variables for 64-bit modules
 void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
-  msg("[%s] find other addresses of gBS variables\n", g_plugin_name);
   for (auto s : m_all_services) {
     std::string table_name = s["table_name"];
     if (table_name.compare("EFI_BOOT_SERVICES")) {
@@ -1237,63 +1232,66 @@ void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
     }
 
     ea_t addr = static_cast<ea_t>(s["address"]);
-    msg("[%s] current service: 0x%016llX\n", g_plugin_name, u64_addr(addr));
-    ea_t addr_bs = efi_utils::find_unknown_bs_var_64(addr);
+    ea_t addr_bs = efi_utils::find_unknown_bs_var64(addr);
 
     if (addr_bs == BADADDR ||
         efi_utils::addr_in_tables(bs_list, rt_list, addr_bs)) {
       continue;
     }
 
-    msg("[%s] found BootServices table at 0x%016llX, address = 0x%016llX\n",
-        g_plugin_name, u64_addr(addr), u64_addr(addr_bs));
+    efi_utils::log(
+        "found boot services table at 0x%016llX, address = 0x%016llX\n",
+        u64_addr(addr), u64_addr(addr_bs));
+
     efi_utils::set_ptr_type_and_name(addr_bs, "gBS", "EFI_BOOT_SERVICES");
+
     bs_list.push_back(addr_bs);
   }
 }
 
+//--------------------------------------------------------------------------
+// add protocol in protocols list
 bool efi_analysis::efi_analyser_t::add_protocol(std::string service_name,
                                                 ea_t guid_addr, ea_t xref_addr,
                                                 ea_t call_addr) {
   if (m_arch != arch_file_type_t::uefi && guid_addr >= m_start_addr &&
       guid_addr <= m_end_addr) {
-    msg("[%s] wrong service call detection: 0x%016llX\n", g_plugin_name,
-        u64_addr(call_addr));
     return false; // filter FP
   }
 
-  json protocol;
+  json p;
   auto guid = efi_utils::get_guid_by_address(guid_addr);
-  protocol["address"] = guid_addr;
-  protocol["xref"] = xref_addr;
-  protocol["service"] = service_name;
-  protocol["guid"] = efi_utils::guid_to_string(guid);
-  protocol["ea"] = call_addr;
+  p["address"] = guid_addr;
+  p["xref"] = xref_addr;
+  p["service"] = service_name;
+  p["guid"] = efi_utils::guid_to_string(guid);
+  p["ea"] = call_addr;
 
-  qstring moduleName("Current");
+  qstring module_name("Current");
   if (efi_utils::input_file_type() == arch_file_type_t::uefi) {
-    moduleName = efi_utils::get_module_name_loader(call_addr);
+    module_name = efi_utils::get_module_name_loader(call_addr);
   }
-  protocol["module"] = static_cast<std::string>(moduleName.c_str());
+
+  p["module"] = module_name.c_str();
 
   // find GUID name
   auto it = m_guiddb_map.find(guid);
   if (it != m_guiddb_map.end()) {
     std::string name = it->second;
-    protocol["prot_name"] = name;
+    p["prot_name"] = name;
   } else {
-    protocol["prot_name"] = "UNKNOWN_PROTOCOL_GUID";
+    p["prot_name"] = "UNKNOWN_PROTOCOL_GUID";
     efi_utils::set_type_and_name(guid_addr, "UNKNOWN_PROTOCOL_GUID",
                                  "EFI_GUID");
   }
-  if (!efi_utils::json_in_vec(m_all_protocols, protocol)) {
-    m_all_protocols.push_back(protocol);
+  if (!efi_utils::json_in_vec(m_all_protocols, p)) {
+    m_all_protocols.push_back(p);
   }
   return true;
 }
 
 //--------------------------------------------------------------------------
-// Extract protocols from InstallMultipleProtocolInterfaces service call
+// extract protocols from InstallMultipleProtocolInterfaces service call
 bool efi_analysis::efi_analyser_x86_t::
     install_multiple_prot_interfaces_analyser() {
   ea_list_t addrs = m_boot_services["InstallMultipleProtocolInterfaces"];
@@ -1307,7 +1305,7 @@ bool efi_analysis::efi_analyser_x86_t::
     ea_t handle_arg = BADADDR;
     stack_params.clear();
 
-    // Check current basic block
+    // check current basic block
     while (true) {
       address = prev_head(address, m_start_addr);
       decode_insn(&insn, address);
@@ -1316,12 +1314,12 @@ bool efi_analysis::efi_analyser_x86_t::
         break; // installed only one protocol
       }
 
-      // Exit loop if end of previous basic block found
+      // exit loop if end of previous basic block found
       if (is_basic_block_end(insn, false)) {
         break;
       }
 
-      // Get handle stack/data parameter
+      // get handle stack/data parameter
       if (handle_arg == BADADDR && insn.itype == NN_lea &&
           insn.ops[0].reg == R_RCX) {
         switch (insn.ops[1].type) {
@@ -1336,7 +1334,7 @@ bool efi_analysis::efi_analyser_x86_t::
         }
       }
 
-      // Exit from loop if found last argument
+      // exit loop if last argument found
       if (insn.itype == NN_xor && insn.ops[0].reg == R_R9 &&
           insn.ops[1].reg == R_R9) {
         check_stack = false;
@@ -1366,7 +1364,7 @@ bool efi_analysis::efi_analyser_x86_t::
       }
     }
 
-    // Enumerate all stack params
+    // enumerate all stack params
     auto index = 0;
     for (auto const &param : stack_params) {
       if (index++ % 2) {
@@ -1380,28 +1378,27 @@ bool efi_analysis::efi_analyser_x86_t::
 }
 
 //--------------------------------------------------------------------------
-// Get boot services protocols names for X64 modules
+// get boot services protocols names for 64-bit modules
 void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
-  if (!code_segs.size()) {
+  if (code_segs.empty()) {
     return;
   }
   segment_t *s = code_segs.at(0);
   ea_t start = s->start_ea;
-  msg("[%s] protocols finding (boot services, start address = 0x%016llX)\n",
-      g_plugin_name, u64_addr(start));
 
   install_multiple_prot_interfaces_analyser();
+
   for (int i = 0; i < g_boot_services_table64_count; i++) {
     if (g_boot_services_table64[i].offset == 0x148) {
-      // Handle InstallMultipleProtocolInterfaces separately
+      // handle InstallMultipleProtocolInterfaces separately
       continue;
     }
 
     ea_list_t addrs = m_boot_services[g_boot_services_table64[i].name];
     for (auto ea : addrs) {
       ea_t address = ea;
-      msg("[%s] looking for protocols in the 0x%016llX area\n", g_plugin_name,
-          u64_addr(address));
+      efi_utils::log("search for protocols in the 0x%016llX area\n",
+                     u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
       ea_t guid_data_address = 0;
@@ -1412,7 +1409,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
         address = prev_head(address, m_start_addr);
         decode_insn(&insn, address);
 
-        // exit from loop if end of previous basic block found
+        // exit loop if end of previous basic block found
         if (is_basic_block_end(insn, false)) {
           break;
         }
@@ -1441,13 +1438,10 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
       }
 
       if (found) {
-        msg("[%s] get_bs_prot_names64: found protocol GUID parameter at "
-            "0x%016llX\n",
-            g_plugin_name, u64_addr(guid_code_address));
+        efi_utils::log("found protocol GUID at 0x%016llX\n",
+                       u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
-          msg("[%s] incorrect GUID at 0x%016llX\n", g_plugin_name,
-              u64_addr(guid_code_address));
           continue;
         }
 
@@ -1473,7 +1467,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
     // for each boot service
     for (auto ea : addrs) {
       ea_t address = ea;
-      msg("[%s] looking for protocols in the 0x%016llX area\n", g_plugin_name,
+      msg("[%s] search for protocols in the 0x%016llX area\n", g_plugin_name,
           u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
@@ -1534,9 +1528,10 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
 //--------------------------------------------------------------------------
 // Get smm services protocols names for X64 modules
 void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
-  if (!code_segs.size()) {
+  if (code_segs.empty()) {
     return;
   }
+
   segment_t *s = code_segs.at(0);
   ea_t start = s->start_ea;
   msg("[%s] protocols finding (smm services, start address = 0x%016llX)\n",
@@ -1547,7 +1542,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
     // for each SMM service
     for (auto ea : addrs) {
       ea_t address = ea;
-      msg("[%s] looking for protocols in the 0x%016llX area\n", g_plugin_name,
+      msg("[%s] search for protocols in the 0x%016llX area\n", g_plugin_name,
           u64_addr(address));
       insn_t insn;
       ea_t guid_code_address = 0;
@@ -1918,16 +1913,13 @@ void efi_analysis::efi_analyser_t::find_smi_handlers() {
 }
 
 //--------------------------------------------------------------------------
-// Find callouts inside SwSmiHandler function:
-//  * find SwSmiHandler function
-//  * find gBS->service_name and gRT->service_name inside SmiHandler function
+// find callouts inside SwSmiHandler functions
 bool efi_analysis::efi_analyser_t::find_smm_callout() {
-  msg("[%s] Looking for SMM callout\n", g_plugin_name);
-  if (!bs_list.size() && !rt_list.size()) {
+  efi_utils::log("search for SMM callouts\n");
+  if (bs_list.empty() && rt_list.empty()) {
     return false;
   }
-  if (!m_smi_handlers.size() && !child_smi_handlers.size()) {
-    msg("[%s] can't find a SwSmiHandler functions\n", g_plugin_name);
+  if (m_smi_handlers.empty() && child_smi_handlers.empty()) {
     return false;
   }
   for (auto func : m_smi_handlers) {

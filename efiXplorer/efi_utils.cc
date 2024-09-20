@@ -249,8 +249,8 @@ ffs_file_type_t efi_utils::ask_file_type(json_list_t *m_all_guids) {
 }
 
 //--------------------------------------------------------------------------
-// find address of global gBS var for X64 module for each service
-ea_t efi_utils::find_unknown_bs_var_64(ea_t ea) {
+// find address of global gBS var for x86 64-bit module for each service
+ea_t efi_utils::find_unknown_bs_var64(ea_t ea) {
   ea_t res = BADADDR;
   insn_t insn;
 

@@ -46,7 +46,7 @@ ea_list_t get_xrefs_to_array(ea_t addr);
 ea_list_t get_xrefs(ea_t addr);
 ea_list_t search_protocol(std::string protocol);
 
-ea_t find_unknown_bs_var_64(ea_t ea);
+ea_t find_unknown_bs_var64(ea_t ea);
 
 efi_guid_t get_global_guid(ea_t addr);
 efi_guid_t get_local_guid(func_t *f, uint64_t offset);
