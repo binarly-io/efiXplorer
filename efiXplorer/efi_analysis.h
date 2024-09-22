@@ -35,13 +35,24 @@ public:
   efi_analyser_t();
   ~efi_analyser_t();
 
+  ea_list_t m_bs_list;   // gBS list (boot services addresses)
+  ea_list_t m_rt_list;   // gRT list (runtime services addresses)
+  ea_list_t m_smst_list; // gSmst list (SMM system table addresses)
+  ea_list_t m_st_list;   // gST list (system table addresses)
+
   ea_list_t m_funcs;
+
   func_list_t m_smi_handlers;
   json_list_t m_all_guids;
   json_list_t m_all_ppis;
   json_list_t m_all_protocols;
   json_list_t m_all_services;
   json_list_t m_nvram_variables;
+
+  // all .text and .data segments
+  // for compatibility with the efixloader
+  segment_list_t m_code_segs;
+  segment_list_t m_data_segs;
 
   arch_file_type_t m_arch = arch_file_type_t::unsupported;
   ffs_file_type_t m_ftype = ffs_file_type_t::unsupported;
@@ -53,10 +64,6 @@ public:
   void annotate_data_guids();
   bool smm_cpu_protocol_resolver();
   void find_smi_handlers();
-  bool find_double_get_variable(json_list_t m_all_services);
-  bool find_double_get_variable_pei();
-  bool find_double_get_variable_smm();
-  bool find_smm_callout();
   bool analyse_nvram_variables();
 
 protected:
@@ -67,13 +74,6 @@ protected:
   std::map<json, std::string> m_guiddb_map;
   json m_guiddb;
 
-  ea_list_t m_annotated_protocols;
-  json m_boot_services;
-  json m_pei_services_all;
-  json m_ppi_calls_all;
-  json m_runtime_services_all;
-  json m_smm_services_all;
-  json m_smm_services;
   std::filesystem::path m_guids_json_path;
 
   // protocol related boot services
@@ -102,6 +102,32 @@ protected:
   // protocol related PEI services
   string_list_t m_ppi_peis_names = {"InstallPpi", "ReInstallPpi", "LocatePpi",
                                     "NotifyPpi"};
+
+  // data and stack guids
+  json_list_t m_data_guids;
+  json_list_t m_stack_guids;
+
+  ea_list_t m_annotated_protocols;
+  json m_boot_services;
+  json m_pei_services_all;
+  json m_ppi_calls_all;
+  json m_runtime_services_all;
+  json m_smm_services_all;
+  json m_smm_services;
+
+  ea_list_t m_image_handle_list; // gImageHandle list (image handle addresses)
+  ea_list_t m_runtime_services_list; // runtime services list
+
+  // for SMM callout scanners
+  ea_list_t m_callout_addrs;
+  ea_list_t m_read_save_state_calls;
+  func_list_t m_child_smi_handlers;
+  func_list_t m_exc_funcs;
+
+  // for double GetVariable scanners
+  ea_list_t m_double_get_variable_pei;
+  ea_list_t m_double_get_variable_smm;
+  ea_list_t m_double_get_variable;
 
   bool add_protocol(std::string service_name, ea_t guid_addr, ea_t xref_addr,
                     ea_t call_addr);
@@ -351,11 +377,16 @@ public:
   }
 
   bool find_boot_services_tables();
+  bool find_double_get_variable_pei();
+  bool find_double_get_variable_smm();
+  bool find_double_get_variable();
   bool find_image_handle64();
   bool find_runtime_services_tables();
+  bool find_smm_callout();
   bool find_smst_postproc64();
   bool find_smst64();
   bool find_system_table64();
+  void find_local_guids64();
   void find_other_boot_services_tables64();
   void get_boot_services_all();
   void get_bs_prot_names32();
@@ -368,10 +399,10 @@ public:
   void get_smm_prot_names64();
   void get_smm_services_all64();
   void get_variable_ppi_calls_all32();
-  void find_local_guids64();
   void show_all_choosers();
 
 private:
+  void find_callout_rec(func_t *func);
   bool install_multiple_prot_interfaces_analyser();
 };
 
