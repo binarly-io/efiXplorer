@@ -421,7 +421,6 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
   }
 
   if (!smm_variable_addrs.size()) {
-    efi_utils::log("gSmmVariable not found\n");
     return smm_get_variable_calls;
   }
 
@@ -465,15 +464,14 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
             efi_utils::log("found SmmGetVariable call at 0x%" PRIx64 "\n",
                            u64_addr(ea));
 
-            json service;
-            service["address"] = ea;
-            service["service_name"] = "gSmmVariable->SmmGetVariable";
-            service["table_name"] = "EFI_SMM_VARIABLE_PROTOCOL";
-            service["offset"] = 0;
+            json s;
+            s["address"] = ea;
+            s["service_name"] = "gSmmVariable->SmmGetVariable";
+            s["table_name"] = "EFI_SMM_VARIABLE_PROTOCOL";
+            s["offset"] = 0;
 
-            if (find(all_services->begin(), all_services->end(), service) ==
-                all_services->end()) {
-              all_services->push_back(service);
+            if (!efi_utils::json_in_vec(*all_services, s)) {
+              all_services->push_back(s);
             }
 
             break;
@@ -541,8 +539,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
     }
   }
 
-  if (!smm_cpu_addrs.size()) {
-    efi_utils::log("gSmmCpu not found\n");
+  if (smm_cpu_addrs.empty()) {
     return read_save_state_calls;
   }
 
@@ -583,15 +580,14 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
             efi_utils::log("gSmmCpu->ReadSaveState: 0x%" PRIx64 "\n",
                            u64_addr(ea));
 
-            json service;
-            service["address"] = ea;
-            service["service_name"] = "gSmmCpu->ReadSaveState";
-            service["table_name"] = "EFI_SMM_CPU_PROTOCOL";
-            service["offset"] = 0;
+            json s;
+            s["address"] = ea;
+            s["service_name"] = "gSmmCpu->ReadSaveState";
+            s["table_name"] = "EFI_SMM_CPU_PROTOCOL";
+            s["offset"] = 0;
 
-            if (find(all_services->begin(), all_services->end(), service) ==
-                all_services->end()) {
-              all_services->push_back(service);
+            if (!efi_utils::json_in_vec(*all_services, s)) {
+              all_services->push_back(s);
             }
 
             break;

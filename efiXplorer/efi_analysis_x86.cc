@@ -2640,11 +2640,11 @@ bool efi_analysis::efi_analyse_main_x86_64() {
   }
 
   if (analyser.m_arch == arch_file_type_t::uefi) {
-    // Init public EdiDependencies members
+    // init public EdiDependencies members
     g_deps.get_protocols_chooser(analyser.m_all_protocols);
     g_deps.get_protocols_by_guids(analyser.m_all_protocols);
 
-    // Save all protocols information to build dependencies
+    // save all protocols information to build dependencies
     attach_action_protocols_deps();
     attach_action_modules_seq();
   }
