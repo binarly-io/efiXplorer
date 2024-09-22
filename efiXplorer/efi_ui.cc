@@ -115,7 +115,7 @@ void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *,
   std::string service = static_cast<std::string>(item["service"]);
   std::string attributes =
       static_cast<std::string>(item["AttributesHumanReadable"]);
-  cols[0].sprnt("%016llX", u64_addr(ea));
+  cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", name.c_str());
   cols[2].sprnt("%s", guid.c_str());
   cols[3].sprnt("%s", service.c_str());
@@ -137,7 +137,7 @@ void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *,
   qstrvec_t &cols = *cols_;
   json item = chooser_vulns[n];
   std::string type = static_cast<std::string>(item["type"]);
-  cols[0].sprnt("%016llX", u64_addr(ea));
+  cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", type.c_str());
   CASSERT(qnumber(header_vulns) == 2);
 }
@@ -157,7 +157,7 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
   json item = chooser_guids[n];
   std::string guid = static_cast<std::string>(item["guid"]);
   std::string name = static_cast<std::string>(item["name"]);
-  cols[0].sprnt("%016llX", u64_addr(ea));
+  cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", guid.c_str());
   cols[2].sprnt("%s", name.c_str());
   CASSERT(qnumber(header_guids) == 3);
@@ -184,7 +184,7 @@ void idaapi m_protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
   std::string service = static_cast<std::string>(item["service"]);
   std::string protGuid = static_cast<std::string>(item["guid"]);
   std::string moduleName = static_cast<std::string>(item["module"]);
-  cols[0].sprnt("%016llX", u64_addr(ea));
+  cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", protGuid.c_str());
   cols[2].sprnt("%s", name.c_str());
   cols[3].sprnt("%s", service.c_str());
@@ -207,7 +207,7 @@ void idaapi services_chooser_t::get_row(qstrvec_t *cols_, int *,
   json item = chooser_s[n];
   std::string service_name = item["service_name"];
   std::string table_name = item["table_name"];
-  cols[0].sprnt("%016llX", u64_addr(ea));
+  cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", service_name.c_str());
   cols[2].sprnt("%s", table_name.c_str());
   CASSERT(qnumber(header_s) == 3);

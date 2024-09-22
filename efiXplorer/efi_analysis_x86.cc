@@ -188,13 +188,13 @@ void efi_analysis::efi_analyser_t::get_segments() {
   // print all .text and .code segments addresses
   for (auto seg : code_segs) {
     segment_t *s = seg;
-    efi_utils::log("code segment: 0x%016llX\n", u64_addr(s->start_ea));
+    efi_utils::log("code segment: 0x%" PRIx64 "\n", u64_addr(s->start_ea));
   }
 
   // print all .data segments addresses
   for (auto seg : data_segs) {
     segment_t *s = seg;
-    efi_utils::log("data segment: 0x%016llX\n", u64_addr(s->start_ea));
+    efi_utils::log("data segment: 0x%" PRIx64 "\n", u64_addr(s->start_ea));
   }
 }
 
@@ -267,7 +267,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst64() {
   smst_list.erase(last, smst_list.end());
 
   for (auto smst : smst_list) {
-    efi_utils::log("0x%016llX: gSmst\n", u64_addr(smst));
+    efi_utils::log("0x%" PRIx64 ": gSmst\n", u64_addr(smst));
   }
 
   return !smst_list.empty();
@@ -278,7 +278,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst64() {
 // modules after Hex-Rays based analysis
 bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
   for (auto ea : g_get_smst_location_calls) {
-    efi_utils::log("EfiSmmBase2Protocol->GetSmstLocation call: 0x%016llX\n",
+    efi_utils::log("EfiSmmBase2Protocol->GetSmstLocation call: 0x%" PRIx64 "\n",
                    u64_addr(ea));
     insn_t insn;
     auto addr = ea;
@@ -319,7 +319,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
     }
 
     if (smst_stack.is_null() && smst_addr != BADADDR) {
-      efi_utils::log("   gSmst: 0x%016llX\n", u64_addr(smst_addr));
+      efi_utils::log("   gSmst: 0x%" PRIx64 "\n", u64_addr(smst_addr));
       if (!efi_utils::addr_in_vec(smst_list, smst_addr)) {
         efi_utils::set_ptr_type_and_name(smst_addr, "gSmst",
                                          "_EFI_SMM_SYSTEM_TABLE2");
@@ -329,7 +329,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 
     if (!smst_stack.is_null()) {
       auto reg = smst_stack["reg"] == R_RSP ? "RSP" : "RBP";
-      efi_utils::log("   Smst: 0x%016llX, reg = %s\n", u64_addr(smst_addr),
+      efi_utils::log("   Smst: 0x%" PRIx64 ", reg = %s\n", u64_addr(smst_addr),
                      reg);
 
       // try to extract ChildSwSmiHandler
@@ -679,7 +679,7 @@ void efi_analysis::efi_analyser_x86_t::get_boot_services_all() {
               }
 
               efi_utils::op_stroff(addr, "EFI_BOOT_SERVICES");
-              efi_utils::log("0x%016llX: %s\n", u64_addr(addr),
+              efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(addr),
                              g_boot_services_table_all[j].name);
 
               m_boot_services[static_cast<std::string>(
@@ -760,7 +760,7 @@ void efi_analysis::efi_analyser_x86_t::get_runtime_services_all() {
             }
             if (service_offset == u32_addr(offset)) {
               efi_utils::op_stroff(addr, "EFI_RUNTIME_SERVICES");
-              efi_utils::log("0x%016llX: %s\n", u64_addr(addr),
+              efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(addr),
                              g_runtime_services_table_all[j].name);
 
               m_runtime_services_all[static_cast<std::string>(
@@ -835,7 +835,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
               }
 
               efi_utils::op_stroff(addr, "_EFI_SMM_SYSTEM_TABLE2");
-              efi_utils::log("0x%016llX: %s\n", u64_addr(addr),
+              efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(addr),
                              g_smm_services_table_all[j].name);
 
               // add address to m_smm_services
@@ -927,7 +927,7 @@ void efi_analysis::efi_analyser_x86_t::get_pei_services_all32() {
             }
 
             efi_utils::op_stroff(ea, "EFI_PEI_SERVICES");
-            efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+            efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                            g_pei_services_table32[j].name);
 
             m_pei_services_all[static_cast<std::string>(
@@ -985,7 +985,7 @@ void efi_analysis::efi_analyser_x86_t::get_variable_ppi_calls_all32() {
 
           if (found_push) {
             efi_utils::op_stroff(ea, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
-            efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+            efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                            g_variable_ppi_table_all[j].name);
 
             std::string ppi_call =
@@ -1067,7 +1067,7 @@ void efi_analysis::efi_analyser_x86_t::get_ppi_names32() {
       }
 
       if (found) {
-        efi_utils::log("found PPI GUID parameter at 0x%016llX\n",
+        efi_utils::log("found PPI GUID parameter at 0x%" PRIx64 "\n",
                        u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
@@ -1142,7 +1142,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
         }
 
         efi_utils::op_stroff(ea, "EFI_BOOT_SERVICES");
-        efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+        efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                        g_boot_services_table64[i].name);
 
         m_boot_services[static_cast<std::string>(
@@ -1182,7 +1182,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
       for (auto i = 0; i < g_boot_services_table32_count; i++) {
         if (insn.ops[0].addr == u32_addr(g_boot_services_table32[i].offset)) {
           efi_utils::op_stroff(ea, "EFI_BOOT_SERVICES");
-          efi_utils::log("0x%016llX: %s\n", u64_addr(ea),
+          efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                          g_boot_services_table32[i].name);
 
           m_boot_services[static_cast<std::string>(
@@ -1232,9 +1232,9 @@ void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
       continue;
     }
 
-    efi_utils::log(
-        "found boot services table at 0x%016llX, address = 0x%016llX\n",
-        u64_addr(addr), u64_addr(addr_bs));
+    efi_utils::log("found boot services table at 0x%" PRIx64
+                   ", address = 0x%" PRIx64 "\n",
+                   u64_addr(addr), u64_addr(addr_bs));
 
     efi_utils::set_ptr_type_and_name(addr_bs, "gBS", "EFI_BOOT_SERVICES");
 
@@ -1429,7 +1429,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names64() {
       }
 
       if (found) {
-        efi_utils::log("found protocol GUID at 0x%016llX\n",
+        efi_utils::log("found protocol GUID at 0x%" PRIx64 "\n",
                        u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
@@ -1496,7 +1496,7 @@ void efi_analysis::efi_analyser_x86_t::get_bs_prot_names32() {
       }
 
       if (found) {
-        efi_utils::log("found protocol GUID at 0x%016llX\n",
+        efi_utils::log("found protocol GUID at 0x%" PRIx64 "\n",
                        u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
@@ -1552,7 +1552,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
       }
 
       if (found) {
-        efi_utils::log("found protocol GUID at 0x%016llX\n",
+        efi_utils::log("found protocol GUID at 0x%" PRIx64 "\n",
                        u64_addr(guid_code_address));
         auto guid = efi_utils::get_guid_by_address(guid_data_address);
         if (!efi_utils::valid_guid(guid)) {
@@ -1628,7 +1628,7 @@ void efi_analysis::efi_analyser_t::annotate_data_guids() {
               continue;
             }
 
-            efi_utils::log("found %s PPI at 0x%016llX\n", ppi_name.c_str(),
+            efi_utils::log("found %s PPI at 0x%" PRIx64 "\n", ppi_name.c_str(),
                            u64_addr(ppi_ea));
             set_name(ppi_ea, ppi_name.c_str(), SN_FORCE);
           }
@@ -1694,8 +1694,8 @@ void efi_analysis::efi_analyser_x86_t::find_local_guids64() {
                 data2 == static_cast<uint16_t>(guid[1])) {
               std::string name_str = name;
               set_cmt(ea, name.c_str(), true);
-              efi_utils::log("found local GUID %s at 0x%016llX\n", name.c_str(),
-                             u64_addr(ea));
+              efi_utils::log("found local GUID %s at 0x%" PRIx64 "\n",
+                             name.c_str(), u64_addr(ea));
 
               json g;
               g["address"] = ea;
@@ -1758,7 +1758,8 @@ void find_callout_rec(func_t *func) {
           }
         }
         if (!fp) {
-          efi_utils::log("found SMM callout via boot services at 0x%016llX\n",
+          efi_utils::log("found SMM callout via boot services at 0x%" PRIx64
+                         "\n",
                          u64_addr(ea));
           callout_addrs.push_back(ea);
           continue;
@@ -1767,7 +1768,8 @@ void find_callout_rec(func_t *func) {
 
       // search for callouts with gRT
       if (efi_utils::addr_in_vec(rt_list, insn.ops[1].addr)) {
-        efi_utils::log("found SMM callout via runtime services at 0x%016llX\n",
+        efi_utils::log("found SMM callout via runtime services at 0x%" PRIx64
+                       "\n",
                        u64_addr(ea));
         callout_addrs.push_back(ea);
         continue;
@@ -1798,7 +1800,8 @@ void find_callout_rec(func_t *func) {
               next_insn.ops[0].reg == R_RAX) {
             if (next_insn.ops[0].addr == 0x140 ||
                 next_insn.ops[0].addr == 0x40) {
-              efi_utils::log("found SMM callout via interface at 0x%016llX\n",
+              efi_utils::log("found SMM callout via interface at 0x%" PRIx64
+                             "\n",
                              u64_addr(ea));
               callout_addrs.push_back(ea);
               found = true;
@@ -1907,9 +1910,9 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
   ea_t prev_addr = get_variable_services_calls.at(0);
   for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
     ea_t curr_addr = get_variable_services_calls.at(i);
-    efi_utils::log("first call to VariablePPI.GetVariable: 0x%016llX\n",
+    efi_utils::log("first call to VariablePPI.GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
-    efi_utils::log("second call to VariablePPI.GetVariable: 0x%016llX\n",
+    efi_utils::log("second call to VariablePPI.GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(curr_addr));
 
     // check code from first call to second call
@@ -1955,7 +1958,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
 
       if (same_datasize) {
         double_get_variable_pei.push_back(curr_addr);
-        efi_utils::log("overflow may occur here: 0x%016llX\n",
+        efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
       }
@@ -1975,7 +1978,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
         // if datasize wasn't found, just let the pattern
         // trigger - for manual review
         double_get_variable_pei.push_back(curr_addr);
-        efi_utils::log("overflow may occur here: 0x%016llX\n",
+        efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
       }
@@ -2005,7 +2008,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
 
       if (same_datasize) {
         double_get_variable_pei.push_back(curr_addr);
-        efi_utils::log("overflow may occur here: 0x%016llX\n",
+        efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
       }
@@ -2023,11 +2026,11 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_pei() {
 
       if (!datasize_addr_found) {
         double_get_variable_pei.push_back(curr_addr);
-        efi_utils::log("overflow may occur here: 0x%016llX\n",
+        efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
       } else if (prev_datasize_addr == curr_datasize_addr) {
         double_get_variable_pei.push_back(curr_addr);
-        efi_utils::log("overflow may occur here: 0x%016llX\n",
+        efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
       }
     }
@@ -2063,9 +2066,9 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
   ea_t prev_addr = get_variable_services_calls.at(0);
   for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
     ea_t curr_addr = get_variable_services_calls.at(i);
-    efi_utils::log("first call to GetVariable: 0x%016llX\n",
+    efi_utils::log("first call to GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
-    efi_utils::log("second call to GetVariable: 0x%016llX\n",
+    efi_utils::log("second call to GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(curr_addr));
 
     int datasize_stack_addr = 0;
@@ -2158,7 +2161,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable(
                  (sval + stack_addr) == datasize_stack_addr) ||
                 (datasize_stack_addr == insn.ops[1].addr)) {
               double_get_variable.push_back(curr_addr);
-              efi_utils::log("overflow may occur here: 0x%016llX\n",
+              efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                              u64_addr(curr_addr));
               break;
             }
@@ -2188,9 +2191,9 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
   insn_t insn;
   for (auto i = 1; i < smm_get_variable_calls.size(); ++i) {
     ea_t curr_addr = smm_get_variable_calls.at(i);
-    efi_utils::log("first call to SmmGetVariable: 0x%016llX\n",
+    efi_utils::log("first call to SmmGetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
-    efi_utils::log("second call to SmmGetVariable: 0x%016llX\n",
+    efi_utils::log("second call to SmmGetVariable: 0x%" PRIx64 "\n",
                    u64_addr(curr_addr));
 
     uint32_t datasize_stack_addr = 0xffffffff;
@@ -2236,7 +2239,7 @@ bool efi_analysis::efi_analyser_t::find_double_get_variable_smm() {
               insn.ops[0].reg == R_R9) {
             if (datasize_stack_addr == insn.ops[1].addr) {
               double_get_variable_smm.push_back(curr_addr);
-              efi_utils::log("overflow may occur here: 0x%016llX\n",
+              efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                              u64_addr(curr_addr));
               break;
             }
@@ -2259,7 +2262,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
     return false;
   }
 
-  efi_utils::log("analysing %s call at 0x%016llX\n", service_str.c_str(),
+  efi_utils::log("analysing %s call at 0x%" PRIx64 "\n", service_str.c_str(),
                  u64_addr(ea));
 
   eavec_t args;
@@ -2285,7 +2288,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
 
     // retype CHAR16 to const CHAR16 to improve pseudocode quality
     efi_utils::set_const_char16_type(insn.ops[1].addr);
-    efi_utils::log("  VariableName: %s (at 0x%016llX)\n", var_name.c_str(),
+    efi_utils::log("  VariableName: %s (at 0x%" PRIx64 ")\n", var_name.c_str(),
                    u64_addr(insn.ops[1].addr));
 
     v["VariableName"] = var_name;
@@ -2300,7 +2303,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
   if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
       insn.ops[0].reg == R_RDX && insn.ops[1].type == o_mem) {
     efi_guid_t guid = efi_utils::get_global_guid(insn.ops[1].addr);
-    efi_utils::log("  VendorGuid: %s (at 0x%016llX)\n",
+    efi_utils::log("  VendorGuid: %s (at 0x%" PRIx64 ")\n",
                    guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
 
     v["VendorGuid"] = guid.to_string();
@@ -2313,7 +2316,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
     switch (insn.ops[1].reg) {
     case R_RBP: {
       efi_guid_t guid = efi_utils::get_local_guid(f, insn.ops[1].addr);
-      efi_utils::log("  VendorGuid: %s, RBP offset: 0x%016llX\n",
+      efi_utils::log("  VendorGuid: %s, RBP offset: 0x%" PRIx64 "\n",
                      guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
 
       v["VendorGuid"] = guid.to_string();
@@ -2321,7 +2324,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
     }
     case R_RSP: {
       efi_guid_t guid = efi_utils::get_local_guid(f, insn.ops[1].addr);
-      efi_utils::log("  VendorGuid: %s, RSP offset: 0x%016llX\n",
+      efi_utils::log("  VendorGuid: %s, RSP offset: 0x%" PRIx64 "\n",
                      guid.to_string().c_str(), u64_addr(insn.ops[1].addr));
 
       v["VendorGuid"] = guid.to_string();

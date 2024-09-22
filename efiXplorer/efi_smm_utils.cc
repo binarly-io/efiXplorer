@@ -45,13 +45,13 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
   data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
 
   for (auto data_addr : data_addrs) {
-    efi_utils::log("SMM dispatch protocol GUID: 0x%016llX\n",
+    efi_utils::log("SMM dispatch protocol GUID: 0x%" PRIx64 "\n",
                    u64_addr(data_addr));
     ea_list_t xrefs = efi_utils::get_xrefs(data_addr);
     insn_t insn;
     for (auto xref : xrefs) {
       // smst register
-      uint16_t smst_reg = 0xffff;
+      uint16_t smst_reg = NONE_REG;
       ea_t cur_addr = xref;
       while (true) {
         cur_addr = next_head(cur_addr, BADADDR);
@@ -67,7 +67,7 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
         }
       }
 
-      if (smst_reg == 0xffff) {
+      if (smst_reg == NONE_REG) {
         // smst register not found
         continue;
       }
@@ -79,7 +79,8 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
         decode_insn(&insn, cur_addr);
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == smst_reg && insn.ops[1].type == o_mem) {
-          efi_utils::log("found gSmst at 0x%016llX, address = 0x%016llX\n",
+          efi_utils::log("found gSmst at 0x%" PRIx64 ", address = 0x%" PRIx64
+                         "\n",
                          u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
           res_addr = insn.ops[1].addr;
           if (efi_utils::addr_in_vec(bs_list, res_addr)) {
@@ -112,7 +113,8 @@ ea_list_t efi_smm_utils::find_smst_smm_base(ea_list_t bs_list) {
   ea_list_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
   for (auto data_addr : data_addrs) {
-    efi_utils::log("SMM base protocol GUID: 0x%016llX\n", u64_addr(data_addr));
+    efi_utils::log("SMM base protocol GUID: 0x%" PRIx64 "\n",
+                   u64_addr(data_addr));
     ea_list_t data_xrefs = efi_utils::get_xrefs(data_addr);
     insn_t insn;
     for (auto xref : data_xrefs) {
@@ -126,9 +128,9 @@ ea_list_t efi_smm_utils::find_smst_smm_base(ea_list_t bs_list) {
         if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == R_RDX && insn.ops[1].type == o_mem) {
           res_addr = insn.ops[1].addr;
-          efi_utils::log(
-              "found gSmst/InSmram at 0x%016llX, address = 0x%016llX\n",
-              u64_addr(cur_addr), u64_addr(res_addr));
+          efi_utils::log("found gSmst/InSmram at 0x%" PRIx64
+                         ", address = 0x%" PRIx64 "\n",
+                         u64_addr(cur_addr), u64_addr(res_addr));
         }
         if (res_addr != BADADDR && insn.itype == NN_callni &&
             insn.ops[0].type == o_phrase && !insn.ops[0].addr) {
@@ -158,7 +160,7 @@ ea_list_t efi_smm_utils::find_smst_smm_base(ea_list_t bs_list) {
 // find SmiHandler in reg_smi_func function,
 // prefix: Sw, TrapIo, Sx, Gpi, Usb, StandbyButton, PeriodicTimer, ...
 func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
-  efi_utils::log("analyse xref to SMM %sDispatch protocol: 0x%016llX\n",
+  efi_utils::log("analyse xref to SMM %sDispatch protocol: 0x%" PRIx64 "\n",
                  prefix.c_str(), u64_addr(address));
 
   func_list_t smi_handlers;
@@ -233,7 +235,7 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
     return smi_handlers;
   }
 
-  efi_utils::log("found SMM %sDispatch protocol interface at: 0x%016llX\n",
+  efi_utils::log("found SMM %sDispatch protocol interface at: 0x%" PRIx64 "\n",
                  prefix.c_str(), dispatch_interface);
 
   // TODO(yeggor): handle xrefs for globals
@@ -278,7 +280,7 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
     }
     if (insn.itype == NN_callni && insn.ops[0].type == o_phrase &&
         insn.ops[0].reg == reg) {
-      efi_utils::log("Register(): 0x%016llX, %sSmiHandler: 0x%016llX\n",
+      efi_utils::log("Register(): 0x%" PRIx64 ", %sSmiHandler: 0x%" PRIx64 "\n",
                      u64_addr(ea), prefix.c_str(), dispatch_func);
       auto handler_func = get_func(dispatch_func);
       if (handler_func == nullptr) {
@@ -356,7 +358,7 @@ efi_smm_utils::find_smi_handlers_dispatch_stack(json_list_t stack_guids,
 
     ea_t address = static_cast<ea_t>(guid["address"]);
     efi_utils::log(
-        "found EFI_SMM_SW_DISPATCH{2}_PROTOCOL_GUID on stack: 0x%016llX\n",
+        "found EFI_SMM_SW_DISPATCH{2}_PROTOCOL_GUID on stack: 0x%" PRIx64 "\n",
         u64_addr(address));
     auto res = efi_smm_utils::find_smi_handlers(address, prefix);
     smi_handlers.insert(smi_handlers.end(), res.begin(), res.end());
@@ -390,7 +392,8 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
       segment_t *seg = getseg(xref);
       qstring seg_name;
       get_segm_name(&seg_name, seg);
-      efi_utils::log("found EFI_SMM_VARIABLE_PROTOCOL_GUID xref at 0x%016llX\n",
+      efi_utils::log("found EFI_SMM_VARIABLE_PROTOCOL_GUID xref at 0x%" PRIx64
+                     "\n",
                      u64_addr(xref));
 
       size_t index = seg_name.find(".text");
@@ -406,7 +409,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
         decode_insn(&insn, ea);
         if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == R_R8 && insn.ops[1].type == o_mem) {
-          efi_utils::log("gSmmVariable: 0x%016llX\n",
+          efi_utils::log("gSmmVariable: 0x%" PRIx64 "\n",
                          u64_addr(insn.ops[1].addr));
           efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gSmmVariable",
                                            "EFI_SMM_VARIABLE_PROTOCOL");
@@ -428,7 +431,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
       segment_t *seg = getseg(smm_variable_xref);
       qstring seg_name;
       get_segm_name(&seg_name, seg);
-      efi_utils::log("found gSmmVariable xref at 0x%016llX\n",
+      efi_utils::log("found gSmmVariable xref at 0x%" PRIx64 "\n",
                      u64_addr(smm_variable_xref));
 
       size_t index = seg_name.find(".text");
@@ -459,7 +462,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
             // temporarily add a "virtual" SMM service call
             // for easier annotations and UI
             efi_utils::op_stroff(ea, "EFI_SMM_VARIABLE_PROTOCOL");
-            efi_utils::log("found SmmGetVariable call at 0x%016llX\n",
+            efi_utils::log("found SmmGetVariable call at 0x%" PRIx64 "\n",
                            u64_addr(ea));
 
             json service;
@@ -493,7 +496,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
     if (static_cast<std::string>(guid["name"]) != "EFI_SMM_CPU_PROTOCOL_GUID")
       continue;
     ea_t address = static_cast<ea_t>(guid["address"]);
-    efi_utils::log("found EFI_SMM_CPU_PROTOCOL on stack at 0x%016llX\n",
+    efi_utils::log("found EFI_SMM_CPU_PROTOCOL on stack at 0x%" PRIx64 "\n",
                    u64_addr(address));
     code_addrs.push_back(address);
   }
@@ -503,7 +506,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
       continue;
 
     ea_t address = static_cast<ea_t>(guid["address"]);
-    efi_utils::log("found EFI_SMM_CPU_PROTOCOL at 0x%016llX\n",
+    efi_utils::log("found EFI_SMM_CPU_PROTOCOL at 0x%" PRIx64 "\n",
                    u64_addr(address));
     ea_list_t guid_xrefs = efi_utils::get_xrefs(address);
 
@@ -528,7 +531,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == R_R8 && insn.ops[1].type == o_mem) {
-        efi_utils::log("gSmmCpu: 0x%016llX\n", u64_addr(insn.ops[1].addr));
+        efi_utils::log("gSmmCpu: 0x%" PRIx64 "\n", u64_addr(insn.ops[1].addr));
         efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gSmmCpu",
                                          "EFI_SMM_CPU_PROTOCOL");
         smm_cpu_addrs.push_back(insn.ops[1].addr);
@@ -577,7 +580,8 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
             }
 
             efi_utils::op_stroff(ea, "EFI_SMM_CPU_PROTOCOL");
-            efi_utils::log("gSmmCpu->ReadSaveState: 0x%016llX\n", u64_addr(ea));
+            efi_utils::log("gSmmCpu->ReadSaveState: 0x%" PRIx64 "\n",
+                           u64_addr(ea));
 
             json service;
             service["address"] = ea;

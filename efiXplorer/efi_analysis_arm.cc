@@ -276,7 +276,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       ea = next_head(ea, BADADDR);
       ea_t bs = get_table_addr(ea, 0x60);
       if (bs != BADADDR) {
-        efi_utils::log("gBS: 0x%016llX\n", u64_addr(ea));
+        efi_utils::log("gBS: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
         if (!efi_utils::addr_in_vec(bs_list_arm, bs)) {
           bs_list_arm.push_back(bs);
@@ -285,7 +285,7 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       }
       ea_t rt = get_table_addr(ea, 0x58);
       if (rt != BADADDR) {
-        efi_utils::log("gRT: 0x%016llX\n", u64_addr(ea));
+        efi_utils::log("gRT: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
         if (!efi_utils::addr_in_vec(rt_list_arm, rt)) {
           rt_list_arm.push_back(rt);
@@ -319,7 +319,8 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
         continue;
       }
       if (!efi_utils::json_in_vec(m_all_services, s)) {
-        efi_utils::log("found new boot service at 0x%016llX\n", u64_addr(ea));
+        efi_utils::log("found new boot service at 0x%" PRIx64 "\n",
+                       u64_addr(ea));
         m_all_services.push_back(s);
       }
     }
@@ -336,7 +337,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
         continue;
       }
       if (!efi_utils::json_in_vec(m_all_services, s)) {
-        efi_utils::log("found new runtime service at 0x%016llX\n",
+        efi_utils::log("found new runtime service at 0x%" PRIx64 "\n",
                        u64_addr(ea));
         m_all_services.push_back(s);
       }
@@ -379,7 +380,7 @@ bool efi_analysis::efi_analyser_arm_t::get_protocol(ea_t address,
   if (guid_addr == BADADDR || code_addr == BADADDR) {
     return false;
   }
-  efi_utils::log("found new protocol at 0x%016llX\n", u64_addr(code_addr));
+  efi_utils::log("found new protocol at 0x%" PRIx64 "\n", u64_addr(code_addr));
   return add_protocol(service_name, guid_addr, code_addr, address);
 }
 
@@ -417,7 +418,7 @@ void efi_analysis::efi_analyser_arm_t::find_pei_services_function() {
     }
     decode_insn(&insn, end_ea);
     if (insn.itype == ARM_ret) {
-      efi_utils::log("found GetPeiServices() function at 0x%016llX\n",
+      efi_utils::log("found GetPeiServices() function at 0x%" PRIx64 "\n",
                      u64_addr(start_ea));
       set_name(start_ea, "GetPeiServices", SN_FORCE);
       efi_utils::set_ret_to_pei_svc(start_ea);
@@ -450,7 +451,7 @@ void efi_analysis::efi_analyser_arm_t::show_all_choosers() {
 }
 
 //--------------------------------------------------------------------------
-// Main function for AARCH64 modules
+// main function for AARCH64 modules
 bool efi_analysis::efi_analyse_main_aarch64() {
   show_wait_box("HIDECANCEL\nAnalysing module(s) with efiXplorer...");
 

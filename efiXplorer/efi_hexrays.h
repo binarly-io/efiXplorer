@@ -653,7 +653,7 @@ public:
       return 0;
     }
     if (m_debug) {
-      efi_utils::log("child function address: %016llX\n",
+      efi_utils::log("child function address: 0x%" PRIx64 "\n",
                      u64_addr(e->x->obj_ea));
     }
 
@@ -676,7 +676,7 @@ public:
     }
 
     if (m_debug) {
-      efi_utils::log("call address: 0x%016llX\n", u64_addr(e->ea));
+      efi_utils::log("call address: 0x%" PRIx64 "\n", u64_addr(e->ea));
     }
     for (auto i = 0; i < args->size(); i++) {
       cexpr_t *arg = &args->at(i);
@@ -811,7 +811,7 @@ public:
     }
 
     if (m_debug) {
-      efi_utils::log("code address: 0x%016llX, type name: %s\n",
+      efi_utils::log("code address: 0x%" PRIx64 ", type name: %s\n",
                      u64_addr(e->ea), type_name.c_str());
     }
 
@@ -920,7 +920,8 @@ public:
       }
     }
     if (m_debug) {
-      efi_utils::log("address: 0x%016llX, service type: %s, service name: %s\n",
+      efi_utils::log("address: 0x%" PRIx64
+                     ", service type: %s, service name: %s\n",
                      u64_addr(e->ea), type_name.c_str(), service_name.c_str());
     }
 
@@ -997,7 +998,7 @@ public:
       return 0;
     }
 
-    efi_utils::log("PEI service detected at 0x%08llX\n", u64_addr(e->ea));
+    efi_utils::log("PEI service detected at 0x%" PRIx64 "\n", u64_addr(e->ea));
 
     tinfo_t outer;
     if (!outer.get_named_type(get_idati(), "EFI_PEI_SERVICES_4", BTF_STRUCT)) {
@@ -1015,7 +1016,8 @@ public:
       return 0;
     }
     if (set_var_type(func->start_ea, dest_var, shifted_tif)) {
-      efi_utils::log("shifted pointer applied at 0x%08llX\n", u64_addr(e->ea));
+      efi_utils::log("shifted pointer applied at 0x%" PRIx64 "\n",
+                     u64_addr(e->ea));
     }
 
     if (call) {
@@ -1077,7 +1079,7 @@ public:
       service_name = s->second;
     }
     if (m_debug) {
-      efi_utils::log("0x%08llX: %s service detected (offset: %d): %s\n",
+      efi_utils::log("0x%" PRIx64 ": %s service detected (offset: %d): %s\n",
                      u64_addr(e->ea), table_type_name.c_str(), u32_addr(offset),
                      service_name.c_str());
     }

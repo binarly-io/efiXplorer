@@ -133,7 +133,7 @@ bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
     if (insn.itype == NN_mov && insn.ops[0].type == o_mem &&
         insn.ops[1].type == o_reg && insn.ops[1].reg == reg) {
       var_copy = insn.ops[0].addr;
-      efi_utils::log("found copy for global variable: 0x%016llX\n",
+      efi_utils::log("found copy for global variable: 0x%" PRIx64 "\n",
                      u64_addr(ea));
       break;
     }
@@ -766,9 +766,9 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
         (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
         insn.ops[0].reg == R_RAX) {
       efi_utils::op_stroff(ea, static_cast<std::string>(type_name.c_str()));
-      efi_utils::log(
-          "mark arguments at address 0x%016llX (interface type: %s)\n",
-          u64_addr(ea), type_name.c_str());
+      efi_utils::log("mark arguments at address 0x%" PRIx64
+                     " (interface type: %s)\n",
+                     u64_addr(ea), type_name.c_str());
 
       // check for EfiSmmBase2Protocol->GetSmstLocation
       if (type_name == "EFI_SMM_BASE2_PROTOCOL" &&
