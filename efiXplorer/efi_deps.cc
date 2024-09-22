@@ -100,7 +100,7 @@ bool efi_deps_t::load_deps_from_uefitool() {
 bool efi_deps_t::load_modules_with_guids() {
   std::filesystem::path modules_json;
   modules_json /= get_path(PATH_TYPE_IDB);
-  modules_json.replace_extension(".modules.json");
+  modules_json.replace_extension(".images.json");
   if (!std::filesystem::exists(modules_json)) {
     return false;
   }
