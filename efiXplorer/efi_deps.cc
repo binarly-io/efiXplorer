@@ -26,7 +26,7 @@ efi_deps_t::efi_deps_t() {
   // get modules names from IDB
   get_modules();
   // read modules with GUIDs from
-  // .modules.json file if this file exists
+  // .images.json file if this file exists
   load_modules_with_guids();
 }
 
