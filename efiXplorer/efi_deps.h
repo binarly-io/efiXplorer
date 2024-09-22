@@ -35,7 +35,7 @@ public:
   json m_protocols_by_guids;
   json m_protocols_chooser;
   json m_uefitool_deps;
-  string_list_t m_modules_from_idb;
+  string_set_t m_modules_from_idb;
   string_set_t m_untracked_protocols;
 
   // input: protocols from report
@@ -52,12 +52,13 @@ public:
 private:
   string_set_t m_protocols_without_installers;
 
-  void get_modules();
-  void get_protocols_without_installers();
-  void get_installers_modules();
+  bool installer_found(std::string protocol);
   bool load_deps_from_uefitool();
   bool load_modules_with_guids();
-  bool installer_found(std::string protocol);
-  json get_module_info(std::string image);
+  json get_module_info(std::string module);
   std::string get_installer(std::string protocol);
+  string_set_t get_apriori_modules();
+  void get_installers_modules();
+  void get_modules();
+  void get_protocols_without_installers();
 };

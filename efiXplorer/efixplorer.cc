@@ -116,7 +116,7 @@ bool idaapi run(size_t arg) {
 }
 
 //--------------------------------------------------------------------------
-// PLUGIN DESCRIPTION BLOCK
+// plugin description block
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,
     0,             // plugin flags
