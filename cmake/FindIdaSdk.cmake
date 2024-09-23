@@ -60,10 +60,9 @@ include(CMakeParseArguments)
 include(FindPackageHandleStandardArgs)
 
 option(USE_LD_CLASSIC "Use -ld_classic option" OFF)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15.0.0")
-    set(USE_LD_CLASSIC ON)
-  endif()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15.0.0")
+  set(USE_LD_CLASSIC ON)
 endif()
 
 find_path(
