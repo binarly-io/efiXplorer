@@ -178,7 +178,7 @@ json get_service(ea_t addr, uint8_t table_id) {
               efi_utils::lookup_runtime_service_name(service_offset);
           s["table_name"] = "EFI_RUNTIME_SERVICES";
         } else {
-          s["table_name"] = "OTHER";
+          s["table_name"] = "Unknown";
         }
         return s;
       }
