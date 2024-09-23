@@ -77,8 +77,7 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
 
   // get reverse dictionary
   for (auto g = m_guiddb.begin(); g != m_guiddb.end(); ++g) {
-    m_guiddb_map[static_cast<json>(g.value())] =
-        static_cast<std::string>(g.key());
+    m_guiddb_map[g.value()] = g.key();
   }
 }
 
@@ -655,9 +654,8 @@ void efi_analysis::efi_analyser_x86_t::get_boot_services_all() {
               efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(addr),
                              g_boot_services_table_all[j].name);
 
-              m_boot_services[static_cast<std::string>(
-                                  g_boot_services_table_all[j].name)]
-                  .push_back(addr);
+              m_boot_services[g_boot_services_table_all[j].name].push_back(
+                  addr);
 
               json s;
               s["address"] = addr;
@@ -736,8 +734,7 @@ void efi_analysis::efi_analyser_x86_t::get_runtime_services_all() {
               efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(addr),
                              g_runtime_services_table_all[j].name);
 
-              m_runtime_services_all[static_cast<std::string>(
-                                         g_runtime_services_table_all[j].name)]
+              m_runtime_services_all[g_runtime_services_table_all[j].name]
                   .push_back(addr);
 
               json s;
@@ -818,9 +815,8 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
                 m_smm_services[g_smm_services_table_all[j].name].push_back(
                     addr);
               }
-              m_smm_services_all[static_cast<std::string>(
-                                     g_smm_services_table_all[j].name)]
-                  .push_back(addr);
+              m_smm_services_all[g_smm_services_table_all[j].name].push_back(
+                  addr);
 
               json s;
               s["address"] = addr;
@@ -903,9 +899,7 @@ void efi_analysis::efi_analyser_x86_t::get_pei_services_all32() {
             efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                            g_pei_services_table32[j].name);
 
-            m_pei_services_all[static_cast<std::string>(
-                                   g_pei_services_table32[j].name)]
-                .push_back(ea);
+            m_pei_services_all[g_pei_services_table32[j].name].push_back(ea);
 
             json s;
             s["address"] = ea;
@@ -1118,9 +1112,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
         efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                        g_boot_services_table64[i].name);
 
-        m_boot_services[static_cast<std::string>(
-                            g_boot_services_table64[i].name)]
-            .push_back(ea);
+        m_boot_services[g_boot_services_table64[i].name].push_back(ea);
 
         json s;
         s["address"] = ea;
@@ -1158,9 +1150,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services32() {
           efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                          g_boot_services_table32[i].name);
 
-          m_boot_services[static_cast<std::string>(
-                              g_boot_services_table32[i].name)]
-              .push_back(ea);
+          m_boot_services[g_boot_services_table32[i].name].push_back(ea);
 
           json s;
           s["address"] = ea;
@@ -1548,7 +1538,7 @@ void efi_analysis::efi_analyser_t::annotate_protocol_guids() {
       continue;
     }
 
-    std::string name = static_cast<std::string>(prot[m_pkey]);
+    std::string name = prot[m_pkey];
     set_name(addr, name.c_str(), SN_FORCE);
     efi_utils::set_guid_type(addr);
     m_annotated_protocols.push_back(addr);
@@ -2020,8 +2010,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
 
   for (auto j_service : m_all_services) {
     json service = j_service;
-    std::string service_name =
-        static_cast<std::string>(service["service_name"]);
+    std::string service_name = service["service_name"];
     ea_t addr = static_cast<ea_t>(service["address"]);
     if (service_name.compare(get_variable_str) == 0) {
       get_variable_services_calls.push_back(addr);
@@ -2366,8 +2355,7 @@ bool efi_analysis::efi_analyser_t::analyse_nvram_variables() {
     ea_list_t var_services;
     for (auto j_service : m_all_services) {
       json service = j_service;
-      std::string service_name =
-          static_cast<std::string>(service["service_name"]);
+      std::string service_name = service["service_name"];
       ea_t addr = static_cast<ea_t>(service["address"]);
       if (!service_name.compare(service_str)) {
         var_services.push_back(addr);
@@ -2582,7 +2570,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
 
     analyser.find_smst64();
 
-    // find Boot services and Runtime services
+    // find boot services and runtime services
     analyser.get_prot_boot_services64();
     analyser.find_other_boot_services_tables64();
     analyser.get_boot_services_all();
