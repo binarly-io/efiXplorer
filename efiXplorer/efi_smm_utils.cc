@@ -294,7 +294,8 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
 
       // op_stroff + set_name
       auto name = std::format("{}SmiHandler", prefix);
-      set_name(dispatch_func, name.c_str(), SN_FORCE);
+      efi_utils::set_type_and_name(dispatch_func, name.c_str(),
+                                   "EFI_SMM_HANDLER_ENTRY_POINT2");
 
       std::string prefix_upper;
       std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(),
@@ -458,8 +459,6 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
               smm_get_variable_calls.push_back(ea);
             }
 
-            // temporarily add a "virtual" SMM service call
-            // for easier annotations and UI
             efi_utils::op_stroff(ea, "EFI_SMM_VARIABLE_PROTOCOL");
             efi_utils::log("found SmmGetVariable call at 0x%" PRIx64 "\n",
                            u64_addr(ea));
@@ -614,7 +613,8 @@ ea_t efi_smm_utils::mark_child_sw_smi_handlers(ea_t ea) {
       if (insn.ops[1].type != o_mem) {
         continue;
       }
-      set_name(insn.ops[1].addr, "ChildSwSmiHandler", SN_FORCE);
+      efi_utils::set_type_and_name(insn.ops[1].addr, "ChildSwSmiHandler",
+                                   "EFI_SMM_HANDLER_ENTRY_POINT2");
       return insn.ops[1].addr;
     }
   }
