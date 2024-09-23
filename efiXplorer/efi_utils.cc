@@ -732,33 +732,6 @@ std::string efi_utils::type_to_name(std::string type) {
   return result;
 }
 
-xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring name) {
-  efi_utils::log("get xrefs to stack variable %s at 0x%" PRIx64 "\n",
-                 name.c_str(), func_addr);
-
-  xreflist_t xrefs_list;
-
-#if IDA_SDK_VERSION < 900
-  struc_t *frame = get_frame(func_addr);
-  if (frame == nullptr) {
-    return xrefs_list;
-  }
-
-  func_t *f = get_func(func_addr);
-  if (f == nullptr) {
-    return xrefs_list;
-  }
-
-  member_t *member = get_member_by_name(frame, name.c_str());
-  if (member != nullptr) {
-    build_stkvar_xrefs(&xrefs_list, f, member);
-  }
-#else
-  // TODO(yeggor): rewrite for idasdk90
-#endif
-  return xrefs_list;
-}
-
 void op_stroff_for_addr(ea_t ea, qstring type_name) {
   insn_t insn;
 
@@ -1002,6 +975,8 @@ uint16_t get_machine_type() {
 
 uint32_t u32_addr(ea_t addr) { return static_cast<uint32_t>(addr); }
 uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }
+
+size_t get_ptrsize() { return inf_is_64bit() ? 8 : 4; }
 
 #if IDA_SDK_VERSION >= 900
 tid_t import_type(const til_t *til, int _idx, const char *name) {

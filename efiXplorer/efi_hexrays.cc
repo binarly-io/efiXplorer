@@ -48,8 +48,35 @@ bool efi_hexrays::offset_of(tinfo_t tif, const char *name,
   }
 
   // get the offset of the field
-  *offset = static_cast<unsigned int>(udt.at(fidx).offset >> 3ULL);
+  *offset = static_cast<unsigned int>(udt.at(fidx).offset * get_ptrsize());
   return true;
+}
+
+xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, qstring name) {
+  efi_utils::log("get xrefs to stack variable %s at 0x%" PRIx64 "\n",
+                 name.c_str(), func_addr);
+
+  xreflist_t xrefs_list;
+
+#if IDA_SDK_VERSION < 900
+  struc_t *frame = get_frame(func_addr);
+  if (frame == nullptr) {
+    return xrefs_list;
+  }
+
+  func_t *f = get_func(func_addr);
+  if (f == nullptr) {
+    return xrefs_list;
+  }
+
+  member_t *member = get_member_by_name(frame, name.c_str());
+  if (member != nullptr) {
+    build_stkvar_xrefs(&xrefs_list, f, member);
+  }
+#else
+  // TODO(yeggor): rewrite for idasdk90
+#endif
+  return xrefs_list;
 }
 
 // utility function to set a Hex-Rays variable name
@@ -88,7 +115,24 @@ bool efi_hexrays::set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
       set_member_tinfo(frame, member, 0, tif, 0);
     }
 #else
-    // TODO(yeggor): add support for idasdk90
+    sval_t stkoff = ll.get_stkoff();
+
+    func_t *f = get_func(func_addr);
+    if (f == nullptr) {
+      return false;
+    }
+
+    tinfo_t frame;
+    frame.get_func_frame(f);
+    if (frame.empty()) {
+      return false;
+    }
+
+    ssize_t stkvar_idx = frame.find_udm(stkoff * get_ptrsize());
+    if (stkvar_idx != -1) {
+      frame.rename_udm(stkvar_idx, name.c_str());
+      frame.set_udm_type(stkvar_idx, tif);
+    }
 #endif
   } else {
     lvar_saved_info_t lsi;
@@ -121,7 +165,7 @@ bool efi_hexrays::set_hexrays_var_info_and_handle_interfaces(ea_t func_addr,
   pi.obj_type.get_type_name(&type_name);
 
   // handle all interface functions (to rename function arguments)
-  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(func_addr, name.c_str());
+  xreflist_t xrefs = xrefs_to_stack_var(func_addr, name.c_str());
   efi_utils::op_stroff_for_interface(xrefs, type_name);
 
   return true;

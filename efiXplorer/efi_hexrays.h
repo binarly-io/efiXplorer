@@ -26,22 +26,23 @@
 #include <vector>
 
 namespace efi_hexrays {
-uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
-bool track_entry_params(func_t *f, uint8_t depth);
-json detect_vars(func_t *f);
-json_list_t detect_services(func_t *f);
-json_list_t detect_pei_services_arm(func_t *f);
-bool detect_pei_services(func_t *f);
-bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
-bool apply_all_types_for_interfaces(json_list_t guids);
 bool apply_all_types_for_interfaces_smm(json_list_t guids);
-bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
-                          std::string name);
+bool apply_all_types_for_interfaces(json_list_t guids);
+bool detect_pei_services(func_t *f);
+bool is_pod_array(tinfo_t tif, unsigned int ptr_depth);
+bool offset_of(tinfo_t tif, const char *name, unsigned int *offset);
 bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
                                                 tinfo_t tif, std::string name);
-bool offset_of(tinfo_t tif, const char *name, unsigned int *offset);
-bool is_pod_array(tinfo_t tif, unsigned int ptr_depth);
+bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
+                          std::string name);
+bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
+bool track_entry_params(func_t *f, uint8_t depth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
+json detect_vars(func_t *f);
+json_list_t detect_pei_services_arm(func_t *f);
+json_list_t detect_services(func_t *f);
+uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
+xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring name);
 
 // description of a function pointer within a structure. Ultimately, this
 // plugin is looking for calls to specific UEFI functions. This structure

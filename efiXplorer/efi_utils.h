@@ -78,14 +78,13 @@ void set_guid_type(ea_t ea);
 void set_ptr_type_and_name(ea_t ea, std::string name, std::string type);
 void set_type_and_name(ea_t ea, std::string name, std::string type);
 
-xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring var_name);
-
 int log(const char *fmt, ...);
 } // namespace efi_utils
 
 uint16_t get_machine_type();
 uint32_t u32_addr(ea_t addr);
 uint64_t u64_addr(ea_t addr);
+size_t get_ptrsize();
 
 #if IDA_SDK_VERSION >= 900
 tid_t import_type(const til_t *til, int _idx, const char *name);
