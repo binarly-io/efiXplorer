@@ -42,7 +42,7 @@ json detect_vars(func_t *f);
 json_list_t detect_pei_services_arm(func_t *f);
 json_list_t detect_services(func_t *f);
 uint8_t variables_info_extract_all(func_t *f, ea_t code_addr);
-xreflist_t xrefs_to_stack_var(ea_t func_addr, qstring name);
+xreflist_t xrefs_to_stack_var(ea_t func_addr, lvar_t &ll, qstring name);
 
 // description of a function pointer within a structure. Ultimately, this
 // plugin is looking for calls to specific UEFI functions. This structure

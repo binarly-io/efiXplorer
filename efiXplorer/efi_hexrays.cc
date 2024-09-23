@@ -47,12 +47,13 @@ bool efi_hexrays::offset_of(tinfo_t tif, const char *name,
     return false;
   }
 
-  // get the offset of the field
-  *offset = static_cast<unsigned int>(udt.at(fidx).offset * get_ptrsize());
+  // get the offset of the field in bytes
+  *offset = static_cast<unsigned int>(udt.at(fidx).offset >> 3);
   return true;
 }
 
-xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, qstring name) {
+xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, lvar_t &ll,
+                                           qstring name) {
   efi_utils::log("get xrefs to stack variable %s at 0x%" PRIx64 "\n",
                  name.c_str(), func_addr);
 
@@ -74,7 +75,21 @@ xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, qstring name) {
     build_stkvar_xrefs(&xrefs_list, f, member);
   }
 #else
-  // TODO(yeggor): rewrite for idasdk90
+  sval_t stkoff = ll.get_stkoff();
+
+  func_t *f = get_func(func_addr);
+  if (f == nullptr) {
+    return xrefs_list;
+  }
+
+  // based on processor_t::lvar_off() from frame.hpp
+  range_t lvars;
+  get_frame_part(&lvars, f, FPC_LVARS);
+  uval_t frameoff = stkoff - lvars.end_ea;
+  efi_utils::log("stkoff: %x, frameoff: %d\n", stkoff, frameoff);
+
+  build_stkvar_xrefs(&xrefs_list, f, frameoff, frameoff + get_ptrsize());
+
 #endif
   return xrefs_list;
 }
@@ -128,7 +143,7 @@ bool efi_hexrays::set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
       return false;
     }
 
-    ssize_t stkvar_idx = frame.find_udm(stkoff * get_ptrsize());
+    ssize_t stkvar_idx = frame.find_udm(stkoff << 3);
     if (stkvar_idx != -1) {
       frame.rename_udm(stkvar_idx, name.c_str());
       frame.set_udm_type(stkvar_idx, tif);
@@ -165,7 +180,7 @@ bool efi_hexrays::set_hexrays_var_info_and_handle_interfaces(ea_t func_addr,
   pi.obj_type.get_type_name(&type_name);
 
   // handle all interface functions (to rename function arguments)
-  xreflist_t xrefs = xrefs_to_stack_var(func_addr, name.c_str());
+  xreflist_t xrefs = xrefs_to_stack_var(func_addr, ll, name.c_str());
   efi_utils::op_stroff_for_interface(xrefs, type_name);
 
   return true;
