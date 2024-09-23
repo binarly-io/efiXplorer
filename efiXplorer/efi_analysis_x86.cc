@@ -772,28 +772,48 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
   for (auto smms : m_smst_list) {
     auto xrefs = efi_utils::get_xrefs(smms);
     for (auto ea : xrefs) {
-      decode_insn(&insn, ea);
+      auto addr = ea;
+      decode_insn(&insn, addr);
 
       if (!(insn.itype == NN_mov && insn.ops[1].type == o_mem &&
             insn.ops[1].addr == smms)) {
         continue;
       }
 
-      auto smst_reg = insn.ops[0].reg;
+      efi_utils::log("analysing xref to smst at 0x%" PRIx64 "\n",
+                     u64_addr(addr));
 
-      // 10 instructions below
-      auto addr = ea;
-      for (auto i = 0; i < 10; i++) {
+      auto smst_reg = insn.ops[0].reg;
+      uint32_t offset = 0;
+
+      while (!is_basic_block_end(insn, false) || addr == ea) {
         addr = next_head(addr, BADADDR);
         decode_insn(&insn, addr);
+
+        // handle cases like this
+        // mov rax, cs:gSmst
+        // mov rax, [rax+0E0h] <- we are here
+        // ...
+        // call rax
+        if (insn.itype == NN_mov && insn.ops[0].reg == smst_reg &&
+            (insn.ops[1].type == o_displ || insn.ops[1].type == o_phrase) &&
+            insn.ops[1].reg == smst_reg) {
+          offset = u32_addr(insn.ops[1].addr);
+        }
+
         // add NN_jmpni insn type to handle such cases
         // jmp qword ptr [r9+0D0h]
         if ((insn.itype == NN_callni || insn.itype == NN_jmpni) &&
             insn.ops[0].reg == smst_reg) {
+          // if instruction is not call smst_reg, rewrite the offset
+          if (insn.ops[0].type != o_reg) {
+            offset = insn.ops[0].addr;
+          }
+
           for (int j = 0; j < g_smm_services_table_all_count; j++) {
-            if (insn.ops[0].addr ==
-                u32_addr(g_smm_services_table_all[j].offset64)) {
-              if (u32_addr(g_smm_services_table_all[j].offset64) == 0xe0) {
+            if (offset == g_smm_services_table_all[j].offset64) {
+              // handle SmiHandlerRegister service call
+              if (g_smm_services_table_all[j].offset64 == 0xe0) {
                 // set name for Handler argument
                 auto smi_handler_addr =
                     efi_smm_utils::mark_child_sw_smi_handlers(addr);
