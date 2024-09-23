@@ -371,8 +371,8 @@ protected:
   // this is a helper function used to get the thing being referred to. What
   // does that m_ean?
   //
-  // * for GUID arguments, we'll usually have &globvar. Return globvar
-  // * for output arguments, we'll usually have &globvar or &locvar. Due to
+  // - for GUID arguments, we'll usually have &globvar. Return globvar
+  // - for output arguments, we'll usually have &globvar or &locvar. Due to
   //   Hex-Rays internal heuristics, we might end up with "locarray", which
   //   does not actually have a "&" when passed as a call argument. There's
   //   a bit of extra logic to check for that case
@@ -853,7 +853,7 @@ public:
 
       // set the Hex-Rays variable type
       auto name = efi_utils::type_to_name(type_name.c_str());
-      // set_hexrays_var_info(m_func_ea, dest_var, var_type, name);
+      set_hexrays_var_info(m_func_ea, dest_var, var_type, name);
     }
 
     return 0;

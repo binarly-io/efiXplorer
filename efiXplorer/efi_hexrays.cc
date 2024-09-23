@@ -52,31 +52,6 @@ bool efi_hexrays::offset_of(tinfo_t tif, const char *name,
   return true;
 }
 
-// utility function to set a Hex-Rays variable type and set types for the
-// interfaces
-bool efi_hexrays::set_hexrays_var_info_and_handle_interfaces(ea_t func_addr,
-                                                             lvar_t &ll,
-                                                             tinfo_t tif,
-                                                             std::string name) {
-  lvar_saved_info_t lsi;
-  lsi.ll = ll;
-  lsi.type = tif;
-  lsi.name = name.c_str();
-  modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
-
-  ptr_type_data_t pi;
-  tif.get_ptr_details(&pi);
-
-  qstring type_name;
-  pi.obj_type.get_type_name(&type_name);
-
-  // handle all interface functions (to rename function arguments)
-  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(func_addr, name.c_str());
-  efi_utils::op_stroff_for_interface(xrefs, type_name);
-
-  return true;
-}
-
 // utility function to set a Hex-Rays variable name
 bool efi_hexrays::set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
   lvar_saved_info_t lsi;
@@ -94,22 +69,60 @@ bool efi_hexrays::set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
 // utility function to set a Hex-Rays variable type and name
 bool efi_hexrays::set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                        std::string name) {
-  lvar_saved_info_t lsi;
-  lsi.ll = ll;
-  lsi.type = tif;
-  modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
-
   // set lvar name
   if (ll.is_stk_var()) { // rename local variable on stack
 #if IDA_SDK_VERSION < 900
     sval_t stkoff = ll.get_stkoff();
+
     struc_t *frame = get_frame(func_addr);
-    set_member_name(frame, stkoff, name.c_str());
-#endif     // TODO(yeggor): add support for idasdk90
-  } else { // modufy user lvar info
-    lsi.name = static_cast<qstring>(name.c_str());
+    if (frame == nullptr) {
+      return false;
+    }
+
+    if (!set_member_name(frame, stkoff, name.c_str())) {
+      return false;
+    }
+
+    member_t *member = get_member_by_name(frame, name.c_str());
+    if (member != nullptr) {
+      set_member_tinfo(frame, member, 0, tif, 0);
+    }
+#else
+    // TODO(yeggor): add support for idasdk90
+#endif
+  } else {
+    lvar_saved_info_t lsi;
+    lsi.ll = ll;
+
+    // modufy user lvar type
+    lsi.type = tif;
+    modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
+
+    // modufy user lvar name
+    lsi.name = name.c_str();
     modify_user_lvar_info(func_addr, MLI_NAME, lsi);
   }
+
+  return true;
+}
+
+// utility function to set a Hex-Rays variable type and set types for the
+// interfaces
+bool efi_hexrays::set_hexrays_var_info_and_handle_interfaces(ea_t func_addr,
+                                                             lvar_t &ll,
+                                                             tinfo_t tif,
+                                                             std::string name) {
+  set_hexrays_var_info(func_addr, ll, tif, name);
+
+  ptr_type_data_t pi;
+  tif.get_ptr_details(&pi);
+
+  qstring type_name;
+  pi.obj_type.get_type_name(&type_name);
+
+  // handle all interface functions (to rename function arguments)
+  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(func_addr, name.c_str());
+  efi_utils::op_stroff_for_interface(xrefs, type_name);
 
   return true;
 }

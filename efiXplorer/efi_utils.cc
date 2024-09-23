@@ -732,24 +732,26 @@ std::string efi_utils::type_to_name(std::string type) {
   return result;
 }
 
-xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring var_name) {
+xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring name) {
   efi_utils::log("get xrefs to stack variable %s at 0x%" PRIx64 "\n",
-                 var_name.c_str(), func_addr);
+                 name.c_str(), func_addr);
 
   xreflist_t xrefs_list;
 
 #if IDA_SDK_VERSION < 900
   struc_t *frame = get_frame(func_addr);
-  func_t *func = get_func(func_addr);
-  member_t member; // get member by name
-  for (int i = 0; i < frame->memqty; i++) {
-    member = frame->members[i];
-    qstring name;
-    get_member_name(&name, frame->members[i].id);
-    if (name == var_name) {
-      build_stkvar_xrefs(&xrefs_list, func, &member);
-      return xrefs_list;
-    }
+  if (frame == nullptr) {
+    return xrefs_list;
+  }
+
+  func_t *f = get_func(func_addr);
+  if (f == nullptr) {
+    return xrefs_list;
+  }
+
+  member_t *member = get_member_by_name(frame, name.c_str());
+  if (member != nullptr) {
+    build_stkvar_xrefs(&xrefs_list, f, member);
   }
 #else
   // TODO(yeggor): rewrite for idasdk90
