@@ -82,13 +82,7 @@ xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, lvar_t &ll,
     return xrefs_list;
   }
 
-  // based on processor_t::lvar_off() from frame.hpp
-  range_t lvars;
-  get_frame_part(&lvars, f, FPC_LVARS);
-  uval_t frameoff = stkoff - lvars.end_ea;
-  efi_utils::log("stkoff: %x, frameoff: %d\n", stkoff, frameoff);
-
-  build_stkvar_xrefs(&xrefs_list, f, frameoff, frameoff + get_ptrsize());
+  build_stkvar_xrefs(&xrefs_list, f, stkoff, stkoff + get_ptrsize());
 
 #endif
   return xrefs_list;
