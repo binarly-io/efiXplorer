@@ -214,7 +214,7 @@ protected:
   ea_t m_func_ea;
   ea_t m_code_ea;
   json_list_t m_protocols;
-  bool m_debug = false;
+  bool m_debug = true;
 
   // used for looking up calls to function pointers in structures
   service_descriptor_map_t &m_services;
@@ -634,7 +634,7 @@ public:
 
 protected:
   ea_t m_code_addr = BADADDR;
-  bool m_debug = false;
+  bool m_debug = true;
 };
 
 class prototypes_fixer_t : public ctree_visitor_t {
@@ -908,8 +908,7 @@ public:
       is_ptr = 0;
     }
 
-    auto service_name =
-        efi_utils::type_to_name(static_cast<std::string>(type_name.c_str()));
+    auto service_name = efi_utils::type_to_name(type_name.c_str());
     if (service_name.rfind("Efi", 0) == 0) {
       service_name = service_name.substr(3);
       if (service_name == "RaiseTpl") {

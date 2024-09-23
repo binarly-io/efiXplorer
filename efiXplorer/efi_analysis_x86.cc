@@ -780,9 +780,6 @@ void efi_analysis::efi_analyser_x86_t::get_smm_services_all64() {
         continue;
       }
 
-      efi_utils::log("analysing xref to smst at 0x%" PRIx64 "\n",
-                     u64_addr(addr));
-
       auto smst_reg = insn.ops[0].reg;
       uint32_t offset = 0;
 
@@ -975,8 +972,8 @@ void efi_analysis::efi_analyser_x86_t::get_variable_ppi_calls_all32() {
             efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                            g_variable_ppi_table_all[j].name);
 
-            std::string ppi_call =
-                std::format("VariablePPI.{}", g_variable_ppi_table_all[j].name);
+            std::string ppi_call = std::format(
+                "VariablePPI->{}", g_variable_ppi_table_all[j].name);
             m_ppi_calls_all[ppi_call].push_back(ea);
 
             json s;
@@ -1873,7 +1870,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smm_callout() {
 // find potential double GetVariable patterns in PEI modules
 bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
   ea_list_t get_variable_services_calls;
-  std::string get_variable_str("VariablePPI.GetVariable");
+  std::string get_variable_str("VariablePPI->GetVariable");
 
   for (auto j_service : m_all_services) {
     json service = j_service;
@@ -1893,9 +1890,9 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
   ea_t prev_addr = get_variable_services_calls.at(0);
   for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
     ea_t curr_addr = get_variable_services_calls.at(i);
-    efi_utils::log("first call to VariablePPI.GetVariable: 0x%" PRIx64 "\n",
+    efi_utils::log("first call to VariablePPI->GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
-    efi_utils::log("second call to VariablePPI.GetVariable: 0x%" PRIx64 "\n",
+    efi_utils::log("second call to VariablePPI->GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(curr_addr));
 
     // check code from first call to second call

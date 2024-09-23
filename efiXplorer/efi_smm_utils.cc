@@ -215,7 +215,7 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
     while (!is_basic_block_end(insn, false)) {
       ea = prev_head(ea, 0);
       decode_insn(&insn, ea);
-      // interface is stack variable
+      // interface is local variable
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == R_R8 && insn.ops[1].type == o_displ &&
           (insn.ops[1].reg == R_RBP || insn.ops[1].reg == R_RSP)) {
@@ -349,7 +349,7 @@ efi_smm_utils::find_smi_handlers_dispatch_stack(json_list_t stack_guids,
   func_list_t smi_handlers;
 
   for (auto guid : stack_guids) {
-    std::string name = static_cast<std::string>(guid["name"]);
+    std::string name = guid["name"];
 
     if (name != "EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID" &&
         name != "EFI_SMM_SW_DISPATCH_PROTOCOL_GUID") {
