@@ -530,58 +530,56 @@ protected:
   // given an expression (either a local or global variable) and a type to
   // apply, apply the type. This is just a bit of IDA/Hex-Rays type system
   // skullduggery
-  void apply_type(cexpr_t *outArg, tinfo_t ptrTif, qstring tstr) {
-    ea_t dest_ea = outArg->obj_ea;
+  void apply_type(cexpr_t *out_arg, tinfo_t ptr_tif, qstring tstr) {
+    ea_t dest_ea = out_arg->obj_ea;
 
     // for global variables
-    if (outArg->op == cot_obj) {
+    if (out_arg->op == cot_obj) {
       // just apply the type information to the address
-      apply_tinfo(dest_ea, ptrTif, TINFO_DEFINITE);
+      apply_tinfo(dest_ea, ptr_tif, TINFO_DEFINITE);
       ++m_num_applied;
 
       // rename global variable
-      auto name =
-          "g" + efi_utils::type_to_name(static_cast<std::string>(tstr.c_str()));
+      auto name = "g" + efi_utils::type_to_name(tstr.c_str());
       set_name(dest_ea, name.c_str(), SN_FORCE);
 
       // get xrefs to global variable
       auto xrefs = efi_utils::get_xrefs(dest_ea);
       qstring type_name;
       ptr_type_data_t pi;
-      ptrTif.get_ptr_details(&pi);
+      ptr_tif.get_ptr_details(&pi);
       pi.obj_type.get_type_name(&type_name);
 
       // handling all interface functions (to rename function arguments)
       efi_utils::op_stroff_for_global_interface(xrefs, type_name);
-    } else if (outArg->op == cot_var) { // for local variables
-      var_ref_t var_ref = outArg->v;
+    } else if (out_arg->op == cot_var) { // for local variables
+      var_ref_t var_ref = out_arg->v;
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
 
       // set the Hex-Rays variable type
-      auto name =
-          efi_utils::type_to_name(static_cast<std::string>(tstr.c_str()));
-      set_lvar_name(static_cast<qstring>(name.c_str()), dest_var, m_func_ea);
+      auto name = efi_utils::type_to_name(tstr.c_str());
+      set_lvar_name(name.c_str(), dest_var, m_func_ea);
       if (set_hexrays_var_info_and_handle_interfaces(m_func_ea, dest_var,
-                                                     ptrTif, name)) {
+                                                     ptr_tif, name)) {
         ++m_num_applied;
       }
     }
   }
 
-  void apply_name(cexpr_t *outArg, std::string type_name) {
-    ea_t dest_ea = outArg->obj_ea;
+  void apply_name(cexpr_t *out_arg, std::string type_name) {
+    ea_t dest_ea = out_arg->obj_ea;
 
     // for global variables
-    if (outArg->op == cot_obj) {
+    if (out_arg->op == cot_obj) {
       // rename global variable
       auto name = "g" + efi_utils::type_to_name(type_name);
       set_name(dest_ea, name.c_str(), SN_FORCE);
-    } else if (outArg->op == cot_var) { // for local variables
-      var_ref_t var_ref = outArg->v;
+    } else if (out_arg->op == cot_var) { // for local variables
+      var_ref_t var_ref = out_arg->v;
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
       // set the Hex-Rays variable type
       auto name = efi_utils::type_to_name(type_name);
-      set_lvar_name(static_cast<qstring>(name.c_str()), dest_var, m_func_ea);
+      set_lvar_name(name.c_str(), dest_var, m_func_ea);
     }
   }
 };
@@ -1059,7 +1057,7 @@ public:
       qstring func_type_name;
       tinfo_t service_type = e->x->type;
       service_type.get_type_name(&func_type_name);
-      std::string func_type = static_cast<std::string>(func_type_name.c_str());
+      std::string func_type = func_type_name.c_str();
       std::string prefix = "EFI_PEI_";
       if (func_type.substr(0, prefix.length()) == prefix) {
         func_type.erase(0, prefix.length());

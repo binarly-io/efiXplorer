@@ -388,8 +388,7 @@ void efi_analysis::efi_analyser_arm_t::detect_protocols_all() {
   for (auto s : m_all_services) {
     std::string service_name = s["service_name"];
     for (auto i = 0; i < g_boot_services_table_aarch64_count; i++) {
-      std::string current_name =
-          static_cast<std::string>(g_boot_services_table_aarch64[i].name);
+      std::string current_name = g_boot_services_table_aarch64[i].name;
       if (current_name != service_name) {
         continue;
       }

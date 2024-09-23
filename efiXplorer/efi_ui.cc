@@ -110,11 +110,10 @@ void idaapi nvram_chooser_t::get_row(qstrvec_t *cols_, int *,
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_nvram[n];
-  std::string name = static_cast<std::string>(item["VariableName"]);
-  std::string guid = static_cast<std::string>(item["VendorGuid"]);
-  std::string service = static_cast<std::string>(item["service"]);
-  std::string attributes =
-      static_cast<std::string>(item["AttributesHumanReadable"]);
+  std::string name = item["VariableName"];
+  std::string guid = item["VendorGuid"];
+  std::string service = item["service"];
+  std::string attributes = item["AttributesHumanReadable"];
   cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", name.c_str());
   cols[2].sprnt("%s", guid.c_str());
@@ -136,7 +135,7 @@ void idaapi vulns_chooser_t::get_row(qstrvec_t *cols_, int *,
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_vulns[n];
-  std::string type = static_cast<std::string>(item["type"]);
+  std::string type = item["type"];
   cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", type.c_str());
   CASSERT(qnumber(header_vulns) == 2);
@@ -155,8 +154,8 @@ void idaapi guids_chooser_t::get_row(qstrvec_t *cols_, int *,
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_guids[n];
-  std::string guid = static_cast<std::string>(item["guid"]);
-  std::string name = static_cast<std::string>(item["name"]);
+  std::string guid = item["guid"];
+  std::string name = item["name"];
   cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", guid.c_str());
   cols[2].sprnt("%s", name.c_str());
@@ -180,10 +179,10 @@ void idaapi m_protocols_chooser_t::get_row(qstrvec_t *cols_, int *,
   ea_t ea = list[n];
   qstrvec_t &cols = *cols_;
   json item = chooser_protocols[n];
-  std::string name = static_cast<std::string>(item[name_key]);
-  std::string service = static_cast<std::string>(item["service"]);
-  std::string protGuid = static_cast<std::string>(item["guid"]);
-  std::string moduleName = static_cast<std::string>(item["module"]);
+  std::string name = item[name_key];
+  std::string service = item["service"];
+  std::string protGuid = item["guid"];
+  std::string moduleName = item["module"];
   cols[0].sprnt("%016" PRIX64, u64_addr(ea));
   cols[1].sprnt("%s", protGuid.c_str());
   cols[2].sprnt("%s", name.c_str());

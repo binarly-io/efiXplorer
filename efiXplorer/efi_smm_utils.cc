@@ -356,7 +356,7 @@ efi_smm_utils::find_smi_handlers_dispatch_stack(json_list_t stack_guids,
       continue;
     }
 
-    ea_t address = static_cast<ea_t>(guid["address"]);
+    ea_t address = guid["address"];
     efi_utils::log(
         "found EFI_SMM_SW_DISPATCH{2}_PROTOCOL_GUID on stack: 0x%" PRIx64 "\n",
         u64_addr(address));
@@ -491,32 +491,32 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
   ea_list_t code_addrs;
   ea_list_t smm_cpu_addrs;
   for (auto guid : stack_guids) {
-    if (static_cast<std::string>(guid["name"]) != "EFI_SMM_CPU_PROTOCOL_GUID")
+    if (guid["name"] != "EFI_SMM_CPU_PROTOCOL_GUID")
       continue;
-    ea_t address = static_cast<ea_t>(guid["address"]);
+    ea_t address = guid["address"];
     efi_utils::log("found EFI_SMM_CPU_PROTOCOL on stack at 0x%" PRIx64 "\n",
                    u64_addr(address));
     code_addrs.push_back(address);
   }
 
   for (auto guid : data_guids) {
-    if (static_cast<std::string>(guid["name"]) != "EFI_SMM_CPU_PROTOCOL_GUID")
+    if (guid["name"] != "EFI_SMM_CPU_PROTOCOL_GUID")
       continue;
 
-    ea_t address = static_cast<ea_t>(guid["address"]);
+    ea_t address = guid["address"];
     efi_utils::log("found EFI_SMM_CPU_PROTOCOL at 0x%" PRIx64 "\n",
                    u64_addr(address));
     ea_list_t guid_xrefs = efi_utils::get_xrefs(address);
 
     for (auto guid_xref : guid_xrefs) {
-      segment_t *seg = getseg(static_cast<ea_t>(guid_xref));
+      segment_t *seg = getseg(guid_xref);
       qstring seg_name;
       get_segm_name(&seg_name, seg);
       size_t index = seg_name.find(".text");
       if (index == std::string::npos) {
         continue;
       }
-      code_addrs.push_back(static_cast<ea_t>(guid_xref));
+      code_addrs.push_back(guid_xref);
     }
   }
 

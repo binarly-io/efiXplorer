@@ -306,10 +306,10 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 
       // try to extract ChildSwSmiHandler
       auto counter = 0;
-      ea_t ea = static_cast<ea_t>(smst_stack["start"]);
+      ea_t ea = smst_stack["start"];
       uint16_t smst_reg = NONE_REG;
       uint64_t rcx_last = BADADDR;
-      while (ea < static_cast<ea_t>(smst_stack["end"])) {
+      while (ea < smst_stack["end"]) {
         counter += 1;
         if (counter > 500) {
           break; // just in case
@@ -370,11 +370,11 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
   // init architecture specific constants
   auto BS_OFFSET = BS_OFFSET_64;
-  uint16_t R_SP = static_cast<uint16_t>(R_RSP);
+  uint16_t R_SP = R_RSP;
 
   if (m_arch == arch_file_type_t::x86_32) {
     BS_OFFSET = BS_OFFSET_32;
-    R_SP = static_cast<uint16_t>(R_ESP);
+    R_SP = R_ESP;
   }
 
   insn_t insn;
@@ -485,11 +485,11 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
 bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
   // init architecture specific constants
   auto RT_OFFSET = RT_OFFSET_64;
-  uint16_t R_SP = static_cast<uint16_t>(R_RSP);
+  uint16_t R_SP = R_RSP;
 
   if (m_arch == arch_file_type_t::x86_32) {
     RT_OFFSET = RT_OFFSET_32;
-    R_SP = static_cast<uint16_t>(R_ESP);
+    R_SP = R_ESP;
   }
 
   insn_t insn;
@@ -1204,7 +1204,7 @@ void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
       continue;
     }
 
-    ea_t addr = static_cast<ea_t>(s["address"]);
+    ea_t addr = s["address"];
     ea_t addr_bs = efi_utils::find_unknown_bs_var64(addr);
 
     if (addr_bs == BADADDR ||
@@ -1550,7 +1550,7 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
 // annotate protocol GUIDs
 void efi_analysis::efi_analyser_t::annotate_protocol_guids() {
   for (const auto &prot : *m_ptable) {
-    ea_t addr = static_cast<ea_t>(prot["address"]);
+    ea_t addr = prot["address"];
     if (efi_utils::addr_in_vec(m_annotated_protocols, addr)) {
       continue;
     }
@@ -1603,7 +1603,7 @@ void efi_analysis::efi_analyser_t::annotate_data_guids() {
               continue;
             }
 
-            uint64_t flags = static_cast<uint64_t>(get_wide_dword(ppi_ea));
+            uint64_t flags = get_wide_dword(ppi_ea);
             if (!efi_utils::uint64_in_vec(m_ppi_flags, flags)) {
               continue;
             }
@@ -1661,7 +1661,7 @@ void efi_analysis::efi_analyser_x86_t::find_local_guids64() {
         if (insn_next.itype == NN_mov && insn_next.ops[0].type == o_displ &&
             insn_next.ops[1].type == o_imm) {
           // get guid->data2 value
-          uint16_t data2 = static_cast<uint16_t>(insn_next.ops[1].value);
+          uint16_t data2 = insn_next.ops[1].value;
           if (!data2 || data2 == 0xffff) {
             ea = next_head(ea, BADADDR);
             continue;
@@ -1876,7 +1876,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
     json service = j_service;
     std::string service_name = service["service_name"];
     std::string table_name = service["table_name"];
-    ea_t addr = static_cast<ea_t>(service["address"]);
+    ea_t addr = service["address"];
     if (service_name.compare(get_variable_str) == 0) {
       get_variable_services_calls.push_back(addr);
     }
@@ -2028,7 +2028,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
   for (auto j_service : m_all_services) {
     json service = j_service;
     std::string service_name = service["service_name"];
-    ea_t addr = static_cast<ea_t>(service["address"]);
+    ea_t addr = service["address"];
     if (service_name.compare(get_variable_str) == 0) {
       get_variable_services_calls.push_back(addr);
     }
@@ -2373,7 +2373,7 @@ bool efi_analysis::efi_analyser_t::analyse_nvram_variables() {
     for (auto j_service : m_all_services) {
       json service = j_service;
       std::string service_name = service["service_name"];
-      ea_t addr = static_cast<ea_t>(service["address"]);
+      ea_t addr = service["address"];
       if (!service_name.compare(service_str)) {
         var_services.push_back(addr);
       }
