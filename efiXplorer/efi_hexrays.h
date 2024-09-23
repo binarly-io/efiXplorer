@@ -620,11 +620,6 @@ public:
 
     cexpr_t *attributes_arg = &args->at(2);
     if (attributes_arg->op == cot_num) {
-      if (m_debug) {
-        efi_utils::log("service call: %016llX, attributes: %02X\n",
-                       u64_addr(m_code_addr),
-                       static_cast<uint8_t>(attributes_arg->numval()));
-      }
       attributes_arg->numval();
       m_attributes = static_cast<uint8_t>(attributes_arg->numval());
     }
@@ -818,26 +813,26 @@ public:
     if (global_var) {
       // extract variable data
       ea_t g_addr = e->x->obj_ea;
-      std::string type_name_str = static_cast<std::string>(type_name.c_str());
-      if (type_name == qstring("EFI_HANDLE")) {
+      std::string type_name_str = type_name.c_str();
+      if (type_name == "EFI_HANDLE") {
         efi_utils::set_type_and_name(g_addr, "gImageHandle", type_name_str);
         if (!efi_utils::addr_in_vec(m_image_handle_list, g_addr)) {
           m_image_handle_list.push_back(g_addr);
         }
       }
-      if (type_name == qstring("EFI_SYSTEM_TABLE")) {
+      if (type_name == "EFI_SYSTEM_TABLE") {
         efi_utils::set_ptr_type_and_name(g_addr, "gST", type_name_str);
         if (!efi_utils::addr_in_vec(m_st_list, g_addr)) {
           m_st_list.push_back(g_addr);
         }
       }
-      if (type_name == qstring("EFI_BOOT_SERVICES")) {
+      if (type_name == "EFI_BOOT_SERVICES") {
         efi_utils::set_ptr_type_and_name(g_addr, "gBS", type_name_str);
         if (!efi_utils::addr_in_vec(m_bs_list, g_addr)) {
           m_bs_list.push_back(g_addr);
         }
       }
-      if (type_name == qstring("EFI_RUNTIME_SERVICES")) {
+      if (type_name == "EFI_RUNTIME_SERVICES") {
         efi_utils::set_ptr_type_and_name(g_addr, "gRT", type_name_str);
         if (!efi_utils::addr_in_vec(m_rt_list, g_addr)) {
           m_rt_list.push_back(g_addr);
@@ -857,8 +852,7 @@ public:
       lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
 
       // set the Hex-Rays variable type
-      auto name =
-          efi_utils::type_to_name(static_cast<std::string>(type_name.c_str()));
+      auto name = efi_utils::type_to_name(type_name.c_str());
       // set_hexrays_var_info(m_func_ea, dest_var, var_type, name);
     }
 

@@ -35,20 +35,20 @@ bool efi_hexrays::offset_of(tinfo_t tif, const char *name,
 #if IDA_SDK_VERSION < 840
   udt_member_t udm;
   udm.name = name;
-  int fIdx = tif.find_udt_member(&udm, STRMEM_NAME);
+  int fidx = tif.find_udt_member(&udm, STRMEM_NAME);
 #else
   udm_t udm;
   udm.name = name;
-  int fIdx = tif.find_udm(&udm, STRMEM_NAME);
+  int fidx = tif.find_udm(&udm, STRMEM_NAME);
 #endif
-  if (fIdx < 0) {
+  if (fidx < 0) {
     qstring tstr;
     tif.get_type_name(&tstr);
     return false;
   }
 
   // get the offset of the field
-  *offset = static_cast<unsigned int>(udt.at(fIdx).offset >> 3ULL);
+  *offset = static_cast<unsigned int>(udt.at(fidx).offset >> 3ULL);
   return true;
 }
 
@@ -61,28 +61,17 @@ bool efi_hexrays::set_hexrays_var_info_and_handle_interfaces(ea_t func_addr,
   lvar_saved_info_t lsi;
   lsi.ll = ll;
   lsi.type = tif;
+  lsi.name = name.c_str();
   modify_user_lvar_info(func_addr, MLI_TYPE, lsi);
 
-  // set lvar name
-  if (ll.is_stk_var()) { // rename local variable on stack
-#if IDA_SDK_VERSION < 900
-    sval_t stkoff = ll.get_stkoff();
-    struc_t *frame = get_frame(func_addr);
-    set_member_name(frame, stkoff, name.c_str());
-#endif     // TODO(yeggor): add support for idasdk90
-  } else { // Modufy user lvar info
-    lsi.name = static_cast<qstring>(name.c_str());
-    modify_user_lvar_info(func_addr, MLI_NAME, lsi);
-  }
-
-  // get xrefs to local variable
-  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(
-      func_addr, static_cast<qstring>(name.c_str()));
-  qstring type_name;
   ptr_type_data_t pi;
   tif.get_ptr_details(&pi);
+
+  qstring type_name;
   pi.obj_type.get_type_name(&type_name);
-  // handling all interface functions (to rename function arguments)
+
+  // handle all interface functions (to rename function arguments)
+  xreflist_t xrefs = efi_utils::xrefs_to_stack_var(func_addr, name.c_str());
   efi_utils::op_stroff_for_interface(xrefs, type_name);
 
   return true;

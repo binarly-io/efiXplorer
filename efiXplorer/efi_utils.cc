@@ -733,6 +733,9 @@ std::string efi_utils::type_to_name(std::string type) {
 }
 
 xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring var_name) {
+  efi_utils::log("get xrefs to stack variable %s at 0x%" PRIx64 "\n",
+                 var_name.c_str(), func_addr);
+
   xreflist_t xrefs_list;
 
 #if IDA_SDK_VERSION < 900
@@ -748,9 +751,9 @@ xreflist_t efi_utils::xrefs_to_stack_var(ea_t func_addr, qstring var_name) {
       return xrefs_list;
     }
   }
-#endif
-
+#else
   // TODO(yeggor): rewrite for idasdk90
+#endif
   return xrefs_list;
 }
 
@@ -765,7 +768,7 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
          insn.itype == NN_callni) &&
         (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
         insn.ops[0].reg == R_RAX) {
-      efi_utils::op_stroff(ea, static_cast<std::string>(type_name.c_str()));
+      efi_utils::op_stroff(ea, type_name.c_str());
       efi_utils::log("mark arguments at address 0x%" PRIx64
                      " (interface type: %s)\n",
                      u64_addr(ea), type_name.c_str());
