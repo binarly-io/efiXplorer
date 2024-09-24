@@ -32,7 +32,7 @@ ea_list_t g_smm_set_variable_calls;
 std::string file_format_name() {
   char file_format[256] = {0};
   get_file_type_name(file_format, 256);
-  return static_cast<std::string>(file_format);
+  return file_format;
 }
 
 //--------------------------------------------------------------------------
@@ -65,7 +65,7 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
 
   char file_name[256] = {0};
   get_input_file_path(file_name, sizeof(file_name));
-  auto file_name_str = static_cast<std::string>(file_name);
+  std::string file_name_str = file_name;
 
   if ((file_name_str.find("Pei") != std::string::npos ||
        file_name_str.find("pei") != std::string::npos || signature == VZ) &&
@@ -542,8 +542,8 @@ json efi_utils::get_guid_by_address(ea_t addr) {
 //--------------------------------------------------------------------------
 // validate GUID value
 bool efi_utils::valid_guid(json guid) {
-  auto data0 = static_cast<uint32_t>(guid[0]);
-  auto data1 = static_cast<uint16_t>(guid[1]);
+  uint32_t data0 = guid[0];
+  uint32_t data1 = guid[1];
 
   auto invalid = (!data0 && !data1) || (data0 == 0xffffffff && data1 == 0xffff);
   return !invalid;
@@ -578,7 +578,7 @@ uint8_list_t efi_utils::unpack_guid(std::string guid) {
     }
     for (auto i = 0; i < hex.size(); i += 2) {
       byte_str = hex.substr(i, 2);
-      byte = static_cast<uint8_t>(strtol(byte_str.c_str(), nullptr, 16));
+      byte = strtol(byte_str.c_str(), nullptr, 16);
       tmp.push_back(byte);
     }
     if (index != 3) {
@@ -593,7 +593,7 @@ uint8_list_t efi_utils::unpack_guid(std::string guid) {
 
   for (auto i = 0; i < guid.size(); i += 2) {
     byte_str = guid.substr(i, 2);
-    byte = static_cast<uint8_t>(strtol(byte_str.c_str(), nullptr, 16));
+    byte = strtol(byte_str.c_str(), nullptr, 16);
     res.push_back(byte);
   }
 
@@ -875,7 +875,7 @@ efi_guid_t efi_utils::get_global_guid(ea_t addr) {
   guid.data2 = get_wide_word(addr + 4);
   guid.data3 = get_wide_word(addr + 6);
   for (auto i = 0; i < 8; i++) {
-    guid.data4[i] = static_cast<uint8_t>(get_wide_byte(addr + 8 + i));
+    guid.data4[i] = get_wide_byte(addr + 8 + i);
   }
   return guid;
 }
@@ -932,15 +932,13 @@ efi_guid_t efi_utils::get_local_guid(func_t *f, uint64_t offset) {
 
 std::string efi_utils::get_table_name(std::string service_name) {
   for (auto i = 0; i < g_boot_services_table_all_count; i++) {
-    if (static_cast<std::string>(g_boot_services_table_all[i].name) ==
-        service_name) {
+    if (g_boot_services_table_all[i].name == service_name) {
       return "EFI_BOOT_SERVICES";
     }
   }
 
   for (auto i = 0; i < g_runtime_services_table_all_count; i++) {
-    if (static_cast<std::string>(g_runtime_services_table_all[i].name) ==
-        service_name) {
+    if (g_runtime_services_table_all[i].name == service_name) {
       return "EFI_RUNTIME_SERVICES";
     }
   }
@@ -951,7 +949,7 @@ std::string efi_utils::get_table_name(std::string service_name) {
 std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
   for (auto i = 0; i < g_boot_services_table_all_count; i++) {
     if (g_boot_services_table_all[i].offset64 == offset) {
-      return static_cast<std::string>(g_boot_services_table_all[i].name);
+      return g_boot_services_table_all[i].name;
     }
   }
 
@@ -961,7 +959,7 @@ std::string efi_utils::lookup_boot_service_name(uint64_t offset) {
 std::string efi_utils::lookup_runtime_service_name(uint64_t offset) {
   for (auto i = 0; i < g_runtime_services_table_all_count; i++) {
     if (g_runtime_services_table_all[i].offset64 == offset) {
-      return static_cast<std::string>(g_runtime_services_table_all[i].name);
+      return g_runtime_services_table_all[i].name;
     }
   }
 
@@ -973,8 +971,8 @@ uint16_t get_machine_type() {
   return get_word(pe_offset + 4);
 }
 
-uint32_t u32_addr(ea_t addr) { return static_cast<uint32_t>(addr); }
-uint64_t u64_addr(ea_t addr) { return static_cast<uint64_t>(addr); }
+uint32_t u32_addr(ea_t addr) { return addr; }
+uint64_t u64_addr(ea_t addr) { return addr; }
 
 size_t get_ptrsize() { return inf_is_64bit() ? 8 : 4; }
 

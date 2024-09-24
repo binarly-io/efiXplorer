@@ -153,8 +153,7 @@ void efi_deps_t::get_installers_modules() {
       for (auto ea : xrefs) {
         if (efi_utils::check_install_protocol(ea)) {
           auto module = efi_utils::get_module_name_loader(ea);
-          m_additional_installers[protocol] =
-              static_cast<std::string>(module.c_str());
+          m_additional_installers[protocol] = module.c_str();
           installer_found = true;
           break;
         }
@@ -409,8 +408,8 @@ bool efi_deps_t::build_modules_sequence() {
       size_t mnum = 0;
       for (auto const &[prot, counter] : protocols_usage) {
         if (counter > mnum) {
-          mnum = static_cast<size_t>(counter);
-          mprotocol = static_cast<std::string>(prot);
+          mnum = counter;
+          mprotocol = prot;
         }
       }
 
