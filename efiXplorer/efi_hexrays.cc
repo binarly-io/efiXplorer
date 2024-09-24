@@ -105,7 +105,6 @@ bool efi_hexrays::set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
 // utility function to set a Hex-Rays variable type and name
 bool efi_hexrays::set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                        std::string name) {
-  // set lvar name
   if (ll.is_stk_var()) { // rename local variable on stack
 #if IDA_SDK_VERSION < 900
     sval_t stkoff = ll.get_stkoff();

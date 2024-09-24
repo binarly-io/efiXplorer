@@ -513,10 +513,10 @@ bool efi_utils::add_struct_for_shifted_ptr() {
   set_member_tinfo(new_struct, member, 0, pp_tinfo, 0);
 
   return true;
-#endif
-
+#else
   // return true if there are no errors from parse_decls()
   return !parse_efi_pei_svc4() && !parse_efi_pei_sidt();
+#endif
 }
 
 //--------------------------------------------------------------------------
