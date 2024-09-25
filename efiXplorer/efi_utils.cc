@@ -612,7 +612,7 @@ ea_list_t efi_utils::search_protocol(std::string protocol) {
         bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
 #else
     ea_t addr =
-        bin_search3(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+        bin_search(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
 #endif
     if (addr == BADADDR) {
       break;
@@ -839,8 +839,7 @@ ea_list_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
     auto ea =
         bin_search2(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
 #else
-    auto ea =
-        bin_search3(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
+    auto ea = bin_search(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
 #endif
     if (ea == BADADDR) {
       break;
