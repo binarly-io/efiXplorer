@@ -649,7 +649,7 @@ bool efi_utils::check_install_protocol(ea_t ea) {
 //--------------------------------------------------------------------------
 // convert 64-bit value to hex string
 std::string efi_utils::as_hex(uint64_t value) {
-  char hexstr[21] = {};
+  char hexstr[21] = {0};
   snprintf(hexstr, sizeof(hexstr), "%" PRIX64, value);
   return hexstr;
 }
