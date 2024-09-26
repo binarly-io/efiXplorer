@@ -293,15 +293,14 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
       reg = NONE_REG; // resetting
 
       // op_stroff + set_name
-      auto name = std::format("{}SmiHandler", prefix);
+      auto name = prefix + "SmiHandler";
       efi_utils::set_type_and_name(dispatch_func, name.c_str(),
                                    "EFI_SMM_HANDLER_ENTRY_POINT2");
 
       std::string prefix_upper;
       std::transform(prefix.begin(), prefix.end(), prefix_upper.begin(),
                      ::toupper);
-      std::string type =
-          std::format("EFI_SMM_{}_DISPATCH2_PROTOCOL", prefix_upper);
+      std::string type = "EFI_SMM_" + prefix_upper + "_DISPATCH2_PROTOCOL";
 
       efi_utils::op_stroff(ea, type);
     }

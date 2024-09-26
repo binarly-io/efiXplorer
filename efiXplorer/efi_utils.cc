@@ -552,14 +552,16 @@ bool efi_utils::valid_guid(json guid) {
 //--------------------------------------------------------------------------
 // convert GUID value to string
 std::string efi_utils::guid_to_string(json guid) {
-  return std::format(
-      "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
-      static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
-      static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
-      static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
-      static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
-      static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
-      static_cast<uint8_t>(guid[10]));
+  char guid_str[37] = {0};
+  snprintf(guid_str, sizeof(guid_str),
+           "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+           static_cast<uint32_t>(guid[0]), static_cast<uint16_t>(guid[1]),
+           static_cast<uint16_t>(guid[2]), static_cast<uint8_t>(guid[3]),
+           static_cast<uint8_t>(guid[4]), static_cast<uint8_t>(guid[5]),
+           static_cast<uint8_t>(guid[6]), static_cast<uint8_t>(guid[7]),
+           static_cast<uint8_t>(guid[8]), static_cast<uint8_t>(guid[9]),
+           static_cast<uint8_t>(guid[10]));
+  return guid_str;
 }
 
 uint8_list_t efi_utils::unpack_guid(std::string guid) {
@@ -647,7 +649,9 @@ bool efi_utils::check_install_protocol(ea_t ea) {
 //--------------------------------------------------------------------------
 // convert 64-bit value to hex string
 std::string efi_utils::as_hex(uint64_t value) {
-  return std::format("{:016X}", value);
+  char hexstr[21] = {};
+  snprintf(hexstr, sizeof(hexstr), "%" PRIX64, value);
+  return hexstr;
 }
 
 //--------------------------------------------------------------------------

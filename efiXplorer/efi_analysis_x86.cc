@@ -972,8 +972,9 @@ void efi_analysis::efi_analyser_x86_t::get_variable_ppi_calls_all32() {
             efi_utils::log("0x%" PRIx64 ": %s\n", u64_addr(ea),
                            g_variable_ppi_table_all[j].name);
 
-            std::string ppi_call = std::format(
-                "VariablePPI->{}", g_variable_ppi_table_all[j].name);
+            std::string ppi_call =
+                "VariablePPI->" +
+                static_cast<std::string>(g_variable_ppi_table_all[j].name);
             m_ppi_calls_all[ppi_call].push_back(ea);
 
             json s;
@@ -1592,8 +1593,7 @@ void efi_analysis::efi_analyser_t::annotate_data_guids() {
           auto xrefs = efi_utils::get_xrefs(ea);
           for (auto addr : xrefs) {
             std::string type_name = guid_name.substr(0, guid_name.length() - 5);
-            std::string ppi_name =
-                std::format("g{}", efi_utils::type_to_name(type_name));
+            std::string ppi_name = "g" + efi_utils::type_to_name(type_name);
 
             ea_t ppi_ea = addr - ptrsize;
 
