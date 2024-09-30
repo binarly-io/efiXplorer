@@ -8,10 +8,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(APPLE)
   # to build Mach-O universal binaries with 2 architectures
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC -arch x86_64 -arch arm64")
-  set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-fPIC -arch x86_64 -arch arm64")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -arch x86_64 -arch arm64")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -arch x86_64 -arch arm64")
 else()
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness -Wno-varargs")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
@@ -52,13 +57,13 @@ file(
   "3rd/uefitool/uefidump.h")
 
 # efiLoader sources
-file(GLOB efiloader_src "*.h" "*.c" "*.cpp")
+file(GLOB efiloader_src "*.cc" "*.h")
 
-add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efiLoader.cpp)
+add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cc)
 
 set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src} uefitool.cpp
+add_ida_library(efiXloader_lib ${efiloader_src} ${uefitool_src} uefitool.cc
                 uefitool.h)
 ida_target_link_libraries(efiXloader efiXloader_lib)

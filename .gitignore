@@ -1,14 +1,14 @@
 # Byte-compiled / optimized / DLL files
-*$py.class
-*.py[cod]
 __pycache__/
+*.py[cod]
+*$py.class
 
 # Distribution / packaging
-*.egg
-*.egg-info/
 .eggs/
 .installed.cfg
 .Python
+*.egg
+*.egg-info/
 build/
 develop-eggs/
 dist/
@@ -44,5 +44,5 @@ venv/
 test/
 tests
 
-# OSX
 .DS_Store
+*.sh
