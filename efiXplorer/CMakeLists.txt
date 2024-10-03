@@ -8,15 +8,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(APPLE)
   # to build Mach-O universal binaries with 2 architectures
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC -arch x86_64 -arch arm64")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -arch x86_64 -arch arm64")
 else()
-  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
-if(BATCH)
-  add_definitions(-DBATCH=1)
-  set(BATCH 1)
-  message(STATUS "efiXplorer plugin version for idat/idat64 binaries")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness -Wno-varargs")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
@@ -28,32 +27,33 @@ include_directories(${PROJECT_SOURCE_DIR}/3rd/nlohmann_json)
 
 # efiXplorer sources
 set(efiXplorer_src
-    "efiAnalyzerArm.cpp"
-    "efiAnalyzerX86.cpp"
-    "efiAnalyzer.h"
-    "efiDeps.cpp"
-    "efiDeps.h"
-    "efiGlobal.h"
-    "efiGlobal.cpp"
-    "efiSmmUtils.cpp"
-    "efiSmmUtils.h"
-    "efiUi.cpp"
-    "efiUi.h"
-    "efiUtils.cpp"
-    "efiUtils.h"
-    "efiXplorer.cpp"
-    "efiXplorer.h")
+    "efi_defs.h"
+    "efi_defs.cc"
+    "efi_analysis.h"
+    "efi_analysis_arm.cc"
+    "efi_analysis_x86.cc"
+    "efi_deps.cc"
+    "efi_deps.h"
+    "efi_global.cc"
+    "efi_global.h"
+    "efi_smm_utils.cc"
+    "efi_smm_utils.h"
+    "efi_ui.cc"
+    "efi_ui.h"
+    "efi_utils.cc"
+    "efi_utils.h"
+    "efixplorer.cc")
 
 if(HexRaysSdk_ROOT_DIR)
   add_definitions(-DHEX_RAYS=1)
   set(HexRaysSdk_INCLUDE_DIRS ${HexRaysSdk_ROOT_DIR}/include)
   include_directories(${HexRaysSdk_INCLUDE_DIRS})
-  list(APPEND efiXplorer_src "efiHexRays.cpp" "efiHexRays.h")
+  list(APPEND efiXplorer_src "efi_hexrays.cc" "efi_hexrays.h")
 endif()
 
-add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efiXplorer.cpp)
+add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efixplorer.cc)
 
-set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 17)
+set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 20)
 ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
 add_ida_library(efiXplorer_lib ${efiXplorer_src})

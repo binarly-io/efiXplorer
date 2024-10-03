@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,19 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiGlobal.h
- *
  */
 
-#include "efiDeps.h"
+#include "efi_global.h"
+#include "efi_deps.h"
 
-enum module_types { DXE_SMM = 0, PEI = 1 };
-
-struct args {
-    int module_type;
-    int disable_ui;
-    int disable_vuln_hunt;
-};
-
-extern struct args g_args;
-extern EfiDependencies g_deps;
+efi_deps_t g_deps;

@@ -13,13 +13,6 @@ def cli():
 
 @click.command()
 @click.option(
-    "--batch",
-    "batch",
-    type=bool,
-    default=False,
-    help="set to True if the plugin will be used in batch mode",
-)
-@click.option(
     "--hexrays_sdk",
     "hexrays_sdk",
     type=str,
@@ -27,7 +20,7 @@ def cli():
     help="path to hexrays_sdk directory",
 )
 @click.argument("idasdk")
-def build_plugin(idasdk: str, hexrays_sdk: str, batch: bool):
+def build_plugin(idasdk: str, hexrays_sdk: str):
     """Build efiXplorer plugin"""
 
     os.chdir("efiXplorer")
@@ -38,8 +31,6 @@ def build_plugin(idasdk: str, hexrays_sdk: str, batch: bool):
     os.chdir("build")
 
     command = ["cmake", "..", f"-DIdaSdk_ROOT_DIR={idasdk}"]
-    if batch:
-        command.append("-DBATCH=1")
     if hexrays_sdk:
         print("[INFO] HexRays analysis will be enabled")
         command.append(f"-DHexRaysSdk_ROOT_DIR={hexrays_sdk}")

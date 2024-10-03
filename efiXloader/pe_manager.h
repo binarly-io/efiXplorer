@@ -1,6 +1,6 @@
 /*
  * efiXloader
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,42 +15,40 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * pe_manager.h
  */
 
-#ifndef EFILOADER_PE_MANAGER_H
-#define EFILOADER_PE_MANAGER_H
+#pragma once
+
+#include <string>
 
 #include "ida_core.h"
 #include "pe.h"
 
 namespace efiloader {
 class PeManager {
-  public:
-    PeManager(uint16_t mt) {
-        inf_set_64bit();
-        set_imagebase(0x0);
-        if (mt == PECPU_ARM64) {
-            set_processor_type("arm", SETPROC_LOADER);
-        } else {
-            set_processor_type("metapc", SETPROC_LOADER);
-        }
-        pe_base = 0;
-        pe_sel_base = 0;
-        machine_type = mt;
-    };
-    void process(linput_t *li, std::basic_string<char> fname, int ord);
-    uint16_t machine_type;
+public:
+  explicit PeManager(uint16_t mt) {
+    inf_set_64bit();
+    set_imagebase(0x0);
+    if (mt == PECPU_ARM64) {
+      set_processor_type("arm", SETPROC_LOADER);
+    } else {
+      set_processor_type("metapc", SETPROC_LOADER);
+    }
+    pe_base = 0;
+    pe_sel_base = 0;
+    machine_type = mt;
+  }
+  void process(linput_t *li, std::basic_string<char> fname, int ord);
+  uint16_t machine_type;
 
-  private:
-    void to_base(linput_t *);
-    efiloader::PE *pe;
-    qvector<efiloader::PE *> pe_files;
-    ushort pe_sel_base;
-    ea_t pe_base;
-    // head processing
-    void pe_head_to_base(linput_t *li);
+private:
+  void to_base(linput_t *);
+  efiloader::PE *pe;
+  qvector<efiloader::PE *> pe_files;
+  ushort pe_sel_base;
+  ea_t pe_base;
+  // head processing
+  void pe_head_to_base(linput_t *li);
 };
 } // namespace efiloader
-
-#endif // EFILOADER_PE_MANAGER_H

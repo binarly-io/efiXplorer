@@ -1,6 +1,6 @@
 /*
  * efiXloader
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,29 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * utils.h
  */
 
-#ifndef EFILOADER_UTILS_H
-#define EFILOADER_UTILS_H
+#pragma once
 
-#include "ida_core.h"
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include "ida_core.h"
+
 namespace efiloader {
 
 class Utils {
-  public:
-    Utils() { ; };
-    void show_hex(void *buffer, size_t length, const char *prefix);
-    bool find_vol(bytevec_t &frm, std::string &sig, qoff64_t &vol_off);
-    qoff64_t find_vol_new(linput_t *li, char *sig);
-    qoff64_t find_vol_test(bytevec_t &data);
-    void skip(memory_deserializer_t *ser, size_t size, size_t count);
+public:
+  Utils() {}
+  void show_hex(void *buffer, size_t length, const char *prefix);
+  bool find_vol(bytevec_t &frm, std::string &sig, qoff64_t &vol_off);
+  qoff64_t find_vol_new(linput_t *li, char *sig);
+  qoff64_t find_vol_test(bytevec_t &data);
+  void skip(memory_deserializer_t *ser, size_t size, size_t count);
 };
 } // namespace efiloader
-
-#endif // EFILOADER_UTILS_H

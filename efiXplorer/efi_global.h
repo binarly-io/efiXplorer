@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * efiXplorer.h
- *
  */
 
 #pragma once
 
-#include "efiUtils.h"
+#include "efi_deps.h"
 
-#define COPYRIGHT "(c) 2020-2023, Binarly - https://github.com/binarly-io/efiXplorer"
+struct args_t {
+  module_type_t module_type;
+  int disable_ui;
+  int disable_vuln_hunt;
+};
+
+extern args_t g_args;
+extern efi_deps_t g_deps;

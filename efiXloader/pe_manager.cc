@@ -1,6 +1,6 @@
 /*
  * efiXloader
- * Copyright (C) 2020-2023 Binarly
+ * Copyright (C) 2020-2024 Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,19 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * pe_manager.cpp
  */
 
 #include "pe_manager.h"
 
-void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname, int ord) {
-    efiloader::PE pe(li, fname, &pe_base, &pe_sel_base, ord, machine_type);
-    if (pe.good() && pe.is_p32_plus()) {
-        msg("[efiXloader] PE detected\n");
-        pe.process();
-    } else if (pe.is_p32()) {
-        msg("[efiXloader] this loader is not ready for PE32\n");
-    } else {
-        warning("[efiXloader] not PE\n");
-    }
+void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname,
+                                   int ord) {
+  efiloader::PE pe(li, fname, &pe_base, &pe_sel_base, ord, machine_type);
+  if (pe.good() && pe.is_p32_plus()) {
+    msg("[efiXloader] PE detected\n");
+    pe.process();
+  } else if (pe.is_p32()) {
+    msg("[efiXloader] this loader is not ready for PE32\n");
+  } else {
+    warning("[efiXloader] not PE\n");
+  }
 }
