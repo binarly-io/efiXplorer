@@ -270,7 +270,9 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         if (images_guids[guid.c_str()]
                 .is_null()) { // check if GUID already exists
           get_unique_name(module_name);
-          images_guids[guid.c_str()] = module_name.c_str();
+          images_guids[guid.c_str()] = {
+              module_name.c_str(),
+              fileTypeToUString(model.subtype(index.parent())).toLocal8Bit()};
           file->qname.swap(module_name);
           file->write();
           files.push_back(file);
@@ -305,7 +307,9 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
       files.push_back(file);
       if (module_name.size()) {
         // save image to the images_guids
-        images_guids[module_name.c_str()] = module_name.c_str();
+        images_guids[module_name.c_str()] = {
+            module_name.c_str(),
+            fileTypeToUString(model.subtype(index.parent())).toLocal8Bit()};
       }
     }
     break;

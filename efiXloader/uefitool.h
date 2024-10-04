@@ -139,7 +139,6 @@ public:
   dump_jsons();  // dump JSON with DEPEX and GUIDs information for each image
   json all_deps; // DEPEX information for each image
   json images_guids; // matching the modules to the parent's GUIDs
-  json mod_types;    // EFI module name and its type
   TreeModel model;
   const char *buffer;
   uint32_t buffer_size;
