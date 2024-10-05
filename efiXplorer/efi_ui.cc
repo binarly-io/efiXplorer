@@ -316,7 +316,13 @@ void attach_action_protocols_deps() {
 // action handler for showing the sequence of modules execution
 struct modules_seq_handler_t : public action_handler_t {
   virtual int idaapi activate(action_activation_ctx_t *ctx) {
-    g_deps.build_modules_sequence();
+    try {
+      g_deps.build_modules_sequence();
+    } catch (std::exception &e) {
+      efi_utils::log("failed to build modules sequence: %s\n", e.what());
+      return -1;
+    }
+
     std::string s = g_deps.m_modules_sequence.dump(2);
     efi_utils::log("sequence of modules execution: %s\n", s.c_str());
 
