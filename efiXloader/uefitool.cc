@@ -64,8 +64,8 @@ void efiloader::Uefitool::get_image_guid(qstring &image_guid,
 }
 
 std::vector<std::string>
-efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index,
-                                           UString &parsed) {
+efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
+                                              UString &parsed) {
   // Adopted from FfsParser::parseDepexSectionBody
   std::vector<std::string> res;
 
@@ -180,7 +180,7 @@ efiloader::Uefitool::parseDepexSectionBody(const UModelIndex &index,
 }
 
 std::vector<std::string>
-efiloader::Uefitool::parseAprioriRawSection(const UModelIndex &index) {
+efiloader::Uefitool::parse_apriori_raw_section(const UModelIndex &index) {
   // Adopted from FfsParser::parseDepexSectionBody
   std::vector<std::string> res;
 
@@ -270,9 +270,8 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
         if (images_guids[guid.c_str()]
                 .is_null()) { // check if GUID already exists
           get_unique_name(module_name);
-          images_guids[guid.c_str()] = {
-              module_name.c_str(),
-              fileTypeToUString(model.subtype(index.parent())).toLocal8Bit()};
+          images_guids[guid.c_str()] = {{"name", module_name.c_str()},
+                                        {"kind", get_kind(index)}};
           file->qname.swap(module_name);
           file->write();
           files.push_back(file);
@@ -307,9 +306,8 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
       files.push_back(file);
       if (module_name.size()) {
         // save image to the images_guids
-        images_guids[module_name.c_str()] = {
-            module_name.c_str(),
-            fileTypeToUString(model.subtype(index.parent())).toLocal8Bit()};
+        images_guids[module_name.c_str()] = {{"name", module_name.c_str()},
+                                             {"kind", get_kind(index)}};
       }
     }
     break;
@@ -344,7 +342,7 @@ void efiloader::Uefitool::get_deps(UModelIndex index, std::string key) {
   qstring image_guid("");
 
   get_image_guid(image_guid, index);
-  deps = parseDepexSectionBody(index, parsed);
+  deps = parse_depex_section_body(index, parsed);
   if (deps.size()) {
     msg("[efiXloader] dependency section for image with GUID %s: %s\n",
         image_guid.c_str(), parsed.data);
@@ -356,7 +354,7 @@ void efiloader::Uefitool::get_apriori(UModelIndex index, std::string key) {
   if (all_deps.contains(key)) {
     return;
   }
-  std::vector<std::string> deps = parseAprioriRawSection(index);
+  auto deps = parse_apriori_raw_section(index);
   if (deps.empty()) {
     return;
   }
@@ -364,14 +362,15 @@ void efiloader::Uefitool::get_apriori(UModelIndex index, std::string key) {
 }
 
 void efiloader::Uefitool::dump_jsons() {
-  // Dump deps
+  // dump JSON with DEPEX and GUIDs information for each image
+
   std::filesystem::path out;
   out /= get_path(PATH_TYPE_IDB);
   out.replace_extension(".deps.json");
   std::ofstream out_deps(out);
-  out_deps << std::setw(4) << all_deps << std::endl;
-  // Dump images
+  out_deps << std::setw(2) << all_deps << std::endl;
+
   out.replace_extension("").replace_extension(".images.json");
   std::ofstream out_guids(out);
-  out_guids << std::setw(4) << images_guids << std::endl;
+  out_guids << std::setw(2) << images_guids << std::endl;
 }
