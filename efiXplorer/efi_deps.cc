@@ -244,7 +244,7 @@ json efi_deps_t::get_module_info(std::string module) {
         // can not get name for module
         continue;
       }
-      std::string dmodule_name = m_modules_guids[dmodule_guid];
+      std::string dmodule_name = m_modules_guids[dmodule_guid]["name"];
       if (dmodule_name == module) {
         deps_protocols = element.value();
         found = true;
@@ -268,7 +268,7 @@ string_set_t efi_deps_t::get_apriori_modules() {
   for (auto file : files) {
     auto modules = m_uefitool_deps[file];
     for (auto &mguid : modules) {
-      std::string module = m_modules_guids[mguid];
+      std::string module = m_modules_guids[mguid]["name"];
       apriori_modules.insert(module);
       efi_utils::log("module from %s: %s\n", file.c_str(), module.c_str());
     }

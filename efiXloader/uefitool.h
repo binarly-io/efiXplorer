@@ -130,15 +130,17 @@ public:
   }
   void get_unique_name(qstring &image_name);
   void get_image_guid(qstring &image_guid, UModelIndex index);
-  std::vector<std::string> parseDepexSectionBody(const UModelIndex &index,
-                                                 UString &parsed);
-  std::vector<std::string> parseAprioriRawSection(const UModelIndex &index);
+  std::vector<std::string> parse_depex_section_body(const UModelIndex &index,
+                                                    UString &parsed);
+  std::vector<std::string> parse_apriori_raw_section(const UModelIndex &index);
   void get_deps(UModelIndex index, std::string key);
   void get_apriori(UModelIndex index, std::string key);
-  void
-  dump_jsons();  // dump JSON with DEPEX and GUIDs information for each image
-  json all_deps; // DEPEX information for each image
-  json images_guids; // matching the modules to the parent's GUIDs
+  void dump_jsons();
+
+  // DEPEX information for each image
+  json all_deps;
+
+  json images_guids;
   TreeModel model;
   const char *buffer;
   uint32_t buffer_size;
@@ -149,5 +151,10 @@ public:
   void set_machine_type(UByteArray pe_body);
   uint16_t machine_type = 0xffff;
   bool machine_type_detected = false;
+
+private:
+  std::string get_kind(const UModelIndex &index) {
+    return fileTypeToUString(model.subtype(index.parent())).toLocal8Bit();
+  }
 };
 } // namespace efiloader
