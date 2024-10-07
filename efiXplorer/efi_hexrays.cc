@@ -89,7 +89,7 @@ xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, lvar_t &ll,
 }
 
 // utility function to set a Hex-Rays variable name
-bool efi_hexrays::set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr) {
+bool efi_hexrays::set_lvar_name(qstring name, lvar_t &lvar, ea_t func_addr) {
   lvar_saved_info_t lsi;
   lvar_uservec_t lvuv;
 

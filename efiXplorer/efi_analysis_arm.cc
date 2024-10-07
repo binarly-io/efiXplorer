@@ -61,8 +61,9 @@ void efi_analysis::efi_analyser_arm_t::initial_analysis() {
     efi_hexrays::track_entry_params(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
+
   if (m_ftype == ffs_file_type_t::pei) {
-    // efi_utils::set_entry_arg_to_pei_svc();
+    efi_utils::set_entry_arg_to_pei_svc();
   }
 }
 

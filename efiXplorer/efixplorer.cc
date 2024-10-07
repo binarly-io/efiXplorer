@@ -98,14 +98,14 @@ bool idaapi run(size_t arg) {
     warning("%s: input file is UEFI firmware, analysis can be time consuming\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
-      efi_utils::log("[%s] analyse ARM64 modules\n");
+      efi_utils::log("analyse ARM64 modules\n");
       efi_analysis::efi_analyse_main_aarch64();
     } else {
-      efi_utils::log("[%s] analyse AMD64 modules\n", g_plugin_name);
+      efi_utils::log("analyse AMD64 modules\n");
       efi_analysis::efi_analyse_main_x86_64();
     }
   } else if (arch == arch_file_type_t::aarch64) {
-    efi_utils::log("[%s] input file is ARM 64-bit module\n");
+    efi_utils::log("input file is ARM 64-bit module\n");
     efi_analysis::efi_analyse_main_aarch64();
   }
 

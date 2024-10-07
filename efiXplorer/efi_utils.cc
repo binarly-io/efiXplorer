@@ -299,6 +299,7 @@ ea_list_t efi_utils::get_xrefs_to_array(ea_t addr) {
 //--------------------------------------------------------------------------
 // wrapper for op_stroff function
 bool efi_utils::op_stroff(ea_t addr, std::string type) {
+#if IDA_SDK_VERSION >= 840
   tinfo_t tinfo;
   if (!tinfo.get_named_type(get_idati(), type.c_str())) {
     return false;
@@ -310,6 +311,9 @@ bool efi_utils::op_stroff(ea_t addr, std::string type) {
   if (tid == BADADDR) {
     return false;
   }
+#else
+  tid_t tid = get_struc_id(type.c_str());
+#endif
 
   insn_t insn;
   decode_insn(&insn, addr);
