@@ -35,7 +35,7 @@ bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
                                                 tinfo_t tif, std::string name);
 bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                           std::string name);
-bool set_lvar_name(qstring name, lvar_t lvar, ea_t func_addr);
+bool set_lvar_name(qstring name, lvar_t &lvar, ea_t func_addr);
 bool track_entry_params(func_t *f, uint8_t depth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
 json detect_vars(func_t *f);
@@ -777,18 +777,17 @@ public:
       return 0;
     }
 
-    if (e->y->op != cot_cast && e->y->op != cot_var) {
-      return 0;
-    }
-
     // extract variable type
     tinfo_t var_type;
     tinfo_t var_type_no_ptr;
-    if (e->y->op == cot_var) {
+    if (e->y->op == cot_memptr && e->y->x->op == cot_var) {
       var_type = e->y->type;
-    }
-    if (e->y->op == cot_cast) {
+    } else if (e->y->op == cot_var) {
+      var_type = e->y->type;
+    } else if (e->y->op == cot_cast) {
       var_type = e->y->x->type;
+    } else {
+      return 0;
     }
 
     if (var_type.is_ptr()) {
@@ -840,19 +839,10 @@ public:
     }
 
     if (local_var) {
-      var_ref_t var_ref;
-      if (e->y->op == cot_var) {
-        var_ref = e->y->v;
-      }
-      if (e->y->op == cot_cast) {
-        var_ref = e->y->x->v;
-      }
-
-      lvar_t &dest_var = var_ref.mba->vars[var_ref.idx];
-
       // set the Hex-Rays variable type
       auto name = efi_utils::type_to_name(type_name.c_str());
-      set_hexrays_var_info(m_func_ea, dest_var, var_type, name);
+      efi_utils::log("found %s at 0x%" PRIx64 " (function: 0x%" PRIx64 ")\n",
+                     name.c_str(), u64_addr(e->ea), u64_addr(m_func_ea));
     }
 
     return 0;
