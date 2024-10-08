@@ -224,6 +224,9 @@ json get_service(ea_t addr, uint8_t table_id) {
         }
         return s;
       }
+      if (is_basic_block_end(insn, false)) {
+        break;
+      }
     }
   }
 
