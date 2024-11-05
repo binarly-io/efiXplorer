@@ -118,7 +118,8 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
   msg("[efiXloader] machine type: %04x\n", uefiParser.machine_type);
   efiloader::PeManager peManager(uefiParser.machine_type);
 
-  add_til("uefi.til", ADDTIL_DEFAULT);
+  // add_til("uefi.til", ADDTIL_DEFAULT);
+  // we currently only handle 64-bit binaries with the EFI loader
   add_til("uefi64.til", ADDTIL_DEFAULT);
 
   msg("processing UEFI binaries:\n");

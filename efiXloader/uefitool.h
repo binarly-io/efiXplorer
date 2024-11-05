@@ -67,7 +67,7 @@ class File {
 public:
   File() {}
   void set_data(char *data_in, uint32_t size_in) {
-    qname.qclear();
+    module_name.qclear();
     bytes.resize(size_in);
     memcpy(&bytes[0], data_in, size_in);
   }
@@ -79,8 +79,9 @@ public:
 #else
     mkdir(images_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
-    if (!qname.empty()) {
-      qstring image_path = images_path + qstring("/") + qstring(qname.c_str());
+    if (!module_name.empty()) {
+      qstring image_path =
+          images_path + qstring("/") + qstring(module_name.c_str());
       std::ofstream file;
       file.open(image_path.c_str(), std::ios::out | std::ios::binary);
       file.write(ubytes.constData(), ubytes.size());
@@ -89,6 +90,10 @@ public:
     }
   }
   void print();
+  bool is_ok() {
+    return !module_name.empty() && !module_guid.empty() && !module_kind.empty();
+  }
+
   UByteArray ubytes;
   UByteArray uname;
   bytevec_t bytes;
@@ -96,8 +101,10 @@ public:
   uint32_t size = 0;
   std::string name_utf8;
   std::string name_utf16;
-  qstring qname;
   qstring dump_name;
+  qstring module_guid;
+  qstring module_kind;
+  qstring module_name;
   bool is_pe = false;
   bool is_te = false;
   bool has_ui = false;
@@ -120,7 +127,7 @@ public:
   bool messages_occurs() { return !messages.empty(); }
   void dump();
   void dump(const UModelIndex &index);
-  void dump(const UModelIndex &index, uint8_t el_type, File *pe_file);
+  void dump(const UModelIndex &index, int i, File *pe_file);
   void handle_raw_section(const UModelIndex &index);
   bool is_pe_index(const UModelIndex &index) {
     return model.rowCount(index) == 4;
@@ -136,24 +143,23 @@ public:
   void get_deps(UModelIndex index, std::string key);
   void get_apriori(UModelIndex index, std::string key);
   void dump_jsons();
+  void set_machine_type(UByteArray pe_body);
 
-  // DEPEX information for each image
   json all_deps;
+  json all_modules;
+  std::vector<efiloader::File *> files;
+  std::set<qstring> unique_names;
 
-  json images_guids;
   TreeModel model;
   const char *buffer;
   uint32_t buffer_size;
   std::vector<std::pair<UString, UModelIndex>> messages;
-  std::set<qstring> unique_names;
-  std::vector<efiloader::File *> files;
   USTATUS err;
-  void set_machine_type(UByteArray pe_body);
   uint16_t machine_type = 0xffff;
-  bool machine_type_detected = false;
+  bool machine_type_initialised = false;
 
 private:
-  std::string get_kind(const UModelIndex &index) {
+  qstring get_kind(const UModelIndex &index) {
     return fileTypeToUString(model.subtype(index.parent())).toLocal8Bit();
   }
 };

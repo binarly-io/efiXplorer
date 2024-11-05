@@ -87,7 +87,7 @@ protected:
   void build_list(bool ok, std::vector<efiloader::File *> files) {
     size_t n = 0;
     for (auto file : files) {
-      drivers_names.push_back(qstring(file->qname));
+      drivers_names.push_back(qstring(file->module_name));
       n++;
     }
     ok = true;
