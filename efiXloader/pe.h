@@ -41,7 +41,6 @@ public:
   PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base,
      ushort *sel_base, int ord, uint16_t mt) {
     _image_name = fname.substr(fname.find_last_of("/\\") + 1);
-    msg("[efiXloader] image name is %s\n", _image_name.c_str());
     pe_base = base;
     pe_sel_base = sel_base;
     li = i_li;

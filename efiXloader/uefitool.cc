@@ -19,17 +19,9 @@
 
 #include "uefitool.h"
 
-void efiloader::File::print() {
-  msg("[UEFITOOL PARSER] file ( %s )  \n", module_name.c_str());
-  for (int i = 0; i < 0x10; i++) {
-    msg("%02X ", ubytes[i]);
-  }
-  msg("\n");
-}
-
 void efiloader::Uefitool::show_messages() {
   for (size_t i = 0; i < messages.size(); i++) {
-    msg("[UEFITOOL PARSER] %s\n", messages[i].first.toLocal8Bit());
+    msg("[uefitool] %s\n", messages[i].first.toLocal8Bit());
   }
 }
 

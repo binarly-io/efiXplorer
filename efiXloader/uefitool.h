@@ -89,7 +89,6 @@ public:
       dump_name.swap(image_path);
     }
   }
-  void print();
   bool is_ok() {
     return !module_name.empty() && !module_guid.empty() && !module_kind.empty();
   }
