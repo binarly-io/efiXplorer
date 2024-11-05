@@ -26,8 +26,8 @@ void efiloader::PeManager::process(linput_t *li, std::basic_string<char> fname,
     msg("[efiXloader] PE detected\n");
     pe.process();
   } else if (pe.is_p32()) {
-    msg("[efiXloader] this loader is not ready for PE32\n");
+    msg("[efiXloader] 32-bit modules will not be loaded\n");
   } else {
-    warning("[efiXloader] not PE\n");
+    msg("[efiXloader] modules in the TE format will not be loaded\n");
   }
 }
