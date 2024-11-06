@@ -19,22 +19,14 @@
 
 #include "uefitool.h"
 
-void efiloader::File::print() {
-  msg("[UEFITOOL PARSER] file ( %s )  \n", qname.c_str());
-  for (int i = 0; i < 0x10; i++) {
-    msg("%02X ", ubytes[i]);
-  }
-  msg("\n");
-}
-
 void efiloader::Uefitool::show_messages() {
   for (size_t i = 0; i < messages.size(); i++) {
-    msg("[UEFITOOL PARSER] %s\n", messages[i].first.toLocal8Bit());
+    msg("[uefitool] %s\n", messages[i].first.toLocal8Bit());
   }
 }
 
 void efiloader::Uefitool::get_unique_name(qstring &name) {
-  // If the given name is already in use, create a new one
+  // if the given name is already in use, create a new one
   qstring new_name = name;
   std::string suf;
   int index = 0;
@@ -50,8 +42,16 @@ void efiloader::Uefitool::get_image_guid(qstring &image_guid,
   UString guid;
   UModelIndex guid_index;
   switch (model.subtype(model.parent(index))) {
-  case EFI_SECTION_COMPRESSION:
   case EFI_SECTION_GUID_DEFINED:
+    if (model.type(model.parent(index)) == Types::File) {
+      guid_index = model.parent(index);
+    } else {
+      guid_index = model.parent(model.parent(index));
+    }
+    if (model.subtype(guid_index) == EFI_SECTION_COMPRESSION)
+      guid_index = model.parent(guid_index);
+    break;
+  case EFI_SECTION_COMPRESSION:
     guid_index = model.parent(model.parent(index));
     break;
   default:
@@ -74,7 +74,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
 
   UByteArray body = model.body(index);
 
-  // Check data to be present
+  // check data to be present
   if (body.size() < 2) { // 2 is a minimal sane value, i.e TRUE + END
     return res;
   }
@@ -82,7 +82,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
   const EFI_GUID *guid;
   const UINT8 *current = (const UINT8 *)body.constData();
 
-  // Special cases of first opcode
+  // special cases of first opcode
   switch (*current) {
   case EFI_DEP_BEFORE:
     if (body.size() != 2 * EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
@@ -115,7 +115,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
     break;
   }
 
-  // Parse the rest of depex
+  // parse the rest of depex
   while (current - (const UINT8 *)body.constData() < body.size()) {
     switch (*current) {
     case EFI_DEP_BEFORE: {
@@ -128,7 +128,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
       return res;
     }
     case EFI_DEP_PUSH:
-      // Check that the rest of depex has correct size
+      // check that the rest of depex has correct size
       if ((UINT32)body.size() -
               (UINT32)(current - (const UINT8 *)body.constData()) <=
           EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
@@ -137,7 +137,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
       }
       guid = (const EFI_GUID *)(current + EFI_DEP_OPCODE_SIZE);
       parsed += UString("\nPUSH ") + guidToUString(readUnaligned(guid));
-      // Add protocol GUID to result vector
+      // add protocol GUID to result vector
       res.push_back(
           reinterpret_cast<char *>(guidToUString(readUnaligned(guid)).data));
       current += EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID);
@@ -165,7 +165,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
     case EFI_DEP_END:
       parsed += UString("\nEND");
       current += EFI_DEP_OPCODE_SIZE;
-      // Check that END is the last opcode
+      // check that END is the last opcode
       if (current - (const UINT8 *)body.constData() < body.size()) {
         parsed.clear();
       }
@@ -181,7 +181,7 @@ efiloader::Uefitool::parse_depex_section_body(const UModelIndex &index,
 
 std::vector<std::string>
 efiloader::Uefitool::parse_apriori_raw_section(const UModelIndex &index) {
-  // Adopted from FfsParser::parseDepexSectionBody
+  // adopted from FfsParser::parseDepexSectionBody
   std::vector<std::string> res;
 
   if (!index.isValid())
@@ -189,7 +189,7 @@ efiloader::Uefitool::parse_apriori_raw_section(const UModelIndex &index) {
 
   UByteArray body = model.body(index);
 
-  // Sanity check
+  // sanity check
   if (body.size() % sizeof(EFI_GUID)) {
     return res;
   }
@@ -217,7 +217,7 @@ void efiloader::Uefitool::set_machine_type(UByteArray pe_body) {
   }
   if (*(uint32_t *)(data + _pe_header_off) == 0x4550) {
     machine_type = *(uint16_t *)(data + _pe_header_off + 4);
-    machine_type_detected = true;
+    machine_type_initialised = true;
   }
 }
 
@@ -238,10 +238,15 @@ void efiloader::Uefitool::handle_raw_section(const UModelIndex &index) {
   }
 }
 
-void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
+inline void get_module_name(qstring &module_name, efiloader::File *file) {
+  utf16_utf8(&module_name,
+             reinterpret_cast<const wchar16_t *>(file->uname.data()));
+}
+
+void efiloader::Uefitool::dump(const UModelIndex &index, int i,
                                efiloader::File *file) {
-  qstring module_name("");
-  qstring guid("");
+  qstring name;
+  qstring guid;
 
   switch (model.subtype(index)) {
   case EFI_SECTION_RAW:
@@ -250,34 +255,19 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
   case EFI_SECTION_TE:
     file->is_te = true;
     file->ubytes = model.body(index);
+    file->module_kind = get_kind(index);
     break;
   case EFI_SECTION_PE32:
     file->is_pe = true;
     file->ubytes = model.body(index);
-    if (!machine_type_detected) {
+    file->module_kind = get_kind(index);
+    if (!machine_type_initialised) {
       set_machine_type(model.body(index));
     }
     break;
   case EFI_SECTION_USER_INTERFACE:
     file->has_ui = true;
-    if (file->is_pe || file->is_te) {
-      file->uname = model.body(index);
-      utf16_utf8(&module_name,
-                 reinterpret_cast<const wchar16_t *>(file->uname.data()));
-      if (module_name.size()) {
-        // save image to the images_guids
-        get_image_guid(guid, index);
-        if (images_guids[guid.c_str()]
-                .is_null()) { // check if GUID already exists
-          get_unique_name(module_name);
-          images_guids[guid.c_str()] = {{"name", module_name.c_str()},
-                                        {"kind", get_kind(index)}};
-          file->qname.swap(module_name);
-          file->write();
-          files.push_back(file);
-        }
-      }
-    }
+    file->uname = model.body(index);
     break;
   case EFI_SECTION_COMPRESSION:
   case EFI_SECTION_GUID_DEFINED:
@@ -285,7 +275,6 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
       dump(index.child(i, 0), i, file);
     }
     break;
-  // Get DEPEX information
   case EFI_SECTION_DXE_DEPEX:
     get_deps(index, "EFI_SECTION_DXE_DEPEX");
     break;
@@ -298,34 +287,42 @@ void efiloader::Uefitool::dump(const UModelIndex &index, uint8_t el_type,
   case EFI_SECTION_VERSION:
     break;
   default:
-    // if there is no UI section, then the image name is GUID
-    if ((file->is_pe || file->is_te) && !file->has_ui) {
-      get_image_guid(module_name, index);
-      file->qname.swap(module_name);
-      file->write();
-      files.push_back(file);
-      if (module_name.size()) {
-        // save image to the images_guids
-        images_guids[module_name.c_str()] = {{"name", module_name.c_str()},
-                                             {"kind", get_kind(index)}};
-      }
-    }
     break;
   }
 
-  return dump(index);
+  // update file
+  if (file->is_pe || file->is_te) {
+    get_image_guid(guid, index);
+    if (file->has_ui) {
+      // get module name from UI section
+      get_module_name(name, file);
+    } else {
+      // use module GUID as module name
+      name = guid;
+    }
+    file->module_name.swap(name);
+    file->module_guid.swap(guid);
+  }
+
+  dump(index);
 }
 
 void efiloader::Uefitool::dump(const UModelIndex &index) {
   USTATUS err;
-  msg("[UEFITOOL PARSER] file (%s, %s)\n",
-      itemTypeToUString(model.type(index)).data,
-      itemSubtypeToUString(model.type(index), model.subtype(index)).data);
-  msg("[UEFITOOL PARSER] number of items: %#x\n", model.rowCount(index));
+
   if (is_file_index(index)) {
     efiloader::File *file = new File;
     for (int i = 0; i < model.rowCount(index); i++) {
       dump(index.child(i, 0), i, file);
+    }
+
+    // append file
+    if (file->is_ok()) {
+      all_modules[file->module_guid.c_str()] = {
+          {"name", file->module_name.c_str()},
+          {"kind", file->module_kind.c_str()}};
+      file->write();
+      files.push_back(file);
     }
   } else {
     for (int i = 0; i < model.rowCount(index); i++) {
@@ -363,7 +360,6 @@ void efiloader::Uefitool::get_apriori(UModelIndex index, std::string key) {
 
 void efiloader::Uefitool::dump_jsons() {
   // dump JSON with DEPEX and GUIDs information for each image
-
   std::filesystem::path out;
   out /= get_path(PATH_TYPE_IDB);
   out.replace_extension(".deps.json");
@@ -372,5 +368,5 @@ void efiloader::Uefitool::dump_jsons() {
 
   out.replace_extension("").replace_extension(".images.json");
   std::ofstream out_guids(out);
-  out_guids << std::setw(2) << images_guids << std::endl;
+  out_guids << std::setw(2) << all_modules << std::endl;
 }

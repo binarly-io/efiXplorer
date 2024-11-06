@@ -115,13 +115,13 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
   }
   uefiParser.dump();
   uefiParser.dump_jsons();
-  msg("[efiXloader] machine type: %04x\n", uefiParser.machine_type);
   efiloader::PeManager peManager(uefiParser.machine_type);
 
-  add_til("uefi.til", ADDTIL_DEFAULT);
+  // add_til("uefi.til", ADDTIL_DEFAULT);
+  // we currently only handle 64-bit binaries with the EFI loader
   add_til("uefi64.til", ADDTIL_DEFAULT);
 
-  msg("processing UEFI binaries:\n");
+  msg("[efiXloader] processing UEFI binaries:\n");
   if (uefiParser.files.size()) {
     for (int i = 0; i < uefiParser.files.size(); i++) {
       if (uefiParser.files[i]->is_te) {
@@ -129,18 +129,19 @@ void idaapi load_file(linput_t *li, ushort neflag, const char *fileformatname) {
       }
       auto inf = open_linput(uefiParser.files[i]->dump_name.c_str(), false);
       if (!inf) {
-        msg("Unable to open file %s\n", uefiParser.files[i]->dump_name.c_str());
+        msg("[efiXloader] unable to open file %s\n",
+            uefiParser.files[i]->dump_name.c_str());
         continue;
       }
       peManager.process(inf, uefiParser.files[i]->dump_name.c_str(), i);
     }
   } else {
-    msg("[efiXloader] Can not parse input firmware\n");
+    msg("[efiXloader] can not parse input firmware\n");
   }
 
   plugin_t *findpat = find_plugin("patfind", true);
   if (findpat) {
-    msg("Running the Find functions plugin\n");
+    msg("[efiXloader] running the patfind plugin\n");
     run_plugin(findpat, 0);
   }
 }
@@ -166,8 +167,8 @@ loader_t LDSC = {
     load_file,
     // create output file from the database.
     // this function may be absent.
-    NULL,
+    nullptr,
     // take care of a moved segment (fix up relocations, for example)
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
 };

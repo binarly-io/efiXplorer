@@ -394,7 +394,7 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
   ea_t seg_ea = image_base + segm_entries[0];
   ea_t seg_ea_end = seg_ea + segm_raw_sizes[0];
-  msg("[efiXloader]\tprocessing: %s\n", segm_names[0].c_str());
+  msg("[efiXloader] processing: %s\n", segm_names[0].c_str());
 
   segments.push_back(make_generic_segment(
       seg_ea, seg_ea_end, section_name.c_str(), section_characteristics));
@@ -407,9 +407,6 @@ ea_t efiloader::PE::process_section_entry(ea_t next_ea) {
 
 void efiloader::PE::setup_ds_selector() {
   for (; !secs_names.empty(); secs_names.pop_back()) {
-    msg("[efiXloader]\tsetting DS ( 0x%016llX ) for %s segment\n",
-        static_cast<uint64_t>(data_segment_sel),
-        secs_names[secs_names.size() - 1].c_str());
     segment_t *seg =
         get_segm_by_name(secs_names[secs_names.size() - 1].c_str());
     set_default_sreg_value(seg, str2reg("DS"), data_segment_sel);
