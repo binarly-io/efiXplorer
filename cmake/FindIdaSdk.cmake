@@ -84,12 +84,7 @@ find_package_handle_standard_args(
 # Define some platform specific variables for later use.
 set(_so ${CMAKE_SHARED_LIBRARY_SUFFIX})
 set(_so64 64${CMAKE_SHARED_LIBRARY_SUFFIX}) # An additional "64"
-# _plx, _plx64, _llx, _llx64 are kept to stay compatible with older
-# CMakeLists.txt files.
-set(_plx ${CMAKE_SHARED_LIBRARY_SUFFIX})
-set(_plx64 64${CMAKE_SHARED_LIBRARY_SUFFIX}) # An additional "64"
-set(_llx ${CMAKE_SHARED_LIBRARY_SUFFIX})
-set(_llx64 64${CMAKE_SHARED_LIBRARY_SUFFIX}) # An additional "64"
+
 if(APPLE)
   set(IdaSdk_PLATFORM __MAC__)
 elseif(UNIX)
@@ -110,6 +105,21 @@ function(_ida_common_target_settings t ea64)
     ${t} PUBLIC ${IdaSdk_PLATFORM} __X64__ __IDP__ USE_DANGEROUS_FUNCTIONS
                 USE_STANDARD_FILE_FUNCTIONS)
   target_include_directories(${t} PUBLIC ${IdaSdk_INCLUDE_DIRS})
+endfunction()
+
+function(_target_link_libraries_win_ea64 t)
+  if(EXISTS ${IdaSdk_DIR}/lib/x64_win_vc_64_pro/ida.lib) # for idasdk84
+    target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_64_pro/ida.lib)
+  elseif(EXISTS ${IdaSdk_DIR}/lib/x64_win_vc_64/ida.lib) # for idasdk90
+    target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_64/ida.lib)
+  else()
+    message(FATAL_ERROR "ida.lib could not be found")
+  endif()
+endfunction()
+
+function(_target_link_libraries_win_ea32 t)
+  # Should not be used on idasdk90 and later
+  target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_32_pro/ida.lib)
 endfunction()
 
 function(_ida_plugin name ea64 link_script) # ARGN contains sources
@@ -147,9 +157,10 @@ function(_ida_plugin name ea64 link_script) # ARGN contains sources
     target_compile_options(${t} PUBLIC -Wno-non-virtual-dtor -Wno-varargs)
   elseif(WIN32)
     if(ea64)
-      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_64_pro/ida.lib)
+      _target_link_libraries_win_ea64(${t})
     else()
-      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_32_pro/ida.lib)
+      # Not reachable when using idasdk90 and later
+      _target_link_libraries_win_ea32(${t})
     endif()
   endif()
 endfunction()
@@ -188,9 +199,10 @@ function(_ida_loader name ea64 link_script)
     target_compile_options(${t} PUBLIC -Wno-non-virtual-dtor -Wno-varargs)
   elseif(WIN32)
     if(ea64)
-      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_64_pro/ida.lib)
+      _target_link_libraries_win_ea64(${t})
     else()
-      target_link_libraries(${t} ${IdaSdk_DIR}/lib/x64_win_vc_32_pro/ida.lib)
+      # Not reachable when using idasdk90 and later
+      _target_link_libraries_win_ea32(${t})
     endif()
     target_link_options(${t} PUBLIC "/EXPORT:LDSC")
   endif()

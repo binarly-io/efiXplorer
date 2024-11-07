@@ -51,10 +51,12 @@ if(HexRaysSdk_ROOT_DIR)
   list(APPEND efiXplorer_src "efi_hexrays.cc" "efi_hexrays.h")
 endif()
 
-add_ida_plugin(efiXplorer ${PROJECT_SOURCE_DIR}/efixplorer.cc)
+# remove NOEA32 to compile with SDK versions prior to idasdk90 as from IDA 90
+# the EA32 is no longer required
+add_ida_plugin(efiXplorer NOEA32 ${PROJECT_SOURCE_DIR}/efixplorer.cc)
 
 set_ida_target_properties(efiXplorer PROPERTIES CXX_STANDARD 20)
 ida_target_include_directories(efiXplorer PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-add_ida_library(efiXplorer_lib ${efiXplorer_src})
+add_ida_library(efiXplorer_lib NOEA32 ${efiXplorer_src})
 ida_target_link_libraries(efiXplorer efiXplorer_lib)
