@@ -3,7 +3,7 @@ on:
   push:
 jobs:
   build_windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
@@ -15,18 +15,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "%IDA_SDK%" -o idasdk84.zip
-          unzip -P "%PASSWORD%" idasdk84.zip
+          curl -J -L "%IDA_SDK%" -o idasdk90.zip
+          unzip -P "%PASSWORD%" idasdk90.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk84" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
-          cmake --build . --config Release
-      - uses: actions/upload-artifact@master
-        with:
-          name: efiXplorer.dll
-          path: build/efiXplorer/Release/efiXplorer.dll
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk90" -DHexRaysSdk_ROOT_DIR="../../idasdk90"
+          cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dll
@@ -36,7 +32,7 @@ jobs:
           name: efiXloader64.dll
           path: build/efiXloader/Release/efiXloader64.dll
   build_linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,18 +44,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk84.zip
-          unzip -P $PASSWORD idasdk84.zip
+          curl -J -L "$IDA_SDK" -o idasdk90.zip
+          unzip -P $PASSWORD idasdk90.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk84" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
-          cmake --build . --config Release
-      - uses: actions/upload-artifact@master
-        with:
-          name: efiXplorer.so
-          path: build/efiXplorer/efiXplorer.so
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk90" -DHexRaysSdk_ROOT_DIR="../../idasdk90"
+          cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.so
@@ -81,18 +73,14 @@ jobs:
           PASSWORD: ${{ secrets.ZIP_PASSWORD }}
         run: |
           cd ..
-          curl -J -L "$IDA_SDK" -o idasdk84.zip
-          unzip -P $PASSWORD idasdk84.zip
+          curl -J -L "$IDA_SDK" -o idasdk90.zip
+          unzip -P $PASSWORD idasdk90.zip
       - name: Build efiXplorer
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk84" -DHexRaysSdk_ROOT_DIR="../../hexrays_sdk"
-          cmake --build . --config Release
-      - uses: actions/upload-artifact@master
-        with:
-          name: efiXplorer.dylib
-          path: build/efiXplorer/efiXplorer.dylib
+          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk90" -DHexRaysSdk_ROOT_DIR="../../idasdk90"
+          cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dylib
