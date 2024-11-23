@@ -79,6 +79,18 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
   for (auto g = m_guiddb.begin(); g != m_guiddb.end(); ++g) {
     m_guiddb_map[g.value()] = g.key();
   }
+
+  // set mask and masked value for MACRO_EFI enum value detection
+  if (m_arch == arch_file_type_t::x86_32) {
+    m_mask = 0xffffff00;
+    m_masked_value = 0x80000000;
+  } else {
+    // arch_file_type_t::x86_64
+    // arch_file_type_t::aarch64,
+    // rch_file_type_t::uefi -- as only 64-bit binaries are loaded
+    m_mask = 0xffffffffffffff00;
+    m_masked_value = 0x8000000000000000;
+  }
 }
 
 efi_analysis::efi_analyser_t::~efi_analyser_t() {

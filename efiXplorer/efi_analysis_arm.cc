@@ -22,12 +22,45 @@
 #include "efi_ui.h"
 #include "efi_utils.h"
 
-ea_list_t image_handle_list_arm;
-ea_list_t st_list_arm;
-ea_list_t bs_list_arm;
-ea_list_t rt_list_arm;
+bool efi_analysis::efi_analyser_arm_t::set_enums_repr(ea_t ea, insn_t insn) {
+  // apply enum values from MACRO_EFI
 
-void efi_analysis::efi_analyser_arm_t::fix_offsets() {
+  if (m_macro_efi_tid == BADADDR) {
+    return false;
+  }
+
+  if (insn.itype != ARM_mov && insn.itype != ARM_movl) {
+    return false;
+  }
+
+  if (insn.ops[0].type != o_reg) {
+    return false;
+  }
+
+  int index = 1;
+  if ((insn.ops[index].value & m_mask) == m_masked_value) {
+    op_enum(ea, index, m_macro_efi_tid, 0);
+    return true;
+  }
+
+  return false;
+}
+
+bool efi_analysis::efi_analyser_arm_t::set_offsets_repr(ea_t ea, insn_t insn) {
+  if (insn.itype == ARM_str) {
+    return false;
+  }
+
+  for (int i = 0; i < 2; i++) {
+    if (insn.ops[i].type == o_displ) {
+      op_num(ea, i);
+    }
+  }
+
+  return true;
+}
+
+void efi_analysis::efi_analyser_arm_t::set_operands_repr() {
   insn_t insn;
   for (auto faddr : m_funcs) {
     func_t *f = get_func(faddr);
@@ -38,21 +71,18 @@ void efi_analysis::efi_analyser_arm_t::fix_offsets() {
     while (ea < f->end_ea) {
       ea = next_head(ea, BADADDR);
       decode_insn(&insn, ea);
-      if (insn.itype == ARM_str) {
-        continue;
-      }
-      if (insn.ops[0].type == o_displ) {
-        op_num(ea, 0);
-      }
-      if (insn.ops[1].type == o_displ) {
-        op_num(ea, 1);
-      }
+
+      // set offsets representation
+      set_offsets_repr(ea, insn);
+
+      // set enums representation
+      set_enums_repr(ea, insn);
     }
   }
 }
 
 void efi_analysis::efi_analyser_arm_t::initial_analysis() {
-  fix_offsets();
+  set_operands_repr();
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
     ea_t ep = get_entry(ord);
@@ -240,29 +270,29 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
     json res = efi_hexrays::detect_vars(get_func(func_addr));
     if (res.contains("image_handle_list")) {
       for (auto addr : res["image_handle_list"]) {
-        if (!efi_utils::addr_in_vec(image_handle_list_arm, addr)) {
-          image_handle_list_arm.push_back(addr);
+        if (!efi_utils::addr_in_vec(m_image_handle_list_arm, addr)) {
+          m_image_handle_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("st_list")) {
       for (auto addr : res["st_list"]) {
-        if (!efi_utils::addr_in_vec(st_list_arm, addr)) {
-          st_list_arm.push_back(addr);
+        if (!efi_utils::addr_in_vec(m_st_list_arm, addr)) {
+          m_st_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("bs_list")) {
       for (auto addr : res["bs_list"]) {
-        if (!efi_utils::addr_in_vec(bs_list_arm, addr)) {
-          bs_list_arm.push_back(addr);
+        if (!efi_utils::addr_in_vec(m_bs_list_arm, addr)) {
+          m_bs_list_arm.push_back(addr);
         }
       }
     }
     if (res.contains("rt_list")) {
       for (auto addr : res["rt_list"]) {
-        if (!efi_utils::addr_in_vec(rt_list_arm, addr)) {
-          rt_list_arm.push_back(addr);
+        if (!efi_utils::addr_in_vec(m_rt_list_arm, addr)) {
+          m_rt_list_arm.push_back(addr);
         }
       }
     }
@@ -282,8 +312,8 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       if (bs != BADADDR) {
         efi_utils::log("gBS: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
-        if (!efi_utils::addr_in_vec(bs_list_arm, bs)) {
-          bs_list_arm.push_back(bs);
+        if (!efi_utils::addr_in_vec(m_bs_list_arm, bs)) {
+          m_bs_list_arm.push_back(bs);
         }
         continue;
       }
@@ -291,8 +321,8 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       if (rt != BADADDR) {
         efi_utils::log("gRT: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
-        if (!efi_utils::addr_in_vec(rt_list_arm, rt)) {
-          rt_list_arm.push_back(rt);
+        if (!efi_utils::addr_in_vec(m_rt_list_arm, rt)) {
+          m_rt_list_arm.push_back(rt);
         }
         continue;
       }
@@ -311,7 +341,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
 #endif /* HEX_RAYS */
 
   // analyse xrefs to gBS, gRT
-  for (auto bs : bs_list_arm) {
+  for (auto bs : m_bs_list_arm) {
     auto xrefs = efi_utils::get_xrefs(bs);
     for (auto ea : xrefs) {
       auto s = get_service(ea, 1);
@@ -329,7 +359,7 @@ void efi_analysis::efi_analyser_arm_t::detect_services_all() {
       }
     }
   }
-  for (auto rt : rt_list_arm) {
+  for (auto rt : m_rt_list_arm) {
     auto xrefs = efi_utils::get_xrefs(rt);
     for (auto ea : xrefs) {
       auto s = get_service(ea, 2);
