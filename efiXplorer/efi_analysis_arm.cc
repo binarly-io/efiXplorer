@@ -64,9 +64,11 @@ void efi_analysis::efi_analyser_arm_t::set_operands_repr() {
   insn_t insn;
   for (auto faddr : m_funcs) {
     func_t *f = get_func(faddr);
+
     if (f == nullptr) {
       continue;
     }
+
     ea_t ea = f->start_ea;
     while (ea < f->end_ea) {
       ea = next_head(ea, BADADDR);

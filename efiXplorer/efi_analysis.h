@@ -409,6 +409,7 @@ public:
   void get_smm_prot_names64();
   void get_smm_services_all64();
   void get_variable_ppi_calls_all32();
+  void set_operands_repr();
   void show_all_choosers();
 
 private:
@@ -416,8 +417,9 @@ private:
   uint64_t m_mask = 0;
   uint64_t m_masked_value = 0;
 
-  void find_callout_rec(func_t *func);
   bool install_multiple_prot_interfaces_analyser();
+  bool set_enums_repr(ea_t ea, insn_t insn);
+  void find_callout_rec(func_t *func);
 };
 
 class efi_analyser_arm_t : public efi_analyser_t {
