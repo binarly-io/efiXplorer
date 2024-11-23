@@ -79,6 +79,18 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
   for (auto g = m_guiddb.begin(); g != m_guiddb.end(); ++g) {
     m_guiddb_map[g.value()] = g.key();
   }
+
+  // set mask and masked value for MACRO_EFI enum value detection
+  if (m_arch == arch_file_type_t::x86_32) {
+    m_mask = 0xffffff00;
+    m_masked_value = 0x80000000;
+  } else {
+    // arch_file_type_t::x86_64
+    // arch_file_type_t::aarch64,
+    // rch_file_type_t::uefi -- as only 64-bit binaries are loaded
+    m_mask = 0xffffffffffffff00;
+    m_masked_value = 0x8000000000000000;
+  }
 }
 
 efi_analysis::efi_analyser_t::~efi_analyser_t() {
@@ -2232,6 +2244,48 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_smm() {
 }
 
 //--------------------------------------------------------------------------
+// apply enum values from MACRO_EFI
+bool efi_analysis::efi_analyser_x86_t::set_enums_repr(ea_t ea, insn_t insn) {
+  if (m_macro_efi_tid == BADADDR) {
+    return false;
+  }
+
+  if (insn.itype != NN_mov || insn.ops[0].type != o_reg) {
+    return false;
+  }
+
+  int index = 1;
+  if ((insn.ops[index].value & m_mask) == m_masked_value) {
+    op_enum(ea, index, m_macro_efi_tid, 0);
+    return true;
+  }
+
+  return false;
+}
+
+//--------------------------------------------------------------------------
+// set operands representation
+void efi_analysis::efi_analyser_x86_t::set_operands_repr() {
+  insn_t insn;
+  for (auto faddr : m_funcs) {
+    func_t *f = get_func(faddr);
+
+    if (f == nullptr) {
+      continue;
+    }
+
+    ea_t ea = f->start_ea;
+    while (ea < f->end_ea) {
+      ea = next_head(ea, BADADDR);
+      decode_insn(&insn, ea);
+
+      // set enums representation
+      set_enums_repr(ea, insn);
+    }
+  }
+}
+
+//--------------------------------------------------------------------------
 // analyse calls to GetVariable/SetVariable to extract variables information
 bool efi_analysis::efi_analyser_t::analyse_variable_service(
     ea_t ea, std::string service_str) {
@@ -2568,6 +2622,9 @@ bool efi_analysis::efi_analyse_main_x86_64() {
   analyser.annotate_data_guids();
   analyser.find_local_guids64();
 
+  // set operands representation
+  analyser.set_operands_repr();
+
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei
                            ? analyser.m_ftype = ffs_file_type_t::pei
@@ -2675,6 +2732,9 @@ bool efi_analysis::efi_analyse_main_x86_32() {
 
   // mark GUIDs
   analyser.annotate_data_guids();
+
+  // set operands representation
+  analyser.set_operands_repr();
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei

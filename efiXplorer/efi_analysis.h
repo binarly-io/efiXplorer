@@ -129,6 +129,10 @@ protected:
   ea_list_t m_double_get_variable_smm;
   ea_list_t m_double_get_variable;
 
+  // mask and masked value for MACRO_EFI enum value detection
+  uint64_t m_mask = 0;
+  uint64_t m_masked_value = 0;
+
   bool add_protocol(std::string service_name, ea_t guid_addr, ea_t xref_addr,
                     ea_t call_addr);
 
@@ -367,6 +371,12 @@ public:
     import_type(idati, -1, "EFI_PEI_SERVICES");
     import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
     import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
+
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(idati, "MACRO_EFI")) {
+      m_macro_efi_tid = tinfo.force_tid();
+    }
+
 #ifdef HEX_RAYS
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
       uval_t ord = get_entry_ordinal(idx);
@@ -399,11 +409,17 @@ public:
   void get_smm_prot_names64();
   void get_smm_services_all64();
   void get_variable_ppi_calls_all32();
+  void set_operands_repr();
   void show_all_choosers();
 
 private:
-  void find_callout_rec(func_t *func);
+  tid_t m_macro_efi_tid;
+  uint64_t m_mask = 0;
+  uint64_t m_masked_value = 0;
+
   bool install_multiple_prot_interfaces_analyser();
+  bool set_enums_repr(ea_t ea, insn_t insn);
+  void find_callout_rec(func_t *func);
 };
 
 class efi_analyser_arm_t : public efi_analyser_t {
@@ -414,24 +430,45 @@ public:
     add_til("uefi64.til", ADDTIL_DEFAULT);
 
     const til_t *idati = get_idati();
+    import_type(idati, -1, "EFI_BOOT_SERVICES");
     import_type(idati, -1, "EFI_GUID");
     import_type(idati, -1, "EFI_HANDLE");
-    import_type(idati, -1, "EFI_SYSTEM_TABLE");
-    import_type(idati, -1, "EFI_BOOT_SERVICES");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
+    import_type(idati, -1, "EFI_SYSTEM_TABLE");
+
+    tinfo_t tinfo;
+    if (tinfo.get_named_type(idati, "MACRO_EFI")) {
+      m_macro_efi_tid = tinfo.force_tid();
+    }
   }
 
-  void find_boot_services_tables();
-  void find_pei_services_function();
-  void fix_offsets();
-  void initial_analysis();
-  void initial_gvars_detection();
+  ~efi_analyser_arm_t() {
+    m_image_handle_list.clear();
+    m_st_list_arm.clear();
+    m_bs_list_arm.clear();
+    m_rt_list_arm.clear();
+  }
+
   void detect_protocols_all();
   void detect_services_all();
+  void find_boot_services_tables();
+  void find_pei_services_function();
+  void initial_analysis();
+  void initial_gvars_detection();
+  void set_operands_repr();
   void show_all_choosers();
 
 private:
+  ea_list_t m_image_handle_list_arm;
+  ea_list_t m_st_list_arm;
+  ea_list_t m_bs_list_arm;
+  ea_list_t m_rt_list_arm;
+
+  tid_t m_macro_efi_tid;
+
   bool get_protocol(ea_t address, uint32_t p_reg, std::string service_name);
+  bool set_enums_repr(ea_t ea, insn_t insn);
+  bool set_offsets_repr(ea_t ea, insn_t insn);
 };
 
 bool efi_analyse_main_x86_64();
