@@ -129,6 +129,8 @@ protected:
   ea_list_t m_double_get_variable_smm;
   ea_list_t m_double_get_variable;
 
+  tid_t m_macro_efi_tid;
+
   // mask and masked value for MACRO_EFI enum value detection
   uint64_t m_mask = 0;
   uint64_t m_masked_value = 0;
@@ -413,10 +415,6 @@ public:
   void show_all_choosers();
 
 private:
-  tid_t m_macro_efi_tid;
-  uint64_t m_mask = 0;
-  uint64_t m_masked_value = 0;
-
   bool install_multiple_prot_interfaces_analyser();
   bool set_enums_repr(ea_t ea, insn_t insn);
   void find_callout_rec(func_t *func);
