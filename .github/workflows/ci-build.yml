@@ -1,4 +1,4 @@
-name: efiXplorer CI
+name: Build plugin and loader
 on:
   push:
 jobs:

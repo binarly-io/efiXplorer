@@ -1,4 +1,4 @@
-name: "CodeQL"
+name: Analyse plugin
 on:
   push:
     branches: [ master ]
