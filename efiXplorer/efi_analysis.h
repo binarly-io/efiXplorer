@@ -373,6 +373,7 @@ public:
     import_type(idati, -1, "EFI_PEI_SERVICES");
     import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
     import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
+    import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
 
     tinfo_t tinfo;
     if (tinfo.get_named_type(idati, "MACRO_EFI")) {
@@ -433,6 +434,7 @@ public:
     import_type(idati, -1, "EFI_HANDLE");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
     import_type(idati, -1, "EFI_SYSTEM_TABLE");
+    import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
 
     tinfo_t tinfo;
     if (tinfo.get_named_type(idati, "MACRO_EFI")) {
