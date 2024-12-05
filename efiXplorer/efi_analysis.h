@@ -375,10 +375,12 @@ public:
     import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
     import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
 
+#if IDA_SDK_VERSION >= 900
     tinfo_t tinfo;
     if (tinfo.get_named_type(idati, "MACRO_EFI")) {
       m_macro_efi_tid = tinfo.force_tid();
     }
+#endif
 
 #ifdef HEX_RAYS
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
@@ -436,10 +438,12 @@ public:
     import_type(idati, -1, "EFI_SYSTEM_TABLE");
     import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
 
+#if IDA_SDK_VERSION >= 900
     tinfo_t tinfo;
     if (tinfo.get_named_type(idati, "MACRO_EFI")) {
       m_macro_efi_tid = tinfo.force_tid();
     }
+#endif
   }
 
   ~efi_analyser_arm_t() {
