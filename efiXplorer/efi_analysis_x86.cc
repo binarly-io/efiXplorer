@@ -2372,8 +2372,11 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
       {0x00000008, "HARDWARE_ERROR_RECORD"},
       {0x00000010, "AUTHENTICATED_WRITE_ACCESS"}};
 
-  addr = args[2]; // attributes argument
+  addr = args[2]; // Attributes argument
   decode_insn(&insn, addr);
+
+  // attempt to annotate Attributes argument
+  op_enum(addr, 1, m_macro_var_attr_tid, 0);
 
   if (insn.itype == NN_xor && insn.ops[0].type == o_reg &&
       insn.ops[1].type == o_reg && insn.ops[0].reg == insn.ops[1].reg &&
