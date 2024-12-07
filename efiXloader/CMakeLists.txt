@@ -19,6 +19,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       "${CMAKE_CXX_FLAGS} -Wno-nullability-completeness -Wno-varargs")
 endif()
 
+if(NOT MSVC)
+  add_compile_options(-O3 -flto)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 find_package(IdaSdk REQUIRED)
