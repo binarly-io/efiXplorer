@@ -2372,8 +2372,21 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
       {0x00000008, "HARDWARE_ERROR_RECORD"},
       {0x00000010, "AUTHENTICATED_WRITE_ACCESS"}};
 
-  addr = args[2]; // attributes argument
+  addr = args[2]; // Attributes argument
   decode_insn(&insn, addr);
+
+  if (insn.itype == NN_mov && insn.ops[1].type == o_imm) {
+    // attempt to annotate Attributes argument
+    //
+    // mostly we see such code where op_enum() does not
+    // help, because operand is not an immediate value:
+    // mov r9d, X      ; DataSize
+    // lea r8d, [r9+Y] ; Attributes (X + Y)
+    //
+    // however, it will work when we encounter:
+    // mov r8d, X      ; Attributes
+    op_enum(addr, 1, m_macro_var_attr_tid, 0);
+  }
 
   if (insn.itype == NN_xor && insn.ops[0].type == o_reg &&
       insn.ops[1].type == o_reg && insn.ops[0].reg == insn.ops[1].reg &&

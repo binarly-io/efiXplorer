@@ -130,6 +130,7 @@ protected:
   ea_list_t m_double_get_variable;
 
   tid_t m_macro_efi_tid;
+  tid_t m_macro_var_attr_tid;
 
   // mask and masked value for MACRO_EFI enum value detection
   uint64_t m_mask = 0;
@@ -373,14 +374,8 @@ public:
     import_type(idati, -1, "EFI_PEI_SERVICES");
     import_type(idati, -1, "EFI_PEI_READ_ONLY_VARIABLE2_PPI");
     import_type(idati, -1, "EFI_SMM_VARIABLE_PROTOCOL");
-    import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
-
-#if IDA_SDK_VERSION >= 900
-    tinfo_t tinfo;
-    if (tinfo.get_named_type(idati, "MACRO_EFI")) {
-      m_macro_efi_tid = tinfo.force_tid();
-    }
-#endif
+    m_macro_efi_tid = import_type(idati, -1, "MACRO_EFI");
+    m_macro_var_attr_tid = import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
 
 #ifdef HEX_RAYS
     for (auto idx = 0; idx < get_entry_qty(); idx++) {
@@ -436,14 +431,8 @@ public:
     import_type(idati, -1, "EFI_HANDLE");
     import_type(idati, -1, "EFI_RUNTIME_SERVICES");
     import_type(idati, -1, "EFI_SYSTEM_TABLE");
-    import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
-
-#if IDA_SDK_VERSION >= 900
-    tinfo_t tinfo;
-    if (tinfo.get_named_type(idati, "MACRO_EFI")) {
-      m_macro_efi_tid = tinfo.force_tid();
-    }
-#endif
+    m_macro_efi_tid = import_type(idati, -1, "MACRO_EFI");
+    m_macro_var_attr_tid = import_type(idati, -1, "MACRO_VARIABLE_ATTRIBUTE");
   }
 
   ~efi_analyser_arm_t() {
@@ -469,6 +458,7 @@ private:
   ea_list_t m_rt_list_arm;
 
   tid_t m_macro_efi_tid;
+  tid_t m_macro_var_attr_tid;
 
   bool get_protocol(ea_t address, uint32_t p_reg, std::string service_name);
   bool set_enums_repr(ea_t ea, insn_t insn);
