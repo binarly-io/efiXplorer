@@ -59,12 +59,6 @@
 include(CMakeParseArguments)
 include(FindPackageHandleStandardArgs)
 
-option(USE_LD_CLASSIC "Use -ld_classic option" OFF)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
-   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "15.0.0")
-  set(USE_LD_CLASSIC ON)
-endif()
-
 find_path(
   IdaSdk_DIR
   NAMES include/pro.h
@@ -137,15 +131,9 @@ function(_ida_plugin name ea64 link_script) # ARGN contains sources
   if(UNIX)
     target_compile_options(${t} PUBLIC ${_ida_compile_options})
     if(APPLE)
-      if(USE_LD_CLASSIC)
-        target_link_libraries(
-          ${t} ${_ida_compile_options} -Wl,-ld_classic -Wl,-flat_namespace
-          -Wl,-undefined,warning -Wl,-exported_symbol,_PLUGIN)
-      else()
-        target_link_libraries(
-          ${t} ${_ida_compile_options} -Wl,-flat_namespace
-          -Wl,-undefined,warning -Wl,-exported_symbol,_PLUGIN)
-      endif()
+      target_link_libraries(
+        ${t} ${_ida_compile_options} -Wl,-flat_namespace
+        -Wl,-undefined,dynamic_lookup -Wl,-exported_symbol,_PLUGIN)
     else()
       # Always use the linker script needed for IDA.
       target_link_libraries(${t} ${_ida_compile_options} -Wl,--version-script
@@ -180,14 +168,9 @@ function(_ida_loader name ea64 link_script)
   if(UNIX)
     target_compile_options(${t} PUBLIC ${_ida_compile_options})
     if(APPLE)
-      if(USE_LD_CLASSIC)
-        target_link_libraries(
-          ${t} ${_ida_compile_options} -Wl,-ld_classic -Wl,-flat_namespace
-          -Wl,-undefined,warning -Wl,-exported_symbol,_LDSC)
-      else()
-        target_link_libraries(${t} ${_ida_compile_options} -Wl,-flat_namespace
-                              -Wl,-undefined,warning -Wl,-exported_symbol,_LDSC)
-      endif()
+      target_link_libraries(
+        ${t} ${_ida_compile_options} -Wl,-flat_namespace
+        -Wl,-undefined,dynamic_lookup -Wl,-exported_symbol,_LDSC)
     else()
       # Always use the linker script needed for IDA.
       target_link_libraries(${t} ${_ida_compile_options} -Wl,--version-script
