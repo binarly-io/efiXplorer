@@ -2534,7 +2534,7 @@ void efi_analysis::efi_analyser_t::dump_json() {
   idb_path = get_path(PATH_TYPE_IDB);
   std::filesystem::path log_file;
   log_file /= idb_path;
-  log_file.replace_extension(".json");
+  log_file.replace_extension(".efixplorer.json");
   std::ofstream out(log_file);
   out << std::setw(2) << info << std::endl;
 
