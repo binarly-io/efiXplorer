@@ -270,7 +270,6 @@ string_set_t efi_deps_t::get_apriori_modules() {
     for (auto &mguid : modules) {
       std::string module = m_modules_guids[mguid]["name"];
       apriori_modules.insert(module);
-      efi_utils::log("module from %s: %s\n", file.c_str(), module.c_str());
     }
   }
 
@@ -313,60 +312,79 @@ bool efi_deps_t::build_modules_sequence() {
   get_protocols_without_installers();
   get_modules_info();
 
+  // load apriori modules
   size_t index = 0;
+  for (auto &module : get_apriori_modules()) {
+    efi_utils::log("apriori module: %s\n", module.c_str());
+    string_list_t installers = m_modules_info[module]["installed_protocols"];
+    installed_protocols.insert(installers.begin(), installers.end());
+
+    auto deps = m_modules_info[module]["deps_protocols"];
+    json inf;
+    inf["module"] = module;
+    if (!deps.is_null()) {
+      inf["deps"] = deps;
+    }
+    m_modules_sequence[index++] = inf;
+    module_seq.insert(module);
+  }
+
   while (module_seq.size() != m_modules_info.size()) {
     bool changed = false;
+
     for (auto &e : m_modules_info.items()) {
-      std::string module = e.key(); // current module
+      auto module = e.key();  // current module
+      auto minfo = e.value(); // current module information
 
       // check if the module is already loaded
       if (module_seq.find(module) != module_seq.end()) {
         continue;
       }
 
-      string_list_t installers = m_modules_info[module]["installed_protocols"];
+      string_list_t installers = minfo["installed_protocols"];
 
       // if there are no dependencies
-      if (m_modules_info[module]["deps_protocols"].is_null()) {
-        for (auto protocol : installers) {
-          installed_protocols.insert(protocol);
-        }
+      if (minfo["deps_protocols"].is_null()) {
+        installed_protocols.insert(installers.begin(), installers.end());
+
+        json inf;
+        inf["module"] = module;
+        m_modules_sequence[index++] = inf;
         module_seq.insert(module);
-        json info;
-        info["module"] = module;
-        m_modules_sequence[index++] = info;
         changed = true;
         continue;
       }
 
-      string_list_t deps = m_modules_info[module]["deps_protocols"];
+      string_list_t deps = minfo["deps_protocols"];
       string_list_t unresolved_deps;
+
       bool load = true;
       for (auto protocol : deps) {
         if (installed_protocols.find(protocol) != installed_protocols.end()) {
           continue;
         }
+
         if (m_protocols_without_installers.find(protocol) !=
             m_protocols_without_installers.end()) {
           unresolved_deps.push_back(protocol);
           continue;
         }
+
         load = false;
         break;
       }
 
       if (load) {
-        for (auto protocol : installers) {
-          installed_protocols.insert(protocol);
+        installed_protocols.insert(installers.begin(), installers.end());
+
+        json inf;
+        inf["module"] = module;
+        inf["deps"] = deps;
+        if (!unresolved_deps.empty()) {
+          inf["unresolved_deps"] = unresolved_deps;
         }
+        m_modules_sequence[index++] = inf;
         module_seq.insert(module);
-        json info;
-        info["module"] = module;
-        info["deps"] = deps;
-        if (unresolved_deps.size()) {
-          info["unresolved_deps"] = unresolved_deps;
-        }
-        m_modules_sequence[index++] = info;
         changed = true;
       }
     }
@@ -376,27 +394,25 @@ bool efi_deps_t::build_modules_sequence() {
       std::map<std::string, size_t>
           protocols_usage; // get the most popular protocol
       for (auto &e : m_modules_info.items()) {
-        std::string module = e.key();
+        auto module = e.key();
+        auto minfo = e.value();
 
         // check if the module is already loaded
-        if (module_seq.find(module) != module_seq.end()) {
+        if (module_seq.find(module) != module_seq.end() ||
+            minfo["deps_protocols"].is_null()) {
           continue;
         }
 
-        if (m_modules_info[module]["deps_protocols"].is_null()) {
-          continue;
-        }
-
-        string_list_t deps_protocols = m_modules_info[module]["deps_protocols"];
+        string_list_t deps_protocols = minfo["deps_protocols"];
         for (auto protocol : deps_protocols) {
-          if (installed_protocols.find(protocol) != installed_protocols.end()) {
+          if (installed_protocols.find(protocol) != installed_protocols.end() ||
+              m_protocols_without_installers.find(protocol) !=
+                  m_protocols_without_installers.end()) {
             continue;
           }
-          if (m_protocols_without_installers.find(protocol) !=
-              m_protocols_without_installers.end()) {
-            continue;
-          }
+
           if (protocols_usage.find(protocol) == protocols_usage.end()) {
+            // initialise
             protocols_usage[protocol] = 1;
           } else {
             protocols_usage[protocol] += 1;
@@ -404,8 +420,8 @@ bool efi_deps_t::build_modules_sequence() {
         }
       }
 
-      std::string mprotocol;
       size_t mnum = 0;
+      std::string mprotocol;
       for (auto const &[prot, counter] : protocols_usage) {
         if (counter > mnum) {
           mnum = counter;
@@ -428,14 +444,19 @@ bool efi_deps_t::build_modules_sequence() {
       // load installer module
       string_list_t current_installers =
           m_modules_info[installer_module]["installed_protocols"];
-      for (auto protocol : current_installers) {
-        installed_protocols.insert(protocol);
+      auto deps = m_modules_info[installer_module]["deps_protocols"];
+
+      installed_protocols.insert(current_installers.begin(),
+                                 current_installers.end());
+
+      json inf;
+      inf["module"] = installer_module;
+      if (!deps.is_null()) {
+        inf["deps"] = deps;
       }
+      m_modules_sequence[index++] = inf;
+
       module_seq.insert(installer_module);
-      json info;
-      info["module"] = installer_module;
-      info["deps"] = m_modules_info[installer_module]["deps_protocols"];
-      m_modules_sequence[index++] = info;
     }
   }
 
