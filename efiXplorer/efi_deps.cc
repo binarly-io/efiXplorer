@@ -316,12 +316,17 @@ bool efi_deps_t::build_modules_sequence() {
   size_t index = 0;
   for (auto &module : get_apriori_modules()) {
     efi_utils::log("apriori module: %s\n", module.c_str());
+
+    if (!m_modules_info.contains(module)) {
+      continue;
+    }
+
     string_list_t installers = m_modules_info[module]["installed_protocols"];
     installed_protocols.insert(installers.begin(), installers.end());
 
-    auto deps = m_modules_info[module]["deps_protocols"];
     json inf;
     inf["module"] = module;
+    auto deps = m_modules_info[module]["deps_protocols"];
     if (!deps.empty()) {
       inf["deps"] = deps;
     }
