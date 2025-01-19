@@ -67,12 +67,12 @@ json efi_deps_t::get_deps_for(std::string guid) {
 }
 
 void efi_deps_t::get_protocols_by_guids(json_list_t protocols) {
-  for (auto p : protocols) {
-    // check if entry for GUID already exist
-    std::string guid = p["guid"];
-    auto deps = m_protocols_by_guids[guid];
+  for (auto &p : protocols) {
+    // check if entry for GUID already exists
+    auto guid = p["guid"];
+    auto &deps = m_protocols_by_guids[guid];
     if (deps.is_null()) {
-      m_protocols_by_guids[guid] = get_deps_for(guid);
+      deps = get_deps_for(guid);
     }
   }
 }
@@ -201,7 +201,7 @@ void efi_deps_t::get_modules() {
 
 json efi_deps_t::get_module_info(std::string module) {
   json info;
-  json deps_protocols;
+  string_list_t deps_protocols;
   string_list_t installed_protocols;
   std::vector installers({"InstallProtocolInterface",
                           "InstallMultipleProtocolInterfaces",
@@ -316,13 +316,18 @@ bool efi_deps_t::build_modules_sequence() {
   size_t index = 0;
   for (auto &module : get_apriori_modules()) {
     efi_utils::log("apriori module: %s\n", module.c_str());
+
+    if (!m_modules_info.contains(module)) {
+      continue;
+    }
+
     string_list_t installers = m_modules_info[module]["installed_protocols"];
     installed_protocols.insert(installers.begin(), installers.end());
 
-    auto deps = m_modules_info[module]["deps_protocols"];
     json inf;
     inf["module"] = module;
-    if (!deps.is_null()) {
+    auto deps = m_modules_info[module]["deps_protocols"];
+    if (!deps.empty()) {
       inf["deps"] = deps;
     }
     m_modules_sequence[index++] = inf;
@@ -344,7 +349,7 @@ bool efi_deps_t::build_modules_sequence() {
       string_list_t installers = minfo["installed_protocols"];
 
       // if there are no dependencies
-      if (minfo["deps_protocols"].is_null()) {
+      if (minfo["deps_protocols"].empty()) {
         installed_protocols.insert(installers.begin(), installers.end());
 
         json inf;
@@ -399,7 +404,7 @@ bool efi_deps_t::build_modules_sequence() {
 
         // check if the module is already loaded
         if (module_seq.find(module) != module_seq.end() ||
-            minfo["deps_protocols"].is_null()) {
+            minfo["deps_protocols"].empty()) {
           continue;
         }
 
@@ -451,7 +456,7 @@ bool efi_deps_t::build_modules_sequence() {
 
       json inf;
       inf["module"] = installer_module;
-      if (!deps.is_null()) {
+      if (!deps.empty()) {
         inf["deps"] = deps;
       }
       m_modules_sequence[index++] = inf;
