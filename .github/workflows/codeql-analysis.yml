@@ -29,12 +29,12 @@ jobs:
       run: |
         git submodule update --init --recursive
         cd ..
-        curl -J -L "$IDA_SDK" -o idasdk90.zip
-        unzip -P $PASSWORD idasdk90.zip
+        curl -J -L "$IDA_SDK" -o idasdk91.zip
+        unzip -P $PASSWORD idasdk91.zip
         cd efiXplorer
         mkdir build
         cd build
-        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk90" -DHexRaysSdk_ROOT_DIR="../../idasdk90"
+        cmake .. -DIdaSdk_ROOT_DIR="../../idasdk91" -DHexRaysSdk_ROOT_DIR="../../idasdk91"
         cmake --build . --config Release --parallel
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
