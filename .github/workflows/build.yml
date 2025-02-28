@@ -1,27 +1,27 @@
-name: Build plugin and loader
+name: build
+
 on:
   push:
+
 jobs:
-  build_windows:
-    runs-on: windows-2022
+  build-windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Dowload IDA SDK
-        shell: cmd
+      - name: prepare IDA SDK
         env:
-          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
-          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
+          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
         run: |
-          cd ..
-          curl -J -L "%IDA_SDK%" -o idasdk91.zip
-          unzip -P "%PASSWORD%" idasdk91.zip
-      - name: Build efiXplorer
+          curl -o "${{ runner.temp }}/idasdk91.zip" -L $env:IDASDK91_URL
+          unzip -d "${{ runner.temp }}" -P $env:IDASDK91_PASSWORD "${{ runner.temp }}/idasdk91.zip"
+      - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk91" -DHexRaysSdk_ROOT_DIR="../../idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR=""${{ runner.temp }}/idasdk91"
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -31,26 +31,26 @@ jobs:
         with:
           name: efiXloader64.dll
           path: build/efiXloader/Release/efiXloader64.dll
-  build_linux:
-    runs-on: ubuntu-24.04
+
+  build-linux:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Dowload IDA SDK
+      - name: prepare IDA SDK
         shell: bash
         env:
-          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
-          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
+          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
         run: |
-          cd ..
-          curl -J -L "$IDA_SDK" -o idasdk91.zip
-          unzip -P $PASSWORD idasdk91.zip
-      - name: Build efiXplorer
+          curl -o "${{ runner.temp }}/idasdk91.zip" -L "$IDASDK91_URL"
+          unzip -d "${{ runner.temp }}" -P "$IDASDK91_PASSWORD" "${{ runner.temp }}/idasdk91.zip"
+      - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk91" -DHexRaysSdk_ROOT_DIR="../../idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR=""${{ runner.temp }}/idasdk91"
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -60,26 +60,26 @@ jobs:
         with:
           name: efiXloader64.so
           path: build/efiXloader/efiXloader64.so
-  build_osx:
+
+  build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Dowload IDA SDK
+      - name: prepare IDA SDK
         shell: bash
         env:
-          IDA_SDK: ${{ secrets.DOWNLOAD_LINK_IDA_SDK }}
-          PASSWORD: ${{ secrets.ZIP_PASSWORD }}
+          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
+          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
         run: |
-          cd ..
-          curl -J -L "$IDA_SDK" -o idasdk91.zip
-          unzip -P $PASSWORD idasdk91.zip
-      - name: Build efiXplorer
+          curl -o "${{ runner.temp }}/idasdk91.zip" -L "$IDASDK91_URL"
+          unzip -d "${{ runner.temp }}" -P "$IDASDK91_PASSWORD" "${{ runner.temp }}/idasdk91.zip"
+      - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="../../idasdk91" -DHexRaysSdk_ROOT_DIR="../../idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR=""${{ runner.temp }}/idasdk91"
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
