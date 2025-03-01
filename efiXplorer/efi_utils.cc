@@ -983,7 +983,7 @@ uint64_t u64_addr(ea_t addr) { return addr; }
 
 size_t get_ptrsize() { return inf_is_64bit() ? 8 : 4; }
 
-#if IDA_SDK_VERSION > 840
+#if IDA_SDK_VERSION >= 850
 tid_t import_type(const til_t *til, int _idx, const char *name) {
   tinfo_t tinfo;
   if (!tinfo.get_named_type(til, name)) {

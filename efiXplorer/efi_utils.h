@@ -86,6 +86,6 @@ uint32_t u32_addr(ea_t addr);
 uint64_t u64_addr(ea_t addr);
 size_t get_ptrsize();
 
-#if IDA_SDK_VERSION > 840
+#if IDA_SDK_VERSION >= 850
 tid_t import_type(const til_t *til, int _idx, const char *name);
 #endif
