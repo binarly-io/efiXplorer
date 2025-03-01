@@ -486,7 +486,7 @@ bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
 //--------------------------------------------------------------------------
 // add EFI_PEI_SERVICES_4 structure
 bool efi_utils::add_struct_for_shifted_ptr() {
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
   auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
   if (sid == BADADDR) {
     return false;
@@ -613,7 +613,7 @@ ea_list_t efi_utils::search_protocol(std::string protocol) {
   std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
   ea_t start = 0;
   while (true) {
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
     ea_t addr =
         bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
 #else
@@ -843,7 +843,7 @@ ea_list_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
   ea_t start = start_ea;
   int counter = 0;
   while (true) {
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
     auto ea =
         bin_search2(start, end_ea, data, nullptr, len, BIN_SEARCH_FORWARD);
 #else
@@ -983,7 +983,7 @@ uint64_t u64_addr(ea_t addr) { return addr; }
 
 size_t get_ptrsize() { return inf_is_64bit() ? 8 : 4; }
 
-#if IDA_SDK_VERSION >= 900
+#if IDA_SDK_VERSION >= 850
 tid_t import_type(const til_t *til, int _idx, const char *name) {
   tinfo_t tinfo;
   if (!tinfo.get_named_type(til, name)) {
