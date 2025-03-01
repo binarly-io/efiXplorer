@@ -1,5 +1,5 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-[![efiXplorer CI](https://github.com/binarly-io/efiXplorer/actions/workflows/ci-build.yml/badge.svg)](https://github.com/binarly-io/efiXplorer/actions)
+[![efiXplorer CI](https://github.com/binarly-io/efiXplorer/actions/workflows/build.yml/badge.svg)](https://github.com/binarly-io/efiXplorer/actions)
 
 <p align="center">
   <img alt="efiXlorer Logo" src="pics/efiXplorer_logo.png" width="45%">
