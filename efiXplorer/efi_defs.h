@@ -41,7 +41,7 @@
 #include <loader.hpp>
 #include <name.hpp>
 #include <pro.h>
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
 #include <struct.hpp>
 #endif
 #include <typeinf.hpp>

@@ -59,7 +59,7 @@ xreflist_t efi_hexrays::xrefs_to_stack_var(ea_t func_addr, lvar_t &ll,
 
   xreflist_t xrefs_list;
 
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
   struc_t *frame = get_frame(func_addr);
   if (frame == nullptr) {
     return xrefs_list;
@@ -106,7 +106,7 @@ bool efi_hexrays::set_lvar_name(qstring name, lvar_t &lvar, ea_t func_addr) {
 bool efi_hexrays::set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                                        std::string name) {
   if (ll.is_stk_var()) { // rename local variable on stack
-#if IDA_SDK_VERSION < 900
+#if IDA_SDK_VERSION < 850
     sval_t stkoff = ll.get_stkoff();
 
     struc_t *frame = get_frame(func_addr);
