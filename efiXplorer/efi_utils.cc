@@ -554,6 +554,44 @@ bool efi_utils::valid_guid(json guid) {
 }
 
 //--------------------------------------------------------------------------
+// get addresses of argumets, custom mimimal implementation,
+// works with num_args <= 4 and only for x86-64
+bool efi_utils::get_arg_addrs_with(eavec_t *out, ea_t caller, size_t num_args) {
+  if (num_args > 4) {
+    return false;
+  }
+
+  insn_t insn;
+  auto ea = caller;
+  size_t index = 0;
+
+  std::array<regs_x86_64_t, 4> registers = {R_RCX, R_RDX, R_R8, R_R9};
+
+  while (true) {
+    if (index >= num_args) {
+      // should not try to get more than is requested,
+      // also ensure that registers buffer never overflows
+      break;
+    }
+
+    ea = prev_head(ea, 0);
+    decode_insn(&insn, ea);
+
+    if (insn.ops[0].reg == registers[index]) {
+      out->resize_noinit(index + 1);
+      out->at(index) = ea;
+      index += 1;
+    }
+
+    if (is_basic_block_end(insn, false)) {
+      break;
+    }
+  }
+
+  return true;
+}
+
+//--------------------------------------------------------------------------
 // convert GUID value to string
 std::string efi_utils::guid_to_string(json guid) {
   char guid_str[37] = {0};

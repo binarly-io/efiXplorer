@@ -2298,7 +2298,19 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
                  u64_addr(ea));
 
   eavec_t args;
-  get_arg_addrs(&args, ea);
+  if (!get_arg_addrs(&args, ea)) {
+    // handle cases when get_arg_arrs will fail
+    //
+    // e.g:
+    // mov     rax, cs:gEfiSmmVariableProtocol
+    // mov     rax, [rax]
+    // ...
+    // call    rax
+    args.clear();
+    efi_utils::log("extracting argument addresses\n");
+    efi_utils::get_arg_addrs_with(&args, ea, 3);
+  }
+
   if (args.size() < 3) {
     return false;
   }
