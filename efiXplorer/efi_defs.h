@@ -166,6 +166,7 @@ struct service_t {
 };
 
 using ea_list_t = std::vector<ea_t>;
+using ea_set_t = std::set<ea_t>;
 using func_list_t = std::vector<func_t *>;
 using json_list_t = std::vector<json>;
 using segment_list_t = std::vector<segment_t *>;

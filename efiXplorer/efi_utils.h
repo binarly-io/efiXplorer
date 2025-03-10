@@ -40,6 +40,7 @@ bool set_ret_to_pei_svc(ea_t start_ea);
 bool summary_json_exists();
 bool uint64_in_vec(uint64_list_t vec, uint64_t value);
 bool valid_guid(json guid);
+bool get_arg_addrs_with(eavec_t *out, ea_t caller, size_t num_args);
 
 ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
 ea_list_t get_xrefs_to_array(ea_t addr);

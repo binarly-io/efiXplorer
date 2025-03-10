@@ -2298,7 +2298,19 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
                  u64_addr(ea));
 
   eavec_t args;
-  get_arg_addrs(&args, ea);
+  if (!get_arg_addrs(&args, ea)) {
+    // handle cases when get_arg_addrs will fail
+    //
+    // e.g:
+    // mov     rax, cs:gEfiSmmVariableProtocol
+    // mov     rax, [rax]
+    // ...
+    // call    rax
+    args.clear();
+    efi_utils::log("extracting argument addresses\n");
+    efi_utils::get_arg_addrs_with(&args, ea, 3);
+  }
+
   if (args.size() < 3) {
     return false;
   }
@@ -2434,30 +2446,25 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
 //--------------------------------------------------------------------------
 // analyse NVRAM variables
 bool efi_analysis::efi_analyser_t::analyse_nvram_variables() {
-  string_list_t nvram_services = {"GetVariable", "SetVariable"};
-  for (auto service_str : nvram_services) {
-    ea_list_t var_services;
-    for (auto j_service : m_all_services) {
+  string_list_t service_names = {"GetVariable", "SetVariable",
+                                 "gSmmVariable->SmmGetVariable",
+                                 "gSmmVariable->SmmGetVariable"};
+  for (auto &service_str : service_names) {
+    ea_set_t var_services;
+    for (auto &j_service : m_all_services) {
       json service = j_service;
       std::string service_name = service["service_name"];
       ea_t addr = service["address"];
       if (!service_name.compare(service_str)) {
-        var_services.push_back(addr);
+        var_services.insert(addr);
       }
     }
-    sort(var_services.begin(), var_services.end());
-    for (auto ea : var_services) {
+
+    for (auto &ea : var_services) {
       analyse_variable_service(ea, service_str);
     }
-
-    for (auto ea : g_smm_get_variable_calls) {
-      analyse_variable_service(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmGetVariable");
-    }
-
-    for (auto ea : g_smm_set_variable_calls) {
-      analyse_variable_service(ea, "EFI_SMM_VARIABLE_PROTOCOL::SmmSetVariable");
-    }
   }
+
   return true;
 }
 
