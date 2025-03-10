@@ -2299,7 +2299,7 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
 
   eavec_t args;
   if (!get_arg_addrs(&args, ea)) {
-    // handle cases when get_arg_arrs will fail
+    // handle cases when get_arg_addrs will fail
     //
     // e.g:
     // mov     rax, cs:gEfiSmmVariableProtocol
