@@ -2415,14 +2415,18 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
     std::string attributes_hr;
     if (res == 0xff) {
       attributes_hr = "Unknown";
+    } else if (!res) {
+      attributes_hr = "No attributes";
     } else {
       for (auto &[attr, attr_def] : attributes_defs) {
         if (res & attr & 0x0f) {
           attributes_hr += attr_def + " | ";
         }
       }
-      if (attributes_hr.size() >= 3) { // remove the last operation OR
+      if (attributes_hr.size() >= 3) { // remove the last |
         attributes_hr = attributes_hr.substr(0, attributes_hr.size() - 3);
+      } else if (attributes_hr.empty()) {
+        attributes_hr = "Unknown";
       }
     }
     v["AttributesHumanReadable"] = attributes_hr;
