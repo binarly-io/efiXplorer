@@ -368,7 +368,8 @@ efi_smm_utils::find_smi_handlers_dispatch_stack(json_list_t stack_guids,
 }
 
 //--------------------------------------------------------------------------
-// Find gSmmVariable->SmmGetVariable calls via EFI_SMM_VARIABLE_PROTOCOL_GUID
+// Find gEfiSmmVariableProtocol->SmmGetVariable calls via
+// EFI_SMM_VARIABLE_PROTOCOL_GUID
 ea_list_t
 efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
                                            json_list_t *all_services) {
@@ -383,7 +384,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
   ea_list_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
 
-  // find all gSmmVariable variables
+  // find all gEfiSmmVariableProtocol variables
   ea_list_t smm_variable_addrs;
   for (auto data_addr : data_addrs) {
     ea_list_t xrefs = efi_utils::get_xrefs(data_addr);
@@ -404,14 +405,15 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
       insn_t insn;
       ea_t ea = xref;
       for (auto i = 0; i < 8; i++) {
-        // search for `lea r8, {gSmmVariable}` instruction
+        // search for `lea r8, {gEfiSmmVariableProtocol}` instruction
         ea = prev_head(ea, 0);
         decode_insn(&insn, ea);
         if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
             insn.ops[0].reg == R_R8 && insn.ops[1].type == o_mem) {
-          efi_utils::log("gSmmVariable: 0x%" PRIx64 "\n",
+          efi_utils::log("gEfiSmmVariableProtocol: 0x%" PRIx64 "\n",
                          u64_addr(insn.ops[1].addr));
-          efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gSmmVariable",
+          efi_utils::set_ptr_type_and_name(insn.ops[1].addr,
+                                           "gEfiSmmVariableProtocol",
                                            "EFI_SMM_VARIABLE_PROTOCOL");
           smm_variable_addrs.push_back(insn.ops[1].addr);
           break;
@@ -430,7 +432,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
       segment_t *seg = getseg(smm_variable_xref);
       qstring seg_name;
       get_segm_name(&seg_name, seg);
-      efi_utils::log("found gSmmVariable xref at 0x%" PRIx64 "\n",
+      efi_utils::log("found gEfiSmmVariableProtocol xref at 0x%" PRIx64 "\n",
                      u64_addr(smm_variable_xref));
 
       size_t index = seg_name.find(".text");
@@ -464,7 +466,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
 
             json s;
             s["address"] = ea;
-            s["service_name"] = "gSmmVariable->SmmGetVariable";
+            s["service_name"] = "gEfiSmmVariableProtocol->SmmGetVariable";
             s["table_name"] = "EFI_SMM_VARIABLE_PROTOCOL";
             s["offset"] = 0;
 
@@ -523,12 +525,13 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
     ea_t ea = prev_head(addr, 0);
 
     for (auto i = 0; i < 8; i++) {
-      // find 'lea r8, {gSmmCpu}' instruction
+      // find 'lea r8, {gEfiSmmCpuProtocol}' instruction
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
           insn.ops[0].reg == R_R8 && insn.ops[1].type == o_mem) {
-        efi_utils::log("gSmmCpu: 0x%" PRIx64 "\n", u64_addr(insn.ops[1].addr));
-        efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gSmmCpu",
+        efi_utils::log("gEfiSmmCpuProtocol: 0x%" PRIx64 "\n",
+                       u64_addr(insn.ops[1].addr));
+        efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gEfiSmmCpuProtocol",
                                          "EFI_SMM_CPU_PROTOCOL");
         smm_cpu_addrs.push_back(insn.ops[1].addr);
         break;
@@ -575,12 +578,12 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
             }
 
             efi_utils::op_stroff(ea, "EFI_SMM_CPU_PROTOCOL");
-            efi_utils::log("gSmmCpu->ReadSaveState: 0x%" PRIx64 "\n",
+            efi_utils::log("gEfiSmmCpuProtocol->ReadSaveState: 0x%" PRIx64 "\n",
                            u64_addr(ea));
 
             json s;
             s["address"] = ea;
-            s["service_name"] = "gSmmCpu->ReadSaveState";
+            s["service_name"] = "gEfiSmmCpuProtocol->ReadSaveState";
             s["table_name"] = "EFI_SMM_CPU_PROTOCOL";
             s["offset"] = 0;
 

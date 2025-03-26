@@ -2451,8 +2451,8 @@ bool efi_analysis::efi_analyser_t::analyse_variable_service(
 // analyse NVRAM variables
 bool efi_analysis::efi_analyser_t::analyse_nvram_variables() {
   string_list_t service_names = {"GetVariable", "SetVariable",
-                                 "gSmmVariable->SmmGetVariable",
-                                 "gSmmVariable->SmmGetVariable"};
+                                 "gEfiSmmVariableProtocol->SmmGetVariable",
+                                 "gEfiSmmVariableProtocol->SmmGetVariable"};
   for (auto &service_str : service_names) {
     ea_set_t var_services;
     for (auto &j_service : m_all_services) {
