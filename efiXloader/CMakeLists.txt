@@ -54,6 +54,8 @@ file(
   "3rd/uefitool/common/zlib/*.c"
   "3rd/uefitool/common/zlib/*.cpp"
   "3rd/uefitool/common/zlib/*.h"
+  "3rd/uefitool/common/kaitai/*.cpp"
+  "3rd/uefitool/common/kaitai/*.h"
   "3rd/uefitool/version.h"
   "3rd/uefitool/ffsdumper.cpp"
   "3rd/uefitool/ffsdumper.h"
