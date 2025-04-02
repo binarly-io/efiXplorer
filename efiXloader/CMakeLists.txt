@@ -32,18 +32,9 @@ include_directories(${PROJECT_SOURCE_DIR}/../efiXplorer/3rd/nlohmann_json)
 file(
   GLOB
   uefitool_src
-  "3rd/uefitool/common/*.h"
   "3rd/uefitool/common/*.c"
   "3rd/uefitool/common/*.cpp"
-  "3rd/uefitool/common/LZMA/*.cpp"
-  "3rd/uefitool/common/LZMA/*.c"
-  "3rd/uefitool/common/LZMA/*.h"
-  "3rd/uefitool/common/LZMA/SDK/C/*.c"
-  "3rd/uefitool/common/LZMA/SDK/C/*.cpp"
-  "3rd/uefitool/common/LZMA/SDK/C/*.h"
-  "3rd/uefitool/common/Tiano/*.c"
-  "3rd/uefitool/common/Tiano/*.cpp"
-  "3rd/uefitool/common/Tiano/*.h"
+  "3rd/uefitool/common/*.h"
   "3rd/uefitool/common/bstrlib/*.c"
   "3rd/uefitool/common/bstrlib/*.cpp"
   "3rd/uefitool/common/bstrlib/*.h"
@@ -51,16 +42,27 @@ file(
   "3rd/uefitool/common/digest/sha256.c"
   "3rd/uefitool/common/digest/sha512.c"
   "3rd/uefitool/common/digest/sm3.c"
+  "3rd/uefitool/common/generated/*.cpp"
+  "3rd/uefitool/common/generated/*.h"
+  "3rd/uefitool/common/kaitai/*.cpp"
+  "3rd/uefitool/common/kaitai/*.h"
+  "3rd/uefitool/common/LZMA/*.c"
+  "3rd/uefitool/common/LZMA/*.cpp"
+  "3rd/uefitool/common/LZMA/*.h"
+  "3rd/uefitool/common/LZMA/SDK/C/*.c"
+  "3rd/uefitool/common/LZMA/SDK/C/*.cpp"
+  "3rd/uefitool/common/LZMA/SDK/C/*.h"
+  "3rd/uefitool/common/Tiano/*.c"
+  "3rd/uefitool/common/Tiano/*.cpp"
+  "3rd/uefitool/common/Tiano/*.h"
   "3rd/uefitool/common/zlib/*.c"
   "3rd/uefitool/common/zlib/*.cpp"
   "3rd/uefitool/common/zlib/*.h"
-  "3rd/uefitool/common/kaitai/*.cpp"
-  "3rd/uefitool/common/kaitai/*.h"
-  "3rd/uefitool/version.h"
   "3rd/uefitool/ffsdumper.cpp"
   "3rd/uefitool/ffsdumper.h"
   "3rd/uefitool/uefidump.cpp"
-  "3rd/uefitool/uefidump.h")
+  "3rd/uefitool/uefidump.h"
+  "3rd/uefitool/version.h")
 
 # efiLoader sources
 file(GLOB efiloader_src "*.cc" "*.h")
