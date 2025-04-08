@@ -124,7 +124,9 @@ efi_analysis::efi_analyser_t::~efi_analyser_t() {
   g_smm_set_variable_calls.clear();
 
 #ifdef HEX_RAYS
-  clear_cached_cfuncs();
+  if (init_hexrays_plugin()) {
+    clear_cached_cfuncs();
+  }
 #endif
 }
 
