@@ -1,4 +1,7 @@
+# Modified by Binarly
+
 # Copyright 2011-2021 Google LLC
+# Copyright 2021-2025 Binarly
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -11,50 +14,6 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations under
 # the License.
-
-# FindIdaSdk
-# ----------
-#
-# Locates and configures the IDA Pro SDK. Supports version 7.0 or higher.
-#
-# Use this module by invoking find_package with the form:
-#
-# find_package(IdaSdk [REQUIRED]  # Fail with an error if IDA SDK is not found )
-#
-# Defines the following variables:
-#
-# IdaSdk_INCLUDE_DIRS - Include directories for the IDA Pro SDK. IdaSdk_PLATFORM
-# - IDA SDK platform, one of __LINUX__, __NT__ or __MAC__.
-#
-# This module reads hints about search locations from variables:
-#
-# IdaSdk_ROOT_DIR  - Preferred installation prefix
-#
-# Example (this assumes Windows):
-#
-# find_package(IdaSdk REQUIRED)
-#
-# # Builds targets plugin.dll and plugin64.dll add_ida_plugin(plugin
-# myplugin.cc) # Builds target plugin64.dll add_ida_plugin(plugin NOEA32
-# myplugin.cc) # Builds target plugin.dll add_ida_plugin(plugin NOEA64
-# myplugin.cc)
-#
-# Builds targets ldr.dll and ldr64.dll add_ida_loader(ldr myloader.cc)
-#
-# For platform-agnostic build files, the variables _so, and _so64 are available
-# (and map to .dll, .so, .dylib as necessary):
-#
-# add_ida_plugin(plugin myplugin.cc) target_link_libraries(plugin${_so} ssl)
-# target_link_libraries(plugin${_so64} ssl)
-#
-# To avoid the duplication above, these functions, which mimic the built-in
-# ones, are also defined:
-#
-# add_ida_library(<name> NOEA64|NOEA64 ...) <=> add_libary()
-# ida_target_link_libraries(...)            <=> target_link_libraries()
-# ida_target_include_directories(...)       <=> target_include_directories()
-# set_ida_target_properties(...)            <=> set_target_properties()
-# ida_install(...)                          <=> install()
 
 include(CMakeParseArguments)
 include(FindPackageHandleStandardArgs)
@@ -140,8 +99,6 @@ function(_ida_plugin name ea64 link_script) # ARGN contains sources
                             ${IdaSdk_DIR}/${link_script})
     endif()
 
-    # For qrefcnt_obj_t in ida.hpp
-    # TODO(cblichmann): This belongs in an interface library instead.
     target_compile_options(${t} PUBLIC -Wno-non-virtual-dtor -Wno-varargs)
   elseif(WIN32)
     if(ea64)
@@ -177,8 +134,6 @@ function(_ida_loader name ea64 link_script)
                             ${IdaSdk_DIR}/${link_script})
     endif()
 
-    # For qrefcnt_obj_t in ida.hpp
-    # TODO(cblichmann): This belongs in an interface library instead.
     target_compile_options(${t} PUBLIC -Wno-non-virtual-dtor -Wno-varargs)
   elseif(WIN32)
     if(ea64)

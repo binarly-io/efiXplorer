@@ -1,6 +1,6 @@
 /*
  * efiXplorer
- * Copyright (C) 2020-2024  Binarly
+ * Copyright (C) 2020-2025  Binarly
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@
 using nlohmann::json;
 
 #define COPYRIGHT                                                              \
-  "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
+  "(C) 2020-2025  Binarly - https://github.com/binarly-io/efiXplorer"
 
 #define BTOA(x) ((x) ? "true" : "false")
 
