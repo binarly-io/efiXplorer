@@ -1,0 +1,16 @@
+{
+  "IDAMetadataDescriptorVersion": 1,
+  "plugin": {
+    "name": "efiXplorer",
+    "entryPoint": "efiXplorer",
+    "categories": [
+      "file-parsers-and-loaders",
+      "decompilation",
+      "vulnerability-research-and-exploit-development"
+    ],
+    "logoPath": "pics/logo.png",
+    "idaVersions": ">=8.3",
+    "description": "IDA plugin and loader for UEFI firmware analysis and reverse engineering automation",
+    "version": "6.1"
+  }
+}
