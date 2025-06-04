@@ -11,6 +11,6 @@
     "logoPath": "pics/logo.png",
     "idaVersions": ">=8.3",
     "description": "IDA plugin and loader for UEFI firmware analysis and reverse engineering automation",
-    "version": "6.1"
+    "version": "6.1.0"
   }
 }
