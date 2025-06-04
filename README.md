@@ -2,7 +2,7 @@
 [![efiXplorer CI](https://github.com/binarly-io/efiXplorer/actions/workflows/build.yml/badge.svg)](https://github.com/binarly-io/efiXplorer/actions)
 
 <p align="center">
-  <img alt="logo" src="pics/efiXplorer_logo.png" width="45%">
+  <img alt="logo" src="https://raw.githubusercontent.com/binarly-io/efiXplorer/5c21f355c41e74af4a7cd1659780a71f76f5d2c1/pics/efiXplorer_logo.png" width="45%">
 </p>
 
 **efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation
