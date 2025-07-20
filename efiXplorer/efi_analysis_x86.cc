@@ -52,17 +52,17 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
   }
 
   // save all m_funcs
-  for (auto i = 0; i < get_func_qty(); i++) {
-    auto func = getn_func(i);
+  for (auto i = 0; i < get_func_qty(); ++i) {
+    const auto func = getn_func(i);
     m_funcs.push_back(func->start_ea);
   }
 
   ea_list_t addrs;
-  for (auto service : m_prot_bs_names) {
+  for (const auto &service : m_prot_bs_names) {
     m_boot_services[service] = addrs;
   }
 
-  for (auto service : m_prot_smms_names) {
+  for (const auto &service : m_prot_smms_names) {
     m_smm_services[service] = addrs;
   }
 
@@ -70,14 +70,14 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
     // load protocols from guids.json file
     std::ifstream in(m_guids_json_path);
     in >> m_guiddb;
-  } catch (std::exception &e) {
+  } catch (const std::exception &e) {
     m_guiddb.clear();
     warning("%s: %s\n", g_plugin_name, "guids.json file is invalid");
   }
 
   // get reverse dictionary
-  for (auto g = m_guiddb.begin(); g != m_guiddb.end(); ++g) {
-    m_guiddb_map[g.value()] = g.key();
+  for (const auto &[key, value] : m_guiddb.items()) {
+    m_guiddb_map[value] = key;
   }
 
   // set mask and masked value for MACRO_EFI enum value detection
@@ -191,10 +191,10 @@ void efi_analysis::efi_analyser_t::get_segments() {
 // find gImageHandle address for 64-bit modules
 bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
   insn_t insn;
-  for (int idx = 0; idx < get_entry_qty(); idx++) {
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
     // get address of entry point
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t ea = get_entry(ord);
+    const auto ord = get_entry_ordinal(idx);
+    auto ea = get_entry(ord);
 
     // search for EFI_IMAGE_HANDLE, check 8 instructions
     for (auto i = 0; i < 8; i++) {
@@ -216,13 +216,13 @@ bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
 // find gST address for 64-bit modules
 bool efi_analysis::efi_analyser_x86_t::find_system_table64() {
   insn_t insn;
-  for (int idx = 0; idx < get_entry_qty(); idx++) {
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
     // get address of entry point
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t ea = get_entry(ord);
+    const auto ord = get_entry_ordinal(idx);
+    auto ea = get_entry(ord);
 
     // search for EFI_SYSTEM_TABLE, check 16 instructions
-    for (int i = 0; i < 16; i++) {
+    for (auto i = 0; i < 16; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
           insn.ops[1].reg == R_RDX && insn.ops[0].type == o_mem) {
@@ -249,10 +249,10 @@ bool efi_analysis::efi_analyser_x86_t::find_smst64() {
                      smst_list_smm_base.end());
 
   // deduplicate
-  auto last = std::unique(m_smst_list.begin(), m_smst_list.end());
+  const auto last = std::unique(m_smst_list.begin(), m_smst_list.end());
   m_smst_list.erase(last, m_smst_list.end());
 
-  for (auto smst : m_smst_list) {
+  for (const auto smst : m_smst_list) {
     efi_utils::log("0x%" PRIx64 ": gSmst\n", u64_addr(smst));
   }
 
@@ -263,7 +263,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst64() {
 // find and mark gSmst global and local variable address for 64-bit
 // modules after Hex-Rays based analysis
 bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
-  for (auto ea : g_get_smst_location_calls) {
+  for (const auto ea : g_get_smst_location_calls) {
     efi_utils::log("EfiSmmBase2Protocol->GetSmstLocation call: 0x%" PRIx64 "\n",
                    u64_addr(ea));
     insn_t insn;
@@ -284,7 +284,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
             smst_stack["reg"] = insn.ops[1].reg;
             smst_stack["start"] = next_head(ea, BADADDR);
             // get bounds
-            func_t *f = get_func(addr);
+            const auto f = get_func(addr);
             if (f == nullptr) {
               smst_stack["end"] = BADADDR;
             } else {

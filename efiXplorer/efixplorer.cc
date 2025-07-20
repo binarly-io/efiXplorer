@@ -31,7 +31,7 @@ static const char welcome_msg[] = "      ____ _  __     __\n"
                                   "            /_/\n";
 
 // default arguments
-args_t g_args = {module_type_t::dxe_smm, 0, 0};
+args_t g_args{module_type_t::dxe_smm, 0, 0};
 
 #if IDA_SDK_VERSION < 760
 hexdsp_t *hexdsp = nullptr;
@@ -39,7 +39,7 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-  arch_file_type_t file_type = efi_utils::input_file_type();
+  const auto file_type = efi_utils::input_file_type();
   if (file_type == arch_file_type_t::unsupported) {
     return PLUGIN_SKIP;
   }
@@ -80,14 +80,14 @@ bool idaapi run(size_t arg) {
   efi_utils::log("plugin run with argument %lu (sdk version: %d)\n", arg,
                  IDA_SDK_VERSION);
 
-  auto guids_path = efi_utils::get_guids_json_file();
+  const auto guids_path = efi_utils::get_guids_json_file();
   if (guids_path.empty()) {
     warning("%s: %s\n", g_plugin_name,
             "guids.json file not found, copy guids.json to plugins");
     return false;
   }
 
-  arch_file_type_t arch = efi_utils::input_file_type();
+  const auto arch = efi_utils::input_file_type();
   if (arch == arch_file_type_t::x86_64) {
     efi_utils::log("input file is x86 64-bit module\n");
     efi_analysis::efi_analyse_main_x86_64();

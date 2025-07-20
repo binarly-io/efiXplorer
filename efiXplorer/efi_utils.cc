@@ -30,7 +30,7 @@ ea_list_t g_smm_set_variable_calls;
 //--------------------------------------------------------------------------
 // get file format name
 std::string file_format_name() {
-  char file_format[256] = {0};
+  char file_format[256] = {};
   get_file_type_name(file_format, 256);
   return file_format;
 }
@@ -51,9 +51,7 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
 
   uint64_t signature = get_wide_word(hdr_seg->start_ea);
   bool has_pei_guids = false;
-  for (auto guid = m_all_guids->begin(); guid != m_all_guids->end(); guid++) {
-    json guid_value = *guid;
-
+  for (const auto &guid_value : *m_all_guids) {
     if (static_cast<std::string>(guid_value["name"]).find("PEI") !=
         std::string::npos) {
       has_pei_guids = true;
@@ -63,7 +61,7 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
 
   bool has_pei_in_path = false;
 
-  char file_name[256] = {0};
+  char file_name[256] = {};
   get_input_file_path(file_name, sizeof(file_name));
   std::string file_name_str = file_name;
 
@@ -255,7 +253,7 @@ ea_t efi_utils::find_unknown_bs_var64(ea_t ea) {
   insn_t insn;
 
   // check 10 instructions below
-  for (int i = 0; i < 10; i++) {
+  for (auto i = 0; i < 10; ++i) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
         insn.ops[0].reg == R_RAX && insn.ops[1].type == o_mem) {
@@ -285,8 +283,8 @@ ea_list_t efi_utils::get_xrefs_to_array(ea_t addr) {
   ea_t first_ea;
   ea_t ea = addr;
   while (true) {
-    auto ptr = get_qword(ea);
-    auto xrefs = efi_utils::get_xrefs(ptr);
+    const auto ptr = get_qword(ea);
+    const auto xrefs = efi_utils::get_xrefs(ptr);
     if (std::find(xrefs.begin(), xrefs.end(), ea) == xrefs.end()) {
       break;
     }
@@ -411,9 +409,9 @@ bool efi_utils::summary_json_exists() {
 // change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
 // at ModuleEntryPoint
 void efi_utils::set_entry_arg_to_pei_svc() {
-  for (auto idx = 0; idx < get_entry_qty(); idx++) {
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t start_ea = get_entry(ord);
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
+    const auto ord = get_entry_ordinal(idx);
+    const auto start_ea = get_entry(ord);
     tinfo_t tif_ea;
     if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
       continue;
@@ -425,7 +423,7 @@ void efi_utils::set_entry_arg_to_pei_svc() {
     }
 
     tinfo_t tif_pei;
-    bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
+    const auto res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
     if (!res) {
       continue;
     }
@@ -487,12 +485,12 @@ bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
 // add EFI_PEI_SERVICES_4 structure
 bool efi_utils::add_struct_for_shifted_ptr() {
 #if IDA_SDK_VERSION < 850
-  auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
+  const auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
   if (sid == BADADDR) {
     return false;
   }
 
-  auto new_struct = get_struc(sid);
+  const auto new_struct = get_struc(sid);
   if (new_struct == nullptr) {
     return false;
   }
