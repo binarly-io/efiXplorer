@@ -27,6 +27,7 @@
 #endif
 #include <codecvt>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -96,7 +97,7 @@ public:
   UByteArray ubytes;
   UByteArray uname;
   bytevec_t bytes;
-  char *data = NULL;
+  char *data = nullptr;
   uint32_t size = 0;
   std::string name_utf8;
   std::string name_utf16;
@@ -146,7 +147,7 @@ public:
 
   json all_deps;
   json all_modules;
-  std::vector<efiloader::File *> files;
+  std::vector<std::unique_ptr<efiloader::File>> files;
   std::set<qstring> unique_names;
 
   TreeModel model;

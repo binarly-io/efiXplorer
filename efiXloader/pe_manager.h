@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "ida_core.h"
@@ -39,13 +40,13 @@ public:
     pe_sel_base = 0;
     machine_type = mt;
   }
-  void process(linput_t *li, std::basic_string<char> fname, int ord);
+  void process(linput_t *li, const std::string &fname, int ord);
   uint16_t machine_type;
 
 private:
   void to_base(linput_t *);
-  efiloader::PE *pe;
-  qvector<efiloader::PE *> pe_files;
+  std::unique_ptr<efiloader::PE> pe;
+  qvector<std::unique_ptr<efiloader::PE>> pe_files;
   ushort pe_sel_base;
   ea_t pe_base;
   // head processing

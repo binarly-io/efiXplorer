@@ -311,9 +311,9 @@ void efiloader::Uefitool::dump(const UModelIndex &index) {
   USTATUS err;
 
   if (is_file_index(index)) {
-    efiloader::File *file = new File;
+    auto file = std::make_unique<File>();
     for (int i = 0; i < model.rowCount(index); i++) {
-      dump(index.child(i, 0), i, file);
+      dump(index.child(i, 0), i, file.get());
     }
 
     // append file
@@ -322,7 +322,7 @@ void efiloader::Uefitool::dump(const UModelIndex &index) {
           {"name", file->module_name.c_str()},
           {"kind", file->module_kind.c_str()}};
       file->write();
-      files.push_back(file);
+      files.push_back(std::move(file));
     }
   } else {
     for (int i = 0; i < model.rowCount(index); i++) {
