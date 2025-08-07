@@ -22,6 +22,7 @@
 
 #include <pro.h>
 
+#include <cinttypes>
 #include <map>
 
 #include <bytes.hpp>
@@ -446,7 +447,7 @@ void efiloader::PE::preprocess() {
   ea = ea + 0x3c;
   create_dword_with(ea, "File address of new exe header");
   if (is_loaded(ea) && get_dword(ea)) {
-    msg("[efiXloader] making relative offset: 0x%016llX\n",
+    msg("[efiXloader] making relative offset: 0x%" PRIx64 "\n",
         static_cast<uint64_t>(ea));
     op_plain_offset(ea, 0, *pe_base);
   }
