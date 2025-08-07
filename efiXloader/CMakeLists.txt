@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(efiXloader)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -68,7 +68,7 @@ file(GLOB efiloader_src "*.cc" "*.h")
 
 add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cc)
 
-set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 20)
+set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
 add_ida_library(efiXloader_lib NOEA32 ${efiloader_src} ${uefitool_src}
