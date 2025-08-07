@@ -19,6 +19,8 @@
 
 #include "pe_manager.h"
 
+#include <string>
+
 void efiloader::PeManager::process(linput_t *li, const std::string &fname,
                                    int ord) {
   // 32-bit modules and modules in the TE format will not be loaded

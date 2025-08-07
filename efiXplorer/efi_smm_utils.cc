@@ -21,12 +21,13 @@
 
 #include "efi_global.h"
 #include <algorithm>
+#include <string>
 
 //--------------------------------------------------------------------------
 // find and mark gSmst global variable via
 // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID/EFI_SMM_SW_DISPATCH2_PROTOCOL_GUID
-ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
-  ea_list_t smst_addrs;
+ea_set_t efi_smm_utils::find_smst_sw_dispatch(const ea_set_t &bs_addrs) {
+  ea_set_t smst_addrs;
   efi_guid_t guid2 = {0x18a3c6dc,
                       0x5eea,
                       0x48c8,
@@ -38,16 +39,16 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
                      {0xb0, 0x26, 0xdf, 0x99, 0x36, 0x53, 0xf8,
                       0xbf}}; // EFI_SMM_SW_DISPATCH_PROTOCOL_GUID
 
-  ea_list_t data_addrs =
+  ea_set_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
-  ea_list_t data2_addrs =
+  ea_set_t data2_addrs =
       efi_utils::find_data(0, BADADDR, guid2.uchar_data().data(), 16);
-  data_addrs.insert(data_addrs.end(), data2_addrs.begin(), data2_addrs.end());
+  data_addrs.insert(data2_addrs.begin(), data2_addrs.end());
 
   for (auto data_addr : data_addrs) {
     efi_utils::log("SMM dispatch protocol GUID: 0x%" PRIx64 "\n",
                    u64_addr(data_addr));
-    ea_list_t xrefs = efi_utils::get_xrefs(data_addr);
+    ea_set_t xrefs = efi_utils::get_xrefs(data_addr);
     insn_t insn;
     for (auto xref : xrefs) {
       // smst register
@@ -83,12 +84,12 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
                          "\n",
                          u64_addr(cur_addr), u64_addr(insn.ops[1].addr));
           res_addr = insn.ops[1].addr;
-          if (efi_utils::addr_in_vec(bs_list, res_addr)) {
+          if (bs_addrs.contains(res_addr)) {
             continue;
           }
           efi_utils::set_ptr_type_and_name(res_addr, "gSmst",
                                            "_EFI_SMM_SYSTEM_TABLE2");
-          smst_addrs.push_back(res_addr);
+          smst_addrs.insert(res_addr);
           break;
         }
         if (is_basic_block_end(insn, false)) {
@@ -103,19 +104,19 @@ ea_list_t efi_smm_utils::find_smst_sw_dispatch(ea_list_t bs_list) {
 
 //--------------------------------------------------------------------------
 // find and mark gSmst global variable via EFI_SMM_BASE2_PROTOCOL_GUID
-ea_list_t efi_smm_utils::find_smst_smm_base(ea_list_t bs_list) {
-  ea_list_t smst_addrs;
+ea_set_t efi_smm_utils::find_smst_smm_base(const ea_set_t &bs_addrs) {
+  ea_set_t smst_addrs;
   efi_guid_t guid = {0xf4ccbfb7,
                      0xf6e0,
                      0x47fd,
                      {0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1,
                       0x91}}; // EFI_SMM_BASE2_PROTOCOL_GUID
-  ea_list_t data_addrs =
+  ea_set_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
   for (auto data_addr : data_addrs) {
     efi_utils::log("SMM base protocol GUID: 0x%" PRIx64 "\n",
                    u64_addr(data_addr));
-    ea_list_t data_xrefs = efi_utils::get_xrefs(data_addr);
+    ea_set_t data_xrefs = efi_utils::get_xrefs(data_addr);
     insn_t insn;
     for (auto xref : data_xrefs) {
       ea_t res_addr = BADADDR;
@@ -140,12 +141,12 @@ ea_list_t efi_smm_utils::find_smst_smm_base(ea_list_t bs_list) {
       }
       if (!in_smram) {
         // found gSmst
-        if (efi_utils::addr_in_vec(bs_list, res_addr)) {
+        if (bs_addrs.contains(res_addr)) {
           continue;
         }
         efi_utils::set_ptr_type_and_name(res_addr, "gSmst",
                                          "_EFI_SMM_SYSTEM_TABLE2");
-        smst_addrs.push_back(res_addr);
+        smst_addrs.insert(res_addr);
       } else {
         // found gInSmram
         efi_utils::set_type_and_name(res_addr, "gInSmram", "BOOLEAN");
@@ -326,12 +327,12 @@ func_list_t efi_smm_utils::find_smi_handlers(ea_t address, std::string prefix) {
 func_list_t efi_smm_utils::find_smi_handlers_dispatch(efi_guid_t guid,
                                                       std::string prefix) {
   func_list_t smi_handlers;
-  ea_list_t data_addrs =
+  ea_set_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
-  for (auto data_addr : data_addrs) {
-    ea_list_t xrefs = efi_utils::get_xrefs(data_addr);
+  for (const auto &data_addr : data_addrs) {
+    ea_set_t xrefs = efi_utils::get_xrefs(data_addr);
 
-    for (auto xref : xrefs) {
+    for (const auto &xref : xrefs) {
       auto res = efi_smm_utils::find_smi_handlers(xref, prefix);
       smi_handlers.insert(smi_handlers.end(), res.begin(), res.end());
     }
@@ -370,10 +371,9 @@ efi_smm_utils::find_smi_handlers_dispatch_stack(json_list_t stack_guids,
 //--------------------------------------------------------------------------
 // Find gEfiSmmVariableProtocol->SmmGetVariable calls via
 // EFI_SMM_VARIABLE_PROTOCOL_GUID
-ea_list_t
-efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
-                                           json_list_t *all_services) {
-  ea_list_t smm_get_variable_calls;
+ea_set_t efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
+                                                    json_list_t *all_services) {
+  ea_set_t smm_get_variable_calls;
   efi_guid_t guid = {0xed32d533,
                      0x99e6,
                      0x4209,
@@ -381,13 +381,13 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
                       0xa7}}; // EFI_SMM_VARIABLE_PROTOCOL_GUID
 
   // find all EFI_SMM_VARIABLE_PROTOCOL_GUID addresses
-  ea_list_t data_addrs =
+  ea_set_t data_addrs =
       efi_utils::find_data(0, BADADDR, guid.uchar_data().data(), 16);
 
   // find all gEfiSmmVariableProtocol variables
-  ea_list_t smm_variable_addrs;
+  ea_set_t smm_variable_addrs;
   for (auto data_addr : data_addrs) {
-    ea_list_t xrefs = efi_utils::get_xrefs(data_addr);
+    ea_set_t xrefs = efi_utils::get_xrefs(data_addr);
 
     for (auto xref : xrefs) {
       segment_t *seg = getseg(xref);
@@ -415,7 +415,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
           efi_utils::set_ptr_type_and_name(insn.ops[1].addr,
                                            "gEfiSmmVariableProtocol",
                                            "EFI_SMM_VARIABLE_PROTOCOL");
-          smm_variable_addrs.push_back(insn.ops[1].addr);
+          smm_variable_addrs.insert(insn.ops[1].addr);
           break;
         }
       }
@@ -427,7 +427,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
   }
 
   for (auto smm_variable_addr : smm_variable_addrs) {
-    ea_list_t smm_variable_xrefs = efi_utils::get_xrefs(smm_variable_addr);
+    ea_set_t smm_variable_xrefs = efi_utils::get_xrefs(smm_variable_addr);
     for (auto smm_variable_xref : smm_variable_xrefs) {
       segment_t *seg = getseg(smm_variable_xref);
       qstring seg_name;
@@ -457,7 +457,7 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
             if (find(smm_get_variable_calls.begin(),
                      smm_get_variable_calls.end(),
                      ea) == smm_get_variable_calls.end()) {
-              smm_get_variable_calls.push_back(ea);
+              smm_get_variable_calls.insert(ea);
             }
 
             efi_utils::op_stroff(ea, "EFI_SMM_VARIABLE_PROTOCOL");
@@ -483,20 +483,20 @@ efi_smm_utils::find_smm_get_variable_calls(segment_list_t data_segs,
   return smm_get_variable_calls;
 }
 
-ea_list_t
+ea_set_t
 efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
                                             json_list_t data_guids,
                                             json_list_t *all_services) {
-  ea_list_t read_save_state_calls;
-  ea_list_t code_addrs;
-  ea_list_t smm_cpu_addrs;
+  ea_set_t read_save_state_calls;
+  ea_set_t code_addrs;
+  ea_set_t smm_cpu_addrs;
   for (auto guid : stack_guids) {
     if (guid["name"] != "EFI_SMM_CPU_PROTOCOL_GUID")
       continue;
     ea_t address = guid["address"];
     efi_utils::log("found EFI_SMM_CPU_PROTOCOL on stack at 0x%" PRIx64 "\n",
                    u64_addr(address));
-    code_addrs.push_back(address);
+    code_addrs.insert(address);
   }
 
   for (auto guid : data_guids) {
@@ -506,7 +506,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
     ea_t address = guid["address"];
     efi_utils::log("found EFI_SMM_CPU_PROTOCOL at 0x%" PRIx64 "\n",
                    u64_addr(address));
-    ea_list_t guid_xrefs = efi_utils::get_xrefs(address);
+    ea_set_t guid_xrefs = efi_utils::get_xrefs(address);
 
     for (auto guid_xref : guid_xrefs) {
       segment_t *seg = getseg(guid_xref);
@@ -516,7 +516,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
       if (index == std::string::npos) {
         continue;
       }
-      code_addrs.push_back(guid_xref);
+      code_addrs.insert(guid_xref);
     }
   }
 
@@ -533,7 +533,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
                        u64_addr(insn.ops[1].addr));
         efi_utils::set_ptr_type_and_name(insn.ops[1].addr, "gEfiSmmCpuProtocol",
                                          "EFI_SMM_CPU_PROTOCOL");
-        smm_cpu_addrs.push_back(insn.ops[1].addr);
+        smm_cpu_addrs.insert(insn.ops[1].addr);
         break;
       }
       ea = prev_head(ea, 0);
@@ -545,7 +545,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
   }
 
   for (auto smm_cpu_addr : smm_cpu_addrs) {
-    ea_list_t smm_cpu_xrefs = efi_utils::get_xrefs(smm_cpu_addr);
+    ea_set_t smm_cpu_xrefs = efi_utils::get_xrefs(smm_cpu_addr);
 
     for (auto smm_cpu_xref : smm_cpu_xrefs) {
       segment_t *seg = getseg(smm_cpu_xref);
@@ -574,7 +574,7 @@ efi_smm_utils::resolve_efi_smm_cpu_protocol(json_list_t stack_guids,
               insn.ops[0].addr == 0) {
             if (find(read_save_state_calls.begin(), read_save_state_calls.end(),
                      ea) == read_save_state_calls.end()) {
-              read_save_state_calls.push_back(ea);
+              read_save_state_calls.insert(ea);
             }
 
             efi_utils::op_stroff(ea, "EFI_SMM_CPU_PROTOCOL");

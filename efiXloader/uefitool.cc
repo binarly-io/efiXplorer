@@ -19,6 +19,11 @@
 
 #include "uefitool.h"
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 void efiloader::Uefitool::show_messages() {
   for (size_t i = 0; i < messages.size(); i++) {
     msg("[uefitool] %s\n", messages[i].first.toLocal8Bit());

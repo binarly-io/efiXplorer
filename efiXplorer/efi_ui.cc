@@ -21,6 +21,8 @@
 #include "efi_deps.h"
 #include "efi_global.h"
 
+#include <string>
+
 // vulns column widths
 const int vulns_chooser_t::widths_vulns[] = {
     16, // Address

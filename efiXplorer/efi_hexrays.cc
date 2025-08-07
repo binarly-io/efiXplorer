@@ -19,6 +19,8 @@
 
 #include "efi_hexrays.h"
 
+#include <string>
+
 // given a tinfo_t specifying a user-defined type (UDT), look up the specified
 // field by its name, and retrieve its offset.
 bool efi_hexrays::offset_of(tinfo_t tif, const char *name,

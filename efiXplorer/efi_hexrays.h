@@ -634,7 +634,7 @@ protected:
 class prototypes_fixer_t : public ctree_visitor_t {
 public:
   prototypes_fixer_t() : ctree_visitor_t(CV_FAST) {}
-  ea_list_t m_child_functions;
+  ea_set_t m_child_functions;
 
   // this is the callback function that Hex-Rays invokes for every expression
   // in the CTREE
@@ -707,9 +707,7 @@ public:
 
         if (type_name == qstring("EFI_HANDLE") ||
             type_name == qstring("EFI_SYSTEM_TABLE")) {
-          if (!efi_utils::addr_in_vec(m_child_functions, func_addr)) {
-            m_child_functions.push_back(func_addr);
-          }
+          m_child_functions.insert(func_addr);
 
           // set argument type and name
           if (cf->argidx.size() <= i) {
@@ -739,12 +737,12 @@ class variables_detector_t : public ctree_visitor_t {
 public:
   variables_detector_t() : ctree_visitor_t(CV_FAST) {}
 
-  ea_list_t m_child_functions;
+  ea_set_t m_child_functions;
 
-  ea_list_t m_image_handle_list;
-  ea_list_t m_st_list;
-  ea_list_t m_bs_list;
-  ea_list_t m_rt_list;
+  ea_set_t m_image_handle_list;
+  ea_set_t m_st_list;
+  ea_set_t m_bs_list;
+  ea_set_t m_rt_list;
 
   void set_func_ea(ea_t ea) { m_func_ea = ea; }
 
@@ -753,9 +751,7 @@ public:
   int visit_expr(cexpr_t *e) {
     if (e->op == cot_asg) {
       // saving a child function for recursive analysis
-      if (!efi_utils::addr_in_vec(m_child_functions, e->ea)) {
-        m_child_functions.push_back(e->x->obj_ea);
-      }
+      m_child_functions.insert(e->x->obj_ea);
     }
 
     bool global_var = false;
@@ -814,27 +810,19 @@ public:
       std::string type_name_str = type_name.c_str();
       if (type_name == "EFI_HANDLE") {
         efi_utils::set_type_and_name(g_addr, "gImageHandle", type_name_str);
-        if (!efi_utils::addr_in_vec(m_image_handle_list, g_addr)) {
-          m_image_handle_list.push_back(g_addr);
-        }
+        m_image_handle_list.insert(g_addr);
       }
       if (type_name == "EFI_SYSTEM_TABLE") {
         efi_utils::set_ptr_type_and_name(g_addr, "gST", type_name_str);
-        if (!efi_utils::addr_in_vec(m_st_list, g_addr)) {
-          m_st_list.push_back(g_addr);
-        }
+        m_st_list.insert(g_addr);
       }
       if (type_name == "EFI_BOOT_SERVICES") {
         efi_utils::set_ptr_type_and_name(g_addr, "gBS", type_name_str);
-        if (!efi_utils::addr_in_vec(m_bs_list, g_addr)) {
-          m_bs_list.push_back(g_addr);
-        }
+        m_bs_list.insert(g_addr);
       }
       if (type_name == "EFI_RUNTIME_SERVICES") {
         efi_utils::set_ptr_type_and_name(g_addr, "gRT", type_name_str);
-        if (!efi_utils::addr_in_vec(m_rt_list, g_addr)) {
-          m_rt_list.push_back(g_addr);
-        }
+        m_rt_list.insert(g_addr);
       }
     }
 

@@ -35,12 +35,12 @@ public:
   efi_analyser_t();
   ~efi_analyser_t();
 
-  ea_list_t m_bs_list;   // gBS list (boot services addresses)
-  ea_list_t m_rt_list;   // gRT list (runtime services addresses)
-  ea_list_t m_smst_list; // gSmst list (SMM system table addresses)
-  ea_list_t m_st_list;   // gST list (system table addresses)
+  ea_set_t m_bs_list;   // gBS list (boot services addresses)
+  ea_set_t m_rt_list;   // gRT list (runtime services addresses)
+  ea_set_t m_smst_list; // gSmst list (SMM system table addresses)
+  ea_set_t m_st_list;   // gST list (system table addresses)
 
-  ea_list_t m_funcs;
+  ea_set_t m_funcs;
 
   func_list_t m_smi_handlers;
   json_list_t m_all_guids;
@@ -107,7 +107,7 @@ protected:
   json_list_t m_data_guids;
   json_list_t m_stack_guids;
 
-  ea_list_t m_annotated_protocols;
+  ea_set_t m_annotated_protocols;
   json m_boot_services;
   json m_pei_services_all;
   json m_ppi_calls_all;
@@ -115,19 +115,19 @@ protected:
   json m_smm_services_all;
   json m_smm_services;
 
-  ea_list_t m_image_handle_list; // gImageHandle list (image handle addresses)
-  ea_list_t m_runtime_services_list; // runtime services list
+  ea_set_t m_image_handle_list; // gImageHandle list (image handle addresses)
+  ea_set_t m_runtime_services_list; // runtime services list
 
   // for SMM callout scanners
-  ea_list_t m_callout_addrs;
-  ea_list_t m_read_save_state_calls;
+  ea_set_t m_callout_addrs;
+  ea_set_t m_read_save_state_calls;
   func_list_t m_child_smi_handlers;
   func_list_t m_exc_funcs;
 
   // for double GetVariable scanners
-  ea_list_t m_double_get_variable_pei;
-  ea_list_t m_double_get_variable_smm;
-  ea_list_t m_double_get_variable;
+  ea_set_t m_double_get_variable_pei;
+  ea_set_t m_double_get_variable_smm;
+  ea_set_t m_double_get_variable;
 
   tid_t m_macro_efi_tid;
   tid_t m_macro_var_attr_tid;
@@ -452,10 +452,10 @@ public:
   void show_all_choosers();
 
 private:
-  ea_list_t m_image_handle_list_arm;
-  ea_list_t m_st_list_arm;
-  ea_list_t m_bs_list_arm;
-  ea_list_t m_rt_list_arm;
+  ea_set_t m_image_handle_list_arm;
+  ea_set_t m_st_list_arm;
+  ea_set_t m_bs_list_arm;
+  ea_set_t m_rt_list_arm;
 
   tid_t m_macro_efi_tid;
   tid_t m_macro_var_attr_tid;
