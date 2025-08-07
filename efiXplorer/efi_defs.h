@@ -55,7 +55,7 @@
 using nlohmann::json;
 
 #define COPYRIGHT                                                              \
-  "(C) 2020-2024  Binarly - https://github.com/binarly-io/efiXplorer"
+  "(C) 2020-2025  Binarly - https://github.com/binarly-io/efiXplorer"
 
 #define BTOA(x) ((x) ? "true" : "false")
 
