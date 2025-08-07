@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "ida_core.h"
@@ -38,17 +39,11 @@ namespace efiloader {
 
 class PE {
 public:
-  PE(linput_t *i_li, std::basic_string<char> fname, ea_t *base,
-     ushort *sel_base, int ord, uint16_t mt) {
-    _image_name = fname.substr(fname.find_last_of("/\\") + 1);
-    pe_base = base;
-    pe_sel_base = sel_base;
-    li = i_li;
-    utils = new Utils;
-    _sec_off = 0;
-    _sec_ea = 0;
-    _sel = 0;
-    _ord = ord;
+  PE(linput_t *i_li, const std::string &fname, ea_t *base, ushort *sel_base,
+     int ord, uint16_t mt)
+      : _image_name(fname.substr(fname.find_last_of("/\\") + 1)), pe_base(base),
+        pe_sel_base(sel_base), li(i_li), _sec_off(0), _sec_ea(0), _sel(0),
+        _ord(ord) {
     inf_set_64bit();
     if (mt == PECPU_ARM64) {
       set_processor_type("arm", SETPROC_LOADER);
@@ -61,11 +56,9 @@ public:
       set_compiler_id(COMP_MS);
     }
     reset();
-  };
-  ~PE() {
-    close_linput(li);
-    delete utils;
   }
+
+  ~PE() { close_linput(li); }
   uint32_t number_of_sections;
   uint32_t number_of_dirs;
   char *name;
@@ -110,9 +103,8 @@ public:
 
 private:
   qvector<ea_t> segments_ea;
-  std::basic_string<char> _full_path;
-  std::basic_string<char> _image_name;
-  efiloader::Utils *utils;
+  std::string _full_path;
+  std::string _image_name;
   linput_t *li;
   qoff64_t head_start();
   qoff64_t head_off;
@@ -132,6 +124,10 @@ private:
   // PE image preprocessing
   //
   void preprocess();
+  ea_t create_byte_with(ea_t ea, const char *comment);
+  ea_t create_word_with(ea_t ea, const char *comment);
+  ea_t create_dword_with(ea_t ea, const char *comment);
+  ea_t create_qword_with(ea_t ea, const char *comment);
   //
   // sections processing
   //
@@ -144,6 +140,7 @@ private:
   // pe ord
   uval_t _ord;
   ea_t image_base;
+  uint64_t default_image_base;
   uint32_t image_size;
   qvector<size_t> segm_sizes;
   qvector<size_t> segm_raw_sizes;

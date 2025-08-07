@@ -19,6 +19,9 @@
 
 #include "efi_deps.h"
 
+#include <map>
+#include <string>
+
 efi_deps_t::efi_deps_t() {
   // read DEPEX (for protocols) from
   // .deps.json file if this file exists
@@ -145,9 +148,10 @@ void efi_deps_t::get_installers_modules() {
         continue;
       }
       if (xrefs.size() == 1) {
-        func_t *func = get_func(xrefs.at(0));
+        auto xref = *xrefs.begin();
+        func_t *func = get_func(xref);
         if (func == nullptr) {
-          xrefs = efi_utils::get_xrefs_to_array(xrefs.at(0));
+          xrefs = efi_utils::get_xrefs_to_array(xref);
         }
       }
       for (auto ea : xrefs) {

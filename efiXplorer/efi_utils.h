@@ -26,26 +26,28 @@ namespace efi_utils {
 arch_file_type_t input_file_type();
 
 bool add_struct_for_shifted_ptr();
-bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_list_t t3, ea_t ea);
-bool addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea);
-bool addr_in_vec(ea_list_t vec, ea_t addr);
+
+bool addr_in_tables(const ea_set_t &t1, const ea_set_t &t2, ea_t ea);
+bool addr_in_tables(const ea_set_t &t1, const ea_set_t &t2, const ea_set_t &t3,
+                    ea_t ea);
+bool json_in_vec(const json_list_t &vec, const json &item);
+bool uint64_in_vec(const uint64_list_t &vec, uint64_t value);
+
 bool check_boot_service_protocol_xrefs(ea_t call_addr);
 bool check_boot_service_protocol(ea_t call_addr);
 bool check_install_protocol(ea_t ea);
-bool json_in_vec(json_list_t vec, json item);
-bool mark_copies_for_gvars(ea_list_t gvars, std::string type);
+bool mark_copies_for_gvars(const ea_set_t &gvars, const std::string &type);
 bool op_stroff(ea_t addr, std::string type);
 bool set_ptr_type(ea_t addr, std::string type);
 bool set_ret_to_pei_svc(ea_t start_ea);
 bool summary_json_exists();
-bool uint64_in_vec(uint64_list_t vec, uint64_t value);
 bool valid_guid(json guid);
 bool get_arg_addrs_with(eavec_t *out, ea_t caller, size_t num_args);
 
-ea_list_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
-ea_list_t get_xrefs_to_array(ea_t addr);
-ea_list_t get_xrefs(ea_t addr);
-ea_list_t search_protocol(std::string protocol);
+ea_set_t find_data(ea_t start_ea, ea_t end_ea, uchar *data, size_t len);
+ea_set_t get_xrefs_to_array(ea_t addr);
+ea_set_t get_xrefs(ea_t addr);
+ea_set_t search_protocol(const std::string &protocol);
 
 ea_t find_unknown_bs_var64(ea_t ea);
 
@@ -62,16 +64,16 @@ std::filesystem::path get_guids_json_file();
 std::filesystem::path get_summary_file();
 
 std::string as_hex(uint64_t value);
-std::string get_table_name(std::string service_name);
+std::string get_table_name(const std::string &service_name);
 std::string get_wide_string(ea_t addr);
-std::string guid_to_string(json guid);
+std::string guid_to_string(const json &guid);
 std::string lookup_boot_service_name(uint64_t offset);
 std::string lookup_runtime_service_name(uint64_t offset);
 std::string type_to_name(std::string type);
 
 uint8_list_t unpack_guid(std::string guid);
 
-void op_stroff_for_global_interface(ea_list_t xrefs, qstring type_name);
+void op_stroff_for_global_interface(ea_set_t xrefs, qstring type_name);
 void op_stroff_for_interface(xreflist_t local_xrefs, qstring type_name);
 void set_const_char16_type(ea_t ea);
 void set_entry_arg_to_pei_svc();

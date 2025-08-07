@@ -21,18 +21,20 @@
 
 #include "efi_global.h"
 #include <algorithm>
+#include <cstdio>
+#include <string>
 
 // can be used after Hex-Rays based analysis
-ea_list_t g_get_smst_location_calls;
-ea_list_t g_smm_get_variable_calls;
-ea_list_t g_smm_set_variable_calls;
+ea_set_t g_get_smst_location_calls;
+ea_set_t g_smm_get_variable_calls;
+ea_set_t g_smm_set_variable_calls;
 
 //--------------------------------------------------------------------------
 // get file format name
 std::string file_format_name() {
-  char file_format[256] = {0};
-  get_file_type_name(file_format, 256);
-  return file_format;
+  std::array<char, 256> file_format{};
+  get_file_type_name(file_format.data(), file_format.size());
+  return std::string(file_format.data());
 }
 
 //--------------------------------------------------------------------------
@@ -50,30 +52,22 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
   }
 
   uint64_t signature = get_wide_word(hdr_seg->start_ea);
-  bool has_pei_guids = false;
-  for (auto guid = m_all_guids->begin(); guid != m_all_guids->end(); guid++) {
-    json guid_value = *guid;
+  bool has_pei_guids = std::any_of(
+      m_all_guids->begin(), m_all_guids->end(), [](const json &guid_value) {
+        return static_cast<std::string>(guid_value["name"]).find("PEI") !=
+               std::string::npos;
+      });
 
-    if (static_cast<std::string>(guid_value["name"]).find("PEI") !=
-        std::string::npos) {
-      has_pei_guids = true;
-      break;
-    }
-  }
+  std::array<char, 256> file_name_buf{};
+  get_input_file_path(file_name_buf.data(), file_name_buf.size());
+  std::string file_name = file_name_buf.data();
 
-  bool has_pei_in_path = false;
+  bool has_pei_in_path =
+      ((file_name.find("Pei") != std::string::npos ||
+        file_name.find("pei") != std::string::npos || signature == VZ) &&
+       arch == arch_file_type_t::x86_64);
 
-  char file_name[256] = {0};
-  get_input_file_path(file_name, sizeof(file_name));
-  std::string file_name_str = file_name;
-
-  if ((file_name_str.find("Pei") != std::string::npos ||
-       file_name_str.find("pei") != std::string::npos || signature == VZ) &&
-      arch == arch_file_type_t::x86_64) {
-    has_pei_in_path = true;
-  }
-
-  if (signature == VZ || has_pei_guids) {
+  if (signature == VZ || has_pei_guids || has_pei_in_path) {
     efi_utils::log("analysing binary file as PEI, signature: %llx\n",
                    signature);
     return ffs_file_type_t::pei;
@@ -102,10 +96,11 @@ int parse_efi_pei_sidt() {
 }
 
 bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
-  insn_t insn;
   int reg = -1;
   ea_t ea = code_addr;
   ea_t var_copy = BADADDR;
+
+  insn_t insn;
   decode_insn(&insn, ea);
 
   if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
@@ -142,8 +137,6 @@ bool mark_copy(ea_t code_addr, ea_t var_addr, std::string type) {
   if (var_copy == BADADDR) {
     return false;
   }
-
-  std::string name;
 
   if (type == "gSmst") {
     efi_utils::set_ptr_type_and_name(var_copy, "gSmst",
@@ -217,82 +210,91 @@ arch_file_type_t efi_utils::input_file_type() {
   }
 
   if (filetype == f_PE || filetype == f_ELF) {
-    if (ph.id == PLFM_386) {
+    switch (ph.id) {
+    case PLFM_386:
       if (bits == 64)
         return arch_file_type_t::x86_64;
       if (bits == 32)
         return arch_file_type_t::x86_32;
-    }
-    if (ph.id == PLFM_ARM) {
+      break;
+
+    case PLFM_ARM:
       if (bits == 64)
         return arch_file_type_t::aarch64;
+      break;
     }
   }
   return arch_file_type_t::unsupported;
 }
 
 ffs_file_type_t efi_utils::ask_file_type(json_list_t *m_all_guids) {
-  auto arch = efi_utils::input_file_type();
+  const auto arch = efi_utils::input_file_type();
+
   if (arch == arch_file_type_t::uefi || arch == arch_file_type_t::x86_64) {
     return ffs_file_type_t::dxe_smm;
   }
-  auto ftype = guess_file_type(arch, m_all_guids);
-  auto deflt = ftype == ffs_file_type_t::dxe_smm;
-  auto fmt_param = ftype == ffs_file_type_t::dxe_smm ? "DXE/SMM" : "PEI";
-  auto btn_id =
-      ask_buttons("DXE/SMM", "PEI", "", deflt, "Analyse file as %s", fmt_param);
-  if (btn_id == ASKBTN_YES) {
-    return ffs_file_type_t::dxe_smm;
-  }
 
-  return ffs_file_type_t::pei;
+  const auto ftype = guess_file_type(arch, m_all_guids);
+  const auto deflt = ftype == ffs_file_type_t::dxe_smm;
+  const auto fmt_param = ftype == ffs_file_type_t::dxe_smm ? "DXE/SMM" : "PEI";
+  const auto btn_id =
+      ask_buttons("DXE/SMM", "PEI", "", deflt, "Analyse file as %s", fmt_param);
+
+  return (btn_id == ASKBTN_YES) ? ffs_file_type_t::dxe_smm
+                                : ffs_file_type_t::pei;
 }
 
 //--------------------------------------------------------------------------
 // find address of global gBS var for x86 64-bit module for each service
 ea_t efi_utils::find_unknown_bs_var64(ea_t ea) {
-  ea_t res = BADADDR;
   insn_t insn;
 
   // check 10 instructions below
-  for (int i = 0; i < 10; i++) {
+  for (auto i = 0; i < 10; ++i) {
     decode_insn(&insn, ea);
+
     if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
         insn.ops[0].reg == R_RAX && insn.ops[1].type == o_mem) {
-      res = insn.ops[1].addr;
-      break;
+      return insn.ops[1].addr;
     }
+
     ea = prev_head(ea, 0);
   }
-  return res;
+
+  return BADADDR;
 }
 
 //--------------------------------------------------------------------------
 // get all xrefs for given address
-ea_list_t efi_utils::get_xrefs(ea_t addr) {
-  ea_list_t xrefs;
-  ea_t xref = get_first_dref_to(addr);
-  while (xref != BADADDR) {
-    xrefs.push_back(xref);
-    xref = get_next_dref_to(addr, xref);
+ea_set_t efi_utils::get_xrefs(ea_t addr) {
+  ea_set_t xrefs;
+
+  for (ea_t xref = get_first_dref_to(addr); xref != BADADDR;
+       xref = get_next_dref_to(addr, xref)) {
+    xrefs.insert(xref);
   }
+
   return xrefs;
 }
 
 //--------------------------------------------------------------------------
 // get all xrefs for given array element
-ea_list_t efi_utils::get_xrefs_to_array(ea_t addr) {
+ea_set_t efi_utils::get_xrefs_to_array(ea_t addr) {
   ea_t first_ea;
   ea_t ea = addr;
+
   while (true) {
-    auto ptr = get_qword(ea);
-    auto xrefs = efi_utils::get_xrefs(ptr);
-    if (std::find(xrefs.begin(), xrefs.end(), ea) == xrefs.end()) {
+    const auto ptr = get_qword(ea);
+    const auto xrefs = efi_utils::get_xrefs(ptr);
+
+    if (!xrefs.contains(ea)) {
       break;
     }
+
     first_ea = ea;
     ea -= 8;
   }
+
   return efi_utils::get_xrefs(first_ea);
 }
 
@@ -327,10 +329,10 @@ bool efi_utils::set_ptr_type(ea_t addr, std::string type) {
   if (!tinfo.get_named_type(get_idati(), type.c_str())) {
     return false;
   }
+
   tinfo_t p_tinfo;
   p_tinfo.create_ptr(tinfo);
-  apply_tinfo(addr, p_tinfo, TINFO_DEFINITE);
-  return true;
+  return apply_tinfo(addr, p_tinfo, TINFO_DEFINITE);
 }
 
 //--------------------------------------------------------------------------
@@ -344,76 +346,65 @@ void efi_utils::set_ptr_type_and_name(ea_t ea, std::string name,
 //--------------------------------------------------------------------------
 // get guids.json file name
 std::filesystem::path efi_utils::get_guids_json_file() {
-  std::filesystem::path guids_json_path;
+  std::filesystem::path guids;
 
-  // check {idadir}/plugins/guids.json
-  guids_json_path /= idadir("plugins");
-  guids_json_path /= "guids.json";
-  if (std::filesystem::exists(guids_json_path)) {
-    return guids_json_path;
+  const auto user_plugins =
+      std::filesystem::path(get_user_idadir()) / "plugins";
+
+  guids = user_plugins / "guids.json";
+  if (std::filesystem::exists(guids)) {
+    return guids;
   }
 
-  // check {idadir}/plugins/guids/guids.json
-  guids_json_path.clear();
-  guids_json_path /= idadir("plugins");
-  guids_json_path /= "guids";
-  guids_json_path /= "guids.json";
-  if (std::filesystem::exists(guids_json_path)) {
-    return guids_json_path;
+  guids = user_plugins / "guids" / "guids.json";
+  if (std::filesystem::exists(guids)) {
+    return guids;
   }
 
-  // try to load it from the per-user directory.
-  guids_json_path.clear();
-  guids_json_path /= get_user_idadir();
-  guids_json_path /= "plugins";
-  guids_json_path /= "guids.json";
-  if (std::filesystem::exists(guids_json_path)) {
-    return guids_json_path;
+  const auto plugins = std::filesystem::path(idadir("plugins"));
+
+  guids = plugins / "guids.json";
+  if (std::filesystem::exists(guids)) {
+    return guids;
   }
 
-  guids_json_path.clear();
-  guids_json_path /= get_user_idadir();
-  guids_json_path /= "plugins";
-  guids_json_path /= "guids";
-  guids_json_path /= "guids.json";
-  if (std::filesystem::exists(guids_json_path)) {
-    return guids_json_path;
+  guids = plugins / "guids" / "guids.json";
+  if (std::filesystem::exists(guids)) {
+    return guids;
   }
 
-  // does not exist
-  guids_json_path.clear();
-  return guids_json_path;
+  return {};
 }
 
 //--------------------------------------------------------------------------
 // get json summary file name
 std::filesystem::path efi_utils::get_summary_file() {
-  std::string idb_path;
-  idb_path = get_path(PATH_TYPE_IDB);
-  std::filesystem::path log_file;
-  log_file /= idb_path;
-  log_file.replace_extension(".json");
-  return log_file;
+  auto path = std::filesystem::path(get_path(PATH_TYPE_IDB));
+  path.replace_extension(".json");
+  return path;
 }
 
 //--------------------------------------------------------------------------
 // check if summary json file exists
 bool efi_utils::summary_json_exists() {
-  std::string idb_path;
-  idb_path = get_path(PATH_TYPE_IDB);
-  std::filesystem::path log_file;
-  log_file /= idb_path;
-  log_file.replace_extension(".json");
-  return std::filesystem::exists(log_file);
+  return std::filesystem::exists(get_summary_file());
 }
 
 //--------------------------------------------------------------------------
 // change EFI_SYSTEM_TABLE *SystemTable to EFI_PEI_SERVICES **PeiService
 // at ModuleEntryPoint
 void efi_utils::set_entry_arg_to_pei_svc() {
-  for (auto idx = 0; idx < get_entry_qty(); idx++) {
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t start_ea = get_entry(ord);
+  if (get_entry_qty() == 0) {
+    return;
+  }
+
+  tinfo_t pp_tinfo;
+  bool initialised = false;
+
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
+    const auto ord = get_entry_ordinal(idx);
+    const auto start_ea = get_entry(ord);
+
     tinfo_t tif_ea;
     if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
       continue;
@@ -424,30 +415,33 @@ void efi_utils::set_entry_arg_to_pei_svc() {
       continue;
     }
 
-    tinfo_t tif_pei;
-    bool res = tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES");
-    if (!res) {
+    // funcdata.size() does not work for aarch64
+    if (funcdata.size() != 2) {
       continue;
     }
 
-    tinfo_t p_tinfo;
-    tinfo_t pp_tinfo;
-    p_tinfo.create_ptr(tif_pei);
-    pp_tinfo.create_ptr(p_tinfo);
-
-    // funcdata.size() does not work for aarch64
-    if (funcdata.size() == 2) {
-      funcdata[1].type = pp_tinfo;
-      funcdata[1].name = "PeiServices";
-      tinfo_t f_tinfo;
-      if (!f_tinfo.create_func(funcdata)) {
-        continue;
+    if (!initialised) {
+      tinfo_t tif_pei;
+      if (!tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES")) {
+        return; // exit if type not found
       }
 
-      if (!apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE)) {
-        continue;
-      }
+      tinfo_t p_tinfo;
+      p_tinfo.create_ptr(tif_pei);
+      pp_tinfo.create_ptr(p_tinfo);
+
+      initialised = true;
     }
+
+    funcdata[1].type = pp_tinfo;
+    funcdata[1].name = "PeiServices";
+
+    tinfo_t f_tinfo;
+    if (!f_tinfo.create_func(funcdata)) {
+      continue;
+    }
+
+    apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE);
   }
 }
 
@@ -456,14 +450,17 @@ bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
   if (guess_tinfo(&tif_ea, start_ea) == GUESS_FUNC_FAILED) {
     return false;
   }
+
   func_type_data_t fi;
   if (!tif_ea.get_func_details(&fi)) {
     return false;
   }
+
   tinfo_t tif_pei;
   if (!tif_pei.get_named_type(get_idati(), "EFI_PEI_SERVICES")) {
     return false;
   }
+
   tinfo_t p_tinfo;
   tinfo_t pp_tinfo;
   p_tinfo.create_ptr(tif_pei);
@@ -476,23 +473,19 @@ bool efi_utils::set_ret_to_pei_svc(ea_t start_ea) {
     return false;
   }
 
-  if (!apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE)) {
-    return false;
-  }
-
-  return true;
+  return apply_tinfo(start_ea, f_tinfo, TINFO_DEFINITE);
 }
 
 //--------------------------------------------------------------------------
 // add EFI_PEI_SERVICES_4 structure
 bool efi_utils::add_struct_for_shifted_ptr() {
 #if IDA_SDK_VERSION < 850
-  auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
+  const auto sid = add_struc(BADADDR, "EFI_PEI_SERVICES_4");
   if (sid == BADADDR) {
     return false;
   }
 
-  auto new_struct = get_struc(sid);
+  const auto new_struct = get_struc(sid);
   if (new_struct == nullptr) {
     return false;
   }
@@ -527,9 +520,19 @@ bool efi_utils::add_struct_for_shifted_ptr() {
 // get module name by address
 qstring efi_utils::get_module_name_loader(ea_t addr) {
   segment_t *seg = getseg(addr);
-  qstring seg_name;
-  get_segm_name(&seg_name, seg);
-  return seg_name.remove(seg_name.size() - 7, seg_name.size());
+  if (!seg) {
+    return {};
+  }
+
+  qstring segname;
+  get_segm_name(&segname, seg);
+
+  constexpr size_t suflen = 7;
+  if (segname.size() > suflen) {
+    segname.remove(segname.size() - suflen, segname.size());
+  }
+
+  return segname;
 }
 
 //--------------------------------------------------------------------------
@@ -546,11 +549,15 @@ json efi_utils::get_guid_by_address(ea_t addr) {
 //--------------------------------------------------------------------------
 // validate GUID value
 bool efi_utils::valid_guid(json guid) {
-  uint32_t data0 = guid[0];
-  uint32_t data1 = guid[1];
+  if (!guid.is_array() || guid.size() < 2) {
+    return false;
+  }
 
-  auto invalid = (!data0 && !data1) || (data0 == 0xffffffff && data1 == 0xffff);
-  return !invalid;
+  const uint32_t data1 = guid[0].get<uint32_t>();
+  const uint16_t data2 = guid[1].get<uint16_t>();
+
+  return !(data1 == 0 && data2 == 0) &&
+         !(data1 == 0xffffffff && data2 == 0xffff);
 }
 
 //--------------------------------------------------------------------------
@@ -561,23 +568,18 @@ bool efi_utils::get_arg_addrs_with(eavec_t *out, ea_t caller, size_t num_args) {
     return false;
   }
 
+  static constexpr std::array<regs_x86_64_t, 4> registers = {R_RCX, R_RDX, R_R8,
+                                                             R_R9};
+
   insn_t insn;
   auto ea = caller;
   size_t index = 0;
 
-  std::array<regs_x86_64_t, 4> registers = {R_RCX, R_RDX, R_R8, R_R9};
-
-  while (true) {
-    if (index >= num_args) {
-      // should not try to get more than is requested,
-      // also ensure that registers buffer never overflows
-      break;
-    }
-
+  while (index < num_args) {
     ea = prev_head(ea, 0);
     decode_insn(&insn, ea);
 
-    if (insn.ops[0].reg == registers[index]) {
+    if (insn.ops[0].type == o_reg && insn.ops[0].reg == registers[index]) {
       out->resize_noinit(index + 1);
       out->at(index) = ea;
       index += 1;
@@ -593,7 +595,11 @@ bool efi_utils::get_arg_addrs_with(eavec_t *out, ea_t caller, size_t num_args) {
 
 //--------------------------------------------------------------------------
 // convert GUID value to string
-std::string efi_utils::guid_to_string(json guid) {
+std::string efi_utils::guid_to_string(const json &guid) {
+  if (!guid.is_array() || guid.size() < 11) {
+    return {};
+  }
+
   char guid_str[37] = {0};
   snprintf(guid_str, sizeof(guid_str),
            "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X",
@@ -608,62 +614,73 @@ std::string efi_utils::guid_to_string(json guid) {
 
 uint8_list_t efi_utils::unpack_guid(std::string guid) {
   uint8_list_t res;
-  std::string delim = "-";
+  const std::string delim = "-";
   std::string byte_str;
   uint8_t byte;
   size_t pos = 0;
+  int index = 0;
 
-  auto index = 0;
+  uint8_list_t tmp;
   while ((pos = guid.find(delim)) != std::string::npos) {
-    uint8_list_t tmp;
-    auto hex = guid.substr(0, pos);
+    const auto hex = guid.substr(0, pos);
     if (hex.size() % 2) {
       break;
     }
+
     for (auto i = 0; i < hex.size(); i += 2) {
       byte_str = hex.substr(i, 2);
-      byte = strtol(byte_str.c_str(), nullptr, 16);
+      byte = static_cast<uint8_t>(std::strtoul(byte_str.c_str(), nullptr, 16));
       tmp.push_back(byte);
     }
+
     if (index != 3) {
       res.insert(res.end(), tmp.rbegin(), tmp.rend());
     } else {
       res.insert(res.end(), tmp.begin(), tmp.end());
     }
-    index += 1;
+
+    ++index;
     guid.erase(0, pos + delim.size());
     tmp.clear();
   }
 
   for (auto i = 0; i < guid.size(); i += 2) {
     byte_str = guid.substr(i, 2);
-    byte = strtol(byte_str.c_str(), nullptr, 16);
+    byte = static_cast<uint8_t>(std::strtoul(byte_str.c_str(), nullptr, 16));
     res.push_back(byte);
   }
 
   return res;
 }
 
-ea_list_t efi_utils::search_protocol(std::string protocol) {
-  uchar bytes[17] = {0};
-  ea_list_t res;
-  auto guid_bytes = efi_utils::unpack_guid(protocol);
-  std::copy(guid_bytes.begin(), guid_bytes.end(), bytes);
+ea_set_t efi_utils::search_protocol(const std::string &protocol) {
+  ea_set_t res;
+
+  const uint8_list_t guid_bytes = efi_utils::unpack_guid(protocol);
+  if (guid_bytes.size() != 16) {
+    return res;
+  }
+
+  std::array<uchar, 16> bytes{};
+  std::copy(guid_bytes.begin(), guid_bytes.end(), bytes.begin());
+
   ea_t start = 0;
   while (true) {
 #if IDA_SDK_VERSION < 850
-    ea_t addr =
-        bin_search2(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+    ea_t addr = bin_search2(start, BADADDR, bytes.data(), nullptr, 16,
+                            BIN_SEARCH_FORWARD);
 #else
-    ea_t addr =
-        bin_search(start, BADADDR, bytes, nullptr, 16, BIN_SEARCH_FORWARD);
+    ea_t addr = bin_search(start, BADADDR, bytes.data(), nullptr, 16,
+                           BIN_SEARCH_FORWARD);
 #endif
     if (addr == BADADDR) {
       break;
     }
-    res.push_back(addr);
+
+    res.insert(addr);
     start = addr + 16;
   }
+
   return res;
 }
 
@@ -692,7 +709,7 @@ bool efi_utils::check_install_protocol(ea_t ea) {
 // convert 64-bit value to hex string
 std::string efi_utils::as_hex(uint64_t value) {
   char hexstr[21] = {0};
-  snprintf(hexstr, sizeof(hexstr), "%" PRIX64, value);
+  std::snprintf(hexstr, sizeof(hexstr), "%" PRIX64, value);
   return hexstr;
 }
 
@@ -726,7 +743,7 @@ bool efi_utils::check_boot_service_protocol(ea_t call_addr) {
 // make sure that the address does not belong to the protocol interface
 bool efi_utils::check_boot_service_protocol_xrefs(ea_t call_addr) {
   insn_t insn;
-  for (auto xref : efi_utils::get_xrefs(call_addr)) {
+  for (const auto &xref : efi_utils::get_xrefs(call_addr)) {
     decode_insn(&insn, xref);
     if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
         insn.ops[0].reg == R_R8) {
@@ -737,10 +754,10 @@ bool efi_utils::check_boot_service_protocol_xrefs(ea_t call_addr) {
   return true;
 }
 
-bool efi_utils::mark_copies_for_gvars(ea_list_t gvars, std::string type) {
-  for (auto var : gvars) {
-    auto xrefs = efi_utils::get_xrefs(var);
-    for (auto addr : xrefs) {
+bool efi_utils::mark_copies_for_gvars(const ea_set_t &gvars,
+                                      const std::string &type) {
+  for (const auto &var : gvars) {
+    for (const auto &addr : efi_utils::get_xrefs(var)) {
       mark_copy(addr, var, type);
     }
   }
@@ -751,75 +768,59 @@ bool efi_utils::mark_copies_for_gvars(ea_list_t gvars, std::string type) {
 // generate name string from type
 std::string efi_utils::type_to_name(std::string type) {
   std::string result;
-  size_t counter = 0;
+  size_t pos = 0;
   for (char const &c : type) {
-    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+    if (std::islower(c) || std::isdigit(c)) {
       result.push_back(c);
-      counter += 1;
+      pos += 1;
       continue;
-    }
-
-    if (c >= 'A' && c <= 'Z') {
-      if (counter > 0) {
-        result.push_back(c + 32);
-      } else {
-        result.push_back(c);
-      }
-      counter += 1;
-      continue;
-    }
-
-    if (c == '_') {
-      counter = 0;
+    } else if (std::isupper(c)) {
+      result.push_back(pos > 0 ? std::tolower(c) : c);
+      ++pos;
+    } else if (c == '_') {
+      pos = 0;
     } else {
-      counter += 1;
+      ++pos;
     }
   }
+
   return result;
 }
 
-void op_stroff_for_addr(ea_t ea, qstring type_name) {
+void op_stroff_for_addr(ea_t ea, const qstring &type_name) {
   insn_t insn;
 
-  for (auto i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; ++i) {
     ea = next_head(ea, BADADDR);
     decode_insn(&insn, ea);
-    // check for interface function call
+
+    const auto &op = insn.ops[0];
+
     if ((insn.itype == NN_call || insn.itype == NN_callfi ||
          insn.itype == NN_callni) &&
-        (insn.ops[0].type == o_displ || insn.ops[0].type == o_phrase) &&
-        insn.ops[0].reg == R_RAX) {
+        (op.type == o_displ || op.type == o_phrase) && op.reg == R_RAX) {
       efi_utils::op_stroff(ea, type_name.c_str());
       efi_utils::log("mark arguments at address 0x%" PRIx64
                      " (interface type: %s)\n",
                      u64_addr(ea), type_name.c_str());
 
-      // check for EfiSmmBase2Protocol->GetSmstLocation
-      if (type_name == "EFI_SMM_BASE2_PROTOCOL" &&
-          insn.ops[0].type == o_displ && insn.ops[0].addr == 8) {
-        if (!efi_utils::addr_in_vec(g_get_smst_location_calls, ea)) {
-          g_get_smst_location_calls.push_back(ea);
+      if (type_name == "EFI_SMM_BASE2_PROTOCOL" && op.type == o_displ &&
+          op.addr == 8) {
+        g_get_smst_location_calls.insert(ea);
+      }
+
+      if (type_name == "EFI_SMM_VARIABLE_PROTOCOL") {
+        if (op.type == o_phrase) {
+          g_smm_get_variable_calls.insert(ea);
+        } else if (op.type == o_displ && op.addr == 0x10) {
+          g_smm_set_variable_calls.insert(ea);
         }
       }
 
-      if (type_name == "EFI_SMM_VARIABLE_PROTOCOL" &&
-          insn.ops[0].type == o_phrase) {
-        if (!efi_utils::addr_in_vec(g_smm_get_variable_calls, ea)) {
-          g_smm_get_variable_calls.push_back(ea);
-        }
-      }
-
-      if (type_name == "EFI_SMM_VARIABLE_PROTOCOL" &&
-          insn.ops[0].type == o_displ && insn.ops[0].addr == 0x10) {
-        if (!efi_utils::addr_in_vec(g_smm_set_variable_calls, ea)) {
-          g_smm_set_variable_calls.push_back(ea);
-        }
-      }
       break;
     }
 
-    // if the RAX value is overridden
-    if (insn.ops[0].reg == R_RAX) {
+    if (op.type == o_reg && op.reg == R_RAX) {
       break;
     }
   }
@@ -831,7 +832,7 @@ void op_stroff_for_addr(ea_t ea, qstring type_name) {
 void efi_utils::op_stroff_for_interface(xreflist_t local_xrefs,
                                         qstring type_name) {
   insn_t insn;
-  for (auto xref : local_xrefs) {
+  for (const auto &xref : local_xrefs) {
     decode_insn(&insn, xref.ea);
     if (insn.itype == NN_mov && insn.ops[0].reg == R_RAX) {
       op_stroff_for_addr(xref.ea, type_name);
@@ -842,10 +843,10 @@ void efi_utils::op_stroff_for_interface(xreflist_t local_xrefs,
 //--------------------------------------------------------------------------
 // mark the arguments of each function from an interface derived from
 // a global variable
-void efi_utils::op_stroff_for_global_interface(ea_list_t xrefs,
+void efi_utils::op_stroff_for_global_interface(ea_set_t xrefs,
                                                qstring type_name) {
   insn_t insn;
-  for (auto ea : xrefs) {
+  for (const auto &ea : xrefs) {
     decode_insn(&insn, ea);
     if (insn.itype == NN_mov && insn.ops[0].reg == R_RAX) {
       op_stroff_for_addr(ea, type_name);
@@ -853,31 +854,27 @@ void efi_utils::op_stroff_for_global_interface(ea_list_t xrefs,
   }
 }
 
-bool efi_utils::uint64_in_vec(uint64_list_t vec, uint64_t value) {
-  return find(vec.begin(), vec.end(), value) != vec.end();
+bool efi_utils::json_in_vec(const json_list_t &vec, const json &item) {
+  return std::find(vec.begin(), vec.end(), item) != vec.end();
 }
 
-bool efi_utils::addr_in_vec(ea_list_t vec, ea_t addr) {
-  return find(vec.begin(), vec.end(), addr) != vec.end();
+bool efi_utils::uint64_in_vec(const uint64_list_t &vec, uint64_t value) {
+  return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
-bool efi_utils::json_in_vec(json_list_t vec, json item) {
-  return find(vec.begin(), vec.end(), item) != vec.end();
-}
-
-bool efi_utils::addr_in_tables(ea_list_t t1, ea_list_t t2, ea_t ea) {
-  return (efi_utils::addr_in_vec(t1, ea) || efi_utils::addr_in_vec(t2, ea));
-}
-
-bool efi_utils::addr_in_tables(ea_list_t t1, ea_list_t t2, ea_list_t t3,
+bool efi_utils::addr_in_tables(const ea_set_t &t1, const ea_set_t &t2,
                                ea_t ea) {
-  return (efi_utils::addr_in_vec(t1, ea) || efi_utils::addr_in_vec(t2, ea) ||
-          efi_utils::addr_in_vec(t3, ea));
+  return t1.contains(ea) || t2.contains(ea);
 }
 
-ea_list_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
-                               size_t len) {
-  ea_list_t res;
+bool efi_utils::addr_in_tables(const ea_set_t &t1, const ea_set_t &t2,
+                               const ea_set_t &t3, ea_t ea) {
+  return t1.contains(ea) || t2.contains(ea) || t3.contains(ea);
+}
+
+ea_set_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
+                              size_t len) {
+  ea_set_t res;
   ea_t start = start_ea;
   int counter = 0;
   while (true) {
@@ -890,9 +887,10 @@ ea_list_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
     if (ea == BADADDR) {
       break;
     }
-    res.push_back(ea);
+    res.insert(ea);
     start = ea + len;
   }
+
   return res;
 }
 
@@ -901,14 +899,17 @@ ea_list_t efi_utils::find_data(ea_t start_ea, ea_t end_ea, uchar *data,
 std::string efi_utils::get_wide_string(ea_t addr) {
   std::string res;
   int index = 0;
+
   while (get_wide_word(addr + index)) {
     auto byte = get_wide_byte(addr + index);
     if (byte < 0x20 || byte > 0x7e) {
       return "invalid string";
     }
+
     res.push_back(byte);
     index += 2;
   }
+
   return res;
 }
 
@@ -916,66 +917,74 @@ std::string efi_utils::get_wide_string(ea_t addr) {
 // get efi_guid_t by address
 efi_guid_t efi_utils::get_global_guid(ea_t addr) {
   efi_guid_t guid;
+
   guid.data1 = get_wide_dword(addr);
   guid.data2 = get_wide_word(addr + 4);
   guid.data3 = get_wide_word(addr + 6);
+
   for (auto i = 0; i < 8; i++) {
     guid.data4[i] = get_wide_byte(addr + 8 + i);
   }
+
   return guid;
 }
 
 //--------------------------------------------------------------------------
 // get efi_guid_t by stack offset
 efi_guid_t efi_utils::get_local_guid(func_t *f, uint64_t offset) {
-  efi_guid_t guid;
+  efi_guid_t guid{};
   insn_t insn;
   auto ea = f->start_ea;
   int counter = 0;
+
+  auto decode_dword = [](uint32_t dword, uint8_t *out) {
+    out[0] = static_cast<uint8_t>(dword & 0xff);
+    out[1] = static_cast<uint8_t>((dword >> 8) & 0xff);
+    out[2] = static_cast<uint8_t>((dword >> 16) & 0xff);
+    out[3] = static_cast<uint8_t>((dword >> 24) & 0xff);
+  };
+
   while (ea <= f->end_ea) {
     if (counter == 16) {
       break;
     }
+
     ea = next_head(ea, BADADDR);
     decode_insn(&insn, ea);
-    if (insn.itype == NN_mov && insn.ops[0].type == o_displ &&
-        (insn.ops[0].reg == R_RSP || insn.ops[0].reg == R_RBP) &&
-        insn.ops[1].type == o_imm) {
-      if (insn.ops[0].addr == offset) {
-        guid.data1 = insn.ops[1].value;
-        counter += 4;
-        continue;
-      }
-      if (insn.ops[0].addr == offset + 4) {
-        guid.data2 = insn.ops[1].value & 0xffff;
-        guid.data3 = (insn.ops[1].value >> 16) & 0xffff;
-        counter += 4;
-        continue;
-      }
-      if (insn.ops[0].addr == offset + 8) {
-        auto dword = insn.ops[1].value;
-        guid.data4[0] = dword & 0xff;
-        guid.data4[1] = (dword >> 8) & 0xff;
-        guid.data4[2] = (dword >> 16) & 0xff;
-        guid.data4[3] = (dword >> 24) & 0xff;
-        counter += 4;
-        continue;
-      }
-      if (insn.ops[0].addr == offset + 12) {
-        auto dword = insn.ops[1].value;
-        guid.data4[4] = dword & 0xff;
-        guid.data4[5] = (dword >> 8) & 0xff;
-        guid.data4[6] = (dword >> 16) & 0xff;
-        guid.data4[7] = (dword >> 24) & 0xff;
-        counter += 4;
-        continue;
-      }
+    if (insn.itype != NN_mov || insn.ops[0].type != o_displ ||
+        insn.ops[1].type != o_imm) {
+      continue;
+    }
+
+    const auto &dst = insn.ops[0];
+    const auto &src = insn.ops[1];
+
+    if (dst.reg != R_RSP && dst.reg != R_RBP) {
+      continue;
+    }
+
+    const auto addr = dst.addr;
+
+    if (addr == offset + 0) {
+      guid.data1 = static_cast<uint32_t>(src.value);
+      counter += 4;
+    } else if (addr == offset + 4) {
+      guid.data2 = static_cast<uint16_t>(src.value & 0xffff);
+      guid.data3 = static_cast<uint16_t>((src.value >> 16) & 0xffff);
+      counter += 4;
+    } else if (addr == offset + 8) {
+      decode_dword(static_cast<uint32_t>(src.value), &guid.data4[0]);
+      counter += 4;
+    } else if (addr == offset + 12) {
+      decode_dword(static_cast<uint32_t>(src.value), &guid.data4[4]);
+      counter += 4;
     }
   }
+
   return guid;
 }
 
-std::string efi_utils::get_table_name(std::string service_name) {
+std::string efi_utils::get_table_name(const std::string &service_name) {
   for (auto i = 0; i < g_boot_services_table_all_count; i++) {
     if (g_boot_services_table_all[i].name == service_name) {
       return "EFI_BOOT_SERVICES";

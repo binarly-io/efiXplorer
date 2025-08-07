@@ -19,6 +19,8 @@
 
 #include "utils.h"
 
+#include <string>
+
 void efiloader::Utils::show_hex(void *buffer, size_t length,
                                 const char *prefix) {
   uint8_t *buf = reinterpret_cast<uint8_t *>(buffer);

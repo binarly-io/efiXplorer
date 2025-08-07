@@ -22,6 +22,8 @@
 #include "efi_ui.h"
 #include "efi_utils.h"
 
+#include <string>
+
 bool efi_analysis::efi_analyser_arm_t::set_enums_repr(ea_t ea, insn_t insn) {
   // apply enum values from MACRO_EFI
 
@@ -271,31 +273,23 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
   for (auto func_addr : m_funcs) {
     json res = efi_hexrays::detect_vars(get_func(func_addr));
     if (res.contains("image_handle_list")) {
-      for (auto addr : res["image_handle_list"]) {
-        if (!efi_utils::addr_in_vec(m_image_handle_list_arm, addr)) {
-          m_image_handle_list_arm.push_back(addr);
-        }
+      for (const ea_t addr : res["image_handle_list"]) {
+        m_image_handle_list_arm.insert(addr);
       }
     }
     if (res.contains("st_list")) {
-      for (auto addr : res["st_list"]) {
-        if (!efi_utils::addr_in_vec(m_st_list_arm, addr)) {
-          m_st_list_arm.push_back(addr);
-        }
+      for (const ea_t addr : res["st_list"]) {
+        m_st_list_arm.insert(addr);
       }
     }
     if (res.contains("bs_list")) {
-      for (auto addr : res["bs_list"]) {
-        if (!efi_utils::addr_in_vec(m_bs_list_arm, addr)) {
-          m_bs_list_arm.push_back(addr);
-        }
+      for (const ea_t addr : res["bs_list"]) {
+        m_bs_list_arm.insert(addr);
       }
     }
     if (res.contains("rt_list")) {
-      for (auto addr : res["rt_list"]) {
-        if (!efi_utils::addr_in_vec(m_rt_list_arm, addr)) {
-          m_rt_list_arm.push_back(addr);
-        }
+      for (const ea_t addr : res["rt_list"]) {
+        m_rt_list_arm.insert(addr);
       }
     }
   }
@@ -314,18 +308,14 @@ void efi_analysis::efi_analyser_arm_t::initial_gvars_detection() {
       if (bs != BADADDR) {
         efi_utils::log("gBS: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(bs, "gBS", "EFI_BOOT_SERVICES");
-        if (!efi_utils::addr_in_vec(m_bs_list_arm, bs)) {
-          m_bs_list_arm.push_back(bs);
-        }
+        m_bs_list_arm.insert(bs);
         continue;
       }
       ea_t rt = get_table_addr(ea, 0x58);
       if (rt != BADADDR) {
         efi_utils::log("gRT: 0x%" PRIx64 "\n", u64_addr(ea));
         efi_utils::set_ptr_type_and_name(rt, "gRT", "EFI_RUNTIME_SERVICES");
-        if (!efi_utils::addr_in_vec(m_rt_list_arm, rt)) {
-          m_rt_list_arm.push_back(rt);
-        }
+        m_rt_list_arm.insert(rt);
         continue;
       }
     }

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(efiXplorer CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -17,6 +17,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(NOT MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
   add_compile_options(-fPIC -O3 -flto)
 endif()
 

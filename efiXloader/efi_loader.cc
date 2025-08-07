@@ -26,24 +26,24 @@
 
 #define USE_UEFITOOL_PARSER
 
-bool first_uefi_image = true;
-
 //------------------------
 // IDA wrappers
 //------------------------
 
 void idaapi load_binary(const char *fname) {
-  load_info_t *ld = NULL;
-  linput_t *li = NULL;
+  static bool first_uefi_image = true;
+
+  load_info_t *ld = nullptr;
+  linput_t *li = nullptr;
   ushort nflags =
       NEF_SEGS | NEF_RSCS | NEF_NAME | NEF_IMPS | NEF_LALL | NEF_FLAT;
   if (first_uefi_image) {
     nflags |= NEF_FIRST;
+    first_uefi_image = false;
   }
-  first_uefi_image = false;
   // linput
   li = open_linput(fname, false);
-  if (li == NULL) {
+  if (li == nullptr) {
     error("failed to process input source: %s", fname);
   }
   // get loaders

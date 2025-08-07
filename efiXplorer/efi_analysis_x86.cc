@@ -25,9 +25,13 @@
 #include "efi_hexrays.h"
 #endif
 
-extern ea_list_t g_get_smst_location_calls;
-extern ea_list_t g_smm_get_variable_calls;
-extern ea_list_t g_smm_set_variable_calls;
+#include <map>
+#include <string>
+#include <utility>
+
+extern ea_set_t g_get_smst_location_calls;
+extern ea_set_t g_smm_get_variable_calls;
+extern ea_set_t g_smm_set_variable_calls;
 
 efi_analysis::efi_analyser_t::efi_analyser_t() {
   // 32-bit, 64-bit, ARM or UEFI (in loader instance)
@@ -52,17 +56,17 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
   }
 
   // save all m_funcs
-  for (auto i = 0; i < get_func_qty(); i++) {
-    auto func = getn_func(i);
-    m_funcs.push_back(func->start_ea);
+  for (auto i = 0; i < get_func_qty(); ++i) {
+    const auto func = getn_func(i);
+    m_funcs.insert(func->start_ea);
   }
 
   ea_list_t addrs;
-  for (auto service : m_prot_bs_names) {
+  for (const auto &service : m_prot_bs_names) {
     m_boot_services[service] = addrs;
   }
 
-  for (auto service : m_prot_smms_names) {
+  for (const auto &service : m_prot_smms_names) {
     m_smm_services[service] = addrs;
   }
 
@@ -70,14 +74,14 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
     // load protocols from guids.json file
     std::ifstream in(m_guids_json_path);
     in >> m_guiddb;
-  } catch (std::exception &e) {
+  } catch (const std::exception &e) {
     m_guiddb.clear();
     warning("%s: %s\n", g_plugin_name, "guids.json file is invalid");
   }
 
   // get reverse dictionary
-  for (auto g = m_guiddb.begin(); g != m_guiddb.end(); ++g) {
-    m_guiddb_map[g.value()] = g.key();
+  for (const auto &[key, value] : m_guiddb.items()) {
+    m_guiddb_map[value] = key;
   }
 
   // set mask and masked value for MACRO_EFI enum value detection
@@ -191,10 +195,10 @@ void efi_analysis::efi_analyser_t::get_segments() {
 // find gImageHandle address for 64-bit modules
 bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
   insn_t insn;
-  for (int idx = 0; idx < get_entry_qty(); idx++) {
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
     // get address of entry point
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t ea = get_entry(ord);
+    const auto ord = get_entry_ordinal(idx);
+    auto ea = get_entry(ord);
 
     // search for EFI_IMAGE_HANDLE, check 8 instructions
     for (auto i = 0; i < 8; i++) {
@@ -203,7 +207,7 @@ bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
           insn.ops[1].reg == R_RCX && insn.ops[0].type == o_mem) {
         efi_utils::set_type_and_name(insn.ops[0].addr, "gImageHandle",
                                      "EFI_IMAGE_HANDLE");
-        m_image_handle_list.push_back(insn.ops[0].addr);
+        m_image_handle_list.insert(insn.ops[0].addr);
         break;
       }
       ea = next_head(ea, m_end_addr);
@@ -216,19 +220,19 @@ bool efi_analysis::efi_analyser_x86_t::find_image_handle64() {
 // find gST address for 64-bit modules
 bool efi_analysis::efi_analyser_x86_t::find_system_table64() {
   insn_t insn;
-  for (int idx = 0; idx < get_entry_qty(); idx++) {
+  for (auto idx = 0; idx < get_entry_qty(); ++idx) {
     // get address of entry point
-    uval_t ord = get_entry_ordinal(idx);
-    ea_t ea = get_entry(ord);
+    const auto ord = get_entry_ordinal(idx);
+    auto ea = get_entry(ord);
 
     // search for EFI_SYSTEM_TABLE, check 16 instructions
-    for (int i = 0; i < 16; i++) {
+    for (auto i = 0; i < 16; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_mov && insn.ops[1].type == o_reg &&
           insn.ops[1].reg == R_RDX && insn.ops[0].type == o_mem) {
         efi_utils::set_ptr_type_and_name(insn.ops[0].addr, "gST",
                                          "EFI_SYSTEM_TABLE");
-        m_st_list.push_back(insn.ops[0].addr);
+        m_st_list.insert(insn.ops[0].addr);
         return true;
       }
       ea = next_head(ea, BADADDR);
@@ -240,19 +244,14 @@ bool efi_analysis::efi_analyser_x86_t::find_system_table64() {
 //--------------------------------------------------------------------------
 // find and mark gSmst global variable for 64-bit modules
 bool efi_analysis::efi_analyser_x86_t::find_smst64() {
-  ea_list_t smst_list_smm_base = efi_smm_utils::find_smst_smm_base(m_bs_list);
-  ea_list_t smst_list_sw_dispatch =
+  ea_set_t smst_list_smm_base = efi_smm_utils::find_smst_smm_base(m_bs_list);
+  ea_set_t smst_list_sw_dispatch =
       efi_smm_utils::find_smst_sw_dispatch(m_bs_list);
-  m_smst_list.insert(m_smst_list.end(), smst_list_sw_dispatch.begin(),
+  m_smst_list.insert(smst_list_sw_dispatch.begin(),
                      smst_list_sw_dispatch.end());
-  m_smst_list.insert(m_smst_list.end(), smst_list_smm_base.begin(),
-                     smst_list_smm_base.end());
+  m_smst_list.insert(smst_list_smm_base.begin(), smst_list_smm_base.end());
 
-  // deduplicate
-  auto last = std::unique(m_smst_list.begin(), m_smst_list.end());
-  m_smst_list.erase(last, m_smst_list.end());
-
-  for (auto smst : m_smst_list) {
+  for (const auto smst : m_smst_list) {
     efi_utils::log("0x%" PRIx64 ": gSmst\n", u64_addr(smst));
   }
 
@@ -263,7 +262,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst64() {
 // find and mark gSmst global and local variable address for 64-bit
 // modules after Hex-Rays based analysis
 bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
-  for (auto ea : g_get_smst_location_calls) {
+  for (const auto ea : g_get_smst_location_calls) {
     efi_utils::log("EfiSmmBase2Protocol->GetSmstLocation call: 0x%" PRIx64 "\n",
                    u64_addr(ea));
     insn_t insn;
@@ -284,7 +283,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
             smst_stack["reg"] = insn.ops[1].reg;
             smst_stack["start"] = next_head(ea, BADADDR);
             // get bounds
-            func_t *f = get_func(addr);
+            const auto f = get_func(addr);
             if (f == nullptr) {
               smst_stack["end"] = BADADDR;
             } else {
@@ -306,10 +305,9 @@ bool efi_analysis::efi_analyser_x86_t::find_smst_postproc64() {
 
     if (smst_stack.is_null() && smst_addr != BADADDR) {
       efi_utils::log("   gSmst: 0x%" PRIx64 "\n", u64_addr(smst_addr));
-      if (!efi_utils::addr_in_vec(m_smst_list, smst_addr)) {
+      if (m_smst_list.insert(smst_addr).second) {
         efi_utils::set_ptr_type_and_name(smst_addr, "gSmst",
                                          "_EFI_SMM_SYSTEM_TABLE2");
-        m_smst_list.push_back(smst_addr);
       }
     }
 
@@ -427,10 +425,9 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
                   next_insn.ops[1].type == o_reg &&
                   next_insn.ops[1].reg == bs_reg) {
                 base_insn_addr = ea;
-                if (!efi_utils::addr_in_vec(m_bs_list, var_addr)) {
+                if (m_bs_list.insert(var_addr).second) {
                   efi_utils::set_ptr_type_and_name(var_addr, "gBS",
                                                    "EFI_BOOT_SERVICES");
-                  m_bs_list.push_back(var_addr);
                 }
                 bs_found = true;
               }
@@ -441,10 +438,9 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
               if (insn.ops[1].reg == bs_reg && !bs_found) {
                 base_insn_addr = ea;
                 var_addr = insn.ops[0].addr;
-                if (!efi_utils::addr_in_vec(m_bs_list, var_addr)) {
+                if (m_bs_list.insert(var_addr).second) {
                   efi_utils::set_ptr_type_and_name(var_addr, "gBS",
                                                    "EFI_BOOT_SERVICES");
-                  m_bs_list.push_back(var_addr);
                 }
                 bs_found = true;
               }
@@ -456,7 +452,7 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
                                                var_addr)) {
                   efi_utils::set_ptr_type_and_name(var_addr, "gST",
                                                    "EFI_SYSTEM_TABLE");
-                  m_st_list.push_back(var_addr);
+                  m_st_list.insert(var_addr);
                 }
                 st_found = true;
               }
@@ -479,7 +475,7 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
                                                  m_rt_list, var_addr)) {
                     efi_utils::set_ptr_type_and_name(var_addr, "gST",
                                                      "EFI_SYSTEM_TABLE");
-                    m_st_list.push_back(var_addr);
+                    m_st_list.insert(var_addr);
                   }
                   st_found = true;
                   break;
@@ -542,10 +538,9 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
                   next_insn.ops[1].type == o_reg &&
                   next_insn.ops[1].reg == rt_register) {
                 base_insn_addr = ea;
-                if (!efi_utils::addr_in_vec(m_rt_list, var_addr)) {
+                if (m_rt_list.insert(var_addr).second) {
                   efi_utils::set_ptr_type_and_name(var_addr, "gRT",
                                                    "EFI_RUNTIME_SERVICES");
-                  m_rt_list.push_back(var_addr);
                 }
                 rt_found = true;
               }
@@ -556,10 +551,9 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
               if (insn.ops[1].reg == rt_register && !rt_found) {
                 base_insn_addr = ea;
                 var_addr = insn.ops[0].addr;
-                if (!efi_utils::addr_in_vec(m_rt_list, var_addr)) {
+                if (m_rt_list.insert(var_addr).second) {
                   efi_utils::set_ptr_type_and_name(var_addr, "gRT",
                                                    "EFI_RUNTIME_SERVICES");
-                  m_rt_list.push_back(var_addr);
                 }
                 rt_found = true;
               }
@@ -572,7 +566,7 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
                                                var_addr)) {
                   efi_utils::set_ptr_type_and_name(insn.ops[0].addr, "gST",
                                                    "EFI_SYSTEM_TABLE");
-                  m_st_list.push_back(insn.ops[0].addr);
+                  m_st_list.insert(insn.ops[0].addr);
                 }
                 st_found = true;
               }
@@ -594,7 +588,7 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
                                                  m_rt_list, var_addr)) {
                     efi_utils::set_ptr_type_and_name(var_addr, "gST",
                                                      "EFI_SYSTEM_TABLE");
-                    m_st_list.push_back(var_addr);
+                    m_st_list.insert(var_addr);
                   }
                   st_found = true;
                   break;
@@ -765,7 +759,7 @@ void efi_analysis::efi_analyser_x86_t::get_runtime_services_all() {
               if (!efi_utils::json_in_vec(m_all_services, s)) {
                 m_all_services.push_back(s);
               }
-              m_runtime_services_list.push_back(addr);
+              m_runtime_services_list.insert(addr);
               break;
             }
           }
@@ -1135,7 +1129,7 @@ void efi_analysis::efi_analyser_x86_t::get_prot_boot_services64() {
         // check that address does not belong to the protocol interface
         // (gBS != gInterface)
         auto bs_addr = efi_utils::find_unknown_bs_var64(ea);
-        if (efi_utils::addr_in_vec(m_rt_list, bs_addr) ||
+        if (m_rt_list.contains(bs_addr) ||
             !efi_utils::check_boot_service_protocol_xrefs(bs_addr)) {
           break;
         }
@@ -1233,7 +1227,7 @@ void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
 
     efi_utils::set_ptr_type_and_name(addr_bs, "gBS", "EFI_BOOT_SERVICES");
 
-    m_bs_list.push_back(addr_bs);
+    m_bs_list.insert(addr_bs);
   }
 }
 
@@ -1566,14 +1560,14 @@ void efi_analysis::efi_analyser_x86_t::get_smm_prot_names64() {
 void efi_analysis::efi_analyser_t::annotate_protocol_guids() {
   for (const auto &prot : *m_ptable) {
     ea_t addr = prot["address"];
-    if (efi_utils::addr_in_vec(m_annotated_protocols, addr)) {
+    if (m_annotated_protocols.contains(addr)) {
       continue;
     }
 
     std::string name = prot[m_pkey];
     set_name(addr, name.c_str(), SN_FORCE);
     efi_utils::set_guid_type(addr);
-    m_annotated_protocols.push_back(addr);
+    m_annotated_protocols.insert(addr);
   }
 }
 
@@ -1732,7 +1726,7 @@ void efi_analysis::efi_analyser_x86_t::find_callout_rec(func_t *func) {
     if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
         insn.ops[1].type == o_mem) {
       // search for callouts with gBS
-      if (efi_utils::addr_in_vec(m_bs_list, insn.ops[1].addr)) {
+      if (m_bs_list.contains(insn.ops[1].addr)) {
         // filter FP
         auto reg = insn.ops[0].reg;
         auto addr = ea;
@@ -1755,17 +1749,17 @@ void efi_analysis::efi_analyser_x86_t::find_callout_rec(func_t *func) {
           efi_utils::log("found SMM callout via boot services at 0x%" PRIx64
                          "\n",
                          u64_addr(ea));
-          m_callout_addrs.push_back(ea);
+          m_callout_addrs.insert(ea);
           continue;
         }
       }
 
       // search for callouts with gRT
-      if (efi_utils::addr_in_vec(m_rt_list, insn.ops[1].addr)) {
+      if (m_rt_list.contains(insn.ops[1].addr)) {
         efi_utils::log("found SMM callout via runtime services at 0x%" PRIx64
                        "\n",
                        u64_addr(ea));
-        m_callout_addrs.push_back(ea);
+        m_callout_addrs.insert(ea);
         continue;
       }
 
@@ -1797,7 +1791,7 @@ void efi_analysis::efi_analyser_x86_t::find_callout_rec(func_t *func) {
               efi_utils::log("found SMM callout via interface at 0x%" PRIx64
                              "\n",
                              u64_addr(ea));
-              m_callout_addrs.push_back(ea);
+              m_callout_addrs.insert(ea);
               found = true;
             } // else: FP
             break;
@@ -1883,7 +1877,7 @@ bool efi_analysis::efi_analyser_x86_t::find_smm_callout() {
 //--------------------------------------------------------------------------
 // find potential double GetVariable patterns in PEI modules
 bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
-  ea_list_t get_variable_services_calls;
+  ea_set_t get_variable_services_calls;
   std::string get_variable_str("VariablePPI->GetVariable");
 
   for (auto j_service : m_all_services) {
@@ -1892,18 +1886,21 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
     std::string table_name = service["table_name"];
     ea_t addr = service["address"];
     if (service_name.compare(get_variable_str) == 0) {
-      get_variable_services_calls.push_back(addr);
+      get_variable_services_calls.insert(addr);
     }
   }
 
-  sort(get_variable_services_calls.begin(), get_variable_services_calls.end());
   if (get_variable_services_calls.size() < 2) {
     return false;
   }
 
-  ea_t prev_addr = get_variable_services_calls.at(0);
-  for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
-    ea_t curr_addr = get_variable_services_calls.at(i);
+  auto it = get_variable_services_calls.begin();
+  ea_t prev_addr = *it;
+  insn_t insn;
+
+  ++it;
+  for (; it != get_variable_services_calls.end(); ++it) {
+    ea_t curr_addr = *it;
     efi_utils::log("first call to VariablePPI->GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
     efi_utils::log("second call to VariablePPI->GetVariable: 0x%" PRIx64 "\n",
@@ -1912,7 +1909,6 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
     // check code from first call to second call
     ea_t ea = next_head(prev_addr, BADADDR);
     bool ok = true;
-    insn_t insn;
     while (ea < curr_addr) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_callni || insn.itype == NN_call ||
@@ -1951,7 +1947,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
       }
 
       if (same_datasize) {
-        m_double_get_variable_pei.push_back(curr_addr);
+        m_double_get_variable_pei.insert(curr_addr);
         efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
@@ -1971,7 +1967,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
       if (!datasize_addr_found) {
         // if datasize wasn't found, just let the pattern
         // trigger - for manual review
-        m_double_get_variable_pei.push_back(curr_addr);
+        m_double_get_variable_pei.insert(curr_addr);
         efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
@@ -2001,7 +1997,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
       }
 
       if (same_datasize) {
-        m_double_get_variable_pei.push_back(curr_addr);
+        m_double_get_variable_pei.insert(curr_addr);
         efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
         continue;
@@ -2019,11 +2015,11 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
       }
 
       if (!datasize_addr_found) {
-        m_double_get_variable_pei.push_back(curr_addr);
+        m_double_get_variable_pei.insert(curr_addr);
         efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
       } else if (prev_datasize_addr == curr_datasize_addr) {
-        m_double_get_variable_pei.push_back(curr_addr);
+        m_double_get_variable_pei.insert(curr_addr);
         efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                        u64_addr(curr_addr));
       }
@@ -2036,7 +2032,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_pei() {
 //--------------------------------------------------------------------------
 // find potential double GetVariable patterns
 bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
-  ea_list_t get_variable_services_calls;
+  ea_set_t get_variable_services_calls;
   std::string get_variable_str("GetVariable");
 
   for (auto j_service : m_all_services) {
@@ -2044,20 +2040,21 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
     std::string service_name = service["service_name"];
     ea_t addr = service["address"];
     if (service_name.compare(get_variable_str) == 0) {
-      get_variable_services_calls.push_back(addr);
+      get_variable_services_calls.insert(addr);
     }
   }
 
-  sort(get_variable_services_calls.begin(), get_variable_services_calls.end());
   if (get_variable_services_calls.size() < 2) {
     return false;
   }
 
-  ea_t ea;
+  auto it = get_variable_services_calls.begin();
+  ea_t prev_addr = *it;
   insn_t insn;
-  ea_t prev_addr = get_variable_services_calls.at(0);
-  for (auto i = 1; i < get_variable_services_calls.size(); ++i) {
-    ea_t curr_addr = get_variable_services_calls.at(i);
+
+  ++it;
+  for (; it != get_variable_services_calls.end(); ++it) {
+    ea_t curr_addr = *it;
     efi_utils::log("first call to GetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
     efi_utils::log("second call to GetVariable: 0x%" PRIx64 "\n",
@@ -2065,7 +2062,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
 
     int datasize_stack_addr = 0;
     uint16 datasize_op_reg = 0xFF;
-    ea = prev_head(curr_addr, 0);
+    ea_t ea = prev_head(curr_addr, 0);
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
@@ -2107,7 +2104,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
         if (insn.itype == NN_mov && insn.ops[0].type == o_reg &&
             insn.ops[1].type == o_mem) {
           ea_t mem_addr = insn.ops[1].addr;
-          if (efi_utils::addr_in_vec(m_bs_list, mem_addr)) {
+          if (m_bs_list.contains(mem_addr)) {
             wrong_detection = true;
             break;
           }
@@ -2152,7 +2149,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
             if ((insn.ops[1].phrase == stack_base_reg &&
                  (sval + stack_addr) == datasize_stack_addr) ||
                 (datasize_stack_addr == insn.ops[1].addr)) {
-              m_double_get_variable.push_back(curr_addr);
+              m_double_get_variable.insert(curr_addr);
               efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                              u64_addr(curr_addr));
               break;
@@ -2170,26 +2167,26 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable() {
 //--------------------------------------------------------------------------
 // find potential double GetVariable patterns in SMM modules
 bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_smm() {
-  ea_list_t smm_get_variable_calls =
+  ea_set_t smm_get_variable_calls =
       efi_smm_utils::find_smm_get_variable_calls(m_data_segs, &m_all_services);
-  sort(smm_get_variable_calls.begin(), smm_get_variable_calls.end());
-
   if (smm_get_variable_calls.size() < 2) {
     return false;
   }
 
-  ea_t prev_addr = smm_get_variable_calls.at(0);
-  ea_t ea;
+  auto it = smm_get_variable_calls.begin();
+  ea_t prev_addr = *it;
   insn_t insn;
-  for (auto i = 1; i < smm_get_variable_calls.size(); ++i) {
-    ea_t curr_addr = smm_get_variable_calls.at(i);
+
+  ++it;
+  for (; it != smm_get_variable_calls.end(); ++it) {
+    ea_t curr_addr = *it;
     efi_utils::log("first call to SmmGetVariable: 0x%" PRIx64 "\n",
                    u64_addr(prev_addr));
     efi_utils::log("second call to SmmGetVariable: 0x%" PRIx64 "\n",
                    u64_addr(curr_addr));
 
     uint32_t datasize_stack_addr = 0xffffffff;
-    ea = prev_head(curr_addr, 0);
+    ea_t ea = prev_head(curr_addr, 0);
     for (auto i = 0; i < 10; ++i) {
       decode_insn(&insn, ea);
       if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
@@ -2230,7 +2227,7 @@ bool efi_analysis::efi_analyser_x86_t::find_double_get_variable_smm() {
           if (insn.itype == NN_lea && insn.ops[0].type == o_reg &&
               insn.ops[0].reg == R_R9) {
             if (datasize_stack_addr == insn.ops[1].addr) {
-              m_double_get_variable_smm.push_back(curr_addr);
+              m_double_get_variable_smm.insert(curr_addr);
               efi_utils::log("overflow may occur here: 0x%" PRIx64 "\n",
                              u64_addr(curr_addr));
               break;
@@ -2594,7 +2591,7 @@ void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
   if (m_callout_addrs.size() || m_double_get_variable_pei.size() ||
       m_double_get_variable.size() || m_double_get_variable_smm.size()) {
     json_list_t vulns;
-    std::map<std::string, ea_list_t> vulns_map = {
+    std::map<std::string, ea_set_t> vulns_map = {
         {"SmmCallout", m_callout_addrs},
         {"DoubleGetVariablePei", m_double_get_variable_pei},
         {"DoubleGetVariable", m_double_get_variable},

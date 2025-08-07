@@ -22,6 +22,7 @@
 #include <cinttypes>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <set>
 #include <string>
@@ -58,17 +59,17 @@ using nlohmann::json;
 
 #define BTOA(x) ((x) ? "true" : "false")
 
-#define VZ 0x5A56
-#define MZ 0x5A4D
+constexpr uint16_t VZ = 0x5A56;
+constexpr uint16_t MZ = 0x5A4D;
 
-#define BS_OFFSET_64 0x60
-#define BS_OFFSET_32 0x3c
-#define RT_OFFSET_64 0x58
-#define RT_OFFSET_32 0x38
+constexpr uint32_t BS_OFFSET_64 = 0x60;
+constexpr uint32_t BS_OFFSET_32 = 0x3c;
+constexpr uint32_t RT_OFFSET_64 = 0x58;
+constexpr uint32_t RT_OFFSET_32 = 0x38;
 
-#define NONE_REG 0xffff
-#define NONE_OFFSET 0xffff
-#define NONE_PUSH 0xffff
+constexpr uint16_t NONE_REG = 0xffff;
+constexpr uint16_t NONE_OFFSET = 0xffff;
+constexpr uint16_t NONE_PUSH = 0xffff;
 
 enum class arch_file_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
 enum class ffs_file_type_t { unsupported = 0, pei = 6, dxe_smm = 7 };
@@ -192,14 +193,14 @@ struct efi_guid_t {
     res.push_back(data2 >> 8 & 0xff);
     res.push_back(data3 & 0xff);
     res.push_back(data3 >> 8 & 0xff);
-    for (auto i = 0; i < 8; i++) {
-      res.push_back(data4[i]);
+    for (const auto &byte : data4) {
+      res.push_back(byte);
     }
     return res;
   }
 
   std::string to_string() const {
-    char guid_str[37] = {0};
+    char guid_str[37] = {};
     snprintf(guid_str, sizeof(guid_str),
              "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", data1, data2,
              data3, data4[0], data4[1], data4[2], data4[3], data4[4], data4[5],
