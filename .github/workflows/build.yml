@@ -12,10 +12,8 @@ jobs:
           submodules: true
       - name: build plugin and loader
         run: |
-          mkdir build
-          cd build
-          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
-          cmake --build . --config Release --parallel
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dll
@@ -35,8 +33,8 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
-          cmake --build . --config Release --parallel
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.so
@@ -56,8 +54,8 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
-          cmake --build . --config Release --parallel
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
           name: efiXplorer64.dylib

@@ -26,9 +26,7 @@ jobs:
       - name: autobuild
         run: |
           git submodule update --init --recursive
-          mkdir build
-          cd build
-          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
-          cmake --build . --config Release --parallel
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake --build build --config Release --parallel
       - name: analyse with CodeQL
         uses: github/codeql-action/analyze@v3
