@@ -6,3 +6,7 @@
 	path = guids
 	url = https://github.com/binarly-io/guiddb.git
 	branch = main
+[submodule "idasdk"]
+	path = idasdk
+	url = https://github.com/HexRaysSA/ida-sdk.git
+	branch = main
