@@ -12,7 +12,7 @@ jobs:
           submodules: true
       - name: build plugin and loader
         run: |
-          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src -DHexRaysSdk_ROOT_DIR=idasdk/src
           cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src -DHexRaysSdk_ROOT_DIR=idasdk/src
           cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -54,7 +54,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -S . -B build -DIdaSdk_DIR=idasdk/src
+          cmake -S . -B build -DIdaSdk_DIR=idasdk/src -DHexRaysSdk_ROOT_DIR=idasdk/src
           cmake --build build --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
