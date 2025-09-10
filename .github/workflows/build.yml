@@ -10,18 +10,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: prepare IDA SDK
-        env:
-          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
-          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
-        run: |
-          curl -o "${{ runner.temp }}/idasdk91.zip" -L $env:IDASDK91_URL
-          unzip -d "${{ runner.temp }}" -P $env:IDASDK91_PASSWORD "${{ runner.temp }}/idasdk91.zip"
       - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR="${{ runner.temp }}/idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -38,19 +31,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: prepare IDA SDK
-        shell: bash
-        env:
-          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
-          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
-        run: |
-          curl -o "${{ runner.temp }}/idasdk91.zip" -L "$IDASDK91_URL"
-          unzip -d "${{ runner.temp }}" -P "$IDASDK91_PASSWORD" "${{ runner.temp }}/idasdk91.zip"
       - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR="${{ runner.temp }}/idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:
@@ -67,19 +52,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: prepare IDA SDK
-        shell: bash
-        env:
-          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
-          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
-        run: |
-          curl -o "${{ runner.temp }}/idasdk91.zip" -L "$IDASDK91_URL"
-          unzip -d "${{ runner.temp }}" -P "$IDASDK91_PASSWORD" "${{ runner.temp }}/idasdk91.zip"
       - name: build plugin and loader
         run: |
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR="${{ runner.temp }}/idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
           cmake --build . --config Release --parallel
       - uses: actions/upload-artifact@master
         with:

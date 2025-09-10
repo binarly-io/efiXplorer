@@ -24,16 +24,11 @@ jobs:
         with:
           languages: ${{ matrix.language }}
       - name: autobuild
-        env:
-          IDASDK91_URL: ${{ secrets.IDASDK91_URL }}
-          IDASDK91_PASSWORD: ${{ secrets.IDASDK91_PASSWORD }}
         run: |
           git submodule update --init --recursive
-          curl -o "${{ runner.temp }}/idasdk91.zip" -L "$IDASDK91_URL"
-          unzip -d "${{ runner.temp }}" -P "$IDASDK91_PASSWORD" "${{ runner.temp }}/idasdk91.zip"
           mkdir build
           cd build
-          cmake .. -DIdaSdk_ROOT_DIR="${{ runner.temp }}/idasdk91" -DHexRaysSdk_ROOT_DIR="${{ runner.temp }}/idasdk91"
+          cmake .. -DIdaSdk_ROOT_DIR=../idasdk/src -DHexRaysSdk_ROOT_DIR=../idasdk/src
           cmake --build . --config Release --parallel
       - name: analyse with CodeQL
         uses: github/codeql-action/analyze@v3
