@@ -346,31 +346,22 @@ void efi_utils::set_ptr_type_and_name(ea_t ea, std::string name,
 //--------------------------------------------------------------------------
 // get guids.json file name
 std::filesystem::path efi_utils::get_guids_json_file() {
-  std::filesystem::path guids;
+  const auto search_paths = {
+      std::filesystem::path(get_user_idadir()) / "plugins" /
+          "efiXplorer", // if installed via ida-hcli
+      std::filesystem::path(get_user_idadir()) / "plugins",
+      std::filesystem::path(idadir("plugins"))};
 
-  const auto user_plugins =
-      std::filesystem::path(get_user_idadir()) / "plugins";
+  const auto guids_paths = {std::filesystem::path("guids.json"),
+                            std::filesystem::path("guids") / "guids.json"};
 
-  guids = user_plugins / "guids.json";
-  if (std::filesystem::exists(guids)) {
-    return guids;
-  }
-
-  guids = user_plugins / "guids" / "guids.json";
-  if (std::filesystem::exists(guids)) {
-    return guids;
-  }
-
-  const auto plugins = std::filesystem::path(idadir("plugins"));
-
-  guids = plugins / "guids.json";
-  if (std::filesystem::exists(guids)) {
-    return guids;
-  }
-
-  guids = plugins / "guids" / "guids.json";
-  if (std::filesystem::exists(guids)) {
-    return guids;
+  for (const auto &base_path : search_paths) {
+    for (const auto &guids_path : guids_paths) {
+      auto guids = base_path / guids_path;
+      if (std::filesystem::exists(guids)) {
+        return guids;
+      }
+    }
   }
 
   return {};
