@@ -5,7 +5,7 @@
   <img alt="logo" src="https://raw.githubusercontent.com/binarly-io/efiXplorer/5c21f355c41e74af4a7cd1659780a71f76f5d2c1/pics/efiXplorer_logo.png" width="45%">
 </p>
 
-**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation
+**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation.
 
 **Supported versions of Hex-Rays products:** everytime we focus on last versions of IDA and Decompiler because we try to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
 
@@ -24,6 +24,14 @@
 - [efiXplorer: Hunting for UEFI Firmware Vulnerabilities at Scale with Automated Static Analysis](https://i.blackhat.com/eu-20/Wednesday/eu-20-Labunets-efiXplorer-Hunting-For-UEFI-Firmware-Vulnerabilities-At-Scale-With-Automated-Static-Analysis.pdf)
 - [Static analysis-based recovery of service function calls in UEFI firmware](https://github.com/binarly-io/Research_Publications/blob/main/EKO_2020/EKO_2020_efiXplorer.pdf)
 - [How efiXplorer helping to solve challenges in reverse engineering of UEFI firmware](https://www.youtube.com/watch?v=FFGQJBmRkLw)
+
+## Acknowledgements
+
+Special thanks to:
+
+- [Hex-Rays](https://hex-rays.com/), for their support of this project through the [Hex-Rays Contributor Program](https://hex-rays.com/contributor-program)
+- All contributors who have helped improve this project (see `CONTRIBUTORS.md` for a list)
+- The authors of the projects listed below for their ideas and research efforts
 
 ## References
 

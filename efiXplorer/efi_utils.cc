@@ -19,7 +19,6 @@
 
 #include "efi_utils.h"
 
-#include "efi_global.h"
 #include <algorithm>
 #include <cstdio>
 #include <string>
