@@ -5,19 +5,13 @@
   <img alt="logo" src="https://raw.githubusercontent.com/binarly-io/efiXplorer/5c21f355c41e74af4a7cd1659780a71f76f5d2c1/pics/efiXplorer_logo.png" width="45%">
 </p>
 
-**efiXplorer** - IDA plugin for UEFI firmware analysis and reverse engineering automation.
+**efiXplorer** - [IDA plugin](https://plugins.hex-rays.com/binarly-io/efixplorer) and loader for UEFI firmware analysis and reverse engineering automation
 
-**Supported versions of Hex-Rays products:** everytime we focus on last versions of IDA and Decompiler because we try to use most recent features from new SDK releases. That means we tested only on recent versions of Hex-Rays products and do not guarantee stable work on previous generations.
+## Documentation
 
-**Why not IDApython:** all code developed in C++ because it's a more stable and performant way to support a complex plugin and get full power of most recent SDK's features.
-
-**Supported Platforms:** Windows, Linux and OSX.
-
-## [efiXplorer core features](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
-
-## [efiXloader description](https://github.com/binarly-io/efiXplorer/wiki/efiXloader)
-
-## [Build instructions and Installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
+- [efiXplorer wiki](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
+- [efiXloader wiki](https://github.com/binarly-io/efiXplorer/wiki/efiXloader)
+- [Build instructions and installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
 
 ## Publications
 
