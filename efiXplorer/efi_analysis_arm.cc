@@ -528,7 +528,8 @@ bool efi_analysis::efi_analyse_main_aarch64() {
   // prototype
   analyser.initial_analysis();
 
-  if (analyser.m_ftype == ffs_file_type_t::driver) {
+  if (analyser.m_ftype == ffs_file_type_t::driver ||
+      analyser.m_ftype == ffs_file_type_t::mm_standalone) {
     analyser.initial_gvars_detection();
 
     // detect services
