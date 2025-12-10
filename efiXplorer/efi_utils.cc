@@ -39,20 +39,19 @@ std::string file_format_name() {
 //--------------------------------------------------------------------------
 // get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-ffs_file_type_t guess_file_type(arch_file_type_t arch,
-                                json_list_t *m_all_guids) {
+ffs_file_type_t guess_file_type(arch_file_type_t arch, json_list_t *all_guids) {
   if (arch == arch_file_type_t::uefi) {
-    return ffs_file_type_t::dxe_smm;
+    return ffs_file_type_t::driver;
   }
 
   segment_t *hdr_seg = get_segm_by_name("HEADER");
   if (hdr_seg == nullptr) {
-    return ffs_file_type_t::dxe_smm;
+    return ffs_file_type_t::driver;
   }
 
   uint64_t signature = get_wide_word(hdr_seg->start_ea);
   bool has_pei_guids = std::any_of(
-      m_all_guids->begin(), m_all_guids->end(), [](const json &guid_value) {
+      all_guids->begin(), all_guids->end(), [](const json &guid_value) {
         return static_cast<std::string>(guid_value["name"]).find("PEI") !=
                std::string::npos;
       });
@@ -69,11 +68,30 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch,
   if (signature == VZ || has_pei_guids || has_pei_in_path) {
     efi_utils::log("analysing binary file as PEI, signature: %llx\n",
                    signature);
-    return ffs_file_type_t::pei;
+    return ffs_file_type_t::peim;
   }
 
   efi_utils::log("analysing binary file as DXE/SMM\n");
-  return ffs_file_type_t::dxe_smm;
+  return ffs_file_type_t::driver;
+}
+
+int parse_efi_standalone_smm_entry_point() {
+  return parse_decls(
+      nullptr,
+      "typedef EFI_STATUS (*EFI_SMM_STANDALONE_ENTRY_POINT)(EFI_HANDLE "
+      "ImageHandle, EFI_SMM_SYSTEM_TABLE2 *Smst);",
+      msg, HTI_DCL);
+}
+
+//--------------------------------------------------------------------------
+// add EFI_SMM_STANDALONE_ENTRY_POINT
+bool efi_utils::add_efi_standalone_smm_entry_point() {
+#if IDA_SDK_VERSION < 850
+  return false;
+#else
+  // return true if there are no errors from parse_decls()
+  return !parse_efi_standalone_smm_entry_point();
+#endif
 }
 
 int parse_efi_pei_svc4() {
@@ -226,21 +244,29 @@ arch_file_type_t efi_utils::input_file_type() {
   return arch_file_type_t::unsupported;
 }
 
-ffs_file_type_t efi_utils::ask_file_type(json_list_t *m_all_guids) {
+ffs_file_type_t efi_utils::ask_file_type(json_list_t *all_guids) {
   const auto arch = efi_utils::input_file_type();
-
   if (arch == arch_file_type_t::uefi || arch == arch_file_type_t::x86_64) {
-    return ffs_file_type_t::dxe_smm;
+    // if the input is UEFI firmware or an x86-64 module,
+    // it will be analysed as DXE/SMM
+    return ffs_file_type_t::driver;
   }
 
-  const auto ftype = guess_file_type(arch, m_all_guids);
-  const auto deflt = ftype == ffs_file_type_t::dxe_smm;
-  const auto fmt_param = ftype == ffs_file_type_t::dxe_smm ? "DXE/SMM" : "PEI";
-  const auto btn_id =
-      ask_buttons("DXE/SMM", "PEI", "", deflt, "Analyse file as %s", fmt_param);
+  constexpr std::array file_types = {ffs_file_type_t::driver,
+                                     ffs_file_type_t::peim,
+                                     ffs_file_type_t::mm_standalone};
 
-  return (btn_id == ASKBTN_YES) ? ffs_file_type_t::dxe_smm
-                                : ffs_file_type_t::pei;
+  static const char form[] = "Analyse file as\n\n"
+                             "<DXE/SMM:R>\n"
+                             "<PEI Module:R>\n"
+                             "<Standalone SMM:R>>\n";
+
+  int16_t choice = 0;
+  if (!ask_form(form, &choice)) {
+    return guess_file_type(arch, all_guids);
+  }
+
+  return file_types[choice];
 }
 
 //--------------------------------------------------------------------------

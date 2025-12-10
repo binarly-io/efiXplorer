@@ -36,7 +36,7 @@ bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
 bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                           std::string name);
 bool set_lvar_name(qstring name, lvar_t &lvar, ea_t func_addr);
-bool track_entry_params(func_t *f, uint8_t depth);
+bool propagate_types(func_t *f, uint8_t depth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
 json detect_vars(func_t *f);
 json_list_t detect_pei_services_arm(func_t *f);
@@ -631,9 +631,9 @@ protected:
   bool m_debug = true;
 };
 
-class prototypes_fixer_t : public ctree_visitor_t {
+class type_propagator_t : public ctree_visitor_t {
 public:
-  prototypes_fixer_t() : ctree_visitor_t(CV_FAST) {}
+  type_propagator_t() : ctree_visitor_t(CV_FAST) {}
   ea_set_t m_child_functions;
 
   // this is the callback function that Hex-Rays invokes for every expression

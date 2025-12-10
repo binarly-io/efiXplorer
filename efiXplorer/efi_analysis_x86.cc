@@ -135,11 +135,11 @@ efi_analysis::efi_analyser_t::~efi_analyser_t() {
 }
 
 void efi_analysis::efi_analyser_t::set_pvalues() {
-  if (m_ftype == ffs_file_type_t::dxe_smm) {
+  if (m_ftype == ffs_file_type_t::driver) {
     m_pname = "protocols";
     m_pkey = "prot_name";
     m_ptable = &m_all_protocols;
-  } else if (m_ftype == ffs_file_type_t::pei) {
+  } else if (m_ftype == ffs_file_type_t::peim) {
     m_pname = "ppis";
     m_pkey = "ppi_name";
     m_ptable = &m_all_ppis;
@@ -2563,12 +2563,12 @@ void efi_analysis::efi_analyser_x86_t::show_all_choosers() {
   }
 
   // open window with protocols
-  if (m_ftype == ffs_file_type_t::pei) {
+  if (m_ftype == ffs_file_type_t::peim) {
     if (m_all_ppis.size()) {
       title = "efiXplorer: PPIs";
       show_ppis(m_all_ppis, title);
     }
-  } else { // ffs_file_type_t::dxe_smm
+  } else { // ffs_file_type_t::driver
     if (m_all_protocols.size()) {
       title = "efiXplorer: protocols";
       show_protocols(m_all_protocols, title);
@@ -2650,8 +2650,8 @@ bool efi_analysis::efi_analyse_main_x86_64() {
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei
-                           ? analyser.m_ftype = ffs_file_type_t::pei
-                           : analyser.m_ftype = ffs_file_type_t::dxe_smm;
+                           ? analyser.m_ftype = ffs_file_type_t::peim
+                           : analyser.m_ftype = ffs_file_type_t::driver;
   } else {
     analyser.m_ftype = efi_utils::ask_file_type(&analyser.m_all_guids);
   }
@@ -2659,7 +2659,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
   analyser.set_pvalues();
 
   // find global vars for gImageHandle, gST, gBS, gRT, gSmst
-  if (analyser.m_ftype == ffs_file_type_t::dxe_smm) {
+  if (analyser.m_ftype == ffs_file_type_t::driver) {
     analyser.find_image_handle64();
     analyser.find_system_table64();
     analyser.find_boot_services_tables();
@@ -2761,15 +2761,15 @@ bool efi_analysis::efi_analyse_main_x86_32() {
 
   if (g_args.disable_ui) {
     analyser.m_ftype = g_args.module_type == module_type_t::pei
-                           ? analyser.m_ftype = ffs_file_type_t::pei
-                           : analyser.m_ftype = ffs_file_type_t::dxe_smm;
+                           ? analyser.m_ftype = ffs_file_type_t::peim
+                           : analyser.m_ftype = ffs_file_type_t::driver;
   } else {
     analyser.m_ftype = efi_utils::ask_file_type(&analyser.m_all_guids);
   }
 
   analyser.set_pvalues();
 
-  if (analyser.m_ftype == ffs_file_type_t::dxe_smm) {
+  if (analyser.m_ftype == ffs_file_type_t::driver) {
     // find global vars for gST, gBS, gRT
     analyser.find_boot_services_tables();
     analyser.find_runtime_services_tables();
@@ -2787,7 +2787,7 @@ bool efi_analysis::efi_analyse_main_x86_32() {
     efi_hexrays::apply_all_types_for_interfaces(analyser.m_all_protocols);
     efi_hexrays::apply_all_types_for_interfaces_smm(analyser.m_all_protocols);
 #endif
-  } else if (analyser.m_ftype == ffs_file_type_t::pei) {
+  } else if (analyser.m_ftype == ffs_file_type_t::peim) {
     efi_utils::set_entry_arg_to_pei_svc();
     efi_utils::add_struct_for_shifted_ptr();
 #ifdef HEX_RAYS

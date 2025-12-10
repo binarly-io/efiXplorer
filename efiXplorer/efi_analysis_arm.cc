@@ -18,6 +18,7 @@
  */
 
 #include "efi_analysis.h"
+#include "efi_defs.h"
 #include "efi_global.h"
 #include "efi_ui.h"
 #include "efi_utils.h"
@@ -87,16 +88,25 @@ void efi_analysis::efi_analyser_arm_t::set_operands_repr() {
 
 void efi_analysis::efi_analyser_arm_t::initial_analysis() {
   set_operands_repr();
+  if (m_ftype == ffs_file_type_t::mm_standalone) {
+    efi_utils::add_efi_standalone_smm_entry_point();
+  }
+
   for (auto idx = 0; idx < get_entry_qty(); idx++) {
     uval_t ord = get_entry_ordinal(idx);
     ea_t ep = get_entry(ord);
-    set_name(ep, "_ModuleEntryPoint", SN_FORCE);
+    if (m_ftype == ffs_file_type_t::mm_standalone) {
+      efi_utils::set_type_and_name(ep, "_ModuleEntryPoint",
+                                   "EFI_SMM_STANDALONE_ENTRY_POINT");
+    } else {
+      set_name(ep, "_ModuleEntryPoint", SN_FORCE);
+    }
 #ifdef HEX_RAYS
-    efi_hexrays::track_entry_params(get_func(ep), 0);
+    efi_hexrays::propagate_types(get_func(ep), 0);
 #endif /* HEX_RAYS */
   }
 
-  if (m_ftype == ffs_file_type_t::pei) {
+  if (m_ftype == ffs_file_type_t::peim) {
     efi_utils::set_entry_arg_to_pei_svc();
   }
 }
@@ -493,22 +503,32 @@ bool efi_analysis::efi_analyse_main_aarch64() {
   analyser.annotate_data_guids();
 
   if (g_args.disable_ui) {
-    analyser.m_ftype = g_args.module_type == module_type_t::pei
-                           ? analyser.m_ftype = ffs_file_type_t::pei
-                           : analyser.m_ftype = ffs_file_type_t::dxe_smm;
+    switch (g_args.module_type) {
+    case module_type_t::pei:
+      analyser.m_ftype = ffs_file_type_t::peim;
+      break;
+    case module_type_t::standalone_smm:
+      analyser.m_ftype = ffs_file_type_t::mm_standalone;
+      break;
+    default:
+      analyser.m_ftype = ffs_file_type_t::driver;
+      break;
+    }
   } else {
     analyser.m_ftype = efi_utils::ask_file_type(&analyser.m_all_guids);
   }
 
-  if (analyser.m_ftype == ffs_file_type_t::pei) {
+  if (analyser.m_ftype == ffs_file_type_t::peim) {
     efi_utils::log("input file is PEI module\n");
+  } else if (analyser.m_ftype == ffs_file_type_t::mm_standalone) {
+    efi_utils::log("input file is standalone SMM module\n");
   }
 
   // set the correct name for the entry point and automatically fix the
   // prototype
   analyser.initial_analysis();
 
-  if (analyser.m_ftype == ffs_file_type_t::dxe_smm) {
+  if (analyser.m_ftype == ffs_file_type_t::driver) {
     analyser.initial_gvars_detection();
 
     // detect services
@@ -516,7 +536,7 @@ bool efi_analysis::efi_analyse_main_aarch64() {
 
     // detect protocols
     analyser.detect_protocols_all();
-  } else if (analyser.m_ftype == ffs_file_type_t::pei) {
+  } else if (analyser.m_ftype == ffs_file_type_t::peim) {
     analyser.find_pei_services_function();
   }
 

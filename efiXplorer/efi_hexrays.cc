@@ -367,7 +367,7 @@ uint8_t efi_hexrays::variables_info_extract_all(func_t *f, ea_t code_addr) {
   return extractor.m_attributes;
 }
 
-bool efi_hexrays::track_entry_params(func_t *f, uint8_t depth) {
+bool efi_hexrays::propagate_types(func_t *f, uint8_t depth) {
   if (!init_hexrays_plugin()) {
     return false;
   }
@@ -386,10 +386,10 @@ bool efi_hexrays::track_entry_params(func_t *f, uint8_t depth) {
     return false;
   }
 
-  prototypes_fixer_t *pf = new prototypes_fixer_t();
+  type_propagator_t *pf = new type_propagator_t();
   pf->apply_to(&cfunc->body, nullptr);
   for (auto addr : pf->m_child_functions) {
-    efi_hexrays::track_entry_params(get_func(addr), ++depth);
+    efi_hexrays::propagate_types(get_func(addr), ++depth);
   }
 
   delete pf;

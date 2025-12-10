@@ -57,24 +57,23 @@ static plugmod_t *idaapi init(void) {
 
 //--------------------------------------------------------------------------
 bool idaapi run(size_t arg) {
-  // parse arg value:
-  //  - arg = 0 (000): default (DXE)
-  //  - arg = 1 (001): default (PEI, 32-bit binaries only)
-  //  - arg = 2 (010): disable_ui (DXE)
-  //  - arg = 3 (011): disable_ui (PEI, 32-bit binaries only)
-  //  - arg = 4 (100): disable_vuln_hunt (DXE)
-  //  - arg = 5 (101): disable_vuln_hunt (PEI, 32-bit binaries only)
-  //  - arg = 6 (110): disable_ui & disable_vuln_hunt for DXE
-  //  - arg = 7 (111): disable_ui & disable_vuln_hunt for PEI
-  if (arg & 1) {
-    g_args.module_type = module_type_t::pei;
-  }
+  // parse argument:
+  //  - bit 0: disable UI
+  //  - bit 1: disable vulnerability hunting
+  //  - bits 2..N: module type (0 = DXE, 4 = PEI, 8 = standalone SMM)
+  g_args.disable_ui = arg & 1;
+  g_args.disable_vuln_hunt = (arg >> 1) & 1;
 
-  if (arg >> 1 & 1) {
-    g_args.disable_ui = 1;
-  }
-  if (arg >> 2 & 1) {
-    g_args.disable_vuln_hunt = 1;
+  switch (arg >> 2) {
+  case 1:
+    g_args.module_type = module_type_t::pei;
+    break;
+  case 2:
+    g_args.module_type = module_type_t::standalone_smm;
+    break;
+  default:
+    g_args.module_type = module_type_t::dxe_smm;
+    break;
   }
 
   efi_utils::log("plugin run with argument %lu (sdk version: %d)\n", arg,

@@ -26,6 +26,7 @@ namespace efi_utils {
 arch_file_type_t input_file_type();
 
 bool add_struct_for_shifted_ptr();
+bool add_efi_standalone_smm_entry_point();
 
 bool addr_in_tables(const ea_set_t &t1, const ea_set_t &t2, ea_t ea);
 bool addr_in_tables(const ea_set_t &t1, const ea_set_t &t2, const ea_set_t &t3,
