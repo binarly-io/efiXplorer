@@ -72,8 +72,13 @@ constexpr uint16_t NONE_OFFSET = 0xffff;
 constexpr uint16_t NONE_PUSH = 0xffff;
 
 enum class arch_file_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
-enum class ffs_file_type_t { unsupported = 0, pei = 6, dxe_smm = 7 };
-enum class module_type_t { dxe_smm = 0, pei = 1 };
+enum class ffs_file_type_t {
+  unsupported = 0,
+  peim = 6,
+  driver = 7,
+  mm_standalone = 14
+};
+enum class module_type_t { dxe_smm = 0, pei = 1, standalone_smm = 2 };
 
 enum machine_type_t { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };
 

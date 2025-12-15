@@ -20,8 +20,10 @@
 #pragma once
 
 #include "efi_utils.h"
+#include "pro.h"
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -36,7 +38,7 @@ bool set_hexrays_var_info_and_handle_interfaces(ea_t func_addr, lvar_t &ll,
 bool set_hexrays_var_info(ea_t func_addr, lvar_t &ll, tinfo_t tif,
                           std::string name);
 bool set_lvar_name(qstring name, lvar_t &lvar, ea_t func_addr);
-bool track_entry_params(func_t *f, uint8_t depth);
+bool propagate_types(func_t *f, uint8_t depth);
 const char *expr_to_string(cexpr_t *e, qstring *out);
 json detect_vars(func_t *f);
 json_list_t detect_pei_services_arm(func_t *f);
@@ -631,21 +633,23 @@ protected:
   bool m_debug = true;
 };
 
-class prototypes_fixer_t : public ctree_visitor_t {
+class type_propagator_t : public ctree_visitor_t {
 public:
-  prototypes_fixer_t() : ctree_visitor_t(CV_FAST) {}
+  type_propagator_t() : ctree_visitor_t(CV_FAST) {}
   ea_set_t m_child_functions;
 
   // this is the callback function that Hex-Rays invokes for every expression
   // in the CTREE
   int visit_expr(cexpr_t *e) {
-    if (e->op != cot_call)
+    if (e->op != cot_call) {
       return 0;
+    }
 
     // get child function address
     if (e->x->op != cot_obj) {
       return 0;
     }
+
     if (m_debug) {
       efi_utils::log("child function address: 0x%" PRIx64 "\n",
                      u64_addr(e->x->obj_ea));
@@ -672,6 +676,7 @@ public:
     if (m_debug) {
       efi_utils::log("call address: 0x%" PRIx64 "\n", u64_addr(e->ea));
     }
+
     for (auto i = 0; i < args->size(); i++) {
       cexpr_t *arg = &args->at(i);
       if (arg->op == cot_cast || arg->op == cot_var) {
@@ -681,6 +686,7 @@ public:
         if (arg->op == cot_var) {
           arg_type = arg->type;
         }
+
         if (arg->op == cot_cast) {
           arg_type = arg->x->type;
         }
@@ -691,12 +697,9 @@ public:
         }
 
         qstring type_name;
-        bool is_ptr = false;
-        if (!arg_type.get_type_name(&type_name)) {
-          if (!arg_type_no_ptr.get_type_name(&type_name)) {
-            continue;
-          }
-          is_ptr = true;
+        bool is_ptr = !arg_type.get_type_name(&type_name);
+        if (is_ptr && !arg_type_no_ptr.get_type_name(&type_name)) {
+          continue;
         }
 
         if (is_ptr) {
@@ -705,24 +708,20 @@ public:
           efi_utils::log("arg #%d, type = %s\n", i, type_name.c_str());
         }
 
-        if (type_name == qstring("EFI_HANDLE") ||
-            type_name == qstring("EFI_SYSTEM_TABLE")) {
-          m_child_functions.insert(func_addr);
-
-          // set argument type and name
-          if (cf->argidx.size() <= i) {
-            return 0;
-          }
-
-          auto argid = cf->argidx[i];
-          lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
-          if (type_name == qstring("EFI_HANDLE")) {
-            set_hexrays_var_info(func_addr, arg_var, arg_type, "ImageHandle");
-          }
-          if (type_name == qstring("EFI_SYSTEM_TABLE")) {
-            set_hexrays_var_info(func_addr, arg_var, arg_type, "SystemTable");
-          }
+        auto it = m_names.find(type_name.c_str());
+        if (it == m_names.end()) {
+          continue;
         }
+
+        m_child_functions.insert(func_addr);
+
+        if (cf->argidx.size() <= i) {
+          return 0;
+        }
+
+        auto argid = cf->argidx[i];
+        lvar_t &arg_var = cf->mba->vars[argid]; // get lvar for argument
+        set_hexrays_var_info(func_addr, arg_var, arg_type, it->second);
       }
     }
 
@@ -731,6 +730,11 @@ public:
 
 protected:
   bool m_debug = true;
+  static inline const std::unordered_map<std::string, const char *> m_names = {
+      {"EFI_HANDLE", "ImageHandle"},
+      {"EFI_SYSTEM_TABLE", "SystemTable"},
+      {"EFI_SMM_SYSTEM_TABLE2", "Smst"},
+  };
 };
 
 class variables_detector_t : public ctree_visitor_t {
