@@ -1,21 +1,5 @@
-/*
- * efiXplorer
- * Copyright (C) 2020-2025  Binarly
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2020-2026 Binarly
 
 #pragma once
 
@@ -71,13 +55,14 @@ constexpr uint16_t NONE_REG = 0xffff;
 constexpr uint16_t NONE_OFFSET = 0xffff;
 constexpr uint16_t NONE_PUSH = 0xffff;
 
-enum class arch_file_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
+enum class analysis_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
 enum class ffs_file_type_t {
   unsupported = 0,
   peim = 6,
   driver = 7,
   mm_standalone = 14
 };
+
 enum class module_type_t { dxe_smm = 0, pei = 1, standalone_smm = 2 };
 
 enum machine_type_t { AMD64 = 0x8664, I386 = 0x014C, AARCH64 = 0xaa64 };

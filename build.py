@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2020-2026 Binarly
+
 import os
 import subprocess
 
