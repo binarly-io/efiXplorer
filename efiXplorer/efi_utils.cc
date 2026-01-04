@@ -274,7 +274,7 @@ ffs_file_type_t efi_utils::ask_file_type(json_list_t *all_guids) {
 
   int16_t choice = 0;
   if (!ask_form(form, &choice)) {
-    return guess_file_type(arch, all_guids);
+    return guess_file_type(analysis_kind, all_guids);
   }
 
   return file_types[choice];
