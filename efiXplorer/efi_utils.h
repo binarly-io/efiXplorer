@@ -7,7 +7,7 @@
 #include <string>
 
 namespace efi_utils {
-analysis_type_t get_analysis_type();
+analysis_kind_t get_analysis_kind();
 
 bool add_struct_for_shifted_ptr();
 bool add_efi_standalone_smm_entry_point();

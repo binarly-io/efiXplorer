@@ -38,7 +38,7 @@ public:
   segment_list_t m_code_segs;
   segment_list_t m_data_segs;
 
-  analysis_type_t m_arch = analysis_type_t::unsupported;
+  analysis_kind_t m_analysis_kind = analysis_kind_t::unsupported;
   ffs_file_type_t m_ftype = ffs_file_type_t::unsupported;
 
   void dump_json();

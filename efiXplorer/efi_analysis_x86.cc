@@ -19,7 +19,7 @@ extern ea_set_t g_smm_set_variable_calls;
 
 efi_analysis::efi_analyser_t::efi_analyser_t() {
   // 32-bit, 64-bit, ARM or UEFI (in loader instance)
-  m_arch = efi_utils::get_analysis_type();
+  m_analysis_kind = efi_utils::get_analysis_kind();
 
   // get guids.json path
   m_guids_json_path /= efi_utils::get_guids_json_file();
@@ -69,13 +69,13 @@ efi_analysis::efi_analyser_t::efi_analyser_t() {
   }
 
   // set mask and masked value for MACRO_EFI enum value detection
-  if (m_arch == analysis_type_t::x86_32) {
+  if (m_analysis_kind == analysis_kind_t::x86_32) {
     m_mask = 0xffffff00;
     m_masked_value = 0x80000000;
   } else {
-    // analysis_type_t::x86_64
-    // analysis_type_t::aarch64,
-    // analysis_type_t::uefi -- as only 64-bit binaries are loaded
+    // analysis_kind_t::x86_64
+    // analysis_kind_t::aarch64,
+    // analysis_kind_t::uefi -- as only 64-bit binaries are loaded
     m_mask = 0xffffffffffffff00;
     m_masked_value = 0x8000000000000000;
   }
@@ -368,7 +368,7 @@ bool efi_analysis::efi_analyser_x86_t::find_boot_services_tables() {
   auto BS_OFFSET = BS_OFFSET_64;
   uint16_t R_SP = R_RSP;
 
-  if (m_arch == analysis_type_t::x86_32) {
+  if (m_analysis_kind == analysis_kind_t::x86_32) {
     BS_OFFSET = BS_OFFSET_32;
     R_SP = R_ESP;
   }
@@ -481,7 +481,7 @@ bool efi_analysis::efi_analyser_x86_t::find_runtime_services_tables() {
   auto RT_OFFSET = RT_OFFSET_64;
   uint16_t R_SP = R_RSP;
 
-  if (m_arch == analysis_type_t::x86_32) {
+  if (m_analysis_kind == analysis_kind_t::x86_32) {
     RT_OFFSET = RT_OFFSET_32;
     R_SP = R_ESP;
   }
@@ -629,7 +629,7 @@ void efi_analysis::efi_analyser_x86_t::get_boot_services_all() {
           for (int j = 0; j < g_boot_services_table_all_count; j++) {
             // architecture-specific variables
             auto offset = g_boot_services_table_all[j].offset64;
-            if (m_arch == analysis_type_t::x86_32) {
+            if (m_analysis_kind == analysis_kind_t::x86_32) {
               offset = g_boot_services_table_all[j].offset32;
             }
 
@@ -718,7 +718,7 @@ void efi_analysis::efi_analyser_x86_t::get_runtime_services_all() {
           for (int j = 0; j < g_runtime_services_table_all_count; j++) {
             // architecture specific variables
             auto offset = g_runtime_services_table_all[j].offset64;
-            if (m_arch == analysis_type_t::x86_32) {
+            if (m_analysis_kind == analysis_kind_t::x86_32) {
               offset = g_runtime_services_table_all[j].offset32;
             }
             if (service_offset == u32_addr(offset)) {
@@ -1220,7 +1220,7 @@ void efi_analysis::efi_analyser_x86_t::find_other_boot_services_tables64() {
 bool efi_analysis::efi_analyser_t::add_protocol(std::string service_name,
                                                 ea_t guid_addr, ea_t xref_addr,
                                                 ea_t call_addr) {
-  if (m_arch != analysis_type_t::uefi && guid_addr >= m_start_addr &&
+  if (m_analysis_kind != analysis_kind_t::uefi && guid_addr >= m_start_addr &&
       guid_addr <= m_end_addr) {
     return false; // filter FP
   }
@@ -1234,7 +1234,7 @@ bool efi_analysis::efi_analyser_t::add_protocol(std::string service_name,
   p["ea"] = call_addr;
 
   qstring module_name("Current");
-  if (efi_utils::get_analysis_type() == analysis_type_t::uefi) {
+  if (efi_utils::get_analysis_kind() == analysis_kind_t::uefi) {
     module_name = efi_utils::get_module_name_loader(call_addr);
   }
 
@@ -2611,7 +2611,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
 
   // analyse all
   auto res = ASKBTN_NO;
-  if (analyser.m_arch == analysis_type_t::uefi) {
+  if (analyser.m_analysis_kind == analysis_kind_t::uefi) {
     res = ask_yn(1, "Do you want to analyse all modules with auto_mark_range?");
   }
   if (res == ASKBTN_YES && analyser.m_code_segs.size() &&
@@ -2708,7 +2708,7 @@ bool efi_analysis::efi_analyse_main_x86_64() {
     analyser.show_all_choosers();
   }
 
-  if (analyser.m_arch == analysis_type_t::uefi) {
+  if (analyser.m_analysis_kind == analysis_kind_t::uefi) {
     // init public EdiDependencies members
     g_deps.get_protocols_chooser(analyser.m_all_protocols);
     g_deps.get_protocols_by_guids(analyser.m_all_protocols);

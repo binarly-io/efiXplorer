@@ -23,8 +23,8 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-  const auto arch = efi_utils::get_analysis_type();
-  if (arch == analysis_type_t::unsupported) {
+  const auto analysis_kind = efi_utils::get_analysis_kind();
+  if (analysis_kind == analysis_kind_t::unsupported) {
     return PLUGIN_SKIP;
   }
 
@@ -70,14 +70,14 @@ bool idaapi run(size_t arg) {
     return false;
   }
 
-  const auto arch = efi_utils::get_analysis_type();
-  if (arch == analysis_type_t::x86_64) {
+  const auto analysis_kind = efi_utils::get_analysis_kind();
+  if (analysis_kind == analysis_kind_t::x86_64) {
     efi_utils::log("input file is x86 64-bit module\n");
     efi_analysis::efi_analyse_main_x86_64();
-  } else if (arch == analysis_type_t::x86_32) {
+  } else if (analysis_kind == analysis_kind_t::x86_32) {
     efi_utils::log("input file is x86 32-bit module\n");
     efi_analysis::efi_analyse_main_x86_32();
-  } else if (arch == analysis_type_t::uefi) {
+  } else if (analysis_kind == analysis_kind_t::uefi) {
     warning("%s: input file is UEFI firmware, analysis can be time consuming\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
@@ -87,7 +87,7 @@ bool idaapi run(size_t arg) {
       efi_utils::log("analyse AMD64 modules\n");
       efi_analysis::efi_analyse_main_x86_64();
     }
-  } else if (arch == analysis_type_t::aarch64) {
+  } else if (analysis_kind == analysis_kind_t::aarch64) {
     efi_utils::log("input file is ARM 64-bit module\n");
     efi_analysis::efi_analyse_main_aarch64();
   }

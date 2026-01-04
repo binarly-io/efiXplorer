@@ -55,7 +55,7 @@ constexpr uint16_t NONE_REG = 0xffff;
 constexpr uint16_t NONE_OFFSET = 0xffff;
 constexpr uint16_t NONE_PUSH = 0xffff;
 
-enum class analysis_type_t { unsupported, x86_32, x86_64, aarch64, uefi };
+enum class analysis_kind_t { unsupported, x86_32, x86_64, aarch64, uefi };
 enum class ffs_file_type_t {
   unsupported = 0,
   peim = 6,
