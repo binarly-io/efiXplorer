@@ -2,6 +2,9 @@
 // Copyright (C) 2020-2026 Binarly
 
 #include "efi_utils.h"
+#include "efi_defs.h"
+
+#include "../ldr/pe/pe.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -198,11 +201,15 @@ void efi_utils::set_const_char16_type(ea_t ea) {
   }
 }
 
+inline bool read_pe_header(peheader_t &pe) {
+  const netnode penode(PE_NODE);
+  return penode.valobj(&pe, sizeof(pe)) > 0;
+}
+
 //--------------------------------------------------------------------------
 // get input file type (64-bit, 32-bit module or UEFI firmware)
 analysis_type_t efi_utils::get_analysis_type() {
   processor_t &ph = PH;
-  auto filetype = inf_get_filetype();
   auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
 
   // check if the input file is a UEFI firmware image
@@ -210,21 +217,39 @@ analysis_type_t efi_utils::get_analysis_type() {
     return analysis_type_t::uefi;
   }
 
-  if (filetype == f_PE || filetype == f_ELF) {
-    switch (ph.id) {
-    case PLFM_386:
-      if (bits == 64)
-        return analysis_type_t::x86_64;
-      if (bits == 32)
-        return analysis_type_t::x86_32;
-      break;
-
-    case PLFM_ARM:
-      if (bits == 64)
-        return analysis_type_t::aarch64;
-      break;
-    }
+  if (inf_get_filetype() != f_PE) {
+    // only PE/TE files,
+    // if file is TE, IDA will mark it with f_PE file type
+    efi_utils::log("unsupported format");
+    return analysis_type_t::unsupported;
   }
+
+  // check subsystem
+  peheader_t pe;
+  if (!read_pe_header(pe)) {
+    efi_utils::log("unsupported format");
+    return analysis_type_t::unsupported;
+  }
+
+  if (!pe.is_te() && !pe.is_efi()) {
+    efi_utils::log("unsupported subsystem");
+    return analysis_type_t::unsupported;
+  }
+
+  switch (ph.id) {
+  case PLFM_386:
+    if (bits == 64)
+      return analysis_type_t::x86_64;
+    if (bits == 32)
+      return analysis_type_t::x86_32;
+    break;
+
+  case PLFM_ARM:
+    if (bits == 64)
+      return analysis_type_t::aarch64;
+    break;
+  }
+
   return analysis_type_t::unsupported;
 }
 
