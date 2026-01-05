@@ -1,23 +1,10 @@
-/*
- * efiXplorer
- * Copyright (C) 2020-2025 Binarly
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2020-2026 Binarly
 
 #include "efi_utils.h"
+#include "efi_defs.h"
+
+#include "../ldr/pe/pe.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -39,8 +26,9 @@ std::string file_format_name() {
 //--------------------------------------------------------------------------
 // get input file type (PEI or DXE-like). No reliable way to determine FFS
 // file type given only its PE/TE image section, so hello heuristics
-ffs_file_type_t guess_file_type(arch_file_type_t arch, json_list_t *all_guids) {
-  if (arch == arch_file_type_t::uefi) {
+ffs_file_type_t guess_file_type(analysis_kind_t analysis_kind,
+                                json_list_t *all_guids) {
+  if (analysis_kind == analysis_kind_t::uefi) {
     return ffs_file_type_t::driver;
   }
 
@@ -63,7 +51,7 @@ ffs_file_type_t guess_file_type(arch_file_type_t arch, json_list_t *all_guids) {
   bool has_pei_in_path =
       ((file_name.find("Pei") != std::string::npos ||
         file_name.find("pei") != std::string::npos || signature == VZ) &&
-       arch == arch_file_type_t::x86_64);
+       analysis_kind == analysis_kind_t::x86_64);
 
   if (signature == VZ || has_pei_guids || has_pei_in_path) {
     efi_utils::log("analysing binary file as PEI, signature: %llx\n",
@@ -214,39 +202,62 @@ void efi_utils::set_const_char16_type(ea_t ea) {
   }
 }
 
+inline bool read_pe_header(peheader_t &pe) {
+  const netnode penode(PE_NODE);
+  return penode.valobj(&pe, sizeof(pe)) > 0;
+}
+
 //--------------------------------------------------------------------------
 // get input file type (64-bit, 32-bit module or UEFI firmware)
-arch_file_type_t efi_utils::input_file_type() {
+analysis_kind_t efi_utils::get_analysis_kind() {
   processor_t &ph = PH;
-  auto filetype = inf_get_filetype();
   auto bits = inf_is_64bit() ? 64 : inf_is_32bit_exactly() ? 32 : 16;
 
   // check if the input file is a UEFI firmware image
   if (file_format_name().find("UEFI") != std::string::npos) {
-    return arch_file_type_t::uefi;
+    return analysis_kind_t::uefi;
   }
 
-  if (filetype == f_PE || filetype == f_ELF) {
-    switch (ph.id) {
-    case PLFM_386:
-      if (bits == 64)
-        return arch_file_type_t::x86_64;
-      if (bits == 32)
-        return arch_file_type_t::x86_32;
-      break;
-
-    case PLFM_ARM:
-      if (bits == 64)
-        return arch_file_type_t::aarch64;
-      break;
-    }
+  if (inf_get_filetype() != f_PE) {
+    // only PE/TE files,
+    // if file is TE, IDA will mark it with f_PE file type
+    efi_utils::log("unsupported format");
+    return analysis_kind_t::unsupported;
   }
-  return arch_file_type_t::unsupported;
+
+  // check subsystem
+  peheader_t pe;
+  if (!read_pe_header(pe)) {
+    efi_utils::log("unsupported format");
+    return analysis_kind_t::unsupported;
+  }
+
+  if (!pe.is_te() && !pe.is_efi()) {
+    efi_utils::log("unsupported subsystem");
+    return analysis_kind_t::unsupported;
+  }
+
+  switch (ph.id) {
+  case PLFM_386:
+    if (bits == 64)
+      return analysis_kind_t::x86_64;
+    if (bits == 32)
+      return analysis_kind_t::x86_32;
+    break;
+
+  case PLFM_ARM:
+    if (bits == 64)
+      return analysis_kind_t::aarch64;
+    break;
+  }
+
+  return analysis_kind_t::unsupported;
 }
 
 ffs_file_type_t efi_utils::ask_file_type(json_list_t *all_guids) {
-  const auto arch = efi_utils::input_file_type();
-  if (arch == arch_file_type_t::uefi || arch == arch_file_type_t::x86_64) {
+  const auto analysis_kind = efi_utils::get_analysis_kind();
+  if (analysis_kind == analysis_kind_t::uefi ||
+      analysis_kind == analysis_kind_t::x86_64) {
     // if the input is UEFI firmware or an x86-64 module,
     // it will be analysed as DXE/SMM
     return ffs_file_type_t::driver;
@@ -263,7 +274,7 @@ ffs_file_type_t efi_utils::ask_file_type(json_list_t *all_guids) {
 
   int16_t choice = 0;
   if (!ask_form(form, &choice)) {
-    return guess_file_type(arch, all_guids);
+    return guess_file_type(analysis_kind, all_guids);
   }
 
   return file_types[choice];

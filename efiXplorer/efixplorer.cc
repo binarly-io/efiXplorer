@@ -1,21 +1,5 @@
-/*
- * efiXplorer
- * Copyright (C) 2020-2025 Binarly
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2020-2026 Binarly
 
 #include "efi_analysis.h"
 #include "efi_global.h"
@@ -39,8 +23,8 @@ hexdsp_t *hexdsp = nullptr;
 
 //--------------------------------------------------------------------------
 static plugmod_t *idaapi init(void) {
-  const auto file_type = efi_utils::input_file_type();
-  if (file_type == arch_file_type_t::unsupported) {
+  const auto analysis_kind = efi_utils::get_analysis_kind();
+  if (analysis_kind == analysis_kind_t::unsupported) {
     return PLUGIN_SKIP;
   }
 
@@ -86,14 +70,14 @@ bool idaapi run(size_t arg) {
     return false;
   }
 
-  const auto arch = efi_utils::input_file_type();
-  if (arch == arch_file_type_t::x86_64) {
+  const auto analysis_kind = efi_utils::get_analysis_kind();
+  if (analysis_kind == analysis_kind_t::x86_64) {
     efi_utils::log("input file is x86 64-bit module\n");
     efi_analysis::efi_analyse_main_x86_64();
-  } else if (arch == arch_file_type_t::x86_32) {
+  } else if (analysis_kind == analysis_kind_t::x86_32) {
     efi_utils::log("input file is x86 32-bit module\n");
     efi_analysis::efi_analyse_main_x86_32();
-  } else if (arch == arch_file_type_t::uefi) {
+  } else if (analysis_kind == analysis_kind_t::uefi) {
     warning("%s: input file is UEFI firmware, analysis can be time consuming\n",
             g_plugin_name);
     if (get_machine_type() == AARCH64) {
@@ -103,7 +87,7 @@ bool idaapi run(size_t arg) {
       efi_utils::log("analyse AMD64 modules\n");
       efi_analysis::efi_analyse_main_x86_64();
     }
-  } else if (arch == arch_file_type_t::aarch64) {
+  } else if (analysis_kind == analysis_kind_t::aarch64) {
     efi_utils::log("input file is ARM 64-bit module\n");
     efi_analysis::efi_analyse_main_aarch64();
   }

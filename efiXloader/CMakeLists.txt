@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2020-2026 Binarly
+
 cmake_minimum_required(VERSION 3.10)
 
 project(efiXloader)
@@ -63,14 +66,14 @@ file(
   "3rd/uefitool/uefidump.h"
   "3rd/uefitool/version.h")
 
-# efiLoader sources
-file(GLOB efiloader_src "*.cc" "*.h")
+# efiXloader sources
+file(GLOB efiXloader_src "*.cc" "*.h")
 
 add_ida_loader(efiXloader NOEA32 ${PROJECT_SOURCE_DIR}/efi_loader.cc)
 
 set_ida_target_properties(efiXloader PROPERTIES CXX_STANDARD 17)
 ida_target_include_directories(efiXloader PRIVATE ${IdaSdk_INCLUDE_DIRS})
 
-add_ida_library(efiXloader_lib NOEA32 ${efiloader_src} ${uefitool_src}
+add_ida_library(efiXloader_lib NOEA32 ${efiXloader_src} ${uefitool_src}
                 uefitool.cc uefitool.h)
 ida_target_link_libraries(efiXloader efiXloader_lib)
