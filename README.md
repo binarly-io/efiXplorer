@@ -1,17 +1,17 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-[![efiXplorer CI](https://github.com/binarly-io/efiXplorer/actions/workflows/build.yml/badge.svg)](https://github.com/binarly-io/efiXplorer/actions)
+[![efiXplorer CI](https://github.com/rehints/efiXplorer/actions/workflows/build.yml/badge.svg)](https://github.com/rehints/efiXplorer/actions)
 
 <p align="center">
-  <img alt="logo" src="https://raw.githubusercontent.com/binarly-io/efiXplorer/5c21f355c41e74af4a7cd1659780a71f76f5d2c1/pics/efiXplorer_logo.png" width="45%">
+  <img alt="logo" src="https://raw.githubusercontent.com/rehints/efiXplorer/5c21f355c41e74af4a7cd1659780a71f76f5d2c1/pics/efiXplorer_logo.png" width="45%">
 </p>
 
 **efiXplorer** - [IDA plugin](https://plugins.hex-rays.com/binarly-io/efixplorer) and loader for UEFI firmware analysis and reverse engineering automation
 
 ## Documentation
 
-- [efiXplorer wiki](https://github.com/binarly-io/efiXplorer/wiki/efiXplorer-features)
-- [efiXloader wiki](https://github.com/binarly-io/efiXplorer/wiki/efiXloader)
-- [Build instructions and installation](https://github.com/binarly-io/efiXplorer/wiki/Build-instruction-and-installation)
+- [efiXplorer wiki](https://github.com/rehints/efiXplorer/wiki/efiXplorer-features)
+- [efiXloader wiki](https://github.com/rehints/efiXplorer/wiki/efiXloader)
+- [Build instructions and installation](https://github.com/rehints/efiXplorer/wiki/Build-instruction-and-installation)
 
 ## Publications
 
