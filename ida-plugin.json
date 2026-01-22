@@ -6,7 +6,7 @@
     "version": "6.1.2",
     "idaVersions": ">=8.3",
     "urls": {
-      "repository": "https://github.com/binarly-io/efixplorer"
+      "repository": "https://github.com/rehints/efixplorer"
     },
     "authors": [
       {
