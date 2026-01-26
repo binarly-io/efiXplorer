@@ -1,12 +1,12 @@
-[submodule "efiXloader/3rd/uefitool"]
-	path = efiXloader/3rd/uefitool
-	url = https://github.com/LongSoft/UEFITool.git
-	branch = new_engine
 [submodule "guids"]
 	path = guids
 	url = https://github.com/REhints/guiddb.git
 	branch = main
-[submodule "idasdk"]
-	path = idasdk
+[submodule "third-party/uefitool"]
+	path = third-party/uefitool
+	url = https://github.com/LongSoft/UEFITool.git
+	branch = new_engine
+[submodule "third-party/idasdk"]
+	path = third-party/idasdk
 	url = https://github.com/HexRaysSA/ida-sdk.git
 	branch = main
