@@ -29,42 +29,42 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 find_package(IdaSdk REQUIRED)
 
-include_directories(${PROJECT_SOURCE_DIR}/../efiXplorer/3rd/nlohmann_json)
+include_directories(${PROJECT_SOURCE_DIR}/../third_party)
 
 file(
   GLOB
   uefitool_src
-  "3rd/uefitool/common/*.c"
-  "3rd/uefitool/common/*.cpp"
-  "3rd/uefitool/common/*.h"
-  "3rd/uefitool/common/bstrlib/*.c"
-  "3rd/uefitool/common/bstrlib/*.cpp"
-  "3rd/uefitool/common/bstrlib/*.h"
-  "3rd/uefitool/common/digest/sha1.c"
-  "3rd/uefitool/common/digest/sha256.c"
-  "3rd/uefitool/common/digest/sha512.c"
-  "3rd/uefitool/common/digest/sm3.c"
-  "3rd/uefitool/common/generated/*.cpp"
-  "3rd/uefitool/common/generated/*.h"
-  "3rd/uefitool/common/kaitai/*.cpp"
-  "3rd/uefitool/common/kaitai/*.h"
-  "3rd/uefitool/common/LZMA/*.c"
-  "3rd/uefitool/common/LZMA/*.cpp"
-  "3rd/uefitool/common/LZMA/*.h"
-  "3rd/uefitool/common/LZMA/SDK/C/*.c"
-  "3rd/uefitool/common/LZMA/SDK/C/*.cpp"
-  "3rd/uefitool/common/LZMA/SDK/C/*.h"
-  "3rd/uefitool/common/Tiano/*.c"
-  "3rd/uefitool/common/Tiano/*.cpp"
-  "3rd/uefitool/common/Tiano/*.h"
-  "3rd/uefitool/common/zlib/*.c"
-  "3rd/uefitool/common/zlib/*.cpp"
-  "3rd/uefitool/common/zlib/*.h"
-  "3rd/uefitool/ffsdumper.cpp"
-  "3rd/uefitool/ffsdumper.h"
-  "3rd/uefitool/uefidump.cpp"
-  "3rd/uefitool/uefidump.h"
-  "3rd/uefitool/version.h")
+  "uefitool/common/*.c"
+  "uefitool/common/*.cpp"
+  "uefitool/common/*.h"
+  "uefitool/common/bstrlib/*.c"
+  "uefitool/common/bstrlib/*.cpp"
+  "uefitool/common/bstrlib/*.h"
+  "uefitool/common/digest/sha1.c"
+  "uefitool/common/digest/sha256.c"
+  "uefitool/common/digest/sha512.c"
+  "uefitool/common/digest/sm3.c"
+  "uefitool/common/generated/*.cpp"
+  "uefitool/common/generated/*.h"
+  "uefitool/common/kaitai/*.cpp"
+  "uefitool/common/kaitai/*.h"
+  "uefitool/common/LZMA/*.c"
+  "uefitool/common/LZMA/*.cpp"
+  "uefitool/common/LZMA/*.h"
+  "uefitool/common/LZMA/SDK/C/*.c"
+  "uefitool/common/LZMA/SDK/C/*.cpp"
+  "uefitool/common/LZMA/SDK/C/*.h"
+  "uefitool/common/Tiano/*.c"
+  "uefitool/common/Tiano/*.cpp"
+  "uefitool/common/Tiano/*.h"
+  "uefitool/common/zlib/*.c"
+  "uefitool/common/zlib/*.cpp"
+  "uefitool/common/zlib/*.h"
+  "uefitool/ffsdumper.cpp"
+  "uefitool/ffsdumper.h"
+  "uefitool/uefidump.cpp"
+  "uefitool/uefidump.h"
+  "uefitool/version.h")
 
 # efiXloader sources
 file(GLOB efiXloader_src "*.cc" "*.h")

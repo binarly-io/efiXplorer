@@ -22,7 +22,7 @@ find_path(
   IdaSdk_DIR
   NAMES include/pro.h
   HINTS ${IdaSdk_ROOT_DIR} ENV IDASDK_ROOT
-  PATHS ${CMAKE_CURRENT_LIST_DIR}/../third_party/idasdk
+  PATHS ${CMAKE_CURRENT_LIST_DIR}/../third_party/idasdk/src/
   PATH_SUFFIXES idasdk
   DOC "Location of the IDA SDK"
   NO_DEFAULT_PATH)

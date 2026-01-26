@@ -3,7 +3,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
-PROJECT(efiXplorer_everything)
+PROJECT(efiXplorer_all)
 
-ADD_SUBDIRECTORY(efiXplorer)
-ADD_SUBDIRECTORY(efiXloader)
+ADD_SUBDIRECTORY(plugin)
+ADD_SUBDIRECTORY(loader)

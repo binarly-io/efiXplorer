@@ -9,8 +9,8 @@
 
 ## Documentation
 
-- [efiXplorer wiki](https://github.com/rehints/efiXplorer/wiki/efiXplorer-features)
-- [efiXloader wiki](https://github.com/rehints/efiXplorer/wiki/efiXloader)
+- [Plugin wiki](https://github.com/rehints/efiXplorer/wiki/efiXplorer-features)
+- [Loader wiki](https://github.com/rehints/efiXplorer/wiki/efiXloader)
 - [Build instructions and installation](https://github.com/rehints/efiXplorer/wiki/Build-instruction-and-installation)
 
 ## Publications

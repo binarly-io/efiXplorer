@@ -5,8 +5,8 @@ on:
     branches: [master]
 
 jobs:
-  analyse-everything:
-    name: analyse efiXplorer
+  analyse-all:
+    name: analyse plugin and loader
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -26,7 +26,7 @@ jobs:
       - name: autobuild
         run: |
           git submodule update --init --recursive
-          cmake -S . -B build -DIdaSdk_DIR=idasdk/src -DHexRaysSdk_ROOT_DIR=idasdk/src
+          cmake -S . -B build -DIdaSdk_DIR=third_party/idasdk/src -DHexRaysSdk_ROOT_DIR=third_party/idasdk/src
           cmake --build build --config Release --parallel
       - name: analyse with CodeQL
         uses: github/codeql-action/analyze@d3678e237b9c32a6c9bffb3315c335f976f3549f
